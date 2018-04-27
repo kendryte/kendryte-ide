@@ -38,8 +38,6 @@ export const IPartService = createDecorator<IPartService>('partService');
 export interface IPartService {
 	_serviceBrand: ServiceIdentifier<any>;
 
-	setMaixHidden(hidden: boolean): TPromise<void>;
-
 	/**
 	 * Emits when the visibility of the title bar changes.
 	 */

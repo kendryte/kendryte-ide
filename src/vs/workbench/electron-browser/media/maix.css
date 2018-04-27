@@ -1,0 +1,25 @@
+.mask-layer {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	height: 100%;
+	width: 100%;
+	background-color: rgba(230, 230, 230, 0.5);
+	background-size: 100% 100%;
+}
+
+.maix-container {
+	min-height: 480px;
+    min-width: 600px;
+    top: 50%;
+    left: 50%;
+    position: absolute;
+    background-color: rgb(230, 230, 230);
+    transform: translate3d(-50%,-50%,0);
+}
+
+.maix-titlebar {
+	height: 30px;
+	background-color: whitesmoke;
+	font-size: 20px;
+}

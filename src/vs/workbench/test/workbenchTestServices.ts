@@ -322,10 +322,6 @@ export class TestDialogService implements IDialogService {
 
 export class TestPartService implements IPartService {
 
-	setMaixHidden(hidden: boolean): TPromise<void> {
-		return TPromise.as(null);
-	}
-
 	public _serviceBrand: any;
 
 	private _onTitleBarVisibilityChange = new Emitter<void>();

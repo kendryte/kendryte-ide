@@ -23,11 +23,7 @@ import { KeybindingsResolver } from 'vs/code/electron-main/keyboard';
 import { IWindowsMainService, IWindowsCountChangedEvent } from 'vs/platform/windows/electron-main/windows';
 import { IHistoryMainService } from 'vs/platform/history/common/history';
 import { IWorkspaceIdentifier, getWorkspaceLabel, ISingleFolderWorkspaceIdentifier, isSingleFolderWorkspaceIdentifier } from 'vs/platform/workspaces/common/workspaces';
-// import { IMaixService } from 'vs/platform/maix/common/maix';
-// import { OpenMaixSettingsAction } from '../../platform/maix/common/maixAction';
-// import { $ } from 'vs/base/browser/builder';
-import { broadcast } from 'vs/code/electron-main/boardcaser'
-
+import { broadcast } from 'vs/code/electron-main/broadcaster';
 
 interface IExtensionViewlet {
 	id: string;
@@ -906,22 +902,16 @@ export class CodeMenu {
 		// 	),
 		// 	click: () => this.maixService.showSettingsDialog()
 		// });
-		const test = new MenuItem({
+		const settings = new MenuItem({
 			label: this.mnemonicLabel(
 			   nls.localize({ key: 'miSettings', comment: ['&& denotes a mnemonic'] }, "&&Settings")
 		    ),
 		    click: () => {
 				broadcast('maix-open-settings', { message: false });
-				// let workbenchElement = document.getElementById('monaco-workbench-container');
-				// $().div({
-				// 	'class': 'maix-container',
-				// 	id: 'mmp'
-				// }).appendTo(workbenchElement);
 		   }
 	   	});
 		[
-			// settings,
-			test
+			settings
 		].forEach(item => maixMenu.append(item));
 	}
 

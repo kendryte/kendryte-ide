@@ -1408,10 +1408,6 @@ electron-download@^4.1.0:
     semver "^5.3.0"
     sumchecker "^2.0.1"
 
-electron-ipc-broadcast@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/electron-ipc-broadcast/-/electron-ipc-broadcast-0.1.0.tgz#c686f0fee5c9f79b15231b99b4de95c447b4bc4a"
-
 electron-mksnapshot@~1.7.0:
   version "1.7.1"
   resolved "https://registry.yarnpkg.com/electron-mksnapshot/-/electron-mksnapshot-1.7.1.tgz#926be7c20cfe0593249df979b0a12a2a0c5b27f1"

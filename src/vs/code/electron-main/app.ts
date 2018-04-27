@@ -63,7 +63,8 @@ import { ElectronURLListener } from 'vs/platform/url/electron-main/electronUrlLi
 import { serve as serveDriver } from 'vs/platform/driver/electron-main/driver';
 import { join } from 'path';
 import { exists, rename } from 'vs/base/node/pfs';
-import { mainBroadcastListener } from 'vs/code/electron-main/boardcaser';
+
+import { mainBroadcastListener } from 'vs/code/electron-main/broadcaster';
 mainBroadcastListener();
 
 export class CodeApplication {

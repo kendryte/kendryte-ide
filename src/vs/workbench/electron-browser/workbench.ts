@@ -111,7 +111,7 @@ import { registerWindowDriver } from 'vs/platform/driver/electron-browser/driver
 import { IPreferencesService } from 'vs/workbench/services/preferences/common/preferences';
 import { PreferencesService } from 'vs/workbench/services/preferences/browser/preferencesService';
 import { IExtensionUrlHandler, ExtensionUrlHandler } from 'vs/platform/url/electron-browser/inactiveExtensionUrlHandler';
-import { ipcRenderer } from 'electron';
+import { MaixSettingsWindows } from 'vs/workbench/electron-browser/maix';
 
 export const EditorsVisibleContext = new RawContextKey<boolean>('editorIsOpen', false);
 export const InZenModeContext = new RawContextKey<boolean>('inZenMode', false);
@@ -150,8 +150,7 @@ const Identifiers = {
 	SIDEBAR_PART: 'workbench.parts.sidebar',
 	PANEL_PART: 'workbench.parts.panel',
 	EDITOR_PART: 'workbench.parts.editor',
-	STATUSBAR_PART: 'workbench.parts.statusbar',
-	MAIX_PART: 'workbench.parts.maix'
+	STATUSBAR_PART: 'workbench.parts.statusbar'
 };
 
 function getWorkbenchStateString(state: WorkbenchState): string {
@@ -187,16 +186,13 @@ export class Workbench implements IPartService {
 
 	public _serviceBrand: any;
 
-	//private maixService: IMaixService;
+	private maixSettingsWindows: MaixSettingsWindows;
+
 	private parent: HTMLElement;
 	private container: HTMLElement;
 	private workbenchParams: WorkbenchParams;
 	private workbenchContainer: Builder;
 	private workbench: Builder;
-	// maix begin
-	private maixContainer: Builder;
-
-	// maix end
 	private workbenchStarted: boolean;
 	private workbenchCreated: boolean;
 	private workbenchShutdown: boolean;
@@ -274,6 +270,8 @@ export class Workbench implements IPartService {
 		this.closeEmptyWindowScheduler = new RunOnceScheduler(() => this.onAllEditorsClosed(), 50);
 
 		this._onTitleBarVisibilityChange = new Emitter<void>();
+
+		this.maixSettingsWindows = new MaixSettingsWindows();
 	}
 
 	public get onTitleBarVisibilityChange(): Event<void> {
@@ -336,20 +334,12 @@ export class Workbench implements IPartService {
 			registerWindowDriver(this.mainProcessClient, this.configuration.windowId, this.instantiationService)
 				.then(disposable => this.toUnbind.push(disposable));
 		}
-		// ipcRenderer.send('test');
-		// const ipcMain = require('electron').ipcMain;
 
-		ipcRenderer.on('maix-open-settings', (event, { payload }) => {
-			const { message } = payload
-			console.log(message)  // prints "ping"
-			this.setMaixHidden(false);
-		});
+		// Maix
+		this.maixSettingsWindows.init(this.workbenchContainer);
+
 		// Restore Parts
-
-
 		return this.restoreParts();
-
-
 	}
 
 	private createWorkbench(): void {
@@ -358,12 +348,6 @@ export class Workbench implements IPartService {
 			'class': `monaco-workbench ${isWindows ? 'windows' : isLinux ? 'linux' : 'mac'}`,
 			id: Identifiers.WORKBENCH_CONTAINER
 		}).appendTo(this.workbenchContainer);
-
-		this.maixContainer = $().div({
-			'class': 'maix-container',
-			id: Identifiers.MAIX_PART
-		}).appendTo(this.workbenchContainer);
-
 	}
 
 	private restoreParts(): TPromise<IWorkbenchStartedInfo> {
@@ -555,15 +539,8 @@ export class Workbench implements IPartService {
 	private initServices(): void {
 		const { serviceCollection } = this.workbenchParams;
 
-
 		// Services we contribute
 		serviceCollection.set(IPartService, this);
-
-		// Maix Service
-		// this.maixService = this.instantiationService.createInstance(MaixService);
-		//this.maixService = new MaixService();
-		// this.maixService = this.instantiationService.createInstance(MaixService, Identifiers.MAIX_PART);
-		//serviceCollection.set(IMaixService, new MaixService());
 
 		// Clipboard
 		serviceCollection.set(IClipboardService, new ClipboardService());
@@ -1028,17 +1005,6 @@ export class Workbench implements IPartService {
 		});
 	}
 
-	public setMaixHidden(hidden: boolean): TPromise<void> {
-		if (hidden) {
-			this.workbench.removeProperty('-webkit-filter');
-			this.maixContainer.style('z-index', '0');
-		} else {
-			this.workbench.setProperty('-webkit-filter', 'blur(5px)');
-			this.maixContainer.style('z-index', '1');
-		}
-		return TPromise.as(null);
-	}
-
 	private setFontAliasing(aliasing: FontAliasingOption) {
 		this.fontAliasing = aliasing;
 
@@ -1088,11 +1054,6 @@ export class Workbench implements IPartService {
 	}
 
 	private registerListeners(): void {
-		// this.toUnbind.push(this.maixService.onMaixSettingsShow((hidden) => {
-		// 	console.log("********** superise mother fucker");
-		// 	this.setMaixHidden(hidden)}
-		// ));
-
 		// Listen to editor changes
 		this.toUnbind.push(this.editorPart.onEditorsChanged(() => this.onEditorsChanged()));
 
@@ -1111,6 +1072,9 @@ export class Workbench implements IPartService {
 
 		// Fullscreen changes
 		this.toUnbind.push(browser.onDidChangeFullscreen(() => this.onFullscreenChanged()));
+
+		// maix
+		this.maixSettingsWindows.registerListeners();
 	}
 
 	private onFullscreenChanged(): void {
@@ -1269,22 +1233,11 @@ export class Workbench implements IPartService {
 		this.createPanelPart();
 		this.createStatusbarPart();
 
-		// Maix
-		this.maixCreateTitleBar();
-
 		// Notification Handlers
 		this.createNotificationsHandlers();
 
 		// Add Workbench to DOM
 		this.workbenchContainer.build(this.container);
-	}
-
-	private maixCreateTitleBar() : void {
-		$(this.maixContainer).div({
-			'class': 'maix-titlebar',
-			id: 'maix.workbench.parts.titlebar',
-			role: 'contentinfo'
-		}).text("Settings");
 	}
 
 	private createTitlebarPart(): void {
