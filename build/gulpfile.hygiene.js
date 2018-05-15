@@ -136,13 +136,6 @@ const tslintFilter = [
 	'!extensions/html-language-features/server/lib/jquery.d.ts'
 ];
 
-const copyrightHeaderLines = [
-	'/*---------------------------------------------------------------------------------------------',
-	' *  Copyright (c) Microsoft Corporation. All rights reserved.',
-	' *  Licensed under the MIT License. See License.txt in the project root for license information.',
-	' *--------------------------------------------------------------------------------------------*/'
-];
-
 gulp.task('eslint', () => {
 	return vfs.src(all, { base: '.', follow: true, allowEmpty: true })
 		.pipe(filter(eslintFilter))
@@ -180,20 +173,6 @@ function hygiene(some) {
 					errorCount++;
 				}
 			});
-
-		this.emit('data', file);
-	});
-
-	const copyrights = es.through(function (file) {
-		const lines = file.__lines;
-
-		for (let i = 0; i < copyrightHeaderLines.length; i++) {
-			if (lines[i] !== copyrightHeaderLines[i]) {
-				console.error(file.relative + ': Missing or bad copyright statement');
-				errorCount++;
-				break;
-			}
-		}
 
 		this.emit('data', file);
 	});
@@ -250,8 +229,7 @@ function hygiene(some) {
 		.pipe(filter(f => !f.stat.isDirectory()))
 		.pipe(filter(indentationFilter))
 		.pipe(indentation)
-		.pipe(filter(copyrightFilter))
-		.pipe(copyrights);
+		.pipe(filter(copyrightFilter));
 
 	const typescript = result
 		.pipe(filter(tslintFilter))

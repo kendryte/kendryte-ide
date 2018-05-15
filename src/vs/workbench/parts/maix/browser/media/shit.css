@@ -1,0 +1,39 @@
+#FullScreenEditor {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	text-align: center;
+}
+
+#FullScreenEditor .my-block {
+	position: static !important;
+	min-width: 800px;
+	/*max-width: 1420px;*/
+	height: 80%;
+	display: block;
+	margin: auto;
+	text-align: left;
+	border-style: solid;
+	border-width: 1px;
+}
+
+#FullScreenEditor .my-block > .content {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+#FullScreenEditor .tabs-container {
+	display: block;
+	width: 100%;
+}
+
+#FullScreenEditor .one-editor-silo {
+	position: static;
+}
+
+#FullScreenEditor .main-fake-container {
+	flex-grow: 1;
+	position: relative;
+	box-sizing: border-box;
+}

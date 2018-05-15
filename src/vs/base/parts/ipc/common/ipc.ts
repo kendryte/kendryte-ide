@@ -120,6 +120,10 @@ export class ChannelServer implements IChannelServer, IDisposable {
 	}
 
 	private onMessage(request: IRawRequest): void {
+		if (process && process.type !== 'renderer') {
+			const { type, id, channelName, name, arg } = request;
+			console.log(`IPC receive: ${MessageType[type]}[${id}] ${channelName}::${name} + ${debugArgType(arg)}`);
+		}
 		switch (request.type) {
 			case MessageType.RequestCommon:
 				this.onCommonRequest(request);
@@ -236,6 +240,10 @@ export class ChannelClient implements IChannelClient, IDisposable {
 	}
 
 	private doRequest(request: IRequest): Promise {
+		if (process && process.type !== 'renderer') {
+			const { type, id, channelName, name, arg } = request.raw;
+			console.log(`IPC request: ${MessageType[type]}[${id}] ${channelName}::${name} + ${debugArgType(arg)}`);
+		}
 		const id = request.raw.id;
 
 		return new TPromise((c, e, p) => {
@@ -499,4 +507,16 @@ export function eventFromCall<T>(channel: IChannel, name: string, arg: any = nul
 	});
 
 	return emitter.event;
+}
+
+function debugArgType(arg: any): string {
+	if (arg === null || arg === undefined) {
+		return '' + arg;
+	} else if (Array.isArray(arg)) {
+		return `array(${arg.length})`;
+	} else if (typeof arg === 'object') {
+		return 'object';
+	} else {
+		return arg;
+	}
 }

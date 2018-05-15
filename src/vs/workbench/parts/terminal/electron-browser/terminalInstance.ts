@@ -155,7 +155,7 @@ export class TerminalInstance implements ITerminalInstance {
 			return;
 		}
 
-		const computedStyle = window.getComputedStyle(this._container);
+		const computedStyle = window.getComputedStyle(this._container.parentElement);
 		const width = parseInt(computedStyle.getPropertyValue('width').replace('px', ''), 10);
 		const height = parseInt(computedStyle.getPropertyValue('height').replace('px', ''), 10);
 		this._evaluateColsAndRows(width, height);
@@ -185,7 +185,7 @@ export class TerminalInstance implements ITerminalInstance {
 		// order to be precise. font.charWidth/charHeight alone as insufficient
 		// when window.devicePixelRatio changes.
 		const scaledWidthAvailable = dimension.width * window.devicePixelRatio;
-		const scaledCharWidth = Math.floor(font.charWidth * window.devicePixelRatio);
+		const scaledCharWidth = Math.floor(font.charWidth * window.devicePixelRatio) + font.letterSpacing;
 		this._cols = Math.max(Math.floor(scaledWidthAvailable / scaledCharWidth), 1);
 
 		const scaledHeightAvailable = dimension.height * window.devicePixelRatio;
@@ -256,6 +256,7 @@ export class TerminalInstance implements ITerminalInstance {
 			fontWeight: this._configHelper.config.fontWeight,
 			fontWeightBold: this._configHelper.config.fontWeightBold,
 			fontSize: font.fontSize,
+			letterSpacing: font.letterSpacing,
 			lineHeight: font.lineHeight,
 			bellStyle: this._configHelper.config.enableBell ? 'sound' : 'none',
 			screenReaderMode: accessibilitySupport === 'on',
@@ -541,7 +542,7 @@ export class TerminalInstance implements ITerminalInstance {
 				// for ensuring that terminals that are created in the background by an extension will
 				// correctly get correct character measurements in order to render to the screen (see
 				// #34554).
-				const computedStyle = window.getComputedStyle(this._container);
+				const computedStyle = window.getComputedStyle(this._container.parentElement);
 				const width = parseInt(computedStyle.getPropertyValue('width').replace('px', ''), 10);
 				const height = parseInt(computedStyle.getPropertyValue('height').replace('px', ''), 10);
 				this.layout(new dom.Dimension(width, height));
@@ -574,13 +575,7 @@ export class TerminalInstance implements ITerminalInstance {
 	}
 
 	public clear(): void {
-		if (this._shellLaunchConfig.executable && paths.basename(this._shellLaunchConfig.executable).match(/^(zsh|bash|bash\.exe)$/)) {
-			// If a supported shell is being used, clear xterm scrollback then clear shell (^L)
-			this._xterm.write('\x1b[3J');
-			this._processManager.write('\x0c');
-		} else {
-			this._xterm.clear();
-		}
+		this._xterm.clear();
 	}
 
 	private _refreshSelectionContextKey() {
@@ -854,6 +849,9 @@ export class TerminalInstance implements ITerminalInstance {
 			// Only apply these settings when the terminal is visible so that
 			// the characters are measured correctly.
 			if (this._isVisible) {
+				if (this._xterm.getOption('letterSpacing') !== font.letterSpacing) {
+					this._xterm.setOption('letterSpacing', font.letterSpacing);
+				}
 				if (this._xterm.getOption('lineHeight') !== font.lineHeight) {
 					this._xterm.setOption('lineHeight', font.lineHeight);
 				}

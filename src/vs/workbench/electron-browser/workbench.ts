@@ -97,7 +97,7 @@ import URI from 'vs/base/common/uri';
 import { IListService, ListService } from 'vs/platform/list/browser/listService';
 import { domEvent } from 'vs/base/browser/event';
 import { InputFocusedContext } from 'vs/platform/workbench/common/contextkeys';
-import { ICustomViewsService } from 'vs/workbench/common/views';
+import { IViewsService } from 'vs/workbench/common/views';
 import { CustomViewsService } from 'vs/workbench/browser/parts/views/customView';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { NotificationService } from 'vs/workbench/services/notification/common/notificationService';
@@ -111,7 +111,6 @@ import { registerWindowDriver } from 'vs/platform/driver/electron-browser/driver
 import { IPreferencesService } from 'vs/workbench/services/preferences/common/preferences';
 import { PreferencesService } from 'vs/workbench/services/preferences/browser/preferencesService';
 import { IExtensionUrlHandler, ExtensionUrlHandler } from 'vs/platform/url/electron-browser/inactiveExtensionUrlHandler';
-import { MaixSettingsWindows } from 'vs/workbench/electron-browser/maix';
 
 export const EditorsVisibleContext = new RawContextKey<boolean>('editorIsOpen', false);
 export const InZenModeContext = new RawContextKey<boolean>('inZenMode', false);
@@ -185,8 +184,6 @@ export class Workbench implements IPartService {
 	private readonly _onTitleBarVisibilityChange: Emitter<void>;
 
 	public _serviceBrand: any;
-
-	private maixSettingsWindows: MaixSettingsWindows;
 
 	private parent: HTMLElement;
 	private container: HTMLElement;
@@ -270,8 +267,6 @@ export class Workbench implements IPartService {
 		this.closeEmptyWindowScheduler = new RunOnceScheduler(() => this.onAllEditorsClosed(), 50);
 
 		this._onTitleBarVisibilityChange = new Emitter<void>();
-
-		this.maixSettingsWindows = new MaixSettingsWindows();
 	}
 
 	public get onTitleBarVisibilityChange(): Event<void> {
@@ -334,9 +329,6 @@ export class Workbench implements IPartService {
 			registerWindowDriver(this.mainProcessClient, this.configuration.windowId, this.instantiationService)
 				.then(disposable => this.toUnbind.push(disposable));
 		}
-
-		// Maix
-		this.maixSettingsWindows.init(this.workbenchContainer);
 
 		// Restore Parts
 		return this.restoreParts();
@@ -413,7 +405,7 @@ export class Workbench implements IPartService {
 		}
 
 		// Restore Forced Editor Center Mode
-		if (this.storageService.getBoolean(Workbench.centeredEditorLayoutActiveStorageKey, StorageScope.GLOBAL, false)) {
+		if (this.storageService.getBoolean(Workbench.centeredEditorLayoutActiveStorageKey, StorageScope.WORKSPACE, false)) {
 			this.centeredEditorLayoutActive = true;
 		}
 
@@ -584,7 +576,7 @@ export class Workbench implements IPartService {
 
 		// Custom views service
 		const customViewsService = this.instantiationService.createInstance(CustomViewsService);
-		serviceCollection.set(ICustomViewsService, customViewsService);
+		serviceCollection.set(IViewsService, customViewsService);
 
 		// Activity service (activitybar part)
 		this.activitybarPart = this.instantiationService.createInstance(ActivitybarPart, Identifiers.ACTIVITYBAR_PART);
@@ -1054,6 +1046,7 @@ export class Workbench implements IPartService {
 	}
 
 	private registerListeners(): void {
+
 		// Listen to editor changes
 		this.toUnbind.push(this.editorPart.onEditorsChanged(() => this.onEditorsChanged()));
 
@@ -1072,9 +1065,6 @@ export class Workbench implements IPartService {
 
 		// Fullscreen changes
 		this.toUnbind.push(browser.onDidChangeFullscreen(() => this.onFullscreenChanged()));
-
-		// maix
-		this.maixSettingsWindows.registerListeners();
 	}
 
 	private onFullscreenChanged(): void {
@@ -1425,7 +1415,7 @@ export class Workbench implements IPartService {
 
 	public centerEditorLayout(active: boolean, skipLayout?: boolean): void {
 		this.centeredEditorLayoutActive = active;
-		this.storageService.store(Workbench.centeredEditorLayoutActiveStorageKey, this.centeredEditorLayoutActive, StorageScope.GLOBAL);
+		this.storageService.store(Workbench.centeredEditorLayoutActiveStorageKey, this.centeredEditorLayoutActive, StorageScope.WORKSPACE);
 
 		if (!skipLayout) {
 			this.layout();

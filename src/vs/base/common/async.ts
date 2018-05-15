@@ -29,11 +29,21 @@ export function asWinJsPromise<T>(callback: (token: CancellationToken) => T | TP
 	return new TPromise<T>((resolve, reject, progress) => {
 		let item = callback(source.token);
 		if (item instanceof TPromise) {
-			always(item, () => source.dispose());
-			item.then(resolve, reject, progress);
+			item.then(result => {
+				source.dispose();
+				resolve(result);
+			}, err => {
+				source.dispose();
+				reject(err);
+			}, progress);
 		} else if (isThenable<T>(item)) {
-			always(item, () => source.dispose());
-			item.then(resolve, reject);
+			item.then(result => {
+				source.dispose();
+				resolve(result);
+			}, err => {
+				source.dispose();
+				reject(err);
+			});
 		} else {
 			source.dispose();
 			resolve(item);
@@ -41,6 +51,10 @@ export function asWinJsPromise<T>(callback: (token: CancellationToken) => T | TP
 	}, () => {
 		source.cancel();
 	});
+}
+
+export function asWinJSImport<T>(importPromise: Thenable<T>): TPromise<T> {
+	return new TPromise((resolve, reject) => importPromise.then(resolve, reject)); // workaround for https://github.com/Microsoft/vscode/issues/48205
 }
 
 /**

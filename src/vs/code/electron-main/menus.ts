@@ -23,7 +23,6 @@ import { KeybindingsResolver } from 'vs/code/electron-main/keyboard';
 import { IWindowsMainService, IWindowsCountChangedEvent } from 'vs/platform/windows/electron-main/windows';
 import { IHistoryMainService } from 'vs/platform/history/common/history';
 import { IWorkspaceIdentifier, getWorkspaceLabel, ISingleFolderWorkspaceIdentifier, isSingleFolderWorkspaceIdentifier } from 'vs/platform/workspaces/common/workspaces';
-import { broadcast } from 'vs/code/electron-main/broadcaster';
 
 interface IExtensionViewlet {
 	id: string;
@@ -65,8 +64,6 @@ export class CodeMenu {
 
 	private nativeTabMenuItems: Electron.MenuItem[];
 
-	// private maixService: IMaixService;
-
 	constructor(
 		@IUpdateService private updateService: IUpdateService,
 		@IInstantiationService instantiationService: IInstantiationService,
@@ -82,7 +79,6 @@ export class CodeMenu {
 
 		this.menuUpdater = new RunOnceScheduler(() => this.doUpdateMenu(), 0);
 		this.keybindingsResolver = instantiationService.createInstance(KeybindingsResolver);
-		// this.maixService = instantiationService.createInstance(MaixService);
 
 		this.install();
 
@@ -271,11 +267,6 @@ export class CodeMenu {
 		const debugMenuItem = new MenuItem({ label: this.mnemonicLabel(nls.localize({ key: 'mDebug', comment: ['&& denotes a mnemonic'] }, "&&Debug")), submenu: debugMenu });
 		this.setDebugMenu(debugMenu);
 
-		// Maix
-		const maixMenu = new Menu();
-		const maixMenuItem = new MenuItem({ label: this.mnemonicLabel(nls.localize({ key: 'mDebug', comment: ['&& denotes a mnemonic'] }, "&&Maix")), submenu: maixMenu });
-		this.setMaixMenu(maixMenu);
-
 		// Mac: Window
 		let macWindowMenuItem: Electron.MenuItem;
 		if (isMacintosh) {
@@ -283,6 +274,11 @@ export class CodeMenu {
 			macWindowMenuItem = new MenuItem({ label: this.mnemonicLabel(nls.localize('mWindow', "Window")), submenu: windowMenu, role: 'window' });
 			this.setMacWindowMenu(windowMenu);
 		}
+
+		// Maix
+		const maixMenu = new Menu();
+		const maixMenuItem = new MenuItem({ label: this.mnemonicLabel(nls.localize({ key: 'mMaix', comment: ['&& denotes a mnemonic'] }, "&&Maix")), submenu: maixMenu });
+		this.setMaixMenu(maixMenu);
 
 		// Help
 		const helpMenu = new Menu();
@@ -465,7 +461,7 @@ export class CodeMenu {
 		const kebindingSettings = this.createMenuItem(nls.localize({ key: 'miOpenKeymap', comment: ['&& denotes a mnemonic'] }, "&&Keyboard Shortcuts"), 'workbench.action.openGlobalKeybindings');
 		const keymapExtensions = this.createMenuItem(nls.localize({ key: 'miOpenKeymapExtensions', comment: ['&& denotes a mnemonic'] }, "&&Keymap Extensions"), 'workbench.extensions.action.showRecommendedKeymapExtensions');
 		const snippetsSettings = this.createMenuItem(nls.localize({ key: 'miOpenSnippets', comment: ['&& denotes a mnemonic'] }, "User &&Snippets"), 'workbench.action.openSnippets');
-		const colorThemeSelection = this.createMenuItem(nls.localize({ key: 'miSelectColorTheme', comment: ['&& denotes a mnemonic'] }, "&&Color Theme"), 'workworkbench.action.selectTheme');
+		const colorThemeSelection = this.createMenuItem(nls.localize({ key: 'miSelectColorTheme', comment: ['&& denotes a mnemonic'] }, "&&Color Theme"), 'workbench.action.selectTheme');
 		const iconThemeSelection = this.createMenuItem(nls.localize({ key: 'miSelectIconTheme', comment: ['&& denotes a mnemonic'] }, "File &&Icon Theme"), 'workbench.action.selectIconTheme');
 
 		const preferencesMenu = new Menu();
@@ -862,9 +858,9 @@ export class CodeMenu {
 		const toggleBreakpoint = this.createMenuItem(nls.localize({ key: 'miToggleBreakpoint', comment: ['&& denotes a mnemonic'] }, "Toggle &&Breakpoint"), 'editor.debug.action.toggleBreakpoint');
 		const breakpointsMenu = new Menu();
 		breakpointsMenu.append(this.createMenuItem(nls.localize({ key: 'miConditionalBreakpoint', comment: ['&& denotes a mnemonic'] }, "&&Conditional Breakpoint..."), 'editor.debug.action.conditionalBreakpoint'));
-		breakpointsMenu.append(this.createMenuItem(nls.localize({ key: 'miColumnBreakpoint', comment: ['&& denotes a mnemonic'] }, "C&&olumn Breakpoint"), 'editor.debug.action.toggleColumnBreakpoint'));
+		breakpointsMenu.append(this.createMenuItem(nls.localize({ key: 'miInlineBreakpoint', comment: ['&& denotes a mnemonic'] }, "Inline Breakp&&oint"), 'editor.debug.action.toggleInlineBreakpoint'));
 		breakpointsMenu.append(this.createMenuItem(nls.localize({ key: 'miFunctionBreakpoint', comment: ['&& denotes a mnemonic'] }, "&&Function Breakpoint..."), 'workbench.debug.viewlet.action.addFunctionBreakpointAction'));
-		breakpointsMenu.append(this.createMenuItem(nls.localize({ key: 'miLogPoint', comment: ['&& denotes a mnemonic'] }, "&&Log Point..."), 'editor.debug.action.toggleLogPoint'));
+		breakpointsMenu.append(this.createMenuItem(nls.localize({ key: 'miLogPoint', comment: ['&& denotes a mnemonic'] }, "&&Logpoint..."), 'editor.debug.action.toggleLogPoint'));
 		const newBreakpoints = new MenuItem({ label: this.mnemonicLabel(nls.localize({ key: 'miNewBreakpoint', comment: ['&& denotes a mnemonic'] }, "&&New Breakpoint")), submenu: breakpointsMenu });
 		const enableAllBreakpoints = this.createMenuItem(nls.localize({ key: 'miEnableAllBreakpoints', comment: ['&& denotes a mnemonic'] }, "Enable All Breakpoints"), 'workbench.debug.viewlet.action.enableAllBreakpoints');
 		const disableAllBreakpoints = this.createMenuItem(nls.localize({ key: 'miDisableAllBreakpoints', comment: ['&& denotes a mnemonic'] }, "Disable A&&ll Breakpoints"), 'workbench.debug.viewlet.action.disableAllBreakpoints');
@@ -895,23 +891,13 @@ export class CodeMenu {
 		].forEach(item => debugMenu.append(item));
 	}
 
+
 	private setMaixMenu(maixMenu: Electron.Menu): void {
-		// const settings = new MenuItem({
-		// 	 label: this.mnemonicLabel(
-		// 		nls.localize({ key: 'miSettings', comment: ['&& denotes a mnemonic'] }, "&&Settings")
-		// 	),
-		// 	click: () => this.maixService.showSettingsDialog()
-		// });
-		const settings = new MenuItem({
-			label: this.mnemonicLabel(
-			   nls.localize({ key: 'miSettings', comment: ['&& denotes a mnemonic'] }, "&&Settings")
-		    ),
-		    click: () => {
-				broadcast('maix-open-settings', { message: false });
-		   }
-	   	});
+		const settings = this.createMenuItem(nls.localize({ key: 'miMaix', comment: ['&& denotes a mnemonic'] }, "&&Settings Page"), 'workbench.action.showMaixSettings');
+		const settings3 = this.createMenuItem(nls.localize({ key: 'miSettings', comment: ['&& denotes a mnemonic'] }, "&&Settings 2"), 'workbench.action.openSettings2');
 		[
-			settings
+			settings,
+			settings3,
 		].forEach(item => maixMenu.append(item));
 	}
 

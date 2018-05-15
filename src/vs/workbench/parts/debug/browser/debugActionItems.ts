@@ -34,7 +34,6 @@ export class StartDebugActionItem implements IActionItem {
 	private selectBox: SelectBox;
 	private options: { label: string, handler: (() => boolean) }[];
 	private toDispose: IDisposable[];
-	private toDisposeOnRender: IDisposable[];
 	private selected: number;
 
 	constructor(
@@ -48,8 +47,8 @@ export class StartDebugActionItem implements IActionItem {
 		@IContextViewService contextViewService: IContextViewService,
 	) {
 		this.toDispose = [];
-		this.toDisposeOnRender = [];
 		this.selectBox = new SelectBox([], -1, contextViewService);
+		this.toDispose.push(this.selectBox);
 		this.toDispose.push(attachSelectBoxStyler(this.selectBox, themeService, {
 			selectBackground: SIDE_BAR_BACKGROUND
 		}));
@@ -69,31 +68,30 @@ export class StartDebugActionItem implements IActionItem {
 	}
 
 	public render(container: HTMLElement): void {
-		this.toDisposeOnRender = dispose(this.toDisposeOnRender);
 		this.container = container;
 		dom.addClass(container, 'start-debug-action-item');
 		this.start = dom.append(container, $('.icon'));
 		this.start.title = this.action.label;
 		this.start.tabIndex = 0;
 
-		this.toDisposeOnRender.push(dom.addDisposableListener(this.start, dom.EventType.CLICK, () => {
+		this.toDispose.push(dom.addDisposableListener(this.start, dom.EventType.CLICK, () => {
 			this.start.blur();
 			this.actionRunner.run(this.action, this.context).done(null, errors.onUnexpectedError);
 		}));
 
-		this.toDisposeOnRender.push(dom.addDisposableListener(this.start, dom.EventType.MOUSE_DOWN, (e: MouseEvent) => {
+		this.toDispose.push(dom.addDisposableListener(this.start, dom.EventType.MOUSE_DOWN, (e: MouseEvent) => {
 			if (this.action.enabled && e.button === 0) {
 				dom.addClass(this.start, 'active');
 			}
 		}));
-		this.toDisposeOnRender.push(dom.addDisposableListener(this.start, dom.EventType.MOUSE_UP, () => {
+		this.toDispose.push(dom.addDisposableListener(this.start, dom.EventType.MOUSE_UP, () => {
 			dom.removeClass(this.start, 'active');
 		}));
-		this.toDisposeOnRender.push(dom.addDisposableListener(this.start, dom.EventType.MOUSE_OUT, () => {
+		this.toDispose.push(dom.addDisposableListener(this.start, dom.EventType.MOUSE_OUT, () => {
 			dom.removeClass(this.start, 'active');
 		}));
 
-		this.toDisposeOnRender.push(dom.addDisposableListener(this.start, dom.EventType.KEY_DOWN, (e: KeyboardEvent) => {
+		this.toDispose.push(dom.addDisposableListener(this.start, dom.EventType.KEY_DOWN, (e: KeyboardEvent) => {
 			const event = new StandardKeyboardEvent(e);
 			if (event.equals(KeyCode.Enter)) {
 				this.actionRunner.run(this.action, this.context).done(null, errors.onUnexpectedError);
@@ -103,7 +101,7 @@ export class StartDebugActionItem implements IActionItem {
 				event.stopPropagation();
 			}
 		}));
-		this.toDisposeOnRender.push(this.selectBox.onDidSelect(e => {
+		this.toDispose.push(this.selectBox.onDidSelect(e => {
 			const shouldBeSelected = this.options[e.index].handler();
 			if (shouldBeSelected) {
 				this.selected = e.index;
@@ -115,14 +113,14 @@ export class StartDebugActionItem implements IActionItem {
 
 		const selectBoxContainer = $('.configuration');
 		this.selectBox.render(dom.append(container, selectBoxContainer));
-		this.toDisposeOnRender.push(dom.addDisposableListener(selectBoxContainer, dom.EventType.KEY_DOWN, (e: KeyboardEvent) => {
+		this.toDispose.push(dom.addDisposableListener(selectBoxContainer, dom.EventType.KEY_DOWN, (e: KeyboardEvent) => {
 			const event = new StandardKeyboardEvent(e);
 			if (event.equals(KeyCode.LeftArrow)) {
 				this.start.focus();
 				event.stopPropagation();
 			}
 		}));
-		this.toDisposeOnRender.push(attachStylerCallback(this.themeService, { selectBorder }, colors => {
+		this.toDispose.push(attachStylerCallback(this.themeService, { selectBorder }, colors => {
 			this.container.style.border = colors.selectBorder ? `1px solid ${colors.selectBorder}` : null;
 			selectBoxContainer.style.borderLeft = colors.selectBorder ? `1px solid ${colors.selectBorder}` : null;
 		}));
@@ -189,7 +187,7 @@ export class StartDebugActionItem implements IActionItem {
 	}
 }
 
-export class FocusProcessActionItem extends SelectActionItem {
+export class FocusSessionActionItem extends SelectActionItem {
 	constructor(
 		action: IAction,
 		@IDebugService private debugService: IDebugService,
@@ -201,9 +199,9 @@ export class FocusProcessActionItem extends SelectActionItem {
 		this.toDispose.push(attachSelectBoxStyler(this.selectBox, themeService));
 
 		this.debugService.getViewModel().onDidFocusStackFrame(() => {
-			const process = this.debugService.getViewModel().focusedProcess;
-			if (process) {
-				const index = this.debugService.getModel().getProcesses().indexOf(process);
+			const session = this.debugService.getViewModel().focusedSession;
+			if (session) {
+				const index = this.debugService.getModel().getSessions().indexOf(session);
 				this.select(index);
 			}
 		});
@@ -213,10 +211,10 @@ export class FocusProcessActionItem extends SelectActionItem {
 	}
 
 	private update() {
-		const process = this.debugService.getViewModel().focusedProcess;
-		const processes = this.debugService.getModel().getProcesses();
+		const session = this.debugService.getViewModel().focusedSession;
+		const sessions = this.debugService.getModel().getSessions();
 		const showRootName = this.debugService.getConfigurationManager().getLaunches().length > 1;
-		const names = processes.map(p => p.getName(showRootName));
-		this.setOptions(names, process ? processes.indexOf(process) : undefined);
+		const names = sessions.map(s => s.getName(showRootName));
+		this.setOptions(names, session ? sessions.indexOf(session) : undefined);
 	}
 }

@@ -1,0 +1,21 @@
+.maix-config-editor {
+	white-space: nowrap;
+	padding: 0 27px;
+	margin: auto;
+}
+
+.maix-config-editor .settings-editor {
+	padding: 0;
+	max-width: unset;
+	margin: 0 5px;
+}
+
+.maix-config-editor .split-view-view {
+	position: relative;
+}
+
+.maix-config-editor .settings-group-title-label {
+	margin: 15px 0 5px 0;
+	font-size: 18px;
+	font-weight: bold;
+}

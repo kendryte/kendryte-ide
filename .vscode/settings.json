@@ -39,5 +39,8 @@
 	],
 	"typescript.tsdk": "node_modules/typescript/lib",
 	"npm.exclude": "**/extensions/**",
-	"emmet.excludeLanguages": []
+	"emmet.excludeLanguages": [],
+	"typescript.preferences.importModuleSpecifier": "non-relative",
+	"files.autoSave": "onFocusChange",
+	"maix.config.sample": "B"
 }

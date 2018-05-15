@@ -174,8 +174,10 @@ class ModelMarkerHandler {
 				hoverMessage.appendMarkdown('\n');
 				for (const { message, resource, startLineNumber, startColumn } of relatedInformation) {
 					hoverMessage.appendMarkdown(
-						`* [${basename(resource.path)}(${startLineNumber}, ${startColumn})](${resource.toString(false)}#${startLineNumber},${startColumn}): \`${message}\` \n`
+						`* [${basename(resource.path)}(${startLineNumber}, ${startColumn})](${resource.toString(false)}#${startLineNumber},${startColumn}): `
 					);
+					hoverMessage.appendText(`${message}`);
+					hoverMessage.appendMarkdown('\n');
 				}
 				hoverMessage.appendMarkdown('\n');
 			}
@@ -205,8 +207,8 @@ interface IRawConfig {
 		insertSpaces?: any;
 		detectIndentation?: any;
 		trimAutoWhitespace?: any;
-		largeFileSize?: any;
-		largeFileLineCount?: any;
+		creationOptions?: any;
+		largeFileOptimizations?: any;
 	};
 }
 
@@ -285,20 +287,9 @@ export class ModelServiceImpl implements IModelService {
 			detectIndentation = (config.editor.detectIndentation === 'false' ? false : Boolean(config.editor.detectIndentation));
 		}
 
-		let largeFileSize = EDITOR_MODEL_DEFAULTS.largeFileSize;
-		if (config.editor && typeof config.editor.largeFileSize !== 'undefined') {
-			let parsedlargeFileSize = parseInt(config.editor.largeFileSize, 10);
-			if (!isNaN(parsedlargeFileSize)) {
-				largeFileSize = parsedlargeFileSize;
-			}
-		}
-
-		let largeFileLineCount = EDITOR_MODEL_DEFAULTS.largeFileLineCount;
-		if (config.editor && typeof config.editor.largeFileLineCount !== 'undefined') {
-			let parsedlargeFileLineCount = parseInt(config.editor.largeFileLineCount, 10);
-			if (!isNaN(parsedlargeFileLineCount)) {
-				largeFileLineCount = parsedlargeFileLineCount;
-			}
+		let largeFileOptimizations = EDITOR_MODEL_DEFAULTS.largeFileOptimizations;
+		if (config.editor && typeof config.editor.largeFileOptimizations !== 'undefined') {
+			largeFileOptimizations = (config.editor.largeFileOptimizations === 'false' ? false : Boolean(config.editor.largeFileOptimizations));
 		}
 
 		return {
@@ -308,8 +299,7 @@ export class ModelServiceImpl implements IModelService {
 			detectIndentation: detectIndentation,
 			defaultEOL: newDefaultEOL,
 			trimAutoWhitespace: trimAutoWhitespace,
-			largeFileSize: largeFileSize,
-			largeFileLineCount: largeFileLineCount
+			largeFileOptimizations: largeFileOptimizations
 		};
 	}
 
@@ -430,7 +420,7 @@ export class ModelServiceImpl implements IModelService {
 
 		// Otherwise find a diff between the values and update model
 		model.pushStackElement();
-		model.setEOL(textBuffer.getEOL() === '\r\n' ? EndOfLineSequence.CRLF : EndOfLineSequence.LF);
+		model.pushEOL(textBuffer.getEOL() === '\r\n' ? EndOfLineSequence.CRLF : EndOfLineSequence.LF);
 		model.pushEditOperations(
 			[],
 			ModelServiceImpl._computeEdits(model, textBuffer),

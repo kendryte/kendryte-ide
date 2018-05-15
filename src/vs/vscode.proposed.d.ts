@@ -60,19 +60,32 @@ declare module 'vscode' {
 		isWordMatch?: boolean;
 	}
 
-	export interface TextSearchOptions {
-		includes: GlobPattern[];
-		excludes: GlobPattern[];
+	export interface SearchOptions {
+		folder: Uri;
+		includes: string[]; // paths relative to folder
+		excludes: string[];
+		useIgnoreFiles?: boolean;
+		followSymlinks?: boolean;
+		previewOptions?: any; // total length? # of context lines? leading and trailing # of chars?
 	}
+
+	export interface TextSearchOptions extends SearchOptions {
+		maxFileSize?: number;
+		encoding?: string;
+	}
+
+	export interface FileSearchOptions extends SearchOptions { }
 
 	export interface TextSearchResult {
 		uri: Uri;
 		range: Range;
-		preview: { leading: string, matching: string, trailing: string };
+
+		// For now, preview must be a single line of text
+		preview: { text: string, match: Range };
 	}
 
 	export interface SearchProvider {
-		provideFileSearchResults?(query: string, progress: Progress<Uri>, token: CancellationToken): Thenable<void>;
+		provideFileSearchResults?(options: FileSearchOptions, progress: Progress<Uri>, token: CancellationToken): Thenable<void>;
 		provideTextSearchResults?(query: TextSearchQuery, options: TextSearchOptions, progress: Progress<TextSearchResult>, token: CancellationToken): Thenable<void>;
 	}
 
@@ -412,7 +425,7 @@ declare module 'vscode' {
 		 *
 		 * @readonly
 		 */
-		export let taskExecutions: TaskExecution[];
+		export let taskExecutions: ReadonlyArray<TaskExecution>;
 
 		/**
 		 * Fires when a task starts.
@@ -430,6 +443,11 @@ declare module 'vscode' {
 	//#region Terminal
 
 	export interface Terminal {
+		/**
+		 * Fires when the terminal's pty slave pseudo-device is written to. In other words, this
+		 * provides access to the raw data stream from the process running within the terminal,
+		 * including ANSI sequences.
+		 */
 		onData: Event<string>;
 	}
 
@@ -471,15 +489,24 @@ declare module 'vscode' {
 	export class HierarchicalSymbolInformation {
 		name: string;
 		kind: SymbolKind;
+		detail: string;
 		location: Location;
 		range: Range;
 		children: HierarchicalSymbolInformation[];
 
-		constructor(name: string, kind: SymbolKind, location: Location, range: Range);
+		constructor(name: string, detail: string, kind: SymbolKind, location: Location, range: Range);
 	}
 
 	export interface DocumentSymbolProvider {
-		provideDocumentSymbols(document: TextDocument, token: CancellationToken): ProviderResult<HierarchicalSymbolInformation | SymbolInformation[]>;
+		provideDocumentSymbols(document: TextDocument, token: CancellationToken): ProviderResult<HierarchicalSymbolInformation[] | SymbolInformation[]>;
+	}
+
+	//#endregion
+
+	//#region Joh -> exclusive document filters
+
+	export interface DocumentFilter {
+		exclusive?: boolean;
 	}
 
 	//#endregion

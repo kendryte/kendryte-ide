@@ -2,11 +2,11 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { localize } from 'vs/nls';
 import { IDisposable, dispose } from 'vs/base/common/lifecycle';
 import * as map from 'vs/base/common/map';
-import URI from 'vs/base/common/uri';
+import URI, { UriComponents } from 'vs/base/common/uri';
 import { TPromise } from 'vs/base/common/winjs.base';
+import { localize } from 'vs/nls';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { Position } from 'vs/platform/editor/common/editor';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
@@ -69,11 +69,11 @@ export class MainThreadWebviews implements MainThreadWebviewsShape, WebviewReviv
 		handle: WebviewPanelHandle,
 		viewType: string,
 		title: string,
-		column: Position,
+		showOptions: { viewColumn: Position, preserveFocus: boolean },
 		options: WebviewInputOptions,
-		extensionFolderPath: string
+		extensionLocation: UriComponents
 	): void {
-		const webview = this._webviewService.createWebview(MainThreadWebviews.viewType, title, column, options, extensionFolderPath, this.createWebviewEventDelegate(handle));
+		const webview = this._webviewService.createWebview(MainThreadWebviews.viewType, title, showOptions, options, URI.revive(extensionLocation), this.createWebviewEventDelegate(handle));
 		webview.state = {
 			viewType: viewType,
 			state: undefined
@@ -98,9 +98,13 @@ export class MainThreadWebviews implements MainThreadWebviewsShape, WebviewReviv
 		webview.html = value;
 	}
 
-	$reveal(handle: WebviewPanelHandle, column: Position | undefined): void {
+	$reveal(handle: WebviewPanelHandle, viewColumn: Position | null, preserveFocus: boolean): void {
 		const webview = this.getWebview(handle);
-		this._webviewService.revealWebview(webview, column);
+		if (webview.isDisposed()) {
+			return;
+		}
+
+		this._webviewService.revealWebview(webview, viewColumn, preserveFocus);
 	}
 
 	async $postMessage(handle: WebviewPanelHandle, message: any): TPromise<boolean> {
@@ -140,6 +144,10 @@ export class MainThreadWebviews implements MainThreadWebviewsShape, WebviewReviv
 	}
 
 	canRevive(webview: WebviewEditorInput): boolean {
+		if (webview.isDisposed()) {
+			return false;
+		}
+
 		return this._revivers.has(webview.viewType) || webview.reviver !== null;
 	}
 
@@ -179,9 +187,9 @@ export class MainThreadWebviews implements MainThreadWebviewsShape, WebviewReviv
 			onDidClickLink: uri => this.onDidClickLink(handle, uri),
 			onMessage: message => this._proxy.$onMessage(handle, message),
 			onDispose: () => {
-				this._proxy.$onDidDisposeWebviewPanel(handle).then(() => {
-					this._webviews.delete(handle);
-				});
+				this._proxy.$onDidDisposeWebviewPanel(handle).then(
+					() => this._webviews.delete(handle),
+					() => this._webviews.delete(handle));
 			}
 		};
 	}
