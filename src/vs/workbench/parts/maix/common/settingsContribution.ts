@@ -12,7 +12,7 @@ CategoryRegistry.addSettings('appearance.theme',
 	'workbench.colorTheme',
 	'workbench.editor.showIcons',
 	'workbench.iconTheme',
-	'editor.fontFamily'
+	'editor.fontFamily',
 );
 CategoryRegistry.registerCategory('appearance.look', '外观', 'appearance');
 CategoryRegistry.addSettings('appearance.look',
@@ -24,14 +24,14 @@ CategoryRegistry.addSettings('appearance.look',
 
 Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration)
 	.registerConfiguration({
-		'id': 'maix',
-		'title': localize('sampleConfigurationTitle', 'Maix'),
-		'my-custom-property': 123,
-		'properties': {
+		id: 'maix',
+		title: localize('sampleConfigurationTitle', 'Maix'),
+		properties: {
 			'maix.config.sample': {
-				'type': 'string',
-				'enum': ['A', 'B', 'C'],
-				'enumDescriptions': [
+				category: 'appearance',
+				type: 'string',
+				enum: ['A', 'B', 'C'],
+				enumDescriptions: [
 					localize({
 						comment: ['comment for option A'],
 						key: 'maix.sampleEnum.A'
@@ -45,8 +45,8 @@ Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration)
 						key: 'maix.sampleEnum.C'
 					}, 'Sample Enum Description.'),
 				],
-				'default': 'A',
-				'description': localize('sampleConfigurationDesc', 'Sample Config Description.')
+				default: 'A',
+				description: localize('sampleConfigurationDesc', 'Sample Config Description.')
 			},
 		}
 	} as any);

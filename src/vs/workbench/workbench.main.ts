@@ -139,3 +139,4 @@ import 'vs/workbench/services/bulkEdit/electron-browser/bulkEditService';
 // maix
 import 'vs/workbench/parts/maix/browser/maixContribution';
 import 'vs/workbench/parts/maix/common/settingsContribution';
+import 'vs/workbench/parts/maix/common/category';

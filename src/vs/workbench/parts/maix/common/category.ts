@@ -4,7 +4,6 @@
  *     .addSettings('some-category-id', 'some.setting.id', 'other.setting.id', 'other.setting.id')
  */
 
-import { Extensions as CnfExt, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
 import { Registry } from 'vs/platform/registry/common/platform';
 
 export enum Extensions {
@@ -19,8 +18,6 @@ export interface IConfigCategoryRegistry {
 	getRoot(): ISettingsCategoryTree;
 }
 
-const ConfigRegistry = Registry.as<IConfigurationRegistry>(CnfExt.Configuration);
-
 Registry.add(Extensions.ConfigCategory, new class implements IConfigCategoryRegistry {
 	private map: { [id: string]: ISettingsCategoryTree } = {};
 	private root: ISettingsCategoryTree = {
@@ -28,6 +25,8 @@ Registry.add(Extensions.ConfigCategory, new class implements IConfigCategoryRegi
 		category: 'ROOT',
 		children: []
 	};
+	private toRegister: [string, string[]][] = [];
+	private _inited: boolean = false;
 
 	registerCategory(id: string, title: string, parentId?: string) {
 		if (this.map.hasOwnProperty(id)) {
@@ -55,28 +54,38 @@ Registry.add(Extensions.ConfigCategory, new class implements IConfigCategoryRegi
 			newItem.parent = this.root;
 			this.root.children.push(newItem);
 		}
-		Object.freeze(newItem);
+		Object.freeze(this.map[id]);
 		return this;
 	}
 
 	addSettings(categoryId: string, ...settingIds: string[]) {
-		const keys = ConfigRegistry.getConfigurationProperties();
-		for (const id of settingIds) {
-			if (keys.hasOwnProperty(id)) {
-				throw new TypeError(`missing configuration entry: id=${id}`);
+		const category = this.map[categoryId];
+		if (category) {
+			category.settings.push(...settingIds);
+		} else {
+			this.toRegister.push([categoryId, settingIds]);
+			if (this._inited) {
+				this._inited = false;
 			}
 		}
-
-		const category = this.map[categoryId];
-		if (!category) {
-			throw new TypeError(`missing configuration group (as container): id=${categoryId}`);
-		}
-
-		category.settings.push(...settingIds);
 		return this;
 	}
 
 	getRoot(): ISettingsCategoryTree {
+		if (!this._inited) {
+			this._inited = true;
+			this.init();
+		}
 		return this.root;
+	}
+
+	private init() {
+		for (const [categoryId, settingIds] of this.toRegister) {
+			if (!this.map.hasOwnProperty(categoryId)) {
+				throw new TypeError(`missing configuration group (as container): id=${categoryId}`);
+			}
+			this.map[categoryId].settings.push(...settingIds);
+		}
+		this.toRegister.length = 0;
 	}
 });

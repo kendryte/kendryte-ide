@@ -1,6 +1,6 @@
 import * as DOM from 'vs/base/browser/dom';
 import { Button } from 'vs/base/browser/ui/button/button';
-import { InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
+import { IMessage, InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
 import { IRenderer } from 'vs/base/browser/ui/list/list';
 import { SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
 import { Color } from 'vs/base/common/color';
@@ -12,6 +12,11 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { attachButtonStyler, attachInputBoxStyler, attachSelectBoxStyler } from 'vs/platform/theme/common/styler';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { settingKeyToDisplayFormat } from 'vs/workbench/parts/preferences/browser/settingsEditor2';
+import {
+	Extensions as ConfigurationExtensions,
+	IConfigurationRegistry
+} from '../../../../platform/configuration/common/configurationRegistry';
+import { Registry } from '../../../../platform/registry/common/platform';
 
 const $ = DOM.$;
 
@@ -125,21 +130,37 @@ class ConfigFileEditorRender implements IRenderer<ISettingItemEntry, ISettingIte
 		template.toDispose.push(resetButton);
 
 		const alsoConfiguredInLabel = localize('alsoConfiguredIn', 'Also configured in:');
-		template.overridesElement.textContent = entry.overriddenScopeList.length ? `(${alsoConfiguredInLabel} ${entry.overriddenScopeList.join(', ')})` :
-			'';
+		template.overridesElement.textContent = entry.overriddenScopeList.length ? `(${alsoConfiguredInLabel} ${entry.overriddenScopeList.join(', ')})` : '';
 	}
 
 	private renderValue(entry: ISettingItemEntry, template: ISettingItemTemplate): void {
 		const onChange = value => this._onDidChangeSetting.fire({ key: entry.key, value });
 		template.valueElement.innerHTML = '';
+		let { } = entry;
+
 		if (entry.type === 'string' && entry.enum) {
-			this.renderEnum(entry, template, onChange);
+			this.renderEnum(entry.value, entry.enum, template, onChange);
 		} else if (entry.type === 'boolean') {
 			this.renderBool(entry, template, onChange);
 		} else if (entry.type === 'string') {
-			this.renderText(entry, template, onChange);
+			this.renderText(entry.value, template, onChange);
+		} else if (entry.type === 'integer') {
+			this.renderNumber(entry, template, parseInt, value => onChange(value));
 		} else if (entry.type === 'number') {
-			this.renderText(entry, template, value => onChange(parseInt(value)));
+			this.renderNumber(entry, template, parseFloat, value => onChange(value));
+		} else if (Array.isArray(entry.type) && entry.type.indexOf('string') !== -1) {
+			const reg = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).getConfigurationProperties()[entry.key];
+			if (reg) {
+				if (reg.enum) {
+					this.renderEnum(entry.value, reg.enum, template, onChange);
+				} else {
+					this.renderText(entry.value, template, value => onChange(value));
+				}
+			} else {
+				console.log('missing config', entry);
+			}
+		} else {
+			console.log(entry);
 		}
 	}
 
@@ -151,25 +172,52 @@ class ConfigFileEditorRender implements IRenderer<ISettingItemEntry, ISettingIte
 		template.toDispose.push(DOM.addDisposableListener(checkboxElement, 'change', e => onChange(checkboxElement.checked)));
 	}
 
-	private renderEnum(entry: ISettingItemEntry, template: ISettingItemTemplate, onChange: (value: string) => void): void {
-		const idx = entry.enum.indexOf(entry.value);
-		const selectBox = new SelectBox(entry.enum, idx, this.contextViewService);
+	private renderEnum(current: string, Enum: string[], template: ISettingItemTemplate, onChange: (value: string) => void): void {
+		const idx = Enum.indexOf(current);
+		const sEnum = Enum.map(item => '' + item);
+		const selectBox = new SelectBox(sEnum, idx, this.contextViewService);
 		template.toDispose.push(selectBox);
 		template.toDispose.push(attachSelectBoxStyler(selectBox, this.themeService));
 		selectBox.render(template.valueElement);
 
 		template.toDispose.push(
-			selectBox.onDidSelect(e => onChange(entry.enum[e.index])));
+			selectBox.onDidSelect(e => onChange(Enum[e.index])));
 	}
 
-	private renderText(entry: ISettingItemEntry, template: ISettingItemTemplate, onChange: (value: string) => void): void {
+	private renderText(value: string, template: ISettingItemTemplate, onChange: (value: string) => void): void {
 		const inputBox = new InputBox(template.valueElement, this.contextViewService);
+		template.toDispose.push(attachInputBoxStyler(inputBox, this.themeService));
+		template.toDispose.push(inputBox);
+		inputBox.value = value;
+
+		template.toDispose.push(
+			inputBox.onDidChange(e => onChange(e)));
+	}
+
+	private renderNumber(
+		entry: ISettingItemEntry,
+		template: ISettingItemTemplate,
+		parser: (value: string) => number,
+		onChange: (value: number) => void
+	): void {
+		const inputBox = new InputBox(template.valueElement, this.contextViewService, {
+			type: 'number',
+			validationOptions: {
+				validation(value: string): IMessage {
+					if (value !== parser(value).toString()) {
+						return { content: 'Value Not Number' };
+					} else {
+						return null;
+					}
+				}
+			}
+		});
 		template.toDispose.push(attachInputBoxStyler(inputBox, this.themeService));
 		template.toDispose.push(inputBox);
 		inputBox.value = entry.value;
 
 		template.toDispose.push(
-			inputBox.onDidChange(e => onChange(e)));
+			inputBox.onDidChange(e => onChange(parser(e))));
 	}
 
 	disposeTemplate(template: ISettingItemTemplate): void {

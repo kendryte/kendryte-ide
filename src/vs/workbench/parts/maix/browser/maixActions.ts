@@ -7,9 +7,10 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { FullScreenEditor } from 'vs/workbench/parts/maix/browser/FullScreenEditor';
 import { MaixSettingsEditor } from 'vs/workbench/parts/maix/browser/maixSettingsEditor';
 import { MaixSettingsEditorInput } from 'vs/workbench/parts/maix/common/maixEditorInput';
+import { IWorkbenchEditorService } from '../../../services/editor/common/editorService';
 
 export const ShowMaixSettingsActionId = 'workbench.action.showMaixSettings';
-export const ShowMaixSettingsActionLabel = localize('settings', 'Open Maix Settings Page');
+export const ShowMaixSettingsActionLabel = localize('settingsPage', 'Show Settings Page');
 
 export class ShowMaixSettingsAction extends Action {
 	constructor(
@@ -45,5 +46,24 @@ export class ShowMaixSettingsAction extends Action {
 				});
 			});
 		});
+	}
+}
+
+export const PopMaixSettingsActionId = 'workbench.action.popMaixSettings';
+export const PopMaixSettingsActionLabel = localize('settingsWindow', 'Open Settings Window');
+
+export class PopMaixSettingsAction extends Action {
+	constructor(
+		id: string,
+		label: string,
+		@IWorkbenchEditorService private editorService: IWorkbenchEditorService,
+		@IInstantiationService private instantiationService: IInstantiationService
+	) {
+		super(id, label);
+	}
+
+	run(): TPromise<void> {
+		const input = this.instantiationService.createInstance(MaixSettingsEditorInput, '{}');
+		return this.editorService.openEditor(input, { pinned: true }).then(() => null);
 	}
 }
