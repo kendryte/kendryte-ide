@@ -19,6 +19,11 @@
 	"updateUrl": "https://maix.canaan.io/_update/",
 	"commit": "git-$developing",
 	"quality": "insider",
+	"extensionsGallery": {
+		"serviceUrl": "https://marketplace.visualstudio.com/_apis/public/gallery",
+		"cacheUrl": "https://vscode.blob.core.windows.net/gallery/index",
+		"itemUrl": "https://marketplace.visualstudio.com/items"
+	},
 	"extensionAllowedProposedApi": [
 		"ms-vscode.node-debug",
 		"ms-vscode.node-debug2"
