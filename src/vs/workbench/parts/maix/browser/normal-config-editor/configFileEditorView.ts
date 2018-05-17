@@ -11,9 +11,9 @@ import { ConfigurationTarget, IConfigurationService } from 'vs/platform/configur
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { WorkbenchList } from 'vs/platform/list/browser/listService';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { ICanRender } from 'vs/workbench/parts/maix/browser/categoryView';
-import { createConfigFileEditorRenderInstance, IConfigListEntry, ISettingChangeEvent, ISettingItemEntry } from 'vs/workbench/parts/maix/browser/configFileEditorRender';
-import { createSplitRenderInstance, ISplitEntry } from 'vs/workbench/parts/maix/browser/splitRender';
+import { ICanRender } from 'vs/workbench/parts/maix/browser/frame/mySplitView';
+import { createConfigFileEditorRenderInstance, IConfigListEntry, ISettingChangeEvent, ISettingItemEntry } from 'vs/workbench/parts/maix/browser/normal-config-editor/configFileEditorRender';
+import { createSplitRenderInstance, ISplitEntry } from 'vs/workbench/parts/maix/browser/frame/splitRender';
 import { ITitle, MySettingsEditorModelWrapper } from 'vs/workbench/parts/maix/common/preferencesModels';
 import { SettingsTarget, SettingsTargetsWidget } from 'vs/workbench/parts/preferences/browser/preferencesWidgets';
 import { ISetting } from 'vs/workbench/services/preferences/common/preferences';

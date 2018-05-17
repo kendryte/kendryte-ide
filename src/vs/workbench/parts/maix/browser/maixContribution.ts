@@ -14,7 +14,7 @@ import {
 } from 'vs/workbench/common/contributions';
 import { Extensions as EditorInputExtensions, IEditorInputFactoryRegistry } from 'vs/workbench/common/editor';
 import { ShowMaixSettingsAction, ShowMaixSettingsActionId, ShowMaixSettingsActionLabel } from 'vs/workbench/parts/maix/browser/maixActions';
-import { MaixSettingsEditor } from 'vs/workbench/parts/maix/browser/maixSettingsEditor';
+import { MaixSettingsEditor } from 'vs/workbench/parts/maix/browser/frame/maixSettingsEditor';
 import { MaixSettingsEditorInput, SettingsInputFactory } from 'vs/workbench/parts/maix/common/maixEditorInput';
 import { PopMaixSettingsAction, PopMaixSettingsActionId, PopMaixSettingsActionLabel } from './maixActions';
 import {
@@ -59,7 +59,7 @@ class LockScreenSettingContribution implements IWorkbenchContribution {
 	private checkCategory(key: string) {
 		const schema: IConfigurationPropertySchema = this.registry.getConfigurationProperties()[key];
 		if (schema.hasOwnProperty('category')) {
-			this.categoryRegistry.addSettings((schema as any).category, key);
+			this.categoryRegistry.addSetting((schema as any).category, key);
 		}
 	}
 }

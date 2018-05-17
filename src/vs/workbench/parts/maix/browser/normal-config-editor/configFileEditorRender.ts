@@ -12,11 +12,8 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { attachButtonStyler, attachInputBoxStyler, attachSelectBoxStyler } from 'vs/platform/theme/common/styler';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { settingKeyToDisplayFormat } from 'vs/workbench/parts/preferences/browser/settingsEditor2';
-import {
-	Extensions as ConfigurationExtensions,
-	IConfigurationRegistry
-} from '../../../../platform/configuration/common/configurationRegistry';
-import { Registry } from '../../../../platform/registry/common/platform';
+import { Extensions as ConfigurationExtensions, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
+import { Registry } from 'vs/platform/registry/common/platform';
 
 const $ = DOM.$;
 

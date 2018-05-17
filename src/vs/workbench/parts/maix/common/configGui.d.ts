@@ -1,7 +1,16 @@
+declare interface ISpecialView {
+	readonly element: HTMLElement;
+}
+
+declare interface ISpecialSetting {
+	new (...args: any[]): ISpecialView;
+}
+
 declare interface ISettingsCategoryTree {
 	id: string;
 	category: string;
 	settings?: string[];
+	special?: ISpecialSetting;
 	parent?: ISettingsCategoryTree;
 	children?: ISettingsCategoryTree[];
 }

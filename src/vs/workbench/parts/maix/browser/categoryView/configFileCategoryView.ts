@@ -8,9 +8,9 @@ import 'vs/css!./media/category';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { WorkbenchTree } from 'vs/platform/list/browser/listService';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { ICanRender } from 'vs/workbench/parts/maix/browser/categoryView';
-import { ConfigFileCategoryRender } from 'vs/workbench/parts/maix/browser/configFileCategoryRender';
-import { ConfigFileCategorySource } from 'vs/workbench/parts/maix/browser/configFileCategorySource';
+import { ICanRender } from 'vs/workbench/parts/maix/browser/frame/mySplitView';
+import { ConfigFileCategoryRender } from 'vs/workbench/parts/maix/browser/categoryView/configFileCategoryRender';
+import { ConfigFileCategorySource } from 'vs/workbench/parts/maix/browser/categoryView/configFileCategorySource';
 import { Extensions, IConfigCategoryRegistry } from 'vs/workbench/parts/maix/common/category';
 
 export class ConfigFileCategoryView extends Disposable implements IView, ICanRender {
@@ -22,7 +22,7 @@ export class ConfigFileCategoryView extends Disposable implements IView, ICanRen
 
 	private lastId: string = '';
 
-	private readonly _onChangeCategory = this._register(new Emitter<string[]>());
+	private readonly _onChangeCategory = this._register(new Emitter<string[] | ISpecialSetting>());
 	public readonly onChangeCategory = this._onChangeCategory.event;
 
 	constructor(
@@ -49,8 +49,6 @@ export class ConfigFileCategoryView extends Disposable implements IView, ICanRen
 
 		const tree = Registry.as<IConfigCategoryRegistry>(Extensions.ConfigCategory).getRoot();
 		this.$category.setInput(tree);
-
-		this._register(this.$category);
 	}
 
 	layout(width: number) {
@@ -71,7 +69,13 @@ export class ConfigFileCategoryView extends Disposable implements IView, ICanRen
 			return;
 		}
 
-		this._onChangeCategory.fire(sel.settings);
-		this.lastId = sel.id;
+		if (this.lastId !== sel.id) {
+			if (sel.special) {
+				this._onChangeCategory.fire(sel.special);
+			} else {
+				this._onChangeCategory.fire(sel.settings);
+			}
+			this.lastId = sel.id;
+		}
 	}
 }

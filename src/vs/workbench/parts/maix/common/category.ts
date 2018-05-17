@@ -11,11 +11,21 @@ export enum Extensions {
 }
 
 export interface IConfigCategoryRegistry {
-	registerCategory(id: string, title: string, parentId?: string): this;
+	registerCategory(category: ICategoryConfig): this;
 
-	addSettings(categoryId: string, ...settingIds: string[]): this;
+	addSetting(categoryId: string, ...settingIds: string[]): this;
+
+	addSettings(categoryId: string, settingIds: string[]): this;
 
 	getRoot(): ISettingsCategoryTree;
+}
+
+export interface ICategoryConfig {
+	id: string;
+	category: string;
+	settings?: string[];
+	special?: ISpecialSetting;
+	parent?: string;
 }
 
 Registry.add(Extensions.ConfigCategory, new class implements IConfigCategoryRegistry {
@@ -28,17 +38,19 @@ Registry.add(Extensions.ConfigCategory, new class implements IConfigCategoryRegi
 	private toRegister: [string, string[]][] = [];
 	private _inited: boolean = false;
 
-	registerCategory(id: string, title: string, parentId?: string) {
+	registerCategory({ id, category, settings, special, parent: parentId }: ICategoryConfig) {
 		if (this.map.hasOwnProperty(id)) {
-			throw new TypeError(`duplicated configuration group: id=${id}, title=${title}`);
+			throw new TypeError(`duplicated configuration group: id=${id}, title=${category}`);
 		}
 
-		const newItem: ISettingsCategoryTree = this.map[id] = {
-			id,
-			category: title,
-			settings: [],
-			children: [],
-		};
+		const newItem: ISettingsCategoryTree = this.map[id] = { id, category, children: [] };
+		if (special) {
+			newItem.special = special;
+		} else if (settings) {
+			newItem.settings = settings.slice();
+		} else {
+			newItem.settings = [];
+		}
 
 		if (parentId) {
 			const parent = this.map[parentId];
@@ -58,10 +70,18 @@ Registry.add(Extensions.ConfigCategory, new class implements IConfigCategoryRegi
 		return this;
 	}
 
-	addSettings(categoryId: string, ...settingIds: string[]) {
+	addSetting(categoryId: string, ...settingIds: string[]) {
+		return this.addSettings(categoryId, settingIds);
+	}
+
+	addSettings(categoryId: string, settingIds: string[]) {
 		const category = this.map[categoryId];
 		if (category) {
-			category.settings.push(...settingIds);
+			if (Array.isArray(category.settings)) {
+				category.settings.push(...settingIds);
+			} else {
+				throw new TypeError(`can not add settings to special page "${categoryId}"`);
+			}
 		} else {
 			this.toRegister.push([categoryId, settingIds]);
 			if (this._inited) {
@@ -84,7 +104,7 @@ Registry.add(Extensions.ConfigCategory, new class implements IConfigCategoryRegi
 			if (!this.map.hasOwnProperty(categoryId)) {
 				throw new TypeError(`missing configuration group (as container): id=${categoryId}`);
 			}
-			this.map[categoryId].settings.push(...settingIds);
+			(this.map[categoryId].settings as string[]).push(...settingIds);
 		}
 		this.toRegister.length = 0;
 	}
