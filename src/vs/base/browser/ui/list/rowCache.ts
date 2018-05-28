@@ -32,7 +32,7 @@ export class RowCache<T> implements IDisposable {
 	 * a previously released row which shares the same templateId.
 	 */
 	alloc(templateId: string): IRow {
-		let result = this.getTemplateCache(templateId).pop();
+		let result = this.getTemplateCache(templateId).shift(); // to allow reuse
 
 		if (!result) {
 			const domNode = $('.monaco-list-row');

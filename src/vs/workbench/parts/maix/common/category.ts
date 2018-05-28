@@ -109,3 +109,26 @@ Registry.add(Extensions.ConfigCategory, new class implements IConfigCategoryRegi
 		this.toRegister.length = 0;
 	}
 });
+
+export function deepSearch(treeRoot: ISettingsCategoryTree, id: string): ISettingsCategoryTree | null {
+	for (const item of treeRoot.children) {
+		if (item.id === id) {
+			return item;
+		} else {
+			const found = deepSearch(item, id);
+			if (found) {
+				return found;
+			}
+		}
+	}
+	return null;
+}
+
+export function treeParents(item: ISettingsCategoryTree) {
+	const ret: ISettingsCategoryTree[] = [];
+	while (item.parent) {
+		ret.push(item.parent);
+		item = item.parent;
+	}
+	return ret;
+}

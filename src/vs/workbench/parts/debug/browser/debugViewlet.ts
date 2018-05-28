@@ -11,7 +11,7 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { IActionItem } from 'vs/base/browser/ui/actionbar/actionbar';
 import { PersistentViewsViewlet, ViewsViewletPanel } from 'vs/workbench/browser/parts/views/viewsViewlet';
 import { IDebugService, VIEWLET_ID, State, VARIABLES_VIEW_ID, WATCH_VIEW_ID, CALLSTACK_VIEW_ID, BREAKPOINTS_VIEW_ID, IDebugConfiguration } from 'vs/workbench/parts/debug/common/debug';
-import { StartAction, ToggleReplAction, ConfigureAction, AbstractDebugAction, SelectAndStartAction, FocusSessionAction } from 'vs/workbench/parts/debug/browser/debugActions';
+import { StartAction, ToggleReplAction, ConfigureAction, SelectAndStartAction, FocusSessionAction } from 'vs/workbench/parts/debug/browser/debugActions';
 import { StartDebugActionItem, FocusSessionActionItem } from 'vs/workbench/parts/debug/browser/debugActionItems';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
@@ -28,8 +28,6 @@ import { IDisposable, dispose } from 'vs/base/common/lifecycle';
 import { IPartService } from 'vs/workbench/services/part/common/partService';
 import { memoize } from 'vs/base/common/decorators';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { DebugActionsWidget } from 'vs/workbench/parts/debug/browser/debugActionsWidget';
-import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 
 export class DebugViewlet extends PersistentViewsViewlet {
 
@@ -37,7 +35,7 @@ export class DebugViewlet extends PersistentViewsViewlet {
 	private progressRunner: IProgressRunner;
 	private breakpointView: ViewsViewletPanel;
 	private panelListeners = new Map<string, IDisposable>();
-	private allActions: AbstractDebugAction[] = [];
+	// private allActions: AbstractDebugAction[] = [];
 
 	constructor(
 		@IPartService partService: IPartService,
@@ -52,7 +50,7 @@ export class DebugViewlet extends PersistentViewsViewlet {
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IExtensionService extensionService: IExtensionService,
 		@IConfigurationService private configurationService: IConfigurationService,
-		@IKeybindingService private keybindingService: IKeybindingService,
+		// @IKeybindingService private keybindingService: IKeybindingService,
 		@IContextViewService private contextViewService: IContextViewService,
 	) {
 		super(VIEWLET_ID, ViewLocation.Debug, `${VIEWLET_ID}.state`, false, partService, telemetryService, storageService, instantiationService, themeService, contextService, contextKeyService, contextMenuService, extensionService);
@@ -82,10 +80,10 @@ export class DebugViewlet extends PersistentViewsViewlet {
 		}
 	}
 
-	@memoize
-	private get startAction(): StartAction {
-		return this._register(this.instantiationService.createInstance(StartAction, StartAction.ID, StartAction.LABEL));
-	}
+	// @memoize
+	// private get startAction(): StartAction {
+	// 	return this._register(this.instantiationService.createInstance(StartAction, StartAction.ID, StartAction.LABEL));
+	// }
 
 	@memoize
 	private get configureAction(): ConfigureAction {
@@ -102,13 +100,13 @@ export class DebugViewlet extends PersistentViewsViewlet {
 		return this._register(this.instantiationService.createInstance(SelectAndStartAction, SelectAndStartAction.ID, nls.localize('startAdditionalSession', "Start Additional Session")));
 	}
 
-	public getActions(): IAction[] {
-		if (this.showInitialDebugActions) {
-			return [this.startAction, this.configureAction, this.toggleReplAction];
-		}
-
-		return DebugActionsWidget.getActions(this.allActions, this.toUnbind, this.debugService, this.keybindingService, this.instantiationService);
-	}
+	// public getActions(): IAction[] {
+	// 	if (this.showInitialDebugActions) {
+	// 		return [this.startAction, this.configureAction, this.toggleReplAction];
+	// 	}
+	//
+	// 	return DebugActionsWidget.getActions(this.allActions, this.toUnbind, this.debugService, this.keybindingService, this.instantiationService);
+	// }
 
 	public get showInitialDebugActions(): boolean {
 		const state = this.debugService.state;

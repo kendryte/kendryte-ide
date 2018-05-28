@@ -9,6 +9,8 @@ import { Promise, TPromise } from 'vs/base/common/winjs.base';
 import { IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { Event, Emitter, once, filterEvent } from 'vs/base/common/event';
 
+declare const process: any;
+
 enum MessageType {
 	RequestCommon,
 	RequestCancel,

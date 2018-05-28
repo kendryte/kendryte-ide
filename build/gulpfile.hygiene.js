@@ -34,7 +34,8 @@ const all = [
 	'scripts/**/*',
 	'src/**/*',
 	'test/**/*',
-	'!**/node_modules/**'
+	'!**/node_modules/**',
+	'!my-scripts/**'
 ];
 
 const indentationFilter = [

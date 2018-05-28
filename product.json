@@ -17,7 +17,7 @@
 	"reportIssueUrl": "https://github.com/Canaan-Creative/maix-ide/issues/new",
 	"urlProtocol": "maix-ide",
 	"updateUrl": "https://maix.canaan.io/_update/",
-	"commit": "git-$developing",
+	"commit": "git-0.0.1-maix",
 	"quality": "insider",
 	"extensionsGallery": {
 		"serviceUrl": "https://marketplace.visualstudio.com/_apis/public/gallery",

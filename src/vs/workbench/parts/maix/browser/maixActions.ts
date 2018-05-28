@@ -8,6 +8,7 @@ import { FullScreenEditor } from 'vs/workbench/parts/maix/browser/frame/FullScre
 import { MaixSettingsEditor } from 'vs/workbench/parts/maix/browser/frame/maixSettingsEditor';
 import { MaixSettingsEditorInput } from 'vs/workbench/parts/maix/common/maixEditorInput';
 import { IWorkbenchEditorService } from '../../../services/editor/common/editorService';
+import { ILogService } from 'vs/platform/log/common/log';
 
 export const ShowMaixSettingsActionId = 'workbench.action.showMaixSettings';
 export const ShowMaixSettingsActionLabel = localize('settingsPage', 'Show Settings Page');
@@ -17,35 +18,39 @@ export class ShowMaixSettingsAction extends Action {
 		id: string,
 		label: string,
 		// @IWorkbenchEditorService private editorService: IWorkbenchEditorService,
-		@IInstantiationService private instantiationService: IInstantiationService
+		@IInstantiationService private instantiationService: IInstantiationService,
+		@ILogService private log: ILogService,
 	) {
 		super(id, label);
 	}
 
-	run(): TPromise<void> {
+	async run(switchTab: string): TPromise<void> {
 		// const input = this.instantiationService.createInstance(MaixSettingsEditorInput);
 		// this.editorService.openEditor(input, { pinned: true }, Position.ONE).then(() => null);
-		const inputData = this.instantiationService.createInstance(MaixSettingsEditorInput, '{}');
+		const inputData = this.instantiationService.createInstance(MaixSettingsEditorInput, switchTab);
 		const $editor = this.instantiationService.createInstance(MaixSettingsEditor);
 		const $container = this.instantiationService.createInstance(FullScreenEditor, $editor);
 
-		return $container.create().then(async () => {
-			await $container.setVisible(true);
+		await $container.create();
+		await $container.setVisible(true);
 
-			$container.layout();
+		$container.layout();
 
-			await $editor.setInput(inputData);
+		await $editor.setInput(inputData);
 
-			$editor.focus();
+		$editor.focus();
 
-			return new TPromise<void>((resolve) => {
-				$container.toDispose({
-					dispose() {
-						resolve(void 0);
-					}
-				});
+		this.log.debug('ShowMaixSettingsAction Window Popup.');
+
+		await new TPromise<void>((resolve) => {
+			$container.toDispose({
+				dispose() {
+					resolve(void 0);
+				}
 			});
 		});
+
+		this.log.debug('ShowMaixSettingsAction Finished.');
 	}
 }
 

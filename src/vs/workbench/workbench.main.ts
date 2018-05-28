@@ -122,6 +122,9 @@ import 'vs/workbench/parts/performance/electron-browser/performance.contribution
 
 import 'vs/workbench/parts/cli/electron-browser/cli.contribution';
 
+// maix
+import 'vs/workbench/parts/maix/index';
+
 import 'vs/workbench/api/electron-browser/extensionHost.contribution';
 
 import 'vs/workbench/electron-browser/main.contribution';
@@ -135,8 +138,3 @@ import 'vs/workbench/parts/welcome/overlay/browser/welcomeOverlay';
 
 // services
 import 'vs/workbench/services/bulkEdit/electron-browser/bulkEditService';
-
-// maix
-import 'vs/workbench/parts/maix/browser/maixContribution';
-import 'vs/workbench/parts/maix/common/settingsContribution';
-import 'vs/workbench/parts/maix/common/category';

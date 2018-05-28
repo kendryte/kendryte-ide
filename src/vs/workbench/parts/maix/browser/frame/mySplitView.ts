@@ -1,9 +1,9 @@
 import { addClass } from 'vs/base/browser/dom';
 import { IView, Orientation, SplitView } from 'vs/base/browser/ui/splitview/splitview';
-import 'vs/css!./media/shit';
+import 'vs/css!../media/shit';
 
 export interface ICanRender {
-	renderEntries(): void;
+	renderEntries(): any;
 }
 
 export class MySplitView extends SplitView {
@@ -29,10 +29,10 @@ export class MySplitView extends SplitView {
 		this.leftView = view;
 	}
 
-	render() {
-		this.leftView.renderEntries();
+	async render() {
+		await this.leftView.renderEntries();
 		if (this.rightView) {
-			this.rightView.renderEntries();
+			await this.rightView.renderEntries();
 		}
 	}
 

@@ -12,6 +12,8 @@ import { ConfigFileCategoryView } from 'vs/workbench/parts/maix/browser/category
 import { ConfigFileEditorView } from 'vs/workbench/parts/maix/browser/normal-config-editor/configFileEditorView';
 import { MaixSettingsEditorInput } from 'vs/workbench/parts/maix/common/maixEditorInput';
 import { MySettingsEditorModelWrapper } from 'vs/workbench/parts/maix/common/preferencesModels';
+import { IProgressService2, ProgressLocation } from 'vs/platform/progress/common/progress';
+import { ILogService } from 'vs/platform/log/common/log';
 
 export class MaixSettingsEditor extends BaseEditor {
 	public static readonly ID: string = 'workbench.editor.maixSettingsEditor';
@@ -20,33 +22,48 @@ export class MaixSettingsEditor extends BaseEditor {
 
 	private readonly onDidChangeModel: Emitter<MySettingsEditorModelWrapper> = this._register(new Emitter<MySettingsEditorModelWrapper>());
 	private $editorView: ConfigFileEditorView;
+	private $categoryView: ConfigFileCategoryView;
 
 	constructor(
 		@ITelemetryService telemetryService: ITelemetryService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IThemeService themeService: IThemeService,
 		@IInstantiationService private instantiationService: IInstantiationService,
+		@IProgressService2 private progressService: IProgressService2,
+		@ILogService private log: ILogService,
 	) {
 		super(MaixSettingsEditor.ID, telemetryService, themeService);
 
 		this._register(configurationService.onDidChangeConfiguration(() => this.$main.render()));
 	}
 
-	private onLeftClick(settingListOrView: string[] | ISpecialSetting) {
-		if (Array.isArray(settingListOrView)) {
+	private onLeftClick(settingListOrView: INormalSetting | ISpecialSetting) {
+		if (settingListOrView.type === 0) {
 			this.onNormalCategoryClick(settingListOrView);
 		} else {
 			this.onSpecialCategoryClick(settingListOrView);
 		}
 	}
 
-	private onNormalCategoryClick(settingList: string[]) {
+	private onNormalCategoryClick(settingList: INormalSetting) {
 		this.$main.switch(this.$editorView);
 		if (this.defaultSettingsEditorModel) {
-			this.defaultSettingsEditorModel.setCategoryFilter(settingList);
-			this.onDidChangeModel.fire(this.defaultSettingsEditorModel);
+			const p = this.defaultSettingsEditorModel.setCategoryFilter(settingList.settings);
+			if (p) {
+				this.progressService.withProgress({
+					location: ProgressLocation.Notification,
+					title: 'Loading...',
+				}, () => {
+					return p.then(() => {
+						this.onDidChangeModel.fire(this.defaultSettingsEditorModel);
+					}).then(undefined, () => null);
+				}).then(undefined, () => null);
+			} else {
+				this.onDidChangeModel.fire(this.defaultSettingsEditorModel);
+			}
+			this.defaultSettingsEditorModel.rememberCategory(settingList.categoryId);
 		} else {
-			console.warn('---: defaultSettingsEditorModel not ready');
+			this.log.warn('---: defaultSettingsEditorModel not ready');
 		}
 	}
 
@@ -59,14 +76,19 @@ export class MaixSettingsEditor extends BaseEditor {
 			this.instantiationService.createInstance(MySplitView, parent)
 		);
 
-		const $leftView = this.instantiationService.createInstance(ConfigFileCategoryView);
-		this.$main.setLeft(this._register($leftView));
-		this._register($leftView.onChangeCategory(this.onLeftClick.bind(this)));
+		this.$categoryView = this.instantiationService.createInstance(ConfigFileCategoryView);
+		this.$main.setLeft(this._register(this.$categoryView));
+		this._register(this.onDidChangeModel.event((model) => {
+			return this.$categoryView.updateModel(model);
+		}));
+		this._register(this.$categoryView.onChangeCategory(this.onLeftClick.bind(this)));
 
 		this.$editorView = this.instantiationService.createInstance(ConfigFileEditorView);
 		this._register(this.$editorView);
-		this._register(this.onDidChangeModel.event((model) => this.$editorView.updateModel(model)));
-		this.onNormalCategoryClick([]);
+		this._register(this.onDidChangeModel.event((model) => {
+			return this.$editorView.updateModel(model);
+		}));
+		this.onNormalCategoryClick({ settings: [], categoryId: undefined, type: 0 });
 	}
 
 	public layout(dimension: Dimension): void {

@@ -2,8 +2,16 @@ declare interface ISpecialView {
 	readonly element: HTMLElement;
 }
 
+declare interface INormalSetting {
+	type: 0;
+	settings: string[];
+	categoryId: string;
+}
+
 declare interface ISpecialSetting {
-	new (...args: any[]): ISpecialView;
+	type: 1;
+	special: ISpecialSetting;
+	categoryId: string;
 }
 
 declare interface ISettingsCategoryTree {
