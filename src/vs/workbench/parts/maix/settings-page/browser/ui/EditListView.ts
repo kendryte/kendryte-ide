@@ -15,9 +15,9 @@ import { $, addClass, addDisposableListener, append, findParentWithClass, toggle
 import { IWindowsService } from 'vs/platform/windows/common/windows';
 import { ILogService } from 'vs/platform/log/common/log';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { attachEditableSelectBoxStyler, EditableSelectBox } from 'vs/workbench/parts/maix/browser/ui/editableSelect';
-import { array_has_diff, object_has_diff } from 'vs/workbench/parts/maix/common/utils';
-import { EnumProviderService } from 'vs/workbench/parts/maix/common/type';
+import { attachEditableSelectBoxStyler, EditableSelectBox } from 'vs/workbench/parts/maix/settings-page/browser/ui/editableSelect';
+import { array_has_diff, object_has_diff } from 'vs/workbench/parts/maix/settings-page/common/utils';
+import { EnumProviderService } from 'vs/workbench/parts/maix/settings-page/common/type';
 
 export interface BaseEditableItem {
 	id: string;

@@ -8,11 +8,11 @@ import 'vs/css!../media/category';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { WorkbenchTree } from 'vs/platform/list/browser/listService';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { ICanRender } from 'vs/workbench/parts/maix/browser/frame/mySplitView';
-import { ConfigFileCategoryRender } from 'vs/workbench/parts/maix/browser/categoryView/configFileCategoryRender';
-import { ConfigFileCategorySource } from 'vs/workbench/parts/maix/browser/categoryView/configFileCategorySource';
-import { deepSearch, Extensions, IConfigCategoryRegistry, treeParents } from 'vs/workbench/parts/maix/common/category';
-import { MySettingsEditorModelWrapper } from 'vs/workbench/parts/maix/common/preferencesModels';
+import { ICanRender } from 'vs/workbench/parts/maix/settings-page/browser/frame/mySplitView';
+import { ConfigFileCategoryRender } from 'vs/workbench/parts/maix/settings-page/browser/categoryView/configFileCategoryRender';
+import { ConfigFileCategorySource } from 'vs/workbench/parts/maix/settings-page/browser/categoryView/configFileCategorySource';
+import { deepSearch, Extensions, IConfigCategoryRegistry, treeParents } from 'vs/workbench/parts/maix/settings-page/common/category';
+import { MySettingsEditorModelWrapper } from 'vs/workbench/parts/maix/settings-page/common/preferencesModels';
 import { ILogService } from 'vs/platform/log/common/log';
 
 export class ConfigFileCategoryView extends Disposable implements IView, ICanRender {

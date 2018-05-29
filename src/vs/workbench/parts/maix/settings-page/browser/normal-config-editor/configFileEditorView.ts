@@ -11,10 +11,10 @@ import { ConfigurationTarget, IConfigurationService } from 'vs/platform/configur
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { WorkbenchList } from 'vs/platform/list/browser/listService';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { ICanRender } from 'vs/workbench/parts/maix/browser/frame/mySplitView';
-import { createConfigFileEditorRender, IConfigListEntry, ISettingArrayItem, ISettingItemEntry, ListMode } from 'vs/workbench/parts/maix/browser/ui/EditListView';
-import { createSplitRenderInstance, ISplitEntry } from 'vs/workbench/parts/maix/browser/frame/splitRender';
-import { ITitle, MySettingsEditorModelWrapper } from 'vs/workbench/parts/maix/common/preferencesModels';
+import { ICanRender } from 'vs/workbench/parts/maix/settings-page/browser/frame/mySplitView';
+import { createConfigFileEditorRender, IConfigListEntry, ISettingArrayItem, ISettingItemEntry, ListMode } from 'vs/workbench/parts/maix/settings-page/browser/ui/EditListView';
+import { createSplitRenderInstance, ISplitEntry } from 'vs/workbench/parts/maix/settings-page/browser/frame/splitRender';
+import { ITitle, MySettingsEditorModelWrapper } from 'vs/workbench/parts/maix/settings-page/common/preferencesModels';
 import { SettingsTarget, SettingsTargetsWidget } from 'vs/workbench/parts/preferences/browser/preferencesWidgets';
 import { ISetting } from 'vs/workbench/services/preferences/common/preferences';
 import { Extensions as ConfigurationExtensions, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';

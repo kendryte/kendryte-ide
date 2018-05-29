@@ -16,8 +16,8 @@ import { Extensions as ConfigurationExtensions, IConfigurationRegistry } from 'v
 import { Emitter } from 'vs/base/common/event';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { array_has_diff } from 'vs/workbench/parts/maix/common/utils';
-import { EnumProviderService } from 'vs/workbench/parts/maix/common/type';
+import { array_has_diff } from 'vs/workbench/parts/maix/settings-page/common/utils';
+import { EnumProviderService } from 'vs/workbench/parts/maix/settings-page/common/type';
 
 const category = localize('serialport', 'Serial Port');
 

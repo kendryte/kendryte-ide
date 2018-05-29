@@ -6,9 +6,9 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { EditorDescriptor, Extensions as EditorExtensions, IEditorRegistry } from 'vs/workbench/browser/editor';
 import { Extensions as ActionExtensions, IWorkbenchActionRegistry } from 'vs/workbench/common/actions';
 import { Extensions as EditorInputExtensions, IEditorInputFactoryRegistry } from 'vs/workbench/common/editor';
-import { ShowMaixSettingsAction, ShowMaixSettingsActionId, ShowMaixSettingsActionLabel } from 'vs/workbench/parts/maix/browser/maixActions';
-import { MaixSettingsEditor } from 'vs/workbench/parts/maix/browser/frame/maixSettingsEditor';
-import { MaixSettingsEditorInput, SettingsInputFactory } from 'vs/workbench/parts/maix/common/maixEditorInput';
+import { ShowMaixSettingsAction, ShowMaixSettingsActionId, ShowMaixSettingsActionLabel } from 'vs/workbench/parts/maix/settings-page/browser/maixActions';
+import { MaixSettingsEditor } from 'vs/workbench/parts/maix/settings-page/browser/frame/maixSettingsEditor';
+import { MaixSettingsEditorInput, SettingsInputFactory } from 'vs/workbench/parts/maix/settings-page/common/maixEditorInput';
 import { PopMaixSettingsAction, PopMaixSettingsActionId, PopMaixSettingsActionLabel } from './maixActions';
 
 // Contribute Global Actions

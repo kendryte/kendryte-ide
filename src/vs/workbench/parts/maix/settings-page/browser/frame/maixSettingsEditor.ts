@@ -7,11 +7,11 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { BaseEditor } from 'vs/workbench/browser/parts/editor/baseEditor';
-import { MySplitView } from 'vs/workbench/parts/maix/browser/frame/mySplitView';
-import { ConfigFileCategoryView } from 'vs/workbench/parts/maix/browser/categoryView/configFileCategoryView';
-import { ConfigFileEditorView } from 'vs/workbench/parts/maix/browser/normal-config-editor/configFileEditorView';
-import { MaixSettingsEditorInput } from 'vs/workbench/parts/maix/common/maixEditorInput';
-import { MySettingsEditorModelWrapper } from 'vs/workbench/parts/maix/common/preferencesModels';
+import { MySplitView } from 'vs/workbench/parts/maix/settings-page/browser/frame/mySplitView';
+import { ConfigFileCategoryView } from 'vs/workbench/parts/maix/settings-page/browser/categoryView/configFileCategoryView';
+import { ConfigFileEditorView } from 'vs/workbench/parts/maix/settings-page/browser/normal-config-editor/configFileEditorView';
+import { MaixSettingsEditorInput } from 'vs/workbench/parts/maix/settings-page/common/maixEditorInput';
+import { MySettingsEditorModelWrapper } from 'vs/workbench/parts/maix/settings-page/common/preferencesModels';
 import { IProgressService2, ProgressLocation } from 'vs/platform/progress/common/progress';
 import { ILogService } from 'vs/platform/log/common/log';
 

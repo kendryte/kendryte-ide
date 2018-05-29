@@ -4,10 +4,10 @@ import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { FullScreenEditor } from 'vs/workbench/parts/maix/browser/frame/FullScreenEditor';
-import { MaixSettingsEditor } from 'vs/workbench/parts/maix/browser/frame/maixSettingsEditor';
-import { MaixSettingsEditorInput } from 'vs/workbench/parts/maix/common/maixEditorInput';
-import { IWorkbenchEditorService } from '../../../services/editor/common/editorService';
+import { FullScreenEditor } from 'vs/workbench/parts/maix/settings-page/browser/frame/FullScreenEditor';
+import { MaixSettingsEditor } from 'vs/workbench/parts/maix/settings-page/browser/frame/maixSettingsEditor';
+import { MaixSettingsEditorInput } from 'vs/workbench/parts/maix/settings-page/common/maixEditorInput';
+import { IWorkbenchEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { ILogService } from 'vs/platform/log/common/log';
 
 export const ShowMaixSettingsActionId = 'workbench.action.showMaixSettings';

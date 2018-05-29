@@ -3,7 +3,7 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import * as nls from 'vs/nls';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { EditorInput, IEditorInputFactory } from 'vs/workbench/common/editor';
-import { MySettingsEditorModelWrapper } from 'vs/workbench/parts/maix/common/preferencesModels';
+import { MySettingsEditorModelWrapper } from 'vs/workbench/parts/maix/settings-page/common/preferencesModels';
 import { IPreferencesService } from 'vs/workbench/services/preferences/common/preferences';
 import { DefaultSettingsEditorModel } from 'vs/workbench/services/preferences/common/preferencesModels';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';

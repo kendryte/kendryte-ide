@@ -1,5 +1,5 @@
 import { Registry } from 'vs/platform/registry/common/platform';
-import { Extensions, IConfigCategoryRegistry } from 'vs/workbench/parts/maix/common/category';
+import { Extensions, IConfigCategoryRegistry } from 'vs/workbench/parts/maix/settings-page/common/category';
 
 const CategoryRegistry = Registry.as<IConfigCategoryRegistry>(Extensions.ConfigCategory);
 
