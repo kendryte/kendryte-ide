@@ -41,17 +41,19 @@ class SerialPortService implements ISerialPortService {
 	}
 
 	public refreshDevices(): TPromise<void> {
+		console.info('refreshing COM device list');
 		if (this.cachedPromise) {
 			return this.cachedPromise;
 		}
 		this.cachedPromise = this._refreshDevices();
-		this.cachedPromise.done(() => {
+		this.cachedPromise.done((d) => {
+			console.info('COM device list:', d);
 			delete this.cachedPromise;
 		});
 		return this.cachedPromise;
 	}
 
-	private async _refreshDevices(): TPromise<void> {
+	private async _refreshDevices(): TPromise<any> {
 		const dList = await list();
 		const newList = dList.map((item) => {
 			return item.comName;
@@ -61,6 +63,7 @@ class SerialPortService implements ISerialPortService {
 			Object.freeze(this.devices);
 			this.devicesListChange.fire(newList);
 		}
+		return newList;
 	}
 
 	public getValues(): string[] {

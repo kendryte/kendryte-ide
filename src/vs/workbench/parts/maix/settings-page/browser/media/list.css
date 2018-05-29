@@ -24,6 +24,45 @@
 	flex: 1;
 }
 
+.editable-select-box {
+	border: transparent 1px solid;
+	position: relative;
+	display: inline-flex;
+	width: 100%;
+}
+
+.editable-select-box > .select {
+	position: absolute;
+	left: 0;
+	width: 100%;
+	top: 0;
+	height: 100%;
+}
+
+.editable-select-box > .editable-select-holder {
+	z-index: 9;
+	position: relative;
+	width: 18px;
+}
+
+.editable-select-box > .select > select {
+	z-index: 10;
+	border: none;
+	outline: none;
+}
+
+.editable-select-box > .input {
+	display: inline-flex;
+	flex-grow: 1;
+	position: relative;
+	z-index: 11;
+}
+
+.editable-select-box > .input > input {
+	border: none;
+	outline: none;
+}
+
 /*
 .maix-config-editor .setting-item[data-type=enum] .setting-item-right .setting-item-value {
 	position: relative;

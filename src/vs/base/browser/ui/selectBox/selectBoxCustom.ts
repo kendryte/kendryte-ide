@@ -6,8 +6,8 @@
 import 'vs/css!./selectBoxCustom';
 
 import * as nls from 'vs/nls';
-import { IDisposable, dispose } from 'vs/base/common/lifecycle';
-import { Event, Emitter, chain } from 'vs/base/common/event';
+import { dispose, IDisposable } from 'vs/base/common/lifecycle';
+import { chain, Emitter, Event } from 'vs/base/common/event';
 import { KeyCode, KeyCodeUtils } from 'vs/base/common/keyCodes';
 import { StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
 import * as dom from 'vs/base/browser/dom';
@@ -248,9 +248,11 @@ export class SelectBoxList implements ISelectBoxDelegate, IDelegate<ISelectOptio
 		} else if (index > this.options.length - 1) {
 			// Adjust index to end of list
 			// This could make client out of sync with the select
-			this.select(this.options.length - 1);
+			this.selected = this.options.length - 1;
 		} else if (this.selected < 0) {
 			this.selected = 0;
+		} else {
+			this.selected = undefined;
 		}
 
 		this.selectElement.selectedIndex = this.selected;
@@ -435,8 +437,10 @@ export class SelectBoxList implements ISelectBoxDelegate, IDelegate<ISelectOptio
 			this.selectList.domFocus();
 
 			// Finally set focus on selected item
-			this.selectList.setFocus([this.selected]);
-			this.selectList.reveal(this.selectList.getFocus()[0]);
+			if (this.selected) {
+				this.selectList.setFocus([this.selected]);
+				this.selectList.reveal(this.selectList.getFocus()[0]);
+			}
 
 			// Set final container height after adjustments
 			this.selectDropDownContainer.style.height = (listHeight + totalVerticalListPadding) + 'px';

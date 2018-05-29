@@ -2,60 +2,76 @@ import { Widget } from 'vs/base/browser/ui/widget';
 import { SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
 import { InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
-import { $, append } from 'vs/base/browser/dom';
+import { $, addDisposableListener, append } from 'vs/base/browser/dom';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { Emitter, Event } from 'vs/base/common/event';
 import { attachStyler, IInputBoxStyleOverrides, ISelectBoxStyleOverrides, IThemable } from 'vs/platform/theme/common/styler';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
-import {
-	activeContrastBorder,
-	focusBorder,
-	inputBackground,
-	inputBorder,
-	inputForeground,
-	inputValidationErrorBackground,
-	inputValidationErrorBorder,
-	inputValidationInfoBackground,
-	inputValidationInfoBorder,
-	inputValidationWarningBackground,
-	inputValidationWarningBorder,
-	listFocusBackground,
-	listFocusForeground,
-	listHoverBackground,
-	listHoverForeground,
-	selectBackground,
-	selectBorder,
-	selectForeground,
-	selectListBackground
-} from 'vs/platform/theme/common/colorRegistry';
+import * as ColorRegistry from 'vs/platform/theme/common/colorRegistry';
 import { Color } from 'vs/base/common/color';
 
-export type IEditableSelectBoxStyleOverrides = ISelectBoxStyleOverrides & IInputBoxStyleOverrides;
+export type SelectStyle =
+	'selectBackground' |
+	'selectListBackground' |
+	'selectForeground' |
+	'listFocusBackground' |
+	'listFocusForeground' |
+	'activeContrastBorder' |
+	'listHoverBackground' |
+	'listHoverForeground' |
+	'activeContrastBorder';
+export type IEditableSelectBoxStyleOverrides = Pick<ISelectBoxStyleOverrides, SelectStyle> & IInputBoxStyleOverrides;
+
+const defaultColor: IEditableSelectBoxStyleOverrides = {} as any;
+[
+	'inputBackground',
+	'inputForeground',
+	'inputValidationInfoBorder',
+	'inputValidationInfoBackground',
+	'inputValidationWarningBorder',
+	'inputValidationWarningBackground',
+	'inputValidationErrorBorder',
+	'inputValidationErrorBackground',
+	'selectBackground',
+	'selectListBackground',
+	'selectForeground',
+	'listFocusBackground',
+	'listFocusForeground',
+	'activeContrastBorder',
+	'listHoverBackground',
+	'listHoverForeground',
+	'activeContrastBorder',
+].forEach(name => defaultColor[name] = ColorRegistry[name]);
+defaultColor.inputBorder = ColorRegistry.selectBorder;
 
 export function attachEditableSelectBoxStyler(widget: IThemable, themeService: IThemeService, style?: IEditableSelectBoxStyleOverrides): IDisposable {
 	return attachStyler(themeService, {
-		inputBackground: (style && style.inputBackground) || inputBackground,
-		inputForeground: (style && style.inputForeground) || inputForeground,
-		inputBorder: (style && style.inputBorder) || inputBorder,
-		inputValidationInfoBorder: (style && style.inputValidationInfoBorder) || inputValidationInfoBorder,
-		inputValidationInfoBackground: (style && style.inputValidationInfoBackground) || inputValidationInfoBackground,
-		inputValidationWarningBorder: (style && style.inputValidationWarningBorder) || inputValidationWarningBorder,
-		inputValidationWarningBackground: (style && style.inputValidationWarningBackground) || inputValidationWarningBackground,
-		inputValidationErrorBorder: (style && style.inputValidationErrorBorder) || inputValidationErrorBorder,
-		inputValidationErrorBackground: (style && style.inputValidationErrorBackground) || inputValidationErrorBackground,
+		...defaultColor,
+		...style,
+	}, widget);
+}
 
-		selectBackground: (style && style.selectBackground) || selectBackground,
-		selectListBackground: (style && style.selectListBackground) || selectListBackground,
-		selectForeground: (style && style.selectForeground) || selectForeground,
-		selectBorder: (style && style.selectBorder) || selectBorder,
-		focusBorder: (style && style.focusBorder) || focusBorder,
-		listFocusBackground: (style && style.listFocusBackground) || listFocusBackground,
-		listFocusForeground: (style && style.listFocusForeground) || listFocusForeground,
-		listFocusOutline: (style && style.listFocusOutline) || activeContrastBorder,
-		listHoverBackground: (style && style.listHoverBackground) || listHoverBackground,
-		listHoverForeground: (style && style.listHoverForeground) || listHoverForeground,
-		listHoverOutline: (style && style.listFocusOutline) || activeContrastBorder,
-	} as IEditableSelectBoxStyleOverrides, widget);
+class FireProtect {
+	protected stackSize = 0;
+
+	run(cb: Function) {
+		if (this.isFiring) {
+			return;
+		}
+		this.stackSize++;
+		try {
+			const ret = cb();
+			this.stackSize--;
+			return ret;
+		} catch (e) {
+			this.stackSize--;
+			throw e;
+		}
+	}
+
+	get isFiring() {
+		return this.stackSize > 0;
+	}
 }
 
 export class EditableSelectBox extends Widget implements IThemable {
@@ -64,11 +80,12 @@ export class EditableSelectBox extends Widget implements IThemable {
 
 	private inputEvent: IDisposable;
 	private selectEvent: IDisposable;
+	private selectPlaceHolderEvent: IDisposable;
 
-	protected $remove: HTMLElement;
 	protected $container: HTMLElement;
 
 	protected $input: HTMLElement;
+	protected $selectPlaceHolder: HTMLElement;
 	protected $select: HTMLElement;
 
 	protected enum: string[] = [];
@@ -77,7 +94,7 @@ export class EditableSelectBox extends Widget implements IThemable {
 
 	protected readonly fireOnDidChange: (event: string) => void;
 	public readonly onDidChange: Event<string>;
-	private firing: boolean = false;
+	private firing: FireProtect = new FireProtect;
 	private styleCache: { [p: string]: Color };
 
 	constructor(
@@ -87,12 +104,10 @@ export class EditableSelectBox extends Widget implements IThemable {
 		super();
 
 		this.$container = append(parentElement, $('.editable-select-box'));
-		this.$select = append(this.$container, $('.select'));
 		this.$input = append(this.$container, $('.input'));
+		this.$select = append(this.$container, $('.select'));
 
 		this.applyStyles();
-
-		this.$remove = $('.editable-select');
 
 		this.createInput();
 
@@ -103,21 +118,18 @@ export class EditableSelectBox extends Widget implements IThemable {
 
 	private createInput() {
 		if (!this.input) {
-			this.input = new InputBox(this.$remove, this.contextViewService);
+			this.input = new InputBox(this.$input, this.contextViewService);
 			if (this.styleCache) {
 				this.input.style(this.styleCache);
 			}
 			this.inputEvent = this.input.onDidChange((data) => {
-				if (this.firing) {
-					return;
-				}
 				this._value = data;
-				this.firing = true;
-				if (this.select) {
-					this.selectValue();
-				}
-				this.fireOnDidChange(data);
-				this.firing = false;
+				this.firing.run(() => {
+					if (this.select) {
+						this.selectValue();
+					}
+					this.fireOnDidChange(data);
+				});
 			});
 		}
 	}
@@ -146,13 +158,22 @@ export class EditableSelectBox extends Widget implements IThemable {
 				this.select.style(this.styleCache);
 			}
 			this.select.render(this.$select);
+			this.$selectPlaceHolder = append(this.$container, $('.editable-select-holder'));
 
 			this.selectEvent = this.select.onDidSelect(({ selected, index }) => {
+				if (selected === 'undefined' && index === 0) {
+					return;
+				}
 				if (this.input) {
 					this.input.value = selected;
 				} else {
-					this.fireOnDidChange(selected);
+					this.firing.run(() => {
+						this.fireOnDidChange(selected);
+					});
 				}
+			});
+			this.selectPlaceHolderEvent = addDisposableListener(this.$selectPlaceHolder, 'click', () => {
+				this.$select.querySelector('select').click();
 			});
 		} else {
 			this.select.setOptions(this.enum);
@@ -165,9 +186,14 @@ export class EditableSelectBox extends Widget implements IThemable {
 			return;
 		}
 		dispose(this.selectEvent);
+		dispose(this.selectPlaceHolderEvent);
 		dispose(this.select);
+		this.$selectPlaceHolder.remove();
+
 		this.$select.innerHTML = '';
 		this.select = null;
+		this.$selectPlaceHolder = null;
+		this.selectPlaceHolderEvent = null;
 	}
 
 	private selectValue() {
@@ -175,7 +201,9 @@ export class EditableSelectBox extends Widget implements IThemable {
 			return;
 		}
 		const selected = this.enum.indexOf(this._value);
-		if (selected !== -1) {
+		if (selected === -1) {
+			this.select.select(undefined);
+		} else {
 			this.select.select(selected);
 		}
 	}
@@ -205,11 +233,16 @@ export class EditableSelectBox extends Widget implements IThemable {
 			return;
 		}
 		this._value = v;
-		if (this.select) {
-			this.selectValue();
-		} else if (this.input) {
-			this.input.value = v;
-		}
+		this.firing.run(() => {
+			if (this.select) {
+				this.selectValue();
+			}
+			if (this.input) {
+				if (v !== undefined) {
+					this.input.value = v;
+				}
+			}
+		});
 	}
 
 	get editable() {
@@ -235,12 +268,16 @@ export class EditableSelectBox extends Widget implements IThemable {
 	}
 
 	style(colors: { [name: string]: Color }): void {
+		const { inputBorder, ...others } = colors;
+		if (inputBorder) {
+			this.$container.style.borderColor = inputBorder.toString();
+		}
 		this.styleCache = colors;
 		if (this.input) {
-			this.input.style(colors);
+			this.input.style(others);
 		}
 		if (this.select) {
-			this.select.style(colors);
+			this.select.style(others);
 		}
 	}
 
