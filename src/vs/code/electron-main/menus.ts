@@ -895,11 +895,14 @@ export class CodeMenu {
 	private setMaixMenu(maixMenu: Electron.Menu): void {
 		const settings = this.createMenuItem(nls.localize({ key: 'miSettingsEdit', comment: ['&& denotes a mnemonic'] }, "&&Settings Page"), 'workbench.action.showMaixSettings');
 		const settings2 = this.createMenuItem(nls.localize({ key: 'miSettingsWindow', comment: ['&& denotes a mnemonic'] }, "&&Settings Window"), 'workbench.action.popMaixSettings');
+		const FPIOA = this.createMenuItem(nls.localize({ key: 'miFPIOAWindow', comment: ['&& denotes a mnemonic'] }, "&&MaixIO Configure"), 'workbench.action.openMaixIOConfigureWindow');
 		const settings3 = this.createMenuItem(nls.localize({ key: 'miSettings', comment: ['&& denotes a mnemonic'] }, "&&Settings 2"), 'workbench.action.openSettings2');
 		[
 			settings,
 			settings2,
 			settings3,
+			__separator__(),
+			FPIOA,
 		].forEach(item => maixMenu.append(item));
 	}
 
