@@ -1,0 +1,69 @@
+.fpgio-editor {
+
+}
+
+.fpgio-editor .full-height-panel {
+	height: 100%;
+}
+
+.fpgio-editor .chip-select {
+	padding: 6px;
+}
+
+.fpgio-editor .chip-select > h3 {
+	padding: 0;
+	margin: 0 0 6px 0;
+}
+
+.fpgio-editor .rightPanel {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.fpgio-editor .rightPanel table {
+	margin: auto;
+	border: none;
+	border-spacing: 0;
+	border-collapse: separate;
+	text-align: center;
+}
+
+.fpgio-editor .rightPanel td {
+	width: 58px;
+	height: 58px;
+}
+
+.fpgio-editor .rightPanel th.left,
+.fpgio-editor .rightPanel th.right {
+	width: 2em;
+}
+
+.fpgio-editor .rightPanel th.top,
+.fpgio-editor .rightPanel th.bottom {
+	height: 2em;
+}
+
+.fpgio-editor .rightPanel th.left:not(.top):not(.bottom) {
+	border-right: black 4px solid;
+}
+
+.fpgio-editor .rightPanel th.right:not(.top):not(.bottom) {
+	border-left: black 4px solid;
+}
+
+.fpgio-editor .rightPanel th.top:not(.left):not(.right) {
+	border-bottom: black 4px solid;
+}
+
+.fpgio-editor .rightPanel th.bottom:not(.left):not(.right) {
+	border-top: black 4px solid;
+}
+
+.fpgio-editor .rightPanel td.col-odd {
+	background: rgba(0, 0, 0, 0.05);
+}
+
+.fpgio-editor .rightPanel td.row-odd {
+	background: rgba(0, 0, 0, 0.10);
+}

@@ -6,9 +6,9 @@
 
 import { TPromise } from 'vs/base/common/winjs.base';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { ICommandService, ICommandEvent, CommandsRegistry } from 'vs/platform/commands/common/commands';
+import { CommandsRegistry, ICommandEvent, ICommandService } from 'vs/platform/commands/common/commands';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
-import { Event, Emitter } from 'vs/base/common/event';
+import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { ILogService } from 'vs/platform/log/common/log';
 
@@ -52,6 +52,7 @@ export class CommandService extends Disposable implements ICommandService {
 	}
 
 	private _tryExecuteCommand(id: string, args: any[]): TPromise<any> {
+		console.log('_tryExecuteCommand(%s)', id);
 		const command = CommandsRegistry.getCommand(id);
 		if (!command) {
 			return TPromise.wrapError(new Error(`command '${id}' not found`));

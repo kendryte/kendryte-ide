@@ -67,8 +67,8 @@ export class PopMaixSettingsAction extends Action {
 		super(id, label);
 	}
 
-	run(): TPromise<void> {
+	run(): TPromise<any> {
 		const input = this.instantiationService.createInstance(MaixSettingsEditorInput, '{}');
-		return this.editorService.openEditor(input, { pinned: true }).then(() => null);
+		return this.editorService.openEditor(input, { pinned: true });
 	}
 }

@@ -2,7 +2,6 @@ import { Dimension } from 'vs/base/browser/dom';
 import { Emitter } from 'vs/base/common/event';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { IEditorOptions } from 'vs/platform/editor/common/editor';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
@@ -14,6 +13,7 @@ import { MaixSettingsEditorInput } from 'vs/workbench/parts/maix/settings-page/c
 import { MySettingsEditorModelWrapper } from 'vs/workbench/parts/maix/settings-page/common/preferencesModels';
 import { IProgressService2, ProgressLocation } from 'vs/platform/progress/common/progress';
 import { ILogService } from 'vs/platform/log/common/log';
+import { EditorOptions } from 'vs/workbench/common/editor';
 
 export class MaixSettingsEditor extends BaseEditor {
 	public static readonly ID: string = 'workbench.editor.maixSettingsEditor';
@@ -95,9 +95,9 @@ export class MaixSettingsEditor extends BaseEditor {
 		this.$main.layout(dimension.width);
 	}
 
-	async setInput(input: MaixSettingsEditorInput, options: IEditorOptions = {}): TPromise<void> {
+	async setInput(input: MaixSettingsEditorInput, options?: EditorOptions): TPromise<void> {
 		const oldInput = this.input;
-		await super.setInput(input);
+		await super.setInput(input, options);
 
 		if (!input.matches(oldInput)) {
 			this.defaultSettingsEditorModel = await this.input.resolve() as MySettingsEditorModelWrapper;
