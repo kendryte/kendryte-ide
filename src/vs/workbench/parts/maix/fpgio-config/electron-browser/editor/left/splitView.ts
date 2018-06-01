@@ -1,6 +1,6 @@
 import { $, append } from 'vs/base/browser/dom';
 import { IRenderer } from 'vs/base/browser/ui/list/list';
-import { IListSplitEntry, TEMPLATE_ID } from 'vs/workbench/parts/maix/fpgio-config/browser/editor/left/ids';
+import { IListSplitEntry, TEMPLATE_ID } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/editor/left/ids';
 
 export class SplitRenderer implements IRenderer<IListSplitEntry, any> {
 	get templateId(): string {

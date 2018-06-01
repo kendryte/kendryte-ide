@@ -1,16 +1,16 @@
 import { IView } from 'vs/base/browser/ui/splitview/splitview';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { Emitter, Event } from 'vs/base/common/event';
-import { IFuncPinMap } from 'vs/workbench/parts/maix/fpgio-config/browser/fpgioModel';
+import { IFuncPinMap } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/fpgioModel';
 import { WorkbenchList } from 'vs/platform/list/browser/listService';
 import { localize } from 'vs/nls';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { $, addClasses } from 'vs/base/browser/dom';
 import { IDelegate } from 'vs/base/browser/ui/list/list';
-import { IFpgioLeftListEntry, TEMPLATE_ID } from 'vs/workbench/parts/maix/fpgio-config/browser/editor/left/ids';
-import { SplitRenderer } from 'vs/workbench/parts/maix/fpgio-config/browser/editor/left/splitView';
-import { ChipSelectRenderer } from 'vs/workbench/parts/maix/fpgio-config/browser/editor/left/chipSelectView';
-import { FuncMapListItemRender } from 'vs/workbench/parts/maix/fpgio-config/browser/editor/left/funcMapListItemView';
+import { IFpgioLeftListEntry, TEMPLATE_ID } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/editor/left/ids';
+import { SplitRenderer } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/editor/left/splitView';
+import { ChipSelectRenderer } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/editor/left/chipSelectView';
+import { FuncMapListItemRender } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/editor/left/funcMapListItemView';
 
 export class FpgioLeftPanel extends Disposable implements IView {
 	onDidChange = Event.None;

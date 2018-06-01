@@ -32,6 +32,12 @@
 .fpgio-editor .rightPanel td {
 	width: 58px;
 	height: 58px;
+	vertical-align: top;
+}
+
+.fpgio-editor .rightPanel td > h3 {
+	margin: 0;
+	text-align: left;
 }
 
 .fpgio-editor .rightPanel th.left,

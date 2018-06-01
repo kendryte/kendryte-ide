@@ -1,7 +1,7 @@
 import { $, addClass, addClasses, append } from 'vs/base/browser/dom';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { IChipPackagingCalculated, IPin } from 'vs/workbench/parts/maix/fpgio-config/common/packagingTypes';
-import { ITableCell } from 'vs/workbench/parts/maix/fpgio-config/browser/editor/right/bgaTable';
+import { ITableCell } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/editor/right/bgaTable';
 
 export interface ChipTableCreator {
 	new(chip: IChipPackagingCalculated): AbstractTableRender;

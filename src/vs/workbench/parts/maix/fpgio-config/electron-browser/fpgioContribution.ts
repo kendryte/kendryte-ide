@@ -3,11 +3,11 @@ import { MenuId, MenuRegistry, SyncActionDescriptor } from 'vs/platform/actions/
 import { Registry } from 'vs/platform/registry/common/platform';
 import { Extensions as ActionExtensions, IWorkbenchActionRegistry } from 'vs/workbench/common/actions';
 import { Extensions as EditorInputExtensions, IEditorInputFactoryRegistry } from 'vs/workbench/common/editor';
-import { FpgioEditorAction } from 'vs/workbench/parts/maix/fpgio-config/browser/fpgioActions';
-import { FpgioEditorInput, FpgioInputFactory } from 'vs/workbench/parts/maix/fpgio-config/browser/fpgioEditorInput';
+import { FpgioEditorAction } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/fpgioActions';
+import { FpgioEditorInput, FpgioInputFactory } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/fpgioEditorInput';
 import { EditorDescriptor, Extensions as EditorExtensions, IEditorRegistry } from 'vs/workbench/browser/editor';
 import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
-import { FpgioEditor } from 'vs/workbench/parts/maix/fpgio-config/browser/editor/fpgioEditor';
+import { FpgioEditor } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/editor/fpgioEditor';
 
 // Contribute Global Actions
 const category = localize('maix', 'Maix');

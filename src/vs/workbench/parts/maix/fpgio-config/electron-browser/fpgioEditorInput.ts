@@ -2,7 +2,7 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import * as nls from 'vs/nls';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ConfirmResult, EditorInput, IEditorInputFactory } from 'vs/workbench/common/editor';
-import { FpgioModel } from 'vs/workbench/parts/maix/fpgio-config/browser/fpgioModel';
+import { FpgioModel } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/fpgioModel';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import URI from 'vs/base/common/uri';
 import { dispose } from 'vs/base/common/lifecycle';

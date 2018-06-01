@@ -2,15 +2,15 @@ import { IView } from 'vs/base/browser/ui/splitview/splitview';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { Orientation } from 'vs/base/browser/ui/sash/sash';
 import { Emitter, Event } from 'vs/base/common/event';
-import { IFuncPinMap } from 'vs/workbench/parts/maix/fpgio-config/browser/fpgioModel';
+import { IFuncPinMap } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/fpgioModel';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { $, addClasses } from 'vs/base/browser/dom';
 import { attachStyler, IThemable } from 'vs/platform/theme/common/styler';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { editorWidgetBackground, editorWidgetBorder } from 'vs/platform/theme/common/colorRegistry';
 import { getChipPackaging } from 'vs/workbench/parts/maix/fpgio-config/common/packagingRegistry';
-import { chipRenderFactory } from 'vs/workbench/parts/maix/fpgio-config/browser/editor/right/factory';
-import { AbstractTableRender } from 'vs/workbench/parts/maix/fpgio-config/browser/editor/right/abstract';
+import { chipRenderFactory } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/editor/right/factory';
+import { AbstractTableRender } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/editor/right/abstract';
 
 export class FpgioRightPanel extends Disposable implements IView, IThemable {
 	element: HTMLElement;

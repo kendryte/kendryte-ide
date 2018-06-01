@@ -1,5 +1,5 @@
 import { IRenderer } from 'vs/base/browser/ui/list/list';
-import { IListFuncMapEntry, TEMPLATE_ID } from 'vs/workbench/parts/maix/fpgio-config/browser/editor/left/ids';
+import { IListFuncMapEntry, TEMPLATE_ID } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/editor/left/ids';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
 import { IDisposable } from 'vs/base/common/lifecycle';

@@ -2,7 +2,7 @@ import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
 import { IWorkbenchEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { FpgioEditorInput } from 'vs/workbench/parts/maix/fpgio-config/browser/fpgioEditorInput';
+import { FpgioEditorInput } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/fpgioEditorInput';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { INotificationService } from 'vs/platform/notification/common/notification';

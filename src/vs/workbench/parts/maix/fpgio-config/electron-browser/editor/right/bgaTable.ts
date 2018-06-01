@@ -1,7 +1,7 @@
 import { $, addClass, addClasses, append } from 'vs/base/browser/dom';
 import { IPin, IPin2DNumber } from 'vs/workbench/parts/maix/fpgio-config/common/packagingTypes';
 import { normalizePin, stringifyPin } from 'vs/workbench/parts/maix/fpgio-config/common/builder';
-import { AbstractTableRender, CellRender, grid } from 'vs/workbench/parts/maix/fpgio-config/browser/editor/right/abstract';
+import { AbstractTableRender, CellRender, grid } from 'vs/workbench/parts/maix/fpgio-config/electron-browser/editor/right/abstract';
 
 export interface ITableCell {
 	title: string;
