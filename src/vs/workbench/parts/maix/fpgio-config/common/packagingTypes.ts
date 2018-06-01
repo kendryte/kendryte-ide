@@ -44,6 +44,14 @@ export interface IPinRange {
 	to: IPin;
 }
 
+export interface IOPinPlacement { // { A1: IO1, B2: IO2 ... }
+	[pinLocation: string]: /* pinIO: */number;
+}
+
+export interface IOPinPlacementRevert {
+	[pinIO: number]: /* pinLocation: */string;
+}
+
 export interface IChipGeometry {
 	type: number; // ChipPackageType
 	maxPin: {
@@ -53,13 +61,14 @@ export interface IChipGeometry {
 	};
 	emptyRange?: IPinRange[];
 	missingRows: string; // I S O X Y
-	IOPinPlacement: { [pinLocation: string]: number }; // { A1: IO1, B2: IO2 ... }
+	IOPinPlacement: IOPinPlacement;
 }
 
 export interface IChipPackagingDefine {
 	name: string;
 	geometry: IChipGeometry;
 	usableFunctions: IFunc[];
+	generator?: any; // TODO
 }
 
 //   export  type IFunctionMapping = Map<IFuncItem, (PinId | undefined)[]>;

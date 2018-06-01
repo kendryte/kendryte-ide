@@ -13,6 +13,7 @@ import { TextFileEditorModelManager } from 'vs/workbench/services/textfile/commo
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { SaveAllAction } from 'vs/workbench/parts/files/electron-browser/fileActions';
+import { Emitter, Event } from 'vs/base/common/event';
 
 const fpgioInputTypeId = 'workbench.input.fpgioInput';
 
@@ -34,7 +35,10 @@ export class FpgioInputFactory implements IEditorInputFactory {
 
 export class FpgioEditorInput extends EditorInput {
 	public static readonly ID: string = fpgioInputTypeId;
-	private model: FpgioModel;
+	private _model: FpgioModel;
+
+	private readonly _onDidChange = new Emitter<void>();
+	readonly onDidChange: Event<void> = this._onDidChange.event;
 
 	constructor(
 		protected readonly data: string = '',
@@ -48,6 +52,10 @@ export class FpgioEditorInput extends EditorInput {
 
 		const dis = commandService.onWillExecuteCommand(({ commandId }) => this.saveAllCommandHandler(commandId));
 		this.onDispose(() => dispose(dis));
+	}
+
+	get model() {
+		return this._model;
 	}
 
 	getTypeId(): string {
@@ -69,41 +77,59 @@ export class FpgioEditorInput extends EditorInput {
 	async resolve(refresh?: boolean): TPromise<FpgioModel> {
 		const fileRes = this.getResource();
 		if (!refresh) {
-			if (this.model && this.model.resource.fsPath === fileRes.fsPath) {
-				return this.model;
+			if (this._model && this._model.resource.fsPath === fileRes.fsPath) {
+				return this._model;
 			}
 		}
-		if (this.model) {
-			dispose(this.model);
+		if (this._model) {
+			dispose(this._model);
 		}
 
-		this.model = this.instantiationService.createInstance(FpgioModel, fileRes);
+		this._model = this.instantiationService.createInstance(FpgioModel, fileRes);
 
-		(this.textFileService.models as TextFileEditorModelManager).add(fileRes, this.model as any);
+		(this.textFileService.models as TextFileEditorModelManager).add(fileRes, this._model as any);
 
-		return await this.model.load();
+		return await this._model.load();
 	}
 
 	selectChip(name: string) {
 		if (!getChipPackaging(name)) {
 			throw new TypeError(`no such chip: ${name}`);
 		}
-		this.model.setChip(name);
-		this._onDidChangeDirty.fire();
+		const beforeNotDirty = this._model.isDirty();
+
+		const changed = this._model.setChip(name);
+
+		if (beforeNotDirty !== this._model.isDirty()) {
+			this._onDidChangeDirty.fire();
+		}
+
+		if (changed) {
+			this._onDidChange.fire();
+		}
 	}
 
 	mapPinFunc(funcId: string, ioPin: string) {
-		this.model.setPinFunc(funcId, ioPin);
-		this._onDidChangeDirty.fire();
+		const beforeNotDirty = this._model.isDirty();
+
+		const changed = this._model.setPinFunc(funcId, ioPin);
+
+		if (beforeNotDirty !== this._model.isDirty()) {
+			this._onDidChangeDirty.fire();
+		}
+
+		if (changed) {
+			this._onDidChange.fire();
+		}
 	}
 
 	isDirty() {
-		return this.model && this.model.isDirty();
+		return this._model && this._model.isDirty();
 	}
 
 	dispose() {
-		if (this.model) {
-			dispose(this.model);
+		if (this._model) {
+			dispose(this._model);
 		}
 		super.dispose();
 	}
@@ -117,10 +143,10 @@ export class FpgioEditorInput extends EditorInput {
 	}
 
 	async save(): TPromise<boolean> {
-		if (!this.model) {
+		if (!this._model) {
 			return false;
 		}
-		const ok = await this.model.save();
+		const ok = await this._model.save();
 		if (ok) {
 			this._onDidChangeDirty.fire();
 		}

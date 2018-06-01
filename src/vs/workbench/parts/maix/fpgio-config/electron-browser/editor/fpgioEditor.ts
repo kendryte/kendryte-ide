@@ -18,6 +18,11 @@ import { Position } from 'vs/platform/editor/common/editor';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { SAVE_FILE_COMMAND_ID } from 'vs/workbench/parts/files/electron-browser/fileCommands';
 
+export interface PinFuncSetEvent {
+	pin: string; // IPin
+	func: string; // name of func
+}
+
 export class FpgioEditor extends BaseEditor {
 	public static readonly ID: string = 'workbench.editor.fpgioEditor';
 	input: FpgioEditorInput;
@@ -54,30 +59,38 @@ export class FpgioEditor extends BaseEditor {
 			this.input.selectChip(newChip);
 			this.applyChip(newChip);
 		}));
+
+		this._register(leftPan.onSetPinFunc((map) => {
+			this.input.mapPinFunc(map.func, map.pin);
+		}));
 	}
 
-	public setInput(input: FpgioEditorInput, options?: EditorOptions): TPromise<void> {
+	public async setInput(input: FpgioEditorInput, options?: EditorOptions): TPromise<void> {
 		if (this.inputDispose.length) {
 			dispose(this.inputDispose);
+			this.inputDispose.length = 0;
 		}
 
-		return super.setInput(input, options).then(() => input.resolve()).then(async (model) => {
-			if (!model.isResolved()) {
-				model = await model.load();
-			}
-			this.updateModel(model);
-			this.applyChip(model.currentChip);
-		}).then(undefined, (err) => {
-			this.notifyService.error(err);
-			throw err;
-		});
+		super.setInput(input, options);
+
+		this.inputDispose.push(this.input.onDidChangeDirty(() => this.updateModel()));
+
+		let model = await input.resolve();
+
+		if (!model.isResolved()) {
+			model = await model.load();
+		}
+
+		this.updateModel();
 	}
 
 	public layout(dimension: Dimension): void {
 		this.splitViewMain.layout(dimension.width);
 	}
 
-	private updateModel(model: FpgioModel) {
+	private updateModel() {
+		const model: FpgioModel = this.input.model;
+		this.applyChip(model.currentChip);
 		if (model.isChipSelected) {
 			this.leftPan.updateList(model.currentFuncMap);
 			this.rightPan.fillTable(model.currentFuncMap);

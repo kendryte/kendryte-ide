@@ -75,7 +75,7 @@ const AlphaBet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const LineStruct = /^([a-z]+)\|(.+)$/i;
 
 export function BGA_IO_GEOMETRY(pinMap: string): IChipGeometry {
-	const ret = {
+	const ret: IChipGeometry = {
 		type: ChipPackageType.BGA,
 		maxPin: {
 			name: '',
@@ -139,8 +139,11 @@ export function BGA_IO_GEOMETRY(pinMap: string): IChipGeometry {
 	ret.maxPin.y = BaseAny.fromRevert(ret.missingRows).toBase10(lastLine);
 	ret.maxPin.x = lastItem;
 
-	ioPins.forEach((io, { col, row }) => {
-		const name = row + col.toString();
+	let placement: string[] = [];
+	ioPins.forEach((io: number, { col, row }) => {
+		placement[io] = row + col.toString();
+	});
+	placement.forEach((name, io) => {
 		ret.IOPinPlacement[name] = io;
 	});
 

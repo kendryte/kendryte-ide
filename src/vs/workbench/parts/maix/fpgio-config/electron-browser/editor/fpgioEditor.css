@@ -15,6 +15,50 @@
 	margin: 0 0 6px 0;
 }
 
+.fpgio-editor .leftPanel .group-title {
+	line-height: 22px;
+	display: flex;
+	padding: 0 6px;
+}
+
+.fpgio-editor .leftPanel .group-title > .name {
+	font-size: 18px;
+	font-weight: bold;
+	flex-grow: 1;
+	overflow: hidden;
+}
+
+.fpgio-editor .leftPanel .group-title > .id {
+	font-size: 14px;
+	font-style: italic;
+}
+
+.fpgio-editor .leftPanel .funcMapListItem {
+	box-sizing: border-box;
+	padding: 5px 10px;
+}
+
+.fpgio-editor .leftPanel .funcMapListItem > .header {
+	display: flex;
+	flex-direction: row;
+	margin-bottom: 4px;
+}
+
+.fpgio-editor .leftPanel .funcMapListItem > .header > .id {
+	font-weight: bold;
+	font-size: 12px;
+	min-width: 18%;
+}
+
+.fpgio-editor .leftPanel .funcMapListItem > .header > .select {
+	flex-grow: 1;
+}
+
+.fpgio-editor .leftPanel .funcMapListItem > .desc {
+	font-size: 12px;
+	line-height: 13px;
+}
+
 .fpgio-editor .rightPanel {
 	display: flex;
 	flex-direction: column;

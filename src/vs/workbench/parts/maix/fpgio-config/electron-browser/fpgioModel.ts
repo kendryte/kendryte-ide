@@ -85,6 +85,9 @@ export class FpgioModel extends EditorModel {
 			this.content = {} as any;
 			this.dirty = false;
 		}
+		if (!this.content.funcPinMap) {
+			this.content.funcPinMap = {};
+		}
 		return this;
 	}
 
@@ -115,13 +118,21 @@ export class FpgioModel extends EditorModel {
 	}
 
 	setChip(name: string) {
+		if (this.content.selectedChip === name) {
+			return false;
+		}
 		this.dirty = true;
 		this.content.selectedChip = name;
+		return true;
 	}
 
 	setPinFunc(funcId: string, ioPin: string) {
+		if (this.content.funcPinMap[funcId] === ioPin) {
+			return false;
+		}
 		this.dirty = true;
 		this.content.funcPinMap[funcId] = ioPin;
+		return true;
 	}
 
 	hasState(state: ModelState): boolean {
