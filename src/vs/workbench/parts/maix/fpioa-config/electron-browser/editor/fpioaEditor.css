@@ -1,0 +1,131 @@
+.fpioa-editor {
+
+}
+
+.fpioa-editor .full-height-panel {
+	height: 100%;
+}
+
+.fpioa-editor .chip-select {
+	padding: 6px;
+}
+
+.fpioa-editor .chip-select > h3 {
+	padding: 0;
+	margin: 0 0 6px 0;
+}
+
+.fpioa-editor .leftPanel .group-title {
+	line-height: 22px;
+	display: flex;
+	padding: 0 6px;
+}
+
+.fpioa-editor .leftPanel .group-title > .name {
+	font-size: 18px;
+	font-weight: bold;
+	flex-grow: 1;
+	overflow: hidden;
+}
+
+.fpioa-editor .leftPanel .group-title > .id {
+	font-size: 14px;
+	font-style: italic;
+}
+
+.fpioa-editor .leftPanel .funcMapListItem {
+	box-sizing: border-box;
+	padding: 5px 10px;
+}
+
+.fpioa-editor .leftPanel .funcMapListItem > .header {
+	display: flex;
+	flex-direction: row;
+	margin-bottom: 4px;
+}
+
+.fpioa-editor .leftPanel .funcMapListItem > .header > .id {
+	font-weight: bold;
+	font-size: 12px;
+	min-width: 18%;
+}
+
+.fpioa-editor .leftPanel .funcMapListItem > .header > .select {
+	flex-grow: 1;
+}
+
+.fpioa-editor .leftPanel .funcMapListItem > .desc {
+	font-size: 12px;
+	line-height: 13px;
+}
+
+.fpioa-editor .rightPanel {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+}
+
+.fpioa-editor .rightPanel table {
+	text-align: left;
+	border: none;
+	border-spacing: 0;
+	margin: 0;
+	padding: 0;
+	border-collapse: collapse;
+}
+
+.fpioa-editor .rightPanel td {
+	overflow: hidden;
+	vertical-align: top;
+	border-spacing: 0;
+	border: none;
+}
+
+.fpioa-editor .rightPanel td > h3 {
+	margin: 3px;
+	text-align: left;
+}
+
+.fpioa-editor .rightPanel td > .functions {
+	padding: 3px;
+}
+
+.fpioa-editor .rightPanel td > .functions > div {
+	display: inline-block;
+	border-radius: 5px;
+}
+
+.fpioa-editor .rightPanel th.left,
+.fpioa-editor .rightPanel th.right {
+	width: 2em;
+}
+
+.fpioa-editor .rightPanel th.top,
+.fpioa-editor .rightPanel th.bottom {
+	height: 2em;
+}
+
+/* TODO use js theme, not css */
+.fpioa-editor .rightPanel th.left:not(.top):not(.bottom) {
+	border-right: black 4px solid;
+}
+
+.fpioa-editor .rightPanel th.right:not(.top):not(.bottom) {
+	border-left: black 4px solid;
+}
+
+.fpioa-editor .rightPanel th.top:not(.left):not(.right) {
+	border-bottom: black 4px solid;
+}
+
+.fpioa-editor .rightPanel th.bottom:not(.left):not(.right) {
+	border-top: black 4px solid;
+}
+
+.fpioa-editor .rightPanel td.col-odd {
+	background: rgba(0, 0, 0, 0.05);
+}
+
+.fpioa-editor .rightPanel td.row-odd {
+	background: rgba(0, 0, 0, 0.10);
+}
