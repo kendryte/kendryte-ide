@@ -27,7 +27,7 @@ CategoryRegistry.addSettings('appearance.editor', [
 ]);
 
 CategoryRegistry.addSettings('cmake', [
-	'cmake.mingwSearchDirs',
+	'cmake.toolchainSearchDirs',
 	'cmake.cmakePath',
 ]);
 
