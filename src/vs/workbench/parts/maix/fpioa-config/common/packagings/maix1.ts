@@ -22,7 +22,7 @@ const Maix1BGAPackageDefine: IChipPackagingDefine = {
 	name: 'Maix',
 	geometry: BGA_IO_GEOMETRY(graph),
 	generator: {
-		funcNamePrefix: 'fpioa_function_e.FUNC_',
+		funcNamePrefix: 'fpioa_function_e::FUNC_',
 		setterFuncName: 'fpioa_set_function',
 		libraryName: 'fpioa',
 	},

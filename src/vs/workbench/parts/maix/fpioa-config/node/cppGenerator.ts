@@ -9,7 +9,7 @@ export class SourceGenerator implements IGenerator {
 		const generatedConfigSections: string[] = [];
 
 		funcPinMap.forEach((io, pinFuncID) => {
-			generatedConfigSections.push(`configASSERT(${config.setterFuncName}(${config.funcNamePrefix}${pinFuncID}, ${io}) === 0)`);
+			generatedConfigSections.push(`configASSERT(${config.setterFuncName}(${io}, ${config.funcNamePrefix}${pinFuncID}) == 0)`);
 		});
 
 		return `/**
@@ -18,6 +18,13 @@ export class SourceGenerator implements IGenerator {
  */
 #include "${config.libraryName}.h"
 #include "fpioa-config.h"
+
+#ifndef configASSERT
+	#define configASSERT( x )
+	#define configASSERT_DEFINED 0
+#else
+	#define configASSERT_DEFINED 1
+#endif
 
 void configure_fpioa() {
 	${generatedConfigSections.join(';\n\t')}

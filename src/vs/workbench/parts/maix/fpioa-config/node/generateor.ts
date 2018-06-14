@@ -45,7 +45,9 @@ export class GenerateFpioaFilesAction extends Action {
 		const mapper: IFuncIOMap = new Map();
 		for (const funcId of Object.keys(funcPinMap)) {
 			const pinLoc = funcPinMap[funcId];
-			mapper.set(funcId, geometry.IOPinPlacement[pinLoc]);
+			if (funcId !== undefined) {
+				mapper.set(funcId, geometry.IOPinPlacement[pinLoc]);
+			}
 		}
 
 		for (const g of this.generators) {
