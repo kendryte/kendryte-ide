@@ -47,6 +47,32 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 			this.configurationService.updateValue(key, value, ConfigurationTarget.USER);
 			/// }
 		}
+
+		if (key === 'files.exclude') {
+			this.hideBuildDirectory();
+		}
+	}
+
+	private hideBuildDirectory() {
+		const inspect = this.configurationService.inspect<any>('files.exclude');
+		let data = inspect.user ? { ...inspect.user } : { ...inspect.default };
+		let changed = new Boolean(false);
+
+		ignore(data, '.idea', changed);
+		ignore(data, 'config/fpioa.cfg', changed);
+		for (const part of ['CMakeCache.txt', 'CMakeFiles', 'cmake_install.cmake', 'CMakeLists.txt', 'compile_commands.json', 'Makefile']) {
+			ignore(data, 'build/' + part, changed);
+		}
+		if (changed) {
+			this.configurationService.updateValue('files.exclude', data, ConfigurationTarget.USER);
+		}
+	}
+}
+
+function ignore(data: any, name: string, changed: Boolean) {
+	if (!data.hasOwnProperty(name)) {
+		changed = true;
+		data[name] = true;
 	}
 }
 

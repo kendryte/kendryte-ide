@@ -30,7 +30,6 @@ import * as debug from 'vs/workbench/parts/debug/common/debug';
 import { RawDebugSession } from 'vs/workbench/parts/debug/electron-browser/rawDebugSession';
 import { Model, ExceptionBreakpoint, FunctionBreakpoint, Breakpoint, Expression, RawObjectReplElement, ExpressionContainer, Session, Thread } from 'vs/workbench/parts/debug/common/debugModel';
 import { ViewModel } from 'vs/workbench/parts/debug/common/debugViewModel';
-import * as debugactions from 'vs/workbench/parts/debug/browser/debugActions';
 import { ConfigurationManager } from 'vs/workbench/parts/debug/electron-browser/debugConfigurationManager';
 import Constants from 'vs/workbench/parts/markers/electron-browser/constants';
 import { ITaskService, ITaskSummary } from 'vs/workbench/parts/tasks/common/taskService';
@@ -56,6 +55,7 @@ import { RunOnceScheduler } from 'vs/base/common/async';
 import product from 'vs/platform/node/product';
 import { ILogService, LogLevel } from 'vs/platform/log/common/log';
 import { deepClone, equals } from 'vs/base/common/objects';
+import { ShowMaixSettingsAction, ShowMaixSettingsActionId, ShowMaixSettingsActionLabel } from 'vs/workbench/parts/maix/settings-page/browser/maixActions';
 
 const DEBUG_BREAKPOINTS_KEY = 'debug.breakpoint';
 const DEBUG_BREAKPOINTS_ACTIVATED_KEY = 'debug.breakpointactivated';
@@ -1005,7 +1005,7 @@ export class DebugService implements debug.IDebugService {
 	}
 
 	private showError(message: string, actions: IAction[] = []): TPromise<any> {
-		const configureAction = this.instantiationService.createInstance(debugactions.ConfigureAction, debugactions.ConfigureAction.ID, debugactions.ConfigureAction.LABEL);
+		const configureAction = this.instantiationService.createInstance(ShowMaixSettingsAction, ShowMaixSettingsActionId, ShowMaixSettingsActionLabel);
 		actions.push(configureAction);
 		return this.dialogService.show(severity.Error, message, actions.map(a => a.label).concat(nls.localize('cancel', "Cancel")), { cancelId: actions.length }).then(choice => {
 			if (choice < actions.length) {

@@ -34,6 +34,9 @@ cd "${ROOT}/${TARGET}"
 
 export TMUX_TMPDIR="$ROOT/HOME"
 
+export EXTENSION_DIR="$ROOT/HOME/.maix-dev/extensions"
+mkdir -p "${EXTENSION_DIR}"
+
 if test -z "$DBUS_SESSION_BUS_ADDRESS" ; then
 	## if not found, launch a new one
 	eval $(dbus-launch --sh-syntax)
@@ -50,18 +53,30 @@ if ! tmux has -t "=${TARGET}" ; then
 fi
 
 function sushell() {
-	/bin/tmux new-window -n "$1"
-	/bin/tmux set-window-option allow-rename off
-	/bin/tmux send-keys "$2" Enter
+	if ! tmux list-windows -t "=${TARGET}" | grep "$1" ; then
+		/bin/tmux new-window -n "$1"
+		/bin/tmux set-window-option allow-rename off
+		/bin/tmux send-keys "$2" Enter
+	fi
 }
 
-if ! tmux list-windows -t "=${TARGET}" | grep compile ; then
-	sushell compile 'yarn watch'
-fi
+function link_extension() {
+	local NAME="$1"
+	if [ -L "${EXTENSION_DIR}/${NAME}" ]; then
+		unlink "${EXTENSION_DIR}/${NAME}"
+	fi
+	if [ -e "${EXTENSION_DIR}/${NAME}" ]; then
+		rm -rf "${EXTENSION_DIR}/${NAME}"
+	fi
+	ln -s "${VSCODE_ROOT}/custom-extensions/${NAME}" "${EXTENSION_DIR}/${NAME}"
+}
 
-if ! tmux list-windows -t "=${TARGET}" | grep vscode ; then
-	sushell vscode 'bash ./scripts/code.sh'
-fi
+link_extension code-debug
+link_extension vscode-cmake-tools
+
+sushell compile 'yarn watch'
+sushell ext-cmake 'bash ./my-scripts/ext-cmake.sh'
+sushell vscode 'bash ./scripts/code.sh'
 
 /bin/tmux kill-window -t 'bash' || true
 

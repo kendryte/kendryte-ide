@@ -35,7 +35,8 @@ const all = [
 	'src/**/*',
 	'test/**/*',
 	'!**/node_modules/**',
-	'!my-scripts/**'
+	'!my-scripts/**',
+	'!custom-extensions/**'
 ];
 
 const indentationFilter = [
@@ -83,7 +84,9 @@ const indentationFilter = [
 	'!build/**/*.sh',
 	'!build/tfs/**/*.js',
 	'!**/Dockerfile',
-	'!extensions/markdown-language-features/media/*.js'
+	'!extensions/markdown-language-features/media/*.js',
+	
+	'!custom-extensions/**'
 ];
 
 const copyrightFilter = [
