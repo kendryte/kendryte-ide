@@ -1,4 +1,4 @@
-import { expandToRoot, getDataPath, getInstallPath } from './nodePath';
+import { expandToRoot, getDataPath, getInstallPath, getSDKPath } from './nodePath';
 import { resolve } from 'path';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ConfigurationTarget, IConfigurationService } from 'vs/platform/configuration/common/configuration';
@@ -17,6 +17,17 @@ const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
 	'cmake-tools-helper.cmake_download_path'() {
 		return resolve(getDataPath(this), 'cmakeDownload');
 	},
+	'C_Cpp.default.includePath'(def: string[]) {
+		const sdk = getSDKPath(this);
+		if (!sdk) {
+			return undefined;
+		}
+		const sdkInclude = sdk + '/include';
+		if (def && def.indexOf(sdkInclude) !== -1) {
+			return undefined;
+		}
+		return def ? [...def, sdkInclude] : [sdkInclude];
+	}
 };
 
 class SettingCategoryContribution implements IWorkbenchContribution {
@@ -43,8 +54,10 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 		if (overwrite) {
 			const old = this.configurationService.inspect(key);
 			/// if (!old.user) {
-			const value = overwrite.call(this.environmentService, old.default);
-			this.configurationService.updateValue(key, value, ConfigurationTarget.USER);
+			const value = overwrite.call(this.environmentService, old.user || old.default);
+			if (typeof value !== 'undefined') {
+				this.configurationService.updateValue(key, value, ConfigurationTarget.USER);
+			}
 			/// }
 		}
 

@@ -854,7 +854,7 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
       return null;
     }
 
-    // console.log(target_path, user_config, this._kitManager.activeKit);
+    // TODO: URL and local
     const debug_config: vscode.DebugConfiguration = {
       type: 'gdb',
       request: 'attach',

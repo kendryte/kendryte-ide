@@ -1,6 +1,7 @@
 import { dirname, join, resolve } from 'path';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import product from 'vs/platform/node/product';
+import { existsSync } from 'fs';
 
 export function getInstallPath(environmentService: IEnvironmentService) {
 	return resolve(environmentService.execPath, '..');
@@ -8,6 +9,23 @@ export function getInstallPath(environmentService: IEnvironmentService) {
 
 export function getDataPath(environmentService: IEnvironmentService) {
 	return resolve(environmentService.userHome, product.dataFolderName);
+}
+
+let pathCache: string;
+
+export function getSDKPath(environmentService: IEnvironmentService) {
+	if (pathCache) {
+		return pathCache;
+	}
+	pathCache = findFirstExistsSync(expandToRoot(getInstallPath(environmentService), 'SDK'));
+	if (pathCache) {
+		return pathCache;
+	}
+	pathCache = findFirstExistsSync(expandToRoot(getInstallPath(environmentService), 'maix-sdk/build/archive'));
+	if (pathCache) {
+		return pathCache;
+	}
+	return null;
 }
 
 // return some path like node_modules
@@ -35,4 +53,13 @@ export function CMakeToolsConfigPath() {
 		}
 	}
 	return join(userLocalDir, 'CMakeTools', 'cmake-kits.json');
+}
+
+export function findFirstExistsSync(paths: string[]) {
+	for (const item of paths) {
+		if (existsSync(item)) {
+			return item;
+		}
+	}
+	return undefined;
 }
