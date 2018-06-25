@@ -31,13 +31,19 @@ export function getSDKPath(environmentService: IEnvironmentService) {
 // return some path like node_modules
 export function expandToRoot(currentDir: string, fileName: string): string[] {
 	const ret: string[] = [];
-	currentDir = resolve(currentDir);
-	while (currentDir !== '/') {
-		ret.push(currentDir + '/' + fileName);
 
-		currentDir = dirname(currentDir);
+	currentDir = resolve(currentDir);
+	while (true) {
+		const abs = currentDir + '/' + fileName;
+		const linuxPath = abs.replace(/\\/, '/').replace('//', '/');
+		ret.push(linuxPath);
+
+		const parent = dirname(currentDir);
+		if (currentDir === parent) { // must be root
+			break;
+		}
+		currentDir = parent;
 	}
-	ret.push('/' + fileName);
 	return ret;
 }
 
