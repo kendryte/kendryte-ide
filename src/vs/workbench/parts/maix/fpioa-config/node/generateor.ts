@@ -4,7 +4,7 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { IFuncIOMap, ISavedJson } from 'vs/workbench/parts/maix/fpioa-config/common/types';
 import { getChipPackaging } from 'vs/workbench/parts/maix/fpioa-config/common/packagingRegistry';
 import { IChipGeneratorConfig } from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
-import { HeaderGenerator, SourceGenerator } from 'vs/workbench/parts/maix/fpioa-config/node/cppGenerator';
+import { HeaderGenerator, SourceGenerator } from 'vs/workbench/parts/maix/fpioa-config/node/cGenerator';
 import { IFileService } from 'vs/platform/files/common/files';
 import { resolve } from 'path';
 import URI from 'vs/base/common/uri';

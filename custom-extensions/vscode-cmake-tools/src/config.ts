@@ -2,13 +2,14 @@
  * Provides a typed interface to CMake Tools' configuration options. You'll want
  * to import the `config` default export, which is an instance of the
  * `ConfigurationReader` class.
- */ /** */
+ */
+/** */
 
 import * as util from '@cmt/util';
 import * as os from 'os';
 import * as vscode from 'vscode';
 
-export type LogLevelKey = 'trace'|'debug'|'info'|'note'|'warning'|'error'|'fatal';
+export type LogLevelKey = 'trace' | 'debug' | 'info' | 'note' | 'warning' | 'error' | 'fatal';
 
 interface HardEnv {
   [key: string]: string;
@@ -17,16 +18,16 @@ interface HardEnv {
 export interface ExtensionConfigurationSettings {
   cmakePath: string;
   buildDirectory: string;
-  installPrefix: string|null;
+  installPrefix: string | null;
   sourceDirectory: string;
   saveBeforeBuild: boolean;
   buildBeforeRun: boolean;
   clearOutputBeforeBuild: boolean;
   configureSettings: {[key: string]: any};
   preferredGenerators: string[];
-  generator: string|null;
-  toolset: string|null;
-  platform: string|null;
+  generator: string | null;
+  toolset: string | null;
+  platform: string | null;
   configureArgs: string[];
   buildArgs: string[];
   buildToolArgs: string[];
@@ -48,11 +49,19 @@ export interface ExtensionConfigurationSettings {
   useCMakeServer: boolean;
   enableTraceLogging: boolean;
   loggingLevel: LogLevelKey;
+  debugger: {
+    target: 'remote' | 'localhost';
+    targetIp: string;
+    port: {
+      core0: number;
+      core1: number;
+    };
+  };
 }
 
 type EmittersOf<T> = {
   readonly[Key in keyof T]: vscode.EventEmitter<T[Key]>;
-};
+  };
 
 /**
  * This class exposes a number of readonly properties which can be used to
@@ -88,13 +97,17 @@ export class ConfigurationReader implements vscode.Disposable {
         const new_data = ConfigurationReader.loadForPath(dirPath);
         reader.update(new_data);
       }
+      if (e.affectsConfiguration('debugger', vscode.Uri.file(dirPath))) {
+        const new_data = ConfigurationReader.loadForPath(dirPath);
+        reader.update(new_data);
+      }
     });
     return reader;
   }
 
   static loadForPath(filePath: string): ExtensionConfigurationSettings {
     const data = vscode.workspace.getConfiguration('cmake', vscode.Uri.file(filePath)) as any as
-        ExtensionConfigurationSettings;
+      ExtensionConfigurationSettings;
     const platmap = {
       win32: 'windows',
       darwin: 'osx',
@@ -102,12 +115,14 @@ export class ConfigurationReader implements vscode.Disposable {
     } as {[k: string]: string};
     const platform = platmap[process.platform];
     const for_platform = (data as any)[platform] as ExtensionConfigurationSettings | undefined;
-    return {...data, ...(for_platform || {})};
+    const dbg = vscode.workspace.getConfiguration('debugger', vscode.Uri.file(filePath)) as any;
+    return { ...data, ...(for_platform || {}), debugger: dbg };
   }
 
   update(newData: ExtensionConfigurationSettings) { this.updatePartial(newData); }
+
   updatePartial(newData: Partial<ExtensionConfigurationSettings>) {
-    const old_values = {...this.configData};
+    const old_values = { ...this.configData };
     Object.assign(this.configData, newData);
     for (const key_ of Object.getOwnPropertyNames(newData)) {
       const key = key_ as keyof ExtensionConfigurationSettings;
@@ -125,7 +140,7 @@ export class ConfigurationReader implements vscode.Disposable {
 
   get buildDirectory(): string { return this.configData.buildDirectory; }
 
-  get installPrefix(): string|null { return this.configData.installPrefix; }
+  get installPrefix(): string | null { return this.configData.installPrefix; }
 
   get sourceDirectory(): string { return this.configData.sourceDirectory as string; }
 
@@ -139,11 +154,11 @@ export class ConfigurationReader implements vscode.Disposable {
 
   get preferredGenerators(): string[] { return this.configData.preferredGenerators; }
 
-  get generator(): string|null { return this.configData.generator; }
+  get generator(): string | null { return this.configData.generator; }
 
-  get toolset(): string|null { return this.configData.toolset; }
+  get toolset(): string | null { return this.configData.toolset; }
 
-  get platform(): string|null { return this.configData.platform; }
+  get platform(): string | null { return this.configData.platform; }
 
   get configureArgs(): string[] { return this.configData.configureArgs; }
 
@@ -151,13 +166,13 @@ export class ConfigurationReader implements vscode.Disposable {
 
   get buildToolArgs(): string[] { return this.configData.buildToolArgs; }
 
-  get parallelJobs(): number|null { return this.configData.parallelJobs; }
+  get parallelJobs(): number | null { return this.configData.parallelJobs; }
 
-  get ctest_parallelJobs(): number|null { return this.configData.ctest.parallelJobs; }
+  get ctest_parallelJobs(): number | null { return this.configData.ctest.parallelJobs; }
 
   get parseBuildDiagnostics(): boolean { return !!this.configData.parseBuildDiagnostics; }
 
-  get enableOutputParsers(): string[]|null { return this.configData.enabledOutputParsers; }
+  get enableOutputParsers(): string[] | null { return this.configData.enabledOutputParsers; }
 
   get raw_cmakePath(): string { return this.configData.cmakePath; }
 
@@ -178,6 +193,16 @@ export class ConfigurationReader implements vscode.Disposable {
   get ctestArgs(): string[] { return this.configData.ctestArgs; }
 
   get useCMakeServer(): boolean { return this.configData.useCMakeServer; }
+
+  get target(): string {
+    const { target, targetIp, port } = this.configData.debugger;
+    debugger;
+    if (target === 'remote') {
+      return `${targetIp}:${port.core0}`;
+    } else {
+      return `127.0.0.1:3333`;
+    }
+  }
 
   get numJobs(): number {
     const jobs = this.parallelJobs;
@@ -205,21 +230,22 @@ export class ConfigurationReader implements vscode.Disposable {
     }
     return this.configData.loggingLevel;
   }
+
   get enableTraceLogging(): boolean { return this.configData.enableTraceLogging; }
 
   private readonly _emitters: EmittersOf<ExtensionConfigurationSettings> = {
     cmakePath: new vscode.EventEmitter<string>(),
     buildDirectory: new vscode.EventEmitter<string>(),
-    installPrefix: new vscode.EventEmitter<string|null>(),
+    installPrefix: new vscode.EventEmitter<string | null>(),
     sourceDirectory: new vscode.EventEmitter<string>(),
     saveBeforeBuild: new vscode.EventEmitter<boolean>(),
     buildBeforeRun: new vscode.EventEmitter<boolean>(),
     clearOutputBeforeBuild: new vscode.EventEmitter<boolean>(),
     configureSettings: new vscode.EventEmitter<{[key: string]: any}>(),
     preferredGenerators: new vscode.EventEmitter<string[]>(),
-    generator: new vscode.EventEmitter<string|null>(),
-    toolset: new vscode.EventEmitter<string|null>(),
-    platform: new vscode.EventEmitter<string|null>(),
+    generator: new vscode.EventEmitter<string | null>(),
+    toolset: new vscode.EventEmitter<string | null>(),
+    platform: new vscode.EventEmitter<string | null>(),
     configureArgs: new vscode.EventEmitter<string[]>(),
     buildArgs: new vscode.EventEmitter<string[]>(),
     buildToolArgs: new vscode.EventEmitter<string[]>(),
@@ -241,6 +267,7 @@ export class ConfigurationReader implements vscode.Disposable {
     useCMakeServer: new vscode.EventEmitter<boolean>(),
     enableTraceLogging: new vscode.EventEmitter<boolean>(),
     loggingLevel: new vscode.EventEmitter<LogLevelKey>(),
+    debugger: new vscode.EventEmitter(),
   };
 
   /**
@@ -248,9 +275,10 @@ export class ConfigurationReader implements vscode.Disposable {
    * @param setting The name of the setting to watch
    * @param cb A callback when the setting changes
    */
-  onChange<K extends keyof ExtensionConfigurationSettings>(setting: K,
-                                                           cb: (value: ExtensionConfigurationSettings[K]) => void):
-      vscode.Disposable {
+  onChange<K extends keyof ExtensionConfigurationSettings>(
+    setting: K,
+    cb: (value: ExtensionConfigurationSettings[K]) => void
+  ): vscode.Disposable {
     const emitter: vscode.EventEmitter<ExtensionConfigurationSettings[K]> = this._emitters[setting];
     return emitter.event(cb);
   }

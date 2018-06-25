@@ -32,10 +32,10 @@ CategoryRegistry.addSettings('cmake', [
 ]);
 
 CategoryRegistry.addSettings('debugger', [
-	'openocd.target',
-	'openocd.targetIp',
-	'openocd.port.core0',
-	'openocd.port.core1',
+	'debugger.target',
+	'debugger.targetIp',
+	'debugger.port.core0',
+	'debugger.port.core1',
 ]);
 
 CategoryRegistry.addSettings('deployment', [

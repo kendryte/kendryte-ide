@@ -85,7 +85,7 @@ export class MySettingsEditorModelWrapper extends EditorModel {
 		if (this.waittingConfig.length) {
 			if (!this.waitDfd) {
 				this.waitDfd = new Deferred<void>();
-				this.log.debug('---WAIT', this.waittingConfig);
+				this.log.warn('config field not ok:', this.waittingConfig);
 				return this.waitDfd;
 			}
 		} else {

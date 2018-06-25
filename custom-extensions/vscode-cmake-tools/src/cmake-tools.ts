@@ -854,13 +854,13 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
       return null;
     }
 
-    // TODO: URL and local
+    const remoteTarget = this.workspaceContext.config.target;
     const debug_config: vscode.DebugConfiguration = {
       type: 'gdb',
       request: 'attach',
       name: 'Maix Remote Debug',
       executable: target_path,
-      target: 'maix3:3333',
+      target: remoteTarget,
       remote: true,
       gdbpath: concatBinaryPath(this._kitManager.activeKit.toolchainBinaryPath, 'gdb'),
       cwd: '${workspaceRoot}/build',
@@ -878,11 +878,17 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
       ]
     };
 
-    return vscode.debug.startDebugging(vscode.workspace.workspaceFolders![0], debug_config).then(() => {
-      return vscode.debug.activeDebugSession!;
-    }, (e: Error) => {
-      vscode.window.showErrorMessage(e.message);
-      return null;
+    return vscode.window.withProgress({
+      title: `Connecting to ${remoteTarget}...`,
+      location: vscode.ProgressLocation.Notification,
+      cancellable: false,
+    }, (/*reporter: Progress<{message?: string; increment?: number}>, token: CancellationToken*/) => {
+      return vscode.debug.startDebugging(vscode.workspace.workspaceFolders![0], debug_config).then(() => {
+        return vscode.debug.activeDebugSession!;
+      }, (e: Error) => {
+        vscode.window.showErrorMessage(e.message);
+        return null;
+      });
     });
   }
 

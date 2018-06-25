@@ -3,7 +3,7 @@ import { IChipGeneratorConfig } from 'vs/workbench/parts/maix/fpioa-config/commo
 import { IFuncIOMap } from 'vs/workbench/parts/maix/fpioa-config/common/types';
 
 export class SourceGenerator implements IGenerator {
-	filename = 'fpioa-config.cpp';
+	filename = 'fpioa-config.c';
 
 	public generate(config: IChipGeneratorConfig, funcPinMap: IFuncIOMap): string {
 		const generatedConfigSections: string[] = [];
