@@ -3,28 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-.monaco-workbench-container {
-	position: absolute;
-	height: 100%;
-    width: 100%;
-}
-
-.maix-container {
-	min-height: 480px;
-    min-width: 600px;
-    top: 50%;
-    left: 50%;
-    position: absolute;
-    background-color: rgb(230, 230, 230);
-    transform: translate3d(-50%,-50%,0);
-}
-
-.maix-titlebar {
-	height: 30px;
-	background-color: whitesmoke;
-	font-size: 20px;
-}
-
 .monaco-workbench {
 	font-size: 13px;
 	line-height: 1.4em;
@@ -36,14 +14,6 @@
 .monaco-workbench > .part {
 	position: absolute;
 	box-sizing:	border-box;
-}
-
-.monaco-workbench .monaco-action-bar .monaco-select-box {
-	margin-top: 10px; /* Center the select box */
-}
-
-.monaco-workbench.windows .monaco-action-bar .monaco-select-box {
-	margin-top: 8px; /* Center the select box */
 }
 
 .monaco-font-aliasing-antialiased {

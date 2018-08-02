@@ -30,6 +30,7 @@ import { ICodeEditorService } from 'vs/editor/browser/services/codeEditorService
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
 import { ITextModel, TextModelResolvedOptions } from 'vs/editor/common/model';
 import { ViewLineRenderingData } from 'vs/editor/common/viewModel/viewModel';
+import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
 
 const DIFF_LINES_PADDING = 3;
 
@@ -124,12 +125,12 @@ export class DiffReview extends Disposable {
 			}
 			this._render();
 		}));
-		this._register(diffEditor.getOriginalEditor().onDidFocusEditor(() => {
+		this._register(diffEditor.getOriginalEditor().onDidFocusEditorWidget(() => {
 			if (this._isVisible) {
 				this.hide();
 			}
 		}));
-		this._register(diffEditor.getModifiedEditor().onDidFocusEditor(() => {
+		this._register(diffEditor.getModifiedEditor().onDidFocusEditorWidget(() => {
 			if (this._isVisible) {
 				this.hide();
 			}
@@ -609,7 +610,7 @@ export class DiffReview extends Disposable {
 				'That encodes that at original line 154 (which is now line 159), 12 lines were removed/changed with 39 lines.',
 				'Variables 0 and 1 refer to the diff index out of total number of diffs.',
 				'Variables 2 and 4 will be numbers (a line number).',
-				'Variables 3 and 4 will be "no lines", "1 line" or "X lines", localized separately.'
+				'Variables 3 and 5 will be "no lines", "1 line" or "X lines", localized separately.'
 			]
 		}, "Difference {0} of {1}: original {2}, {3}, modified {4}, {5}", (diffIndex + 1), this._diffs.length, minOriginalLine, originalChangedLinesCntAria, minModifiedLine, modifiedChangedLinesCntAria));
 		header.appendChild(cell);
@@ -769,6 +770,7 @@ export class DiffReview extends Disposable {
 		const r = renderViewLine(new RenderLineInput(
 			(config.fontInfo.isMonospace && !config.viewInfo.disableMonospaceOptimizations),
 			lineContent,
+			false,
 			isBasicASCII,
 			containsRTL,
 			0,
@@ -809,7 +811,8 @@ class DiffReviewNext extends EditorAction {
 			precondition: ContextKeyExpr.has('isInDiffEditor'),
 			kbOpts: {
 				kbExpr: null,
-				primary: KeyCode.F7
+				primary: KeyCode.F7,
+				weight: KeybindingWeight.EditorContrib
 			}
 		});
 	}
@@ -831,7 +834,8 @@ class DiffReviewPrev extends EditorAction {
 			precondition: ContextKeyExpr.has('isInDiffEditor'),
 			kbOpts: {
 				kbExpr: null,
-				primary: KeyMod.Shift | KeyCode.F7
+				primary: KeyMod.Shift | KeyCode.F7,
+				weight: KeybindingWeight.EditorContrib
 			}
 		});
 	}

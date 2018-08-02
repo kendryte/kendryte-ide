@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict';
 import { TextDocument, CancellationToken, Position, Range } from 'vscode-languageserver';
-import { FoldingRange } from 'vscode-languageserver-protocol-foldingprovider';
+import { FoldingRange } from 'vscode-languageserver-types';
 import { LanguageModes } from './languageModes';
 
 export function getFoldingRanges(languageModes: LanguageModes, document: TextDocument, maxRanges: number | undefined, cancellationToken: CancellationToken | null): FoldingRange[] {
@@ -87,5 +87,14 @@ function limitRanges(ranges: FoldingRange[], maxRanges: number) {
 			entries += n;
 		}
 	}
-	return ranges.filter((r, index) => (typeof nestingLevels[index] === 'number') && nestingLevels[index] < maxLevel);
+	let result = [];
+	for (let i = 0; i < ranges.length; i++) {
+		let level = nestingLevels[i];
+		if (typeof level === 'number') {
+			if (level < maxLevel || (level === maxLevel && entries++ < maxRanges)) {
+				result.push(ranges[i]);
+			}
+		}
+	}
+	return result;
 }
