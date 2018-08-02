@@ -41,6 +41,6 @@
 	"npm.exclude": "**/extensions/**",
 	"emmet.excludeLanguages": [],
 	"typescript.preferences.importModuleSpecifier": "non-relative",
-	"files.autoSave": "onFocusChange",
-	"maix.config.sample": "B"
+	"typescript.preferences.quoteStyle": "single"
+
 }

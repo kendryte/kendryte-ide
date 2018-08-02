@@ -15,6 +15,10 @@ import 'vs/workbench/services/configuration/common/configurationExtensionPoint';
 // Editor
 import 'vs/editor/editor.all';
 
+// Platform
+import 'vs/platform/widget/browser/contextScopedHistoryWidget';
+import 'vs/platform/uriDisplay/electron-browser/uriDisplay.contribution';
+
 // Menus/Actions
 import 'vs/workbench/services/actions/electron-browser/menusExtensionPoint';
 
@@ -50,7 +54,8 @@ import 'vs/workbench/parts/files/electron-browser/files.contribution';
 import 'vs/workbench/parts/backup/common/backup.contribution';
 
 import 'vs/workbench/parts/stats/node/stats.contribution';
-import 'vs/workbench/parts/cache/node/cache.contribution';
+
+import 'vs/workbench/parts/splash/electron-browser/partsSplash.contribution';
 
 import 'vs/workbench/parts/search/electron-browser/search.contribution';
 import 'vs/workbench/parts/search/browser/searchView'; // can be packaged separately
@@ -62,10 +67,10 @@ import 'vs/workbench/parts/scm/electron-browser/scmViewlet'; // can be packaged 
 import 'vs/workbench/parts/debug/electron-browser/debug.contribution';
 import 'vs/workbench/parts/debug/browser/debugQuickOpen';
 import 'vs/workbench/parts/debug/electron-browser/repl';
-import 'vs/workbench/parts/debug/browser/debugEditorActions';
 import 'vs/workbench/parts/debug/browser/debugViewlet'; // can be packaged separately
 
 import 'vs/workbench/parts/markers/electron-browser/markers.contribution';
+import 'vs/workbench/parts/comments/electron-browser/comments.contribution';
 
 import 'vs/workbench/parts/html/electron-browser/html.contribution';
 
@@ -136,5 +141,10 @@ import 'vs/workbench/parts/watermark/electron-browser/watermark';
 
 import 'vs/workbench/parts/welcome/overlay/browser/welcomeOverlay';
 
+import 'vs/workbench/parts/outline/electron-browser/outline.contribution';
+
+import 'vs/workbench/parts/navigation/common/navigation.contribution';
+
 // services
 import 'vs/workbench/services/bulkEdit/electron-browser/bulkEditService';
+import 'vs/workbench/parts/experiments/electron-browser/experiments.contribution';

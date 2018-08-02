@@ -37,7 +37,7 @@ export class OpenRawDefaultSettingsAction extends Action {
 export class OpenSettings2Action extends Action {
 
 	public static readonly ID = 'workbench.action.openSettings2';
-	public static readonly LABEL = nls.localize('openSettings2', "Open Settings (Experimental)");
+	public static readonly LABEL = nls.localize('openSettings2', "Open Settings (Preview)");
 
 	constructor(
 		id: string,
@@ -122,6 +122,24 @@ export class OpenGlobalKeybindingsFileAction extends Action {
 
 	public run(event?: any): TPromise<any> {
 		return this.preferencesService.openGlobalKeybindingSettings(true);
+	}
+}
+
+export class OpenDefaultKeybindingsFileAction extends Action {
+
+	public static readonly ID = 'workbench.action.openDefaultKeybindingsFile';
+	public static readonly LABEL = nls.localize('openDefaultKeybindingsFile', "Open Default Keyboard Shortcuts File");
+
+	constructor(
+		id: string,
+		label: string,
+		@IPreferencesService private preferencesService: IPreferencesService
+	) {
+		super(id, label);
+	}
+
+	public run(event?: any): TPromise<any> {
+		return this.preferencesService.openDefaultKeybindingsFile();
 	}
 }
 

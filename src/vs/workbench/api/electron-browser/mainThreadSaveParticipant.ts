@@ -24,7 +24,7 @@ import { EditOperation } from 'vs/editor/common/core/editOperation';
 import { extHostCustomer } from 'vs/workbench/api/electron-browser/extHostCustomers';
 import { IEditorWorkerService } from 'vs/editor/common/services/editorWorkerService';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
-import { IProgressService2, ProgressLocation } from 'vs/platform/progress/common/progress';
+import { IProgressService2, ProgressLocation } from 'vs/workbench/services/progress/common/progress';
 import { localize } from 'vs/nls';
 import { isFalsyOrEmpty } from 'vs/base/common/arrays';
 import { ILogService } from 'vs/platform/log/common/log';
@@ -215,16 +215,20 @@ class FormatOnSaveParticipant implements ISaveParticipantParticipant {
 		const timeout = this._configurationService.getValue('editor.formatOnSaveTimeout', { overrideIdentifier: model.getLanguageIdentifier().language, resource: editorModel.getResource() });
 
 		return new Promise<ISingleEditOperation[]>((resolve, reject) => {
-			setTimeout(() => reject(localize('timeout.formatOnSave', "Aborted format on save after {0}ms", timeout)), timeout);
-			getDocumentFormattingEdits(model, { tabSize, insertSpaces })
-				.then(edits => this._editorWorkerService.computeMoreMinimalEdits(model.uri, edits))
-				.then(resolve, err => {
-					if (!(err instanceof Error) || err.name !== NoProviderError.Name) {
-						reject(err);
-					} else {
-						resolve();
-					}
-				});
+			let request = getDocumentFormattingEdits(model, { tabSize, insertSpaces });
+
+			setTimeout(() => {
+				reject(localize('timeout.formatOnSave', "Aborted format on save after {0}ms", timeout));
+				request.cancel();
+			}, timeout);
+
+			request.then(edits => this._editorWorkerService.computeMoreMinimalEdits(model.uri, edits)).then(resolve, err => {
+				if (!(err instanceof Error) || err.name !== NoProviderError.Name) {
+					reject(err);
+				} else {
+					resolve();
+				}
+			});
 
 		}).then(edits => {
 			if (!isFalsyOrEmpty(edits) && versionNow === model.getVersionId()) {
@@ -307,7 +311,10 @@ class CodeActionOnParticipant implements ISaveParticipant {
 	}
 
 	private async getActionsToRun(model: ITextModel, codeActionsOnSave: CodeActionKind[]) {
-		const actions = await getCodeActions(model, model.getFullModelRange(), { kind: CodeActionKind.Source, includeSourceActions: true });
+		const actions = await getCodeActions(model, model.getFullModelRange(), {
+			type: 'auto',
+			filter: { kind: CodeActionKind.Source, includeSourceActions: true },
+		});
 		const actionsToRun = actions.filter(returnedAction => returnedAction.kind && codeActionsOnSave.some(onSaveKind => onSaveKind.contains(returnedAction.kind)));
 		return actionsToRun;
 	}

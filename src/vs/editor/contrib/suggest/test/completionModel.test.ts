@@ -107,6 +107,35 @@ suite('CompletionModel', function () {
 		assert.ok(complete[0] === completeItem);
 	});
 
+	test('Fuzzy matching of snippets stopped working with inline snippet suggestions #49895', function () {
+		const completeItem1 = createSuggestItem('foobar1', 1, undefined, false, { lineNumber: 1, column: 2 });
+		const completeItem2 = createSuggestItem('foobar2', 1, undefined, false, { lineNumber: 1, column: 2 });
+		const completeItem3 = createSuggestItem('foobar3', 1, undefined, false, { lineNumber: 1, column: 2 });
+		const completeItem4 = createSuggestItem('foobar4', 1, undefined, false, { lineNumber: 1, column: 2 });
+		const completeItem5 = createSuggestItem('foobar5', 1, undefined, false, { lineNumber: 1, column: 2 });
+		const incompleteItem1 = createSuggestItem('foofoo1', 1, undefined, true, { lineNumber: 1, column: 2 });
+
+		const model = new CompletionModel(
+			[
+				completeItem1,
+				completeItem2,
+				completeItem3,
+				completeItem4,
+				completeItem5,
+				incompleteItem1,
+			], 2, { leadingLineContent: 'f', characterCountDelta: 0 }
+		);
+		assert.equal(model.incomplete.size, 1);
+		assert.equal(model.items.length, 6);
+
+		const { incomplete } = model;
+		const complete = model.adopt(incomplete);
+
+		assert.equal(incomplete.size, 1);
+		assert.ok(incomplete.has(incompleteItem1.support));
+		assert.equal(complete.length, 5);
+	});
+
 	test('proper current word when length=0, #16380', function () {
 
 		model = new CompletionModel([
@@ -138,7 +167,7 @@ suite('CompletionModel', function () {
 		], 1, {
 				leadingLineContent: 's',
 				characterCountDelta: 0
-			}, 'top');
+			}, { snippets: 'top', snippetsPreventQuickSuggestions: true, filterGraceful: true });
 
 		assert.equal(model.items.length, 2);
 		const [a, b] = model.items;
@@ -157,7 +186,7 @@ suite('CompletionModel', function () {
 		], 1, {
 				leadingLineContent: 's',
 				characterCountDelta: 0
-			}, 'bottom');
+			}, { snippets: 'bottom', snippetsPreventQuickSuggestions: true, filterGraceful: true });
 
 		assert.equal(model.items.length, 2);
 		const [a, b] = model.items;
@@ -175,7 +204,7 @@ suite('CompletionModel', function () {
 		], 1, {
 				leadingLineContent: 's',
 				characterCountDelta: 0
-			}, 'inline');
+			}, { snippets: 'inline', snippetsPreventQuickSuggestions: true, filterGraceful: true });
 
 		assert.equal(model.items.length, 2);
 		const [a, b] = model.items;
@@ -238,7 +267,7 @@ suite('CompletionModel', function () {
 		], 1, {
 				leadingLineContent: '',
 				characterCountDelta: 0
-			}, 'inline');
+			});
 
 		assert.equal(model.items.length, 5);
 
@@ -265,7 +294,7 @@ suite('CompletionModel', function () {
 		], 1, {
 				leadingLineContent: '',
 				characterCountDelta: 0
-			}, 'inline');
+			});
 
 		// query gets longer, narrow down the narrow-down'ed-set from before
 		model.lineContext = { leadingLineContent: 'rlut', characterCountDelta: 4 };
@@ -287,7 +316,7 @@ suite('CompletionModel', function () {
 		], 1, {
 				leadingLineContent: '',
 				characterCountDelta: 0
-			}, 'inline');
+			});
 
 		model.lineContext = { leadingLineContent: 'form', characterCountDelta: 4 };
 		assert.equal(model.items.length, 5);

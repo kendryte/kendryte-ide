@@ -3,17 +3,15 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import * as nls from 'vs/nls';
 import { alert } from 'vs/base/browser/ui/aria/aria';
 import { KeyCode, KeyMod, KeyChord } from 'vs/base/common/keyCodes';
 import * as platform from 'vs/base/common/platform';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { IEditorService } from 'vs/platform/editor/common/editor';
+import { ICodeEditorService } from 'vs/editor/browser/services/codeEditorService';
 import { Range } from 'vs/editor/common/core/range';
 import { registerEditorAction, IActionOptions, ServicesAccessor, EditorAction } from 'vs/editor/browser/editorExtensions';
-import { Location } from 'vs/editor/common/modes';
+import { DefinitionLink } from 'vs/editor/common/modes';
 import { getDefinitionsAtPosition, getImplementationsAtPosition, getTypeDefinitionsAtPosition } from './goToDefinition';
 import { ReferencesController } from 'vs/editor/contrib/referenceSearch/referencesController';
 import { ReferencesModel } from 'vs/editor/contrib/referenceSearch/referencesModel';
@@ -26,6 +24,8 @@ import { IProgressService } from 'vs/platform/progress/common/progress';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
 import { ITextModel, IWordAtPosition } from 'vs/editor/common/model';
 import { INotificationService } from 'vs/platform/notification/common/notification';
+import { createCancelablePromise } from 'vs/base/common/async';
+import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
 
 export class DefinitionActionConfig {
 
@@ -50,7 +50,7 @@ export class DefinitionAction extends EditorAction {
 
 	public run(accessor: ServicesAccessor, editor: ICodeEditor): TPromise<void> {
 		const notificationService = accessor.get(INotificationService);
-		const editorService = accessor.get(IEditorService);
+		const editorService = accessor.get(ICodeEditorService);
 		const progressService = accessor.get(IProgressService);
 
 		const model = editor.getModel();
@@ -66,7 +66,7 @@ export class DefinitionAction extends EditorAction {
 			// * remove falsy references
 			// * find reference at the current pos
 			let idxOfCurrent = -1;
-			let result: Location[] = [];
+			const result: DefinitionLink[] = [];
 			for (let i = 0; i < references.length; i++) {
 				let reference = references[i];
 				if (!reference || !reference.range) {
@@ -95,7 +95,7 @@ export class DefinitionAction extends EditorAction {
 			} else if (result.length === 1 && idxOfCurrent !== -1) {
 				// only the position at which we are -> adjust selection
 				let [current] = result;
-				this._openReference(editorService, current, false);
+				this._openReference(editor, editorService, current, false);
 
 			} else {
 				// handle multile results
@@ -111,7 +111,7 @@ export class DefinitionAction extends EditorAction {
 		return definitionPromise;
 	}
 
-	protected _getDeclarationsAtPosition(model: ITextModel, position: corePosition.Position): TPromise<Location[]> {
+	protected _getDeclarationsAtPosition(model: ITextModel, position: corePosition.Position): TPromise<DefinitionLink[]> {
 		return getDefinitionsAtPosition(model, position);
 	}
 
@@ -125,7 +125,7 @@ export class DefinitionAction extends EditorAction {
 		return model.references.length > 1 && nls.localize('meta.title', " – {0} definitions", model.references.length);
 	}
 
-	private _onResult(editorService: IEditorService, editor: ICodeEditor, model: ReferencesModel) {
+	private _onResult(editorService: ICodeEditorService, editor: ICodeEditor, model: ReferencesModel) {
 
 		const msg = model.getAriaMessage();
 		alert(msg);
@@ -134,7 +134,7 @@ export class DefinitionAction extends EditorAction {
 			this._openInPeek(editorService, editor, model);
 		} else {
 			let next = model.nearestReference(editor.getModel().uri, editor.getPosition());
-			this._openReference(editorService, next, this._configuration.openToSide).then(editor => {
+			this._openReference(editor, editorService, next, this._configuration.openToSide).then(editor => {
 				if (editor && model.references.length > 1) {
 					this._openInPeek(editorService, editor, model);
 				} else {
@@ -144,30 +144,28 @@ export class DefinitionAction extends EditorAction {
 		}
 	}
 
-	private _openReference(editorService: IEditorService, reference: Location, sideBySide: boolean): TPromise<ICodeEditor> {
-		let { uri, range } = reference;
-		return editorService.openEditor({
+	private _openReference(editor: ICodeEditor, editorService: ICodeEditorService, reference: DefinitionLink, sideBySide: boolean): TPromise<ICodeEditor> {
+		const { uri, range } = reference;
+		return editorService.openCodeEditor({
 			resource: uri,
 			options: {
 				selection: Range.collapseToStart(range),
-				revealIfVisible: true,
+				revealIfOpened: true,
 				revealInCenterIfOutsideViewport: true
 			}
-		}, sideBySide).then(editor => {
-			return editor && <ICodeEditor>editor.getControl();
-		});
+		}, editor, sideBySide);
 	}
 
-	private _openInPeek(editorService: IEditorService, target: ICodeEditor, model: ReferencesModel) {
+	private _openInPeek(editorService: ICodeEditorService, target: ICodeEditor, model: ReferencesModel) {
 		let controller = ReferencesController.get(target);
 		if (controller) {
-			controller.toggleWidget(target.getSelection(), TPromise.as(model), {
+			controller.toggleWidget(target.getSelection(), createCancelablePromise(_ => Promise.resolve(model)), {
 				getMetaTitle: (model) => {
 					return this._getMetaTitle(model);
 				},
 				onGoto: (reference) => {
 					controller.closeWidget();
-					return this._openReference(editorService, reference, false);
+					return this._openReference(target, editorService, reference, false);
 				}
 			});
 		} else {
@@ -194,7 +192,8 @@ export class GoToDefinitionAction extends DefinitionAction {
 				EditorContextKeys.isInEmbeddedEditor.toNegated()),
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
-				primary: goToDeclarationKb
+				primary: goToDeclarationKb,
+				weight: KeybindingWeight.EditorContrib
 			},
 			menuOpts: {
 				group: 'navigation',
@@ -218,7 +217,8 @@ export class OpenDefinitionToSideAction extends DefinitionAction {
 				EditorContextKeys.isInEmbeddedEditor.toNegated()),
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
-				primary: KeyChord(KeyMod.CtrlCmd | KeyCode.KEY_K, goToDeclarationKb)
+				primary: KeyChord(KeyMod.CtrlCmd | KeyCode.KEY_K, goToDeclarationKb),
+				weight: KeybindingWeight.EditorContrib
 			}
 		});
 	}
@@ -237,7 +237,8 @@ export class PeekDefinitionAction extends DefinitionAction {
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
 				primary: KeyMod.Alt | KeyCode.F12,
-				linux: { primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.F10 }
+				linux: { primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.F10 },
+				weight: KeybindingWeight.EditorContrib
 			},
 			menuOpts: {
 				group: 'navigation',
@@ -248,7 +249,7 @@ export class PeekDefinitionAction extends DefinitionAction {
 }
 
 export class ImplementationAction extends DefinitionAction {
-	protected _getDeclarationsAtPosition(model: ITextModel, position: corePosition.Position): TPromise<Location[]> {
+	protected _getDeclarationsAtPosition(model: ITextModel, position: corePosition.Position): TPromise<DefinitionLink[]> {
 		return getImplementationsAtPosition(model, position);
 	}
 
@@ -277,7 +278,8 @@ export class GoToImplementationAction extends ImplementationAction {
 				EditorContextKeys.isInEmbeddedEditor.toNegated()),
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
-				primary: KeyMod.CtrlCmd | KeyCode.F12
+				primary: KeyMod.CtrlCmd | KeyCode.F12,
+				weight: KeybindingWeight.EditorContrib
 			}
 		});
 	}
@@ -297,14 +299,15 @@ export class PeekImplementationAction extends ImplementationAction {
 				EditorContextKeys.isInEmbeddedEditor.toNegated()),
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
-				primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.F12
+				primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.F12,
+				weight: KeybindingWeight.EditorContrib
 			}
 		});
 	}
 }
 
 export class TypeDefinitionAction extends DefinitionAction {
-	protected _getDeclarationsAtPosition(model: ITextModel, position: corePosition.Position): TPromise<Location[]> {
+	protected _getDeclarationsAtPosition(model: ITextModel, position: corePosition.Position): TPromise<DefinitionLink[]> {
 		return getTypeDefinitionsAtPosition(model, position);
 	}
 
@@ -333,7 +336,8 @@ export class GoToTypeDefinitionAction extends TypeDefinitionAction {
 				EditorContextKeys.isInEmbeddedEditor.toNegated()),
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
-				primary: 0
+				primary: 0,
+				weight: KeybindingWeight.EditorContrib
 			},
 			menuOpts: {
 				group: 'navigation',
@@ -357,7 +361,8 @@ export class PeekTypeDefinitionAction extends TypeDefinitionAction {
 				EditorContextKeys.isInEmbeddedEditor.toNegated()),
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
-				primary: 0
+				primary: 0,
+				weight: KeybindingWeight.EditorContrib
 			}
 		});
 	}

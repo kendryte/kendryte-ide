@@ -57,17 +57,18 @@ export class CompositeBar extends Widget implements ICompositeBar {
 		@IContextMenuService private contextMenuService: IContextMenuService
 	) {
 		super();
+
 		this.model = new CompositeBarModel(options);
 		this.storedState = this.loadCompositeItemsFromStorage();
 		this.visibleComposites = [];
 		this.compositeSizeInBar = new Map<string, number>();
 	}
 
-	public getCompositesFromStorage(): string[] {
+	getCompositesFromStorage(): string[] {
 		return this.storedState.map(s => s.id);
 	}
 
-	public create(parent: HTMLElement): HTMLElement {
+	create(parent: HTMLElement): HTMLElement {
 		const actionBarDiv = parent.appendChild($('.composite-bar'));
 		this.compositeSwitcherBar = this._register(new ActionBar(actionBarDiv, {
 			actionItemProvider: (action: Action) => {
@@ -102,7 +103,7 @@ export class CompositeBar extends Widget implements ICompositeBar {
 		return actionBarDiv;
 	}
 
-	public layout(dimension: Dimension): void {
+	layout(dimension: Dimension): void {
 		this.dimension = dimension;
 		if (dimension.height === 0 || dimension.width === 0) {
 			// Do not layout if not visible. Otherwise the size measurment would be computed wrongly
@@ -118,10 +119,10 @@ export class CompositeBar extends Widget implements ICompositeBar {
 		this.updateCompositeSwitcher();
 	}
 
-	public addComposite({ id, name, order }: { id: string; name: string, order: number }, open: boolean): void {
+	addComposite({ id, name, order }: { id: string; name: string, order: number }): void {
 		const state = this.storedState.filter(s => s.id === id)[0];
 		const pinned = state ? state.pinned : true;
-		let index = this.model.items.length;
+		let index = order >= 0 ? order : this.model.items.length;
 
 		if (state) {
 			// Find the index by looking its previous item
@@ -137,16 +138,17 @@ export class CompositeBar extends Widget implements ICompositeBar {
 		}
 
 		// Add to the model
-		if (this.addToModel(id, name, order, pinned, index)) {
-			if (open) {
-				this.pin(id, true);
+		if (this.model.add(id, name, order, index)) {
+			this.computeSizes([this.model.findItem(id)]);
+			if (pinned) {
+				this.pin(id);
 			} else {
 				this.updateCompositeSwitcher();
 			}
 		}
 	}
 
-	public removeComposite(id: string): void {
+	removeComposite(id: string): void {
 
 		// If it pinned, unpin it first
 		if (this.isPinned(id)) {
@@ -159,7 +161,7 @@ export class CompositeBar extends Widget implements ICompositeBar {
 		}
 	}
 
-	public activateComposite(id: string): void {
+	activateComposite(id: string): void {
 		const previousActiveItem = this.model.activeItem;
 		if (this.model.activate(id)) {
 			// Update if current composite is neither visible nor pinned
@@ -170,7 +172,7 @@ export class CompositeBar extends Widget implements ICompositeBar {
 		}
 	}
 
-	public deactivateComposite(id: string): void {
+	deactivateComposite(id: string): void {
 		const previousActiveItem = this.model.activeItem;
 		if (this.model.deactivate()) {
 			if (previousActiveItem && !previousActiveItem.pinned) {
@@ -179,7 +181,7 @@ export class CompositeBar extends Widget implements ICompositeBar {
 		}
 	}
 
-	public showActivity(compositeId: string, badge: IBadge, clazz?: string, priority?: number): IDisposable {
+	showActivity(compositeId: string, badge: IBadge, clazz?: string, priority?: number): IDisposable {
 		if (!badge) {
 			throw illegalArgument('badge');
 		}
@@ -193,7 +195,7 @@ export class CompositeBar extends Widget implements ICompositeBar {
 		return toDisposable(() => this.model.removeActivity(compositeId, activity));
 	}
 
-	public pin(compositeId: string, open?: boolean): void {
+	pin(compositeId: string, open?: boolean): void {
 		if (this.model.setPinned(compositeId, true)) {
 			this.updateCompositeSwitcher();
 
@@ -204,7 +206,7 @@ export class CompositeBar extends Widget implements ICompositeBar {
 		}
 	}
 
-	public unpin(compositeId: string): void {
+	unpin(compositeId: string): void {
 		if (this.model.setPinned(compositeId, false)) {
 
 			this.updateCompositeSwitcher();
@@ -237,34 +239,24 @@ export class CompositeBar extends Widget implements ICompositeBar {
 			else {
 				this.options.openComposite(this.visibleComposites.filter(cid => cid !== compositeId)[0]);
 			}
-
 		}
-
 	}
 
-	public isPinned(compositeId: string): boolean {
+	isPinned(compositeId: string): boolean {
 		const item = this.model.findItem(compositeId);
 		return item && item.pinned;
 	}
 
-	public move(compositeId: string, toCompositeId: string): void {
+	move(compositeId: string, toCompositeId: string): void {
 		if (this.model.move(compositeId, toCompositeId)) {
 			// timeout helps to prevent artifacts from showing up
 			setTimeout(() => this.updateCompositeSwitcher(), 0);
 		}
 	}
 
-	public getAction(compositeId): ActivityAction {
+	getAction(compositeId): ActivityAction {
 		const item = this.model.findItem(compositeId);
 		return item && item.activityAction;
-	}
-
-	private addToModel(id: string, name: string, order: number, pinned: boolean, index: number): boolean {
-		if (this.model.add(id, name, order, pinned, index)) {
-			this.computeSizes([this.model.findItem(id)]);
-			return true;
-		}
-		return false;
 	}
 
 	private computeSizes(items: ICompositeBarItem[]): void {
@@ -482,7 +474,7 @@ class CompositeBarModel {
 		};
 	}
 
-	add(id: string, name: string, order: number, pinned: boolean, index: number): boolean {
+	add(id: string, name: string, order: number, index: number): boolean {
 		const item = this.findItem(id);
 		if (item) {
 			item.order = order;
@@ -495,7 +487,7 @@ class CompositeBarModel {
 					index++;
 				}
 			}
-			this.items.splice(index, 0, this.createCompositeBarItem(id, name, order, pinned));
+			this.items.splice(index, 0, this.createCompositeBarItem(id, name, order, false));
 			return true;
 		}
 	}

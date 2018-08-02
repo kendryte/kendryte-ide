@@ -293,6 +293,7 @@ export interface ISuggestion {
 	documentation?: string | IMarkdownString;
 	filterText?: string;
 	sortText?: string;
+	preselect?: boolean;
 	noAutoAccept?: boolean;
 	commitCharacters?: string[];
 	overwriteBefore?: number;
@@ -351,8 +352,17 @@ export interface CodeAction {
 /**
  * @internal
  */
+export enum CodeActionTrigger {
+	Automatic = 1,
+	Manual = 2,
+}
+
+/**
+ * @internal
+ */
 export interface CodeActionContext {
 	only?: string;
+	trigger: CodeActionTrigger;
 }
 
 /**
@@ -528,6 +538,13 @@ export interface Location {
  */
 export type Definition = Location | Location[];
 
+export interface DefinitionLink {
+	origin?: IRange;
+	uri: URI;
+	range: IRange;
+	selectionRange?: IRange;
+}
+
 /**
  * The definition provider interface defines the contract between extensions and
  * the [go to definition](https://code.visualstudio.com/docs/editor/editingevolved#_go-to-definition)
@@ -537,7 +554,7 @@ export interface DefinitionProvider {
 	/**
 	 * Provide the definition of the symbol at the given position and document.
 	 */
-	provideDefinition(model: model.ITextModel, position: Position, token: CancellationToken): Definition | Thenable<Definition>;
+	provideDefinition(model: model.ITextModel, position: Position, token: CancellationToken): Definition | DefinitionLink[] | Thenable<Definition | DefinitionLink[]>;
 }
 
 /**
@@ -548,7 +565,7 @@ export interface ImplementationProvider {
 	/**
 	 * Provide the implementation of the symbol at the given position and document.
 	 */
-	provideImplementation(model: model.ITextModel, position: Position, token: CancellationToken): Definition | Thenable<Definition>;
+	provideImplementation(model: model.ITextModel, position: Position, token: CancellationToken): Definition | DefinitionLink[] | Thenable<Definition | DefinitionLink[]>;
 }
 
 /**
@@ -559,7 +576,7 @@ export interface TypeDefinitionProvider {
 	/**
 	 * Provide the type definition of the symbol at the given position and document.
 	 */
-	provideTypeDefinition(model: model.ITextModel, position: Position, token: CancellationToken): Definition | Thenable<Definition>;
+	provideTypeDefinition(model: model.ITextModel, position: Position, token: CancellationToken): Definition | DefinitionLink[] | Thenable<Definition | DefinitionLink[]>;
 }
 
 /**
@@ -629,57 +646,32 @@ export const symbolKindToCssClass = (function () {
 	_fromMapping[SymbolKind.TypeParameter] = 'type-parameter';
 
 	return function toCssClassName(kind: SymbolKind): string {
-		return _fromMapping[kind] || 'property';
+		return `symbol-icon ${_fromMapping[kind] || 'property'}`;
 	};
 })();
 
-/**
- * @internal
- */
-export interface IOutline {
-	entries: SymbolInformation[];
-}
-/**
- * Represents information about programming constructs like variables, classes,
- * interfaces etc.
- */
-export interface SymbolInformation {
-	/**
-	 * The name of this symbol.
-	 */
+export interface DocumentSymbol {
 	name: string;
-	/**
-	 * The detail of this symbol.
-	 */
-	detail?: string;
-	/**
-	 * The name of the symbol containing this symbol.
-	 */
-	containerName?: string;
-	/**
-	 * The kind of this symbol.
-	 */
+	detail: string;
 	kind: SymbolKind;
-	/**
-	 * The location of this symbol.
-	 */
-	location: Location;
-	/**
-	 * The defining range of this symbol.
-	 */
-	definingRange: IRange;
-
-	children?: SymbolInformation[];
+	containerName?: string;
+	range: IRange;
+	selectionRange: IRange;
+	children?: DocumentSymbol[];
 }
+
 /**
  * The document symbol provider interface defines the contract between extensions and
  * the [go to symbol](https://code.visualstudio.com/docs/editor/editingevolved#_goto-symbol)-feature.
  */
 export interface DocumentSymbolProvider {
+
+	displayName?: string;
+
 	/**
 	 * Provide symbol information for the given document.
 	 */
-	provideDocumentSymbols(model: model.ITextModel, token: CancellationToken): SymbolInformation[] | Thenable<SymbolInformation[]>;
+	provideDocumentSymbols(model: model.ITextModel, token: CancellationToken): DocumentSymbol[] | Thenable<DocumentSymbol[]>;
 }
 
 export interface TextEdit {
@@ -914,6 +906,7 @@ export function isResourceTextEdit(thing: any): thing is ResourceTextEdit {
 export interface ResourceFileEdit {
 	oldUri: URI;
 	newUri: URI;
+	options: { overwrite?: boolean, ignoreIfNotExists?: boolean, ignoreIfExists?: boolean, recursive?: boolean };
 }
 
 export interface ResourceTextEdit {
@@ -944,6 +937,81 @@ export interface Command {
 	tooltip?: string;
 	arguments?: any[];
 }
+
+export interface CommentInfo {
+	owner: number;
+	threads: CommentThread[];
+	commentingRanges?: IRange[];
+	reply?: Command;
+}
+
+export enum CommentThreadCollapsibleState {
+	/**
+	 * Determines an item is collapsed
+	 */
+	Collapsed = 0,
+	/**
+	 * Determines an item is expanded
+	 */
+	Expanded = 1
+}
+
+export interface CommentThread {
+	threadId: string;
+	resource: string;
+	range: IRange;
+	comments: Comment[];
+	collapsibleState?: CommentThreadCollapsibleState;
+	reply?: Command;
+}
+
+export interface NewCommentAction {
+	ranges: IRange[];
+	actions: Command[];
+}
+
+export interface Comment {
+	readonly commentId: string;
+	readonly body: IMarkdownString;
+	readonly userName: string;
+	readonly gravatar: string;
+	readonly command?: Command;
+}
+
+export interface CommentThreadChangedEvent {
+	readonly owner: number;
+	/**
+	 * Added comment threads.
+	 */
+	readonly added: CommentThread[];
+
+	/**
+	 * Removed comment threads.
+	 */
+	readonly removed: CommentThread[];
+
+	/**
+	 * Changed comment threads.
+	 */
+	readonly changed: CommentThread[];
+}
+
+
+export interface DocumentCommentProvider {
+	provideDocumentComments(resource: URI, token: CancellationToken): Promise<CommentInfo>;
+	createNewCommentThread(resource: URI, range: Range, text: string, token: CancellationToken): Promise<CommentThread>;
+	replyToCommentThread(resource: URI, range: Range, thread: CommentThread, text: string, token: CancellationToken): Promise<CommentThread>;
+	onDidChangeCommentThreads(): Event<CommentThreadChangedEvent>;
+}
+
+
+export interface WorkspaceCommentProvider {
+	provideWorkspaceComments(token: CancellationToken): Promise<CommentThread[]>;
+	createNewCommentThread(resource: URI, range: Range, text: string, token: CancellationToken): Promise<CommentThread>;
+	replyToCommentThread(resource: URI, range: Range, thread: CommentThread, text: string, token: CancellationToken): Promise<CommentThread>;
+	onDidChangeCommentThreads(): Event<CommentThreadChangedEvent>;
+}
+
 export interface ICodeLensSymbol {
 	range: IRange;
 	id?: string;

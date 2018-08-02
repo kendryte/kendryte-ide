@@ -9,9 +9,9 @@ import { Action, IAction } from 'vs/base/common/actions';
 import * as DOM from 'vs/base/browser/dom';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { IActionItem } from 'vs/base/browser/ui/actionbar/actionbar';
-import { PersistentViewsViewlet, ViewsViewletPanel } from 'vs/workbench/browser/parts/views/viewsViewlet';
+import { ViewContainerViewlet } from 'vs/workbench/browser/parts/views/viewsViewlet';
 import { IDebugService, VIEWLET_ID, State, VARIABLES_VIEW_ID, WATCH_VIEW_ID, CALLSTACK_VIEW_ID, BREAKPOINTS_VIEW_ID, IDebugConfiguration } from 'vs/workbench/parts/debug/common/debug';
-import { StartAction, ToggleReplAction, ConfigureAction, SelectAndStartAction, FocusSessionAction } from 'vs/workbench/parts/debug/browser/debugActions';
+import { StartAction, ToggleReplAction, ConfigureAction, AbstractDebugAction, SelectAndStartAction, FocusSessionAction } from 'vs/workbench/parts/debug/browser/debugActions';
 import { StartDebugActionItem, FocusSessionActionItem } from 'vs/workbench/parts/debug/browser/debugActionItems';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
@@ -21,21 +21,22 @@ import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IViewletService } from 'vs/workbench/services/viewlet/browser/viewlet';
-import { ViewLocation } from 'vs/workbench/common/views';
-import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IContextMenuService, IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { IDisposable, dispose } from 'vs/base/common/lifecycle';
 import { IPartService } from 'vs/workbench/services/part/common/partService';
 import { memoize } from 'vs/base/common/decorators';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { DebugActionsWidget } from 'vs/workbench/parts/debug/browser/debugActionsWidget';
+import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
+import { ViewletPanel } from 'vs/workbench/browser/parts/views/panelViewlet';
 
-export class DebugViewlet extends PersistentViewsViewlet {
+export class DebugViewlet extends ViewContainerViewlet {
 
 	private startDebugActionItem: StartDebugActionItem;
 	private progressRunner: IProgressRunner;
-	private breakpointView: ViewsViewletPanel;
+	private breakpointView: ViewletPanel;
 	private panelListeners = new Map<string, IDisposable>();
-	// private allActions: AbstractDebugAction[] = [];
+	private allActions: AbstractDebugAction[] = [];
 
 	constructor(
 		@IPartService partService: IPartService,
@@ -46,30 +47,29 @@ export class DebugViewlet extends PersistentViewsViewlet {
 		@IWorkspaceContextService contextService: IWorkspaceContextService,
 		@IStorageService storageService: IStorageService,
 		@IThemeService themeService: IThemeService,
-		@IContextKeyService contextKeyService: IContextKeyService,
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IExtensionService extensionService: IExtensionService,
 		@IConfigurationService private configurationService: IConfigurationService,
-		// @IKeybindingService private keybindingService: IKeybindingService,
+		@IKeybindingService private keybindingService: IKeybindingService,
 		@IContextViewService private contextViewService: IContextViewService,
 	) {
-		super(VIEWLET_ID, ViewLocation.Debug, `${VIEWLET_ID}.state`, false, partService, telemetryService, storageService, instantiationService, themeService, contextService, contextKeyService, contextMenuService, extensionService);
+		super(VIEWLET_ID, `${VIEWLET_ID}.state`, false, partService, telemetryService, storageService, instantiationService, themeService, contextMenuService, extensionService, contextService);
 
 		this.progressRunner = null;
 
 		this._register(this.debugService.onDidChangeState(state => this.onDebugServiceStateChange(state)));
 		this._register(this.contextService.onDidChangeWorkbenchState(() => this.updateTitleArea()));
 		this._register(this.configurationService.onDidChangeConfiguration(e => {
-			if (e.affectsConfiguration('debug.toolbar')) {
+			if (e.affectsConfiguration('debug.toolBarLocation')) {
 				this.updateTitleArea();
 			}
 		}));
 	}
 
-	async create(parent: HTMLElement): TPromise<void> {
-		await super.create(parent);
-
-		DOM.addClass(parent, 'debug-viewlet');
+	create(parent: HTMLElement): TPromise<void> {
+		return super.create(parent).then(() => {
+			DOM.addClass(parent, 'debug-viewlet');
+		});
 	}
 
 	public focus(): void {
@@ -80,10 +80,10 @@ export class DebugViewlet extends PersistentViewsViewlet {
 		}
 	}
 
-	// @memoize
-	// private get startAction(): StartAction {
-	// 	return this._register(this.instantiationService.createInstance(StartAction, StartAction.ID, StartAction.LABEL));
-	// }
+	@memoize
+	private get startAction(): StartAction {
+		return this._register(this.instantiationService.createInstance(StartAction, StartAction.ID, StartAction.LABEL));
+	}
 
 	@memoize
 	private get configureAction(): ConfigureAction {
@@ -100,17 +100,17 @@ export class DebugViewlet extends PersistentViewsViewlet {
 		return this._register(this.instantiationService.createInstance(SelectAndStartAction, SelectAndStartAction.ID, nls.localize('startAdditionalSession', "Start Additional Session")));
 	}
 
-	// public getActions(): IAction[] {
-	// 	if (this.showInitialDebugActions) {
-	// 		return [this.startAction, this.configureAction, this.toggleReplAction];
-	// 	}
-	//
-	// 	return DebugActionsWidget.getActions(this.allActions, this.toUnbind, this.debugService, this.keybindingService, this.instantiationService);
-	// }
+	public getActions(): IAction[] {
+		if (this.showInitialDebugActions) {
+			return [this.startAction, this.configureAction, this.toggleReplAction];
+		}
+
+		return DebugActionsWidget.getActions(this.allActions, this.toDispose, this.debugService, this.keybindingService, this.instantiationService);
+	}
 
 	public get showInitialDebugActions(): boolean {
 		const state = this.debugService.state;
-		return state === State.Inactive || this.configurationService.getValue<IDebugConfiguration>('debug').toolbar !== 'dock';
+		return state === State.Inactive || this.configurationService.getValue<IDebugConfiguration>('debug').toolBarLocation !== 'docked';
 	}
 
 	public getSecondaryActions(): IAction[] {
@@ -151,12 +151,12 @@ export class DebugViewlet extends PersistentViewsViewlet {
 			this.progressRunner = null;
 		}
 
-		if (this.configurationService.getValue<IDebugConfiguration>('debug').toolbar === 'dock') {
+		if (this.configurationService.getValue<IDebugConfiguration>('debug').toolBarLocation === 'docked') {
 			this.updateTitleArea();
 		}
 	}
 
-	addPanels(panels: { panel: ViewsViewletPanel, size: number, index?: number }[]): void {
+	addPanels(panels: { panel: ViewletPanel, size: number, index?: number }[]): void {
 		super.addPanels(panels);
 
 		for (const { panel } of panels) {
@@ -170,7 +170,7 @@ export class DebugViewlet extends PersistentViewsViewlet {
 		}
 	}
 
-	removePanels(panels: ViewsViewletPanel[]): void {
+	removePanels(panels: ViewletPanel[]): void {
 		super.removePanels(panels);
 		for (const panel of panels) {
 			dispose(this.panelListeners.get(panel.id));
@@ -181,7 +181,7 @@ export class DebugViewlet extends PersistentViewsViewlet {
 	private updateBreakpointsMaxSize(): void {
 		if (this.breakpointView) {
 			// We need to update the breakpoints view since all other views are collapsed #25384
-			const allOtherCollapsed = this.views.every(view => !view.isExpanded() || view === this.breakpointView);
+			const allOtherCollapsed = this.panels.every(view => !view.isExpanded() || view === this.breakpointView);
 			this.breakpointView.maximumBodySize = allOtherCollapsed ? Number.POSITIVE_INFINITY : this.breakpointView.minimumBodySize;
 		}
 	}
@@ -226,7 +226,7 @@ export class FocusWatchViewAction extends Action {
 export class FocusCallStackViewAction extends Action {
 
 	static readonly ID = 'workbench.debug.action.focusCallStackView';
-	static LABEL = nls.localize({ comment: ['Debug is a noun in this context, not a verb.'], key: 'debugFocusCallStackView' }, 'Focus CallStack');
+	static LABEL = nls.localize({ comment: ['Debug is a noun in this context, not a verb.'], key: 'debugFocusCallStackView' }, 'Focus Call Stack');
 
 	constructor(id: string, label: string,
 		@IViewletService private viewletService: IViewletService
