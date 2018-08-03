@@ -112,6 +112,10 @@ export class FuncMapListItemRender implements IRenderer<IListFuncMapEntry, IFunc
 		template.$desc.innerText = entry.description;
 	}
 
+	public disposeElement(element: IListFuncMapEntry, index: number, templateData: IFuncMapTemplate): void {
+		// noop?
+	}
+
 	disposeTemplate(template: IFuncMapTemplate): void {
 		dispose(template.input, ...template.toDispose);
 	}

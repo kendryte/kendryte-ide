@@ -1,4 +1,4 @@
-import 'vs/css!./fpioaEditor';
+import 'vs/css!vs/workbench/parts/maix/fpioa-config/electron-browser/editor/fpioaEditor';
 import { BaseEditor } from 'vs/workbench/browser/parts/editor/baseEditor';
 import { addClass, Dimension } from 'vs/base/browser/dom';
 import { FpioaEditorInput } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/fpioaEditorInput';
@@ -14,9 +14,10 @@ import { FpioaRightPanel } from 'vs/workbench/parts/maix/fpioa-config/electron-b
 import { SplitView } from 'vs/base/browser/ui/splitview/splitview';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
-import { Position } from 'vs/platform/editor/common/editor';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { SAVE_FILE_COMMAND_ID } from 'vs/workbench/parts/files/electron-browser/fileCommands';
+import { CancellationToken } from 'vs/base/common/cancellation';
+import { IEditorGroup } from 'vs/workbench/services/group/common/editorGroupsService';
 
 export interface PinFuncSetEvent {
 	pin: string; // IPin
@@ -63,13 +64,13 @@ export class FpioaEditor extends BaseEditor {
 		}));
 	}
 
-	public async setInput(input: FpioaEditorInput, options?: EditorOptions): TPromise<void> {
+	public async setInput(input: FpioaEditorInput, options: EditorOptions, token: CancellationToken): TPromise<void> {
 		if (this.inputDispose.length) {
 			dispose(this.inputDispose);
 			this.inputDispose.length = 0;
 		}
 
-		super.setInput(input, options);
+		super.setInput(input, options, token);
 
 		this.inputDispose.push(this.input.onDidChange(() => this.updateModel()));
 
@@ -100,8 +101,8 @@ export class FpioaEditor extends BaseEditor {
 		this.rightPan.drawChip(chipName);
 	}
 
-	protected setEditorVisible(visible: boolean, position: Position = null): void {
-		super.setEditorVisible(visible, position);
+	protected setEditorVisible(visible: boolean, group: IEditorGroup): void {
+		super.setEditorVisible(visible, group);
 	}
 
 	private saveCommandHandler(commandId: string) {

@@ -50,6 +50,8 @@ if ! tmux has -t "=${TARGET}" ; then
 	/bin/tmux setenv HOME "$ROOT/HOME"
 	/bin/tmux setenv PATH "$P"
 	/bin/tmux setenv HISTFILE "/dev/null"
+	/bin/tmux setenv HTTP_PROXY "http://127.0.0.1:8080"
+	/bin/tmux setenv HTTPS_PROXY "http://127.0.0.1:8080"
 fi
 
 function sushell() {

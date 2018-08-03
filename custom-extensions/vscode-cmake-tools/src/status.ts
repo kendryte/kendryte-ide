@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
-import {BasicTestResults} from './ctest';
+import { BasicTestResults } from './ctest';
 
 interface Hideable {
   show(): void;
+
   hide(): void;
 }
 
@@ -14,13 +15,15 @@ function setVisible<T extends Hideable>(i: T, v: boolean) {
   }
 }
 
+const ClickChangeKit = 'Click to select kit';
+
 export class StatusBar implements vscode.Disposable {
-  private readonly _cmakeToolsStatusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100.1);
-  private readonly _kitSelectionButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  private readonly _launchTargetNameButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 3.9);
+  private readonly _cmakeToolsStatusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 3.8);
+  private readonly _kitSelectionButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 3.7);
   private readonly _buildButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 3.4);
   // private readonly _targetButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 3.3);
   private readonly _debugButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 3.25);
-  private readonly _launchTargetNameButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 3.2);
   private readonly _testButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 3.1);
   private readonly _warningMessage = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 3);
 
@@ -44,7 +47,7 @@ export class StatusBar implements vscode.Disposable {
     this._cmakeToolsStatusItem.tooltip = 'Click to select the current build variant';
     this._buildButton.command = 'cmake.build';
     this._kitSelectionButton.command = 'cmake.selectKit';
-    this._kitSelectionButton.tooltip = 'Click to change the active kit';
+    this._kitSelectionButton.tooltip = ClickChangeKit;
     // this._targetButton.command = 'cmake.setDefaultTarget';
     // this._targetButton.tooltip = 'Set the active target to build';
     this._testButton.command = 'cmake.ctest';
@@ -69,9 +72,11 @@ export class StatusBar implements vscode.Disposable {
     for (const item of autovis_items) {
       setVisible(item, this._visible && !!item.text);
     }
-    setVisible(this._debugButton,
-               this._visible && vscode.extensions.getExtension('ms-vscode.cpptools') !== undefined
-                   && !!this._debugButton.text);
+    setVisible(
+      this._debugButton,
+      this._visible && vscode.extensions.getExtension('ms-vscode.cpptools') !== undefined
+      && !!this._debugButton.text,
+    );
   }
 
   /**
@@ -81,10 +86,17 @@ export class StatusBar implements vscode.Disposable {
     this._visible = v;
     this.reloadVisibility();
   }
+
   private _visible: boolean = true;
 
   private _reloadStatusButton() {
-    this._cmakeToolsStatusItem.text = `CMake: ${this._projectName}: ${this._buildTypeLabel}: ${this._statusMessage}`;
+    this._cmakeToolsStatusItem.text = this._buildTypeLabel;
+    if (this._projectName) {
+      this._cmakeToolsStatusItem.text += `(${this._projectName})`;
+    }
+    if (this._statusMessage != 'Ready') {
+      this._cmakeToolsStatusItem.text += `: ${this._statusMessage}`;
+    }
     this.reloadVisibility();
   }
 
@@ -104,7 +116,8 @@ export class StatusBar implements vscode.Disposable {
   /**
    * The name of the open project
    */
-  private _projectName: string = 'Unconfigured Project';
+  private _projectName: string = '';
+
   setProjectName(v: string) {
     this._projectName = v;
     this._reloadStatusButton();
@@ -114,6 +127,7 @@ export class StatusBar implements vscode.Disposable {
    * The build type label. Determined by the active build variant
    */
   private _buildTypeLabel: string = 'Unconfigured';
+
   setBuildTypeLabel(v: string) {
     this._buildTypeLabel = v;
     this._reloadStatusButton();
@@ -124,6 +138,7 @@ export class StatusBar implements vscode.Disposable {
    * extension is currently up to.
    */
   private _statusMessage: string = 'Loading...';
+
   setStatusMessage(v: string) {
     this._statusMessage = v;
     this._reloadStatusButton();
@@ -134,6 +149,7 @@ export class StatusBar implements vscode.Disposable {
    */
   private _targetName: string = '';
   public get targetName(): string { return this._targetName; }
+
   public set targetName(v: string) {
     this._targetName = v;
     // this._targetButton.text = `[${v}]`;
@@ -142,20 +158,21 @@ export class StatusBar implements vscode.Disposable {
   }
 
   setLaunchTargetName(v: string) {
-    this._launchTargetNameButton.text = v;
+    this._launchTargetNameButton.text = '$(file-submodule) Project: ' + v;
     this._reloadDebugButton();
   }
 
   private _ctestEnabled: boolean = false;
   public get ctestEnabled(): boolean { return this._ctestEnabled; }
+
   public set ctestEnabled(v: boolean) {
     this._ctestEnabled = v;
     setVisible(this._testButton, v);
   }
 
-
   private _testResults: BasicTestResults|null = null;
   public get testResults(): BasicTestResults|null { return this._testResults; }
+
   public set testResults(v: BasicTestResults|null) {
     this._testResults = v;
 
@@ -168,9 +185,9 @@ export class StatusBar implements vscode.Disposable {
     const passing = v.passing;
     const total = v.total;
     const good = passing == total;
-    const icon = good ? 'check' : 'x';
-    this._testButton.text = `$(${icon}) ${passing}/${total} ${total == 1 ? 'test' : 'tests'} passing`;
-    this._testButton.color = good ? 'lightgreen' : 'yellow';
+    const icon = good? 'check' : 'x';
+    this._testButton.text = `$(${icon}) ${passing}/${total} ${total == 1? 'test' : 'tests'} passing`;
+    this._testButton.color = good? 'lightgreen' : 'yellow';
   }
 
   /** Reloads the content of the build button */
@@ -182,12 +199,15 @@ export class StatusBar implements vscode.Disposable {
       const bars = prog * 0.4 | 0;
       progress_bar = ` [${Array(bars).join('█')}${Array(40 - bars).join('░')}] ${prog}%`;
     }
-    this._buildButton.text = this._isBusy ? `$(x) Stop${progress_bar}` : `$(gear) Build: ${this._targetName}`;
-    this._buildButton.command = this._isBusy ? 'cmake.stop' : 'cmake.build';
+    this._buildButton.text = this._isBusy? `$(x) Stop${progress_bar}` : `$(gear) Build`;
+    if (!this._isBusy && this._targetName) {
+      this._buildButton.text += `: ${this._targetName}`;
+    }
+    this._buildButton.command = this._isBusy? 'cmake.stop' : 'cmake.build';
     if (this._isBusy) {
       this._buildButton.show();
     }
-    else{
+    else {
       this._progress = null;
     }
   }
@@ -197,6 +217,7 @@ export class StatusBar implements vscode.Disposable {
    * of the button and the command that is executed when the button is pressed
    */
   private _isBusy: boolean = false;
+
   setIsBusy(v: boolean) {
     this._isBusy = v;
     this._reloadBuildButton();
@@ -207,6 +228,7 @@ export class StatusBar implements vscode.Disposable {
    * bar.
    */
   private _progress: number|null = null;
+
   setProgress(v: number|null) {
     this._progress = v;
     this._reloadBuildButton();
@@ -215,9 +237,11 @@ export class StatusBar implements vscode.Disposable {
   private _reloadKitsButton() {
     if (this._visible) {
       if (this._activeKitName.length) {
-        this._kitSelectionButton.text = this._activeKitName;
+        this._kitSelectionButton.text = '$(tools) ' + this._activeKitName.split(' ')[0];
+        this._kitSelectionButton.tooltip = this._activeKitName;
       } else {
-        this._kitSelectionButton.text = 'No Kit Selected';
+        this._kitSelectionButton.text = '$(tools) No Kit Selected';
+        this._kitSelectionButton.tooltip = ClickChangeKit;
       }
       this.reloadVisibility();
     } else {
@@ -233,6 +257,7 @@ export class StatusBar implements vscode.Disposable {
     }
     this._reloadKitsButton();
   }
+
   private _activeKitName: string = '';
 
   showWarningMessage(msg: string) {

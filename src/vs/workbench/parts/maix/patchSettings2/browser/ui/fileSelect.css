@@ -1,0 +1,8 @@
+div.fileSelect {
+	display: flex;
+	width: 100%;
+}
+
+div.fileSelect > .text {
+	flex: 1
+}

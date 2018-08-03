@@ -59,6 +59,16 @@ declare module 'serialport' {
 		type ModemBitsCallback = (error: Error, status: {cts: boolean, dsr: boolean, dcd: boolean}) => void;
 		type ListCallback = (error: Error, port: any[]) => void;
 
+		interface SerialPortItem {
+			comName: string;
+			locationId?: undefined;
+			manufacturer?: undefined;
+			pnpId?: undefined;
+			productId?: undefined;
+			serialNumber?: undefined;
+			vendorId?: undefined;
+		}
+
 		// Options Type Defs
 		interface OpenOptions {
 			autoOpen?: boolean;

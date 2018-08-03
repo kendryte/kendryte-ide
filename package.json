@@ -42,6 +42,7 @@
     "native-watchdog": "0.3.0",
     "node-pty": "0.7.6",
     "semver": "^5.5.0",
+    "serialport": "^6.2.2",
     "spdlog": "0.7.1",
     "sudo-prompt": "8.2.0",
     "v8-inspect-profiler": "^0.0.8",

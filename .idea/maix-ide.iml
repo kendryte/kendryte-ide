@@ -5,6 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.release" />
+      <excludeFolder url="file://$MODULE_DIR$/.temp" />
       <excludeFolder url="file://$MODULE_DIR$/.vscode" />
       <excludeFolder url="file://$MODULE_DIR$/custom-extensions/vscode-cmake-tools/node_modules" />
       <excludeFolder url="file://$MODULE_DIR$/out" />

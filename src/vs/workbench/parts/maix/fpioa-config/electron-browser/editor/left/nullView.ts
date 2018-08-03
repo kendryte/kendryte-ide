@@ -13,6 +13,10 @@ export class NullRenderer implements IRenderer<IListFuncMapEntry, any> {
 	renderElement(entry: IListFuncMapEntry, index: number, template: void): void {
 	}
 
+	public disposeElement(element: IListFuncMapEntry, index: number, templateData: any): void {
+		// noop?
+	}
+
 	disposeTemplate(template: void): void {
 	}
 }

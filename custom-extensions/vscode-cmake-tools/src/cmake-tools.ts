@@ -110,8 +110,8 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
               'cmake-cache',
               new CacheEditorContentProvider(
                 this.extensionContext,
-                editor_server.address().port
-              )
+                editor_server.address().port,
+              ),
             );
     }));
   }
@@ -133,7 +133,7 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
    * two-phase init and a private constructor. The driver may be replaced at
    * any time by the user making changes to the workspace configuration.
    */
-  private _cmakeDriver: Promise<CMakeDriver | null> = Promise.resolve(null);
+  private _cmakeDriver: Promise<CMakeDriver|null> = Promise.resolve(null);
 
   /**
    * The status bar manager. Has two-phase init.
@@ -245,7 +245,7 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
     }
   }
 
-  async compilationInfoForFile(filepath: string): Promise<api.CompilationInfo | null> {
+  async compilationInfoForFile(filepath: string): Promise<api.CompilationInfo|null> {
     const drv = await this.getCMakeDriverInstance();
     if (drv) {
       return drv.compilationInfoForFile(filepath);
@@ -330,7 +330,7 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
    * This ensures that user commands can always be executed, because error criterials like
    * exceptions would assign a null driver and it is possible to create a new driver instance later again.
    */
-  async getCMakeDriverInstance(): Promise<CMakeDriver | null> {
+  async getCMakeDriverInstance(): Promise<CMakeDriver|null> {
     if (!this._kitManager.hasActiveKit) {
       log.debug('Not starting CMake driver: no kits defined');
       return null;
@@ -468,7 +468,7 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
           {
             title: 'No',
             isCloseAffordance: true,
-          }
+          },
         );
         return chosen !== undefined && (chosen.title === 'Yes');
       }
@@ -616,7 +616,7 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
       'vscode.previewHtml',
       'cmake-cache://' + drv.cachePath,
       vscode.ViewColumn.Three,
-      'CMake Cache'
+      'CMake Cache',
     );
   }
 
@@ -628,7 +628,7 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
     return this.build(target);
   }
 
-  async showTargetSelector(): Promise<string | null> {
+  async showTargetSelector(): Promise<string|null> {
     const drv = await this.getCMakeDriverInstance();
     if (!drv) {
       vscode.window.showErrorMessage('Set up your CMake project before selecting a target.');
@@ -640,15 +640,15 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
     } else {
       const choices = drv.targets.map((t): vscode.QuickPickItem => {
         switch (t.type) {
-          case 'named': {
-            return {
-              label: t.name,
-              description: 'Target to build',
-            };
-          }
-          case 'rich': {
-            return { label: t.name, description: t.targetType, detail: t.filepath };
-          }
+        case 'named': {
+          return {
+            label: t.name,
+            description: 'Target to build',
+          };
+        }
+        case 'rich': {
+          return { label: t.name, description: t.targetType, detail: t.filepath };
+        }
         }
       });
       const sel = await vscode.window.showQuickPick(choices);
@@ -725,7 +725,7 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
   /**
    * The target that will be built with a regular build invocation
    */
-  public get defaultBuildTarget(): string | null {
+  public get defaultBuildTarget(): string|null {
     return this.workspaceContext.state.defaultBuildTarget;
   }
 
@@ -738,7 +738,7 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
    * Set the default target to build. Implementation of `cmake.setDefaultTarget`
    * @param target If specified, set this target instead of asking the user
    */
-  async setDefaultTarget(target?: string | null) {
+  async setDefaultTarget(target?: string|null) {
     if (!target) {
       target = await this.showTargetSelector();
     }
@@ -751,7 +751,7 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
   /**
    * Implementation of `cmake.selectLaunchTarget`
    */
-  async selectLaunchTarget(): Promise<string | null> {
+  async selectLaunchTarget(): Promise<string|null> {
     if (await this._needsReconfigure()) {
       const rc = await this.configure();
       if (rc !== 0) {
@@ -780,7 +780,7 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
   /**
    * Implementation of `cmake.launchTargetPath`
    */
-  async launchTargetPath(): Promise<string | null> {
+  async launchTargetPath(): Promise<string|null> {
     const target_name = this.workspaceContext.state.launchTargetName;
     const chosen = (await this.executableTargets).find(e => e.name == target_name);
     if (!chosen) {
@@ -795,11 +795,11 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
     return chosen.path;
   }
 
-  launchTargetProgramPath(): Promise<string | null> {
+  launchTargetProgramPath(): Promise<string|null> {
     return this.launchTargetPath();
   }
 
-  async getLaunchTargetPath(): Promise<string | null> {
+  async getLaunchTargetPath(): Promise<string|null> {
     const current = await this.launchTargetPath();
     if (current) {
       return current;
@@ -812,7 +812,7 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
   /**
    * Implementation of `cmake.debugTarget`
    */
-  async debugTarget(): Promise<vscode.DebugSession | null> {
+  async debugTarget(): Promise<vscode.DebugSession|null> {
     const drv = await this.getCMakeDriverInstance();
 
     if (!drv || !this._kitManager.activeKit || !this._kitManager.activeKit.toolchainBinaryPath) {
@@ -875,16 +875,20 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
           text: '-enable-pretty-printing',
           ignoreFailures: true,
         },
-      ]
+      ],
     };
 
     return vscode.window.withProgress({
       title: `Connecting to ${remoteTarget}...`,
       location: vscode.ProgressLocation.Notification,
-      cancellable: false,
-    }, (/*reporter: Progress<{message?: string; increment?: number}>, token: CancellationToken*/) => {
+      cancellable: true,
+    }, (_: vscode.Progress<{message?: string; increment?: number}>, token: vscode.CancellationToken) => {
       return vscode.debug.startDebugging(vscode.workspace.workspaceFolders![0], debug_config).then(() => {
-        return vscode.debug.activeDebugSession!;
+        if (token.isCancellationRequested) {
+          return undefined as any;
+        } else {
+          return vscode.debug.activeDebugSession!;
+        }
       }, (e: Error) => {
         vscode.window.showErrorMessage(e.message);
         return null;
@@ -892,7 +896,7 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
     });
   }
 
-  private _launchTerminal: vscode.Terminal | null = null;
+  private _launchTerminal: vscode.Terminal|null = null;
 
   /**
    * Implementation of `cmake.launchTarget`
@@ -953,19 +957,19 @@ add_source_files(*.c *.h *.cpp *.hpp *.C *.H *.CPP *.HPP)
 
   private async _handleCacheEditorMessage(method: string, params: {[key: string]: any}): Promise<any> {
     switch (method) {
-      case 'getEntries': {
-        const drv = await this.getCMakeDriverInstance();
-        if (!drv) {
-          return null;
-        }
-        return drv.cmakeCacheEntries;
+    case 'getEntries': {
+      const drv = await this.getCMakeDriverInstance();
+      if (!drv) {
+        return null;
       }
-      case 'configure': {
-        return this.configure(params['args']);
-      }
-      case 'build': {
-        return this.build();
-      }
+      return drv.cmakeCacheEntries;
+    }
+    case 'configure': {
+      return this.configure(params['args']);
+    }
+    case 'build': {
+      return this.build();
+    }
     }
     throw new Error('Invalid method: ' + method);
   }

@@ -1,0 +1,341 @@
+import { IRenderer, IVirtualDelegate } from 'vs/base/browser/ui/list/list';
+import { Emitter, Event } from 'vs/base/common/event';
+import { attachInputBoxStyler, attachListStyler } from 'vs/platform/theme/common/styler';
+import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { localize } from 'vs/nls';
+import { WorkbenchList } from 'vs/platform/list/browser/listService';
+import { Disposable, dispose } from 'vs/base/common/lifecycle';
+import { IThemeService } from 'vs/platform/theme/common/themeService';
+import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
+import { IMessage, InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
+import { $, addClass, append, findParentWithClass, toggleClass } from 'vs/base/browser/dom';
+import { IWindowsService } from 'vs/platform/windows/common/windows';
+import { ILogService } from 'vs/platform/log/common/log';
+import { ISettingItemTemplate } from 'vs/workbench/parts/maix/_library/common/type';
+import { settingKeyToDisplayFormat } from 'vs/workbench/parts/preferences/browser/settingsTree';
+import { ValueNotify } from 'vs/workbench/parts/maix/_library/common/valueNotify';
+
+export interface BaseEditableItem {
+	id: string;
+}
+
+const SETTINGS_ENTRY_TEMPLATE_ID = 'ConfigFileEditorRender';
+
+class PrivateDelegate<T> implements IVirtualDelegate<T> {
+	getHeight(entry: T) {
+		return 29;
+	}
+
+	getTemplateId(element: T) {
+		return SETTINGS_ENTRY_TEMPLATE_ID;
+	}
+}
+
+let focusedRowId = '';
+
+export class EditListView<T extends BaseEditableItem> extends Disposable {
+	private _onDidChange = this._register(new Emitter<string[]>());
+	public readonly onDidChange: Event<string[]> = this._onDidChange.event;
+	private _value: string[] = [];
+
+	private workbenchList: WorkbenchList<T>;
+
+	constructor(
+		private entry: T,
+		private container: HTMLElement,
+		@IInstantiationService instantiationService: IInstantiationService,
+		@IThemeService themeService: IThemeService,
+		@ILogService private log: ILogService,
+	) {
+		super();
+
+		const inputRender = instantiationService.createInstance(ConfigFileEditorRender, ListMode.INPUT);
+		this._register(inputRender.onDidChangeSetting(e => {
+			const copy = this.value.slice();
+			copy[e.key] = e.value;
+			const valid = copy.filter(e => !!e);
+			this.log.debug('trigger:', valid);
+			this._onDidChange.fire(valid);
+			this.value = valid;
+		}));
+
+		this.workbenchList = instantiationService.createInstance(
+			WorkbenchList,
+			container,
+			new PrivateDelegate(),
+			[inputRender],
+			{
+				identityProvider: e => e.id,
+				ariaLabel: localize('settingsListLabel', 'Settings'),
+				focusOnMouseDown: true,
+				selectOnMouseDown: true,
+				keyboardSupport: false,
+				mouseSupport: false,
+			},
+		) as WorkbenchList<T>;
+
+		this._register(attachListStyler(this.workbenchList, themeService));
+	}
+
+	public get value(): string[] {
+		this.log.debug('get:', this._value);
+		return this._value;
+	}
+
+	public set value(newValue: string[]) {
+		this.log.debug('set:', newValue);
+		this._value = newValue;
+		const entriesList = newValue.map((value, index) => {
+			return {
+				...(this.entry as any),
+				id: index,
+				key: index,
+				value,
+			};
+		});
+		entriesList.push({
+			...(this.entry as any),
+			id: entriesList.length,
+			key: entriesList.length,
+			value: '',
+			description: 'Write Here to Create, Leave empty to remove.',
+		});
+
+		const focusedRowItem = findParentWithClass(<HTMLElement>document.activeElement, 'monaco-list-row');
+		if (focusedRowItem && focusedRowItem.id) {
+			focusedRowId = focusedRowItem && focusedRowItem.id;
+		}
+
+		this.log.debug('entries: ', entriesList);
+		this.workbenchList.splice(0, this.workbenchList.length, entriesList);
+
+		if (focusedRowId) {
+			const rowSelector = `.monaco-list-row#${focusedRowId}`;
+			const inputElementToFocus: HTMLElement = this.container.querySelector(`${rowSelector} input, ${rowSelector} select`);
+			if (inputElementToFocus) {
+				inputElementToFocus.focus();
+			}
+		}
+	}
+
+	layout(height: number) {
+		this.workbenchList.layout(height);
+	}
+}
+
+export interface IConfigListEntry {
+	id: string;
+	templateId: string;
+}
+
+export interface ISettingItemEntry<T = any> extends IConfigListEntry {
+	title: string;
+	key: string;
+	value: T;
+	isConfigured: boolean;
+	description: string;
+	overriddenScopeList: string[];
+	type?: string|string[];
+	enum?: string[];
+	enumSource?: string;
+	enumEditable?: boolean;
+	arrayType?: ISettingArrayItem;
+}
+
+export interface ISettingArrayItem extends Pick<ISettingItemEntry, 'id'|'key'|'description'|'enum'|'enumSource'|'type'|'templateId'> {
+
+}
+
+export interface ISettingChangeEvent {
+	key: string;
+	value: any; // undefined => reset unconfigure
+}
+
+export enum ListMode {
+	INPUT,
+	FULL,
+}
+
+export interface IConfigFileEditorRender {
+	readonly onDidChangeSetting: Event<ISettingChangeEvent>;
+}
+
+export function createConfigFileEditorRender(instantiationService: IInstantiationService, mode: ListMode): IConfigFileEditorRender {
+	return instantiationService.createInstance(ConfigFileEditorRender, mode);
+}
+
+class ConfigFileEditorRender implements IRenderer<ISettingItemEntry, ISettingItemTemplate>, IConfigFileEditorRender {
+	private _onDidChangeSetting: Emitter<ISettingChangeEvent> = new Emitter<ISettingChangeEvent>();
+	public readonly onDidChangeSetting: Event<ISettingChangeEvent> = this._onDidChangeSetting.event;
+
+	constructor(
+		private mode: ListMode,
+		@IContextViewService protected contextViewService: IContextViewService,
+		@IInstantiationService protected instantiationService: IInstantiationService,
+		@IThemeService protected themeService: IThemeService,
+		@IWindowsService protected windowsService: IWindowsService,
+		@ILogService private log: ILogService,
+	) {
+	}
+
+	get templateId(): string {
+		return SETTINGS_ENTRY_TEMPLATE_ID;
+	}
+
+	renderTemplate(parent: HTMLElement): ISettingItemTemplate {
+		this.log.debug('newTemplate.');
+		addClass(parent, 'setting-item');
+		const valueNotify = new ValueNotify(this.log);
+
+		if (this.mode === ListMode.FULL) {
+			const itemContainer = append(parent, $('.setting-item-container'));
+			const leftElement = append(itemContainer, $('.setting-item-left'));
+			const rightElement = append(itemContainer, $('.setting-item-right'));
+
+			const titleElement = append(leftElement, $('.setting-item-title'));
+			const labelElement = append(titleElement, $('span.setting-item-label'));
+			const overridesElement = append(titleElement, $('span.setting-item-overrides'));
+			const descriptionElement = append(leftElement, $('.setting-item-description'));
+
+			const valueElement = append(rightElement, $('.setting-item-value'));
+
+			return {
+				parent,
+				toDispose: [],
+
+				valueElement,
+				labelElement,
+				descriptionElement,
+				overridesElement,
+
+				valueNotify,
+			};
+		} else {
+			const valueElement = append(parent, $('.setting-item-value'));
+
+			return {
+				parent,
+				toDispose: [],
+
+				valueElement,
+
+				valueNotify,
+			};
+		}
+	}
+
+	renderElement(entry: ISettingItemEntry, index: number, template: ISettingItemTemplate): void {
+		toggleClass(template.parent, 'odd', index % 2 === 1);
+
+		if (entry.id === template.lastId) {
+			this.log.debug('render: reuse: %s', entry.key);
+			return template.valueNotify.notify(entry.value, entry.key);
+		} else {
+			this.log.debug('render: create new: %s -> %s', template.lastId, entry.key);
+			template.valueElement.innerText = '';
+			template.valueElement.className = 'setting-item-value';
+			dispose(template.toDispose);
+			template.toDispose.length = 0;
+		}
+		template.lastId = entry.id;
+
+		template.toDispose.push(
+			template.valueNotify.onInnerChange((value) => {
+				this._onDidChangeSetting.fire({ key: entry.key, value });
+			}),
+		);
+
+		if (entry.enum || entry.enumSource) {
+			template.parent.setAttribute('data-type', 'enum');
+		} else {
+			template.parent.setAttribute('data-type', Array.isArray(entry.type)? entry.type.join(';') : entry.type);
+		}
+		template.parent.setAttribute('data-key', entry.key);
+		template.parent.setAttribute('data-id', entry.id);
+
+		if (this.mode === ListMode.FULL) {
+			let titleTooltip = entry.key;
+			if (entry.isConfigured) {
+				titleTooltip += ' - ' + localize('configuredTitleToolip', 'This setting is configured');
+			}
+
+			template.labelElement.textContent = entry.title || settingKeyToDisplayFormat(entry.key).label;
+			template.labelElement.title = titleTooltip;
+			template.descriptionElement.textContent = entry.description;
+			template.descriptionElement.title = entry.description;
+
+			this.renderEntry(entry, template);
+
+			const alsoConfiguredInLabel = localize('alsoConfiguredIn', 'Also configured in:');
+			template.overridesElement.textContent = entry.overriddenScopeList.length? `(${alsoConfiguredInLabel} ${entry.overriddenScopeList.join(', ')})` : '';
+		} else {
+			this.renderEntry(entry, template);
+		}
+	}
+
+	private renderEntry(entry: ISettingItemEntry, template: ISettingItemTemplate) {
+		this.renderArray(entry, template, template.valueNotify);
+	}
+
+	renderNumber(
+		entry: ISettingItemEntry,
+		template: ISettingItemTemplate,
+		parser: (value: string) => number,
+		notify: ValueNotify,
+	) {
+		const inputBox = new InputBox(template.valueElement, this.contextViewService, {
+			type: 'number',
+			validationOptions: {
+				validation(value: string): IMessage {
+					if (value !== parser(value).toString()) {
+						return { content: 'Value Not Number' };
+					} else {
+						return null;
+					}
+				},
+			},
+		});
+		template.toDispose.push(attachInputBoxStyler(inputBox, this.themeService));
+		template.toDispose.push(inputBox);
+		inputBox.value = entry.value;
+
+		template.toDispose.push(
+			inputBox.onDidChange(e => {
+				notify.updated(parser(e), entry.key);
+			}));
+		template.toDispose.push(
+			notify.onOuterChange(val => inputBox.value = val));
+
+		return inputBox;
+	}
+
+	private renderArray(
+		entry: ISettingItemEntry<string[]>,
+		template: ISettingItemTemplate,
+		notify: ValueNotify,
+	) {
+		const listBox = this.instantiationService.createInstance(EditListView, entry.arrayType, template.valueElement);
+		template.toDispose.push(listBox);
+		listBox.value = entry.value;
+		listBox.layout(template.valueElement.parentElement.clientHeight);
+
+		template.toDispose.push(
+			listBox.onDidChange(e => {
+				notify.updated(e, entry.key);
+			}));
+		template.toDispose.push(
+			notify.onOuterChange(val => listBox.value = val));
+
+		return listBox;
+	}
+
+	public disposeElement(element: ISettingItemEntry, index: number, templateData: ISettingItemTemplate): void {
+		// noop?
+	}
+
+	disposeTemplate(template: ISettingItemTemplate): void {
+		this.log.debug('disposeTemplate.');
+		dispose(template.toDispose);
+		template.toDispose.length = 0;
+	}
+}

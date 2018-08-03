@@ -44,6 +44,10 @@ export class GroupTitleRenderer implements IRenderer<IListGroupEntry, any> {
 		template.currentId = entry.id;
 	}
 
+	public disposeElement(element: IListGroupEntry, index: number, templateData: any): void {
+		// noop?
+	}
+
 	disposeTemplate(template: IGroupTitleEntry): void {
 		template.parent.innerText = '';
 		dispose([template.clickEvent]);

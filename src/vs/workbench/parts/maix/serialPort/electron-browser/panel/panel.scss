@@ -1,0 +1,25 @@
+.monaco-workbench .panel.serial-monitor {
+	display: flex;
+	box-sizing: border-box;
+	.monaco-inputbox {
+		width: 100%;
+	}
+	.monaco-select-box {
+		width: initial;
+		font: inherit;
+		height: 26px;
+	}
+	
+	.session-switch {
+		display: flex;
+		> span {
+			line-height: 29px;
+		}
+		> select {
+			flex-grow: 1;
+		}
+		> .monaco-button {
+			width: initial;
+		}
+	}
+}

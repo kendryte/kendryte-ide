@@ -5,7 +5,7 @@ import { WorkbenchList } from 'vs/platform/list/browser/listService';
 import { localize } from 'vs/nls';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { $, addClasses } from 'vs/base/browser/dom';
-import { IDelegate } from 'vs/base/browser/ui/list/list';
+import { IVirtualDelegate } from 'vs/base/browser/ui/list/list';
 import { IFpioaLeftListEntry, IListFuncMapEntry, IListGroupEntry, TEMPLATE_ID } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/left/ids';
 import { SplitRenderer } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/left/splitView';
 import { ChipSelectRenderer } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/left/chipSelectView';
@@ -166,7 +166,7 @@ export class FpioaLeftPanel extends Disposable implements IView {
 	}
 }
 
-class LeftPanelItemDelegate implements IDelegate<IFpioaLeftListEntry> {
+class LeftPanelItemDelegate implements IVirtualDelegate<IFpioaLeftListEntry> {
 	getHeight(entry: IFpioaLeftListEntry) {
 		if (entry.templateId === TEMPLATE_ID.CHIP_SELECT) {
 			return 55;

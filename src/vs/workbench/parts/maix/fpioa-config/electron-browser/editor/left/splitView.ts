@@ -14,6 +14,10 @@ export class SplitRenderer implements IRenderer<IListSplitEntry, any> {
 	renderElement(entry: IListSplitEntry, index: number, template: HTMLDivElement): void {
 	}
 
+	public disposeElement(element: IListSplitEntry, index: number, templateData: any): void {
+		// noop?
+	}
+
 	disposeTemplate(template: HTMLDivElement): void {
 		template.innerHTML = '';
 	}

@@ -1,4 +1,4 @@
-import { IGenerator } from 'vs/workbench/parts/maix/fpioa-config/node/generateor';
+import { IGenerator } from 'vs/workbench/parts/maix/fpioa-config/node/generateorContribution';
 import { IChipGeneratorConfig } from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
 import { IFuncIOMap } from 'vs/workbench/parts/maix/fpioa-config/common/types';
 

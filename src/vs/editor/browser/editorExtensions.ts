@@ -7,16 +7,16 @@
 import { illegalArgument } from 'vs/base/common/errors';
 import URI from 'vs/base/common/uri';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { ServicesAccessor, IConstructorSignature1 } from 'vs/platform/instantiation/common/instantiation';
+import { IConstructorSignature1, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { CommandsRegistry, ICommandHandlerDescription } from 'vs/platform/commands/common/commands';
-import { KeybindingsRegistry, IKeybindings } from 'vs/platform/keybinding/common/keybindingsRegistry';
+import { IKeybindings, KeybindingsRegistry } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { Position } from 'vs/editor/common/core/position';
 import * as editorCommon from 'vs/editor/common/editorCommon';
 import { IModelService } from 'vs/editor/common/services/modelService';
 import { MenuId, MenuRegistry } from 'vs/platform/actions/common/actions';
-import { IContextKeyService, ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
+import { ContextKeyExpr, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { ICodeEditorService } from 'vs/editor/browser/services/codeEditorService';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
 import { ITextModel } from 'vs/editor/common/model';
@@ -31,6 +31,7 @@ export interface ICommandKeybindingsOptions extends IKeybindings {
 	kbExpr?: ContextKeyExpr;
 	weight: number;
 }
+
 export interface ICommandMenubarOptions {
 	menuId: MenuId;
 	group: string;
@@ -38,6 +39,7 @@ export interface ICommandMenubarOptions {
 	when?: ContextKeyExpr;
 	title: string;
 }
+
 export interface ICommandOptions {
 	id: string;
 	precondition: ContextKeyExpr;
@@ -45,6 +47,7 @@ export interface ICommandOptions {
 	description?: ICommandHandlerDescription;
 	menubarOpts?: ICommandMenubarOptions;
 }
+
 export abstract class Command {
 	public readonly id: string;
 	public readonly precondition: ContextKeyExpr;
@@ -71,7 +74,7 @@ export abstract class Command {
 					// precondition: this.precondition
 				},
 				when: this._menubarOpts.when,
-				order: this._menubarOpts.order
+				order: this._menubarOpts.order,
 			});
 		}
 
@@ -95,7 +98,7 @@ export abstract class Command {
 				win: this._kbOpts.win,
 				linux: this._kbOpts.linux,
 				mac: this._kbOpts.mac,
-				description: this._description
+				description: this._description,
 			});
 
 		} else {
@@ -103,7 +106,7 @@ export abstract class Command {
 			CommandsRegistry.registerCommand({
 				id: this.id,
 				handler: (accessor, args) => this.runCommand(accessor, args),
-				description: this._description
+				description: this._description,
 			});
 		}
 	}
@@ -118,9 +121,11 @@ export abstract class Command {
 export interface IContributionCommandOptions<T> extends ICommandOptions {
 	handler: (controller: T) => void;
 }
+
 export interface EditorControllerCommand<T extends editorCommon.IEditorContribution> {
 	new(opts: IContributionCommandOptions<T>): EditorCommand;
 }
+
 export abstract class EditorCommand extends Command {
 
 	/**
@@ -145,6 +150,8 @@ export abstract class EditorCommand extends Command {
 		};
 	}
 
+	public abstract runEditorCommand(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | TPromise<void>;
+
 	public runCommand(accessor: ServicesAccessor, args: any): void | TPromise<void> {
 		const codeEditorService = accessor.get(ICodeEditorService);
 
@@ -165,8 +172,6 @@ export abstract class EditorCommand extends Command {
 			return this.runEditorCommand(editorAccessor, editor, args);
 		});
 	}
-
-	public abstract runEditorCommand(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | TPromise<void>;
 }
 
 //#endregion EditorCommand
@@ -178,11 +183,13 @@ export interface IEditorCommandMenuOptions {
 	order: number;
 	when?: ContextKeyExpr;
 }
+
 export interface IActionOptions extends ICommandOptions {
 	label: string;
 	alias: string;
 	menuOpts?: IEditorCommandMenuOptions;
 }
+
 export abstract class EditorAction extends EditorCommand {
 
 	public label: string;
@@ -196,27 +203,7 @@ export abstract class EditorAction extends EditorCommand {
 		this.menuOpts = opts.menuOpts;
 	}
 
-	public register(): void {
-
-		if (this.menuOpts) {
-			MenuRegistry.appendMenuItem(MenuId.EditorContext, {
-				command: {
-					id: this.id,
-					title: this.label
-				},
-				when: ContextKeyExpr.and(this.precondition, this.menuOpts.when),
-				group: this.menuOpts.group,
-				order: this.menuOpts.order
-			});
-		}
-
-		super.register();
-	}
-
-	public runEditorCommand(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | TPromise<void> {
-		this.reportTelemetry(accessor, editor);
-		return this.run(accessor, editor, args || {});
-	}
+	public abstract run(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | TPromise<void>;
 
 	protected reportTelemetry(accessor: ServicesAccessor, editor: ICodeEditor) {
 		/* __GDPR__
@@ -231,7 +218,27 @@ export abstract class EditorAction extends EditorCommand {
 		accessor.get(ITelemetryService).publicLog('editorActionInvoked', { name: this.label, id: this.id, ...editor.getTelemetryData() });
 	}
 
-	public abstract run(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | TPromise<void>;
+	public register(): void {
+
+		if (this.menuOpts) {
+			MenuRegistry.appendMenuItem(MenuId.EditorContext, {
+				command: {
+					id: this.id,
+					title: this.label,
+				},
+				when: ContextKeyExpr.and(this.precondition, this.menuOpts.when),
+				group: this.menuOpts.group,
+				order: this.menuOpts.order,
+			});
+		}
+
+		super.register();
+	}
+
+	public runEditorCommand(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | TPromise<void> {
+		this.reportTelemetry(accessor, editor);
+		return this.run(accessor, editor, args || {});
+	}
 }
 
 //#endregion EditorAction
@@ -245,6 +252,7 @@ export function registerLanguageCommand(id: string, handler: (accessor: Services
 interface IDefaultArgs {
 	resource: URI;
 	position: IPosition;
+
 	[name: string]: any;
 }
 
@@ -304,7 +312,7 @@ export namespace EditorExtensionsRegistry {
 
 // Editor extension points
 const Extensions = {
-	EditorCommonContributions: 'editor.contributions'
+	EditorCommonContributions: 'editor.contributions',
 };
 
 class EditorContributionRegistry {
@@ -348,4 +356,5 @@ class EditorContributionRegistry {
 	}
 
 }
+
 Registry.add(Extensions.EditorCommonContributions, EditorContributionRegistry.INSTANCE);

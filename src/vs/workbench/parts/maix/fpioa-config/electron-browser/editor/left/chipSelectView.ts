@@ -57,14 +57,18 @@ export class ChipSelectRenderer implements IRenderer<IListChipSelectEntry, IChip
 		};
 	}
 
-	renderElement(entry: IListChipSelectEntry, index: number, template: IChipSelectTemplate): void {
-		this.lastSelect = this.names.indexOf(entry.selected);
+	renderElement(element: IListChipSelectEntry, index: number, template: IChipSelectTemplate): void {
+		this.lastSelect = this.names.indexOf(element.selected);
 		if (this.lastSelect === -1) {
 			this.lastSelect = 0;
 		}
 		this.firing = true;
 		template.input.select(this.lastSelect);
 		this.firing = false;
+	}
+
+	public disposeElement(element: IListChipSelectEntry, index: number, templateData: any): void {
+		// noop?
 	}
 
 	disposeTemplate(template: IChipSelectTemplate): void {

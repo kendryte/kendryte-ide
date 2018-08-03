@@ -233,6 +233,10 @@
 		{
 			"name": "vs/workbench/services/preferences",
 			"project": "vscode-preferences"
+		},
+		{
+			"name": "vs/workbench/parts/maix",
+			"project": "maix-extension"
 		}
 	]
 }
