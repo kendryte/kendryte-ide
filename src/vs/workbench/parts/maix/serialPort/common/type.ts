@@ -19,6 +19,8 @@ export interface ISerialPortService extends EnumProviderService {
 	getDevices(): TPromise<SerialPortItem[]>;
 
 	refreshDevices(): void;
+
+	quickOpenDevice(): TPromise<string | void>;
 }
 
 export const ISerialPortService = createDecorator<ISerialPortService>('serialPortService');
@@ -26,14 +28,12 @@ export const ISerialPortService = createDecorator<ISerialPortService>('serialPor
 export interface ISerialPanelService {
 	_serviceBrand: any;
 
-	setContainers(panelContainer: HTMLElement, terminalContainer: HTMLElement): void;
-
-	createTerminal(dev: string): TPromise<any>;
+	showConfigPanel(): void;
 }
 
 export const ISerialPanelService = createDecorator<ISerialPanelService>('serialPanelService');
 
 export const SerialPortActionCategory = localize('serialport', 'Serial Port');
-export const CONFIG_KEY_DEFAULT_DEVICE = 'serialport.device';
-export const SerialPortActionId = 'ToggleMonitorAction';
+export const CONFIG_KEY_SRIAL_PORT = 'serialport.pre_defined';
+export const ConfigSerialPortActionId = 'ToggleMonitorAction';
 

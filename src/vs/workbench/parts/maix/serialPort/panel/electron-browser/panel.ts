@@ -4,7 +4,7 @@ import { $, append, Dimension } from 'vs/base/browser/dom';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { CONFIG_KEY_DEFAULT_DEVICE, ISerialPanelService, ISerialPortService } from 'vs/workbench/parts/maix/serialPort/common/type';
+import { CONFIG_KEY_SRIAL_PORT, ISerialPanelService, ISerialPortService } from 'vs/workbench/parts/maix/serialPort/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { dispose } from 'vs/base/common/lifecycle';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
@@ -46,9 +46,9 @@ export class SerialMonitPanel extends Panel {
 		this.left = append(parent, $('.left-panel'));
 		const $right = append(parent, $('.right-panel'));
 
-		const $head = append(this.left, $('.session-switch'));
+		append(this.left, $('span')).innerText = 'Sessions: ';
 
-		append($head, $('span')).innerText = 'Sessions: ';
+		const $head = append(this.left, $('.session-switch'));
 
 		const selectBox = this.selectBox = new SelectBox([], 0, this.contextViewService);
 		this._toDispose.push(attachSelectBoxStyler(selectBox, this.themeService));
@@ -64,12 +64,8 @@ export class SerialMonitPanel extends Panel {
 		createBtn.label = ' ';
 		createBtn.element.classList.add('octicon', `octicon-plus`);
 		this._toDispose.push(attachButtonStyler(createBtn, this.themeService));
-		this._toDispose.push(createBtn.onDidClick(_ => this.doCreateSession()));
-
 		this._toDispose.push(this.serialPortService.onChange(_ => this.refreshDevicesList()));
 		await this.refreshDevicesList();
-
-		this.serialPanelService.setContainers(this.getContainer(), $right);
 
 		return $right;
 	}
@@ -108,22 +104,15 @@ export class SerialMonitPanel extends Panel {
 			return displayName;
 		});
 
-		const def = this.configurationService.getValue(CONFIG_KEY_DEFAULT_DEVICE) as string;
+		const def = this.configurationService.getValue(CONFIG_KEY_SRIAL_PORT) as string;
 		const found = names.indexOf(def);
 
 		this.selectBox.setOptions(names, found >= 0 ? found : 0);
-	}
-
-	private doCreateSession() {
-		this.serialPanelService.createTerminal('/dev/ttyACM0').then(undefined, (e) => {
-			this.notificationService.error(e);
-		});
 	}
 
 	setInput(serialMonitorTerminalInstance: ITerminalInstance) {
 		if (!serialMonitorTerminalInstance) {
 			return;
 		}
-		// this.activeInstance = serialMonitorTerminalInstance;
 	}
 }

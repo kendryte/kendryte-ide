@@ -1,9 +1,8 @@
-import { IShellLaunchConfig, ITerminalProcessManager, ProcessState } from 'vs/workbench/parts/terminal/common/terminal';
 import { ILogService } from 'vs/platform/log/common/log';
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { Emitter, Event } from 'vs/base/common/event';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { OpenOptions } from 'serialport';
+import { ISerialLaunchConfig, ITerminalProcessManager, ProcessState } from 'vs/workbench/parts/maix/serialPort/terminal/common/terminal';
 import SerialPort = require('serialport');
 
 export class SerialManager extends Disposable implements ITerminalProcessManager {
@@ -45,16 +44,16 @@ export class SerialManager extends Disposable implements ITerminalProcessManager
 		this._toDispose.push(disposable);
 	}
 
-	public createProcess(shellLaunchConfig: IShellLaunchConfig, cols: number, rows: number) {
+	public createProcess(shellLaunchConfig: ISerialLaunchConfig, cols: number, rows: number) {
 		this.processState = ProcessState.LAUNCHING;
 
-		const opts = shellLaunchConfig.env as OpenOptions;
-		const port = new SerialPort(shellLaunchConfig.executable, {
+		const opts = shellLaunchConfig.options;
+		const port = new SerialPort(shellLaunchConfig.serialDevice, {
 			...opts,
 			autoOpen: false,
 		});
-		port.on('data', (data: string) => {
-			this._onProcessData.fire(data);
+		port.on('data', (d) => {
+			this._onProcessData.fire(d.toString());
 		});
 		port.on('end', () => {
 			console.log('[serial port] end!');
@@ -62,6 +61,7 @@ export class SerialManager extends Disposable implements ITerminalProcessManager
 				this.processState = ProcessState.KILLED_BY_PROCESS;
 			}
 			this._onProcessExit.fire(0);
+			port.removeAllListeners();
 		});
 		port.open((error: Error) => {
 			if (error) {

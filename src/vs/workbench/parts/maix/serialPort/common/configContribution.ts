@@ -2,14 +2,14 @@ import { Extensions as ConfigurationExtensions, IConfigurationRegistry } from 'v
 import { localize } from 'vs/nls';
 import { dynamicEnum } from 'vs/workbench/parts/maix/_library/common/type';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { CONFIG_KEY_DEFAULT_DEVICE, ISerialPortService } from 'vs/workbench/parts/maix/serialPort/common/type';
+import { CONFIG_KEY_SRIAL_PORT, ISerialPortService } from 'vs/workbench/parts/maix/serialPort/common/type';
 import { ReloadSerialPortDevicesAction } from 'vs/workbench/parts/maix/serialPort/common/reloadAction';
 
 Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).registerConfiguration({
 	id: 'serialport',
 	overridable: true,
 	properties: {
-		[CONFIG_KEY_DEFAULT_DEVICE]: {
+		[CONFIG_KEY_SRIAL_PORT]: {
 			title: localize('serialport.device.title', 'UART Device'),
 			type: 'string',
 			enumDescriptions: dynamicEnum(ISerialPortService, true),

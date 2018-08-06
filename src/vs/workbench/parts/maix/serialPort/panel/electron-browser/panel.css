@@ -10,7 +10,6 @@
 .monaco-workbench .panel.serial-monitor .monaco-select-box {
 	width: initial;
 	font: inherit;
-	height: 26px;
 }
 
 .monaco-workbench .panel.serial-monitor .session-switch {
@@ -23,10 +22,6 @@
 
 .monaco-workbench .panel.serial-monitor .session-switch > select {
 	flex-grow: 1;
-}
-
-.monaco-workbench .panel.serial-monitor .session-switch > .monaco-button {
-	width: initial;
 }
 
 

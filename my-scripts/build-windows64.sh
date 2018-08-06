@@ -5,10 +5,6 @@ set -e
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 source common.sh
 
-if [ "$(id -u)" = "0" ]; then
-	die "Do not use root."
-fi
-
 if [ ! -e "${NODEJS}" ]; then
 	die "没有运行prepare-release.sh，请按照文档执行。
 	https://doc.b-bug.org/pages/viewpage.action?pageId=4228204"
@@ -58,17 +54,23 @@ step "Build extensions" \
 	node build/lib/builtInExtensions.js
 
 step "Build minified" \
-	npm run gulp -- "vscode-linux-$ARCH-min"
+	npm run gulp -- "vscode-win32-$ARCH-min"
 
 step "Run unit tests" \
 	./scripts/test.sh --build --reporter dot
 
-############# create tar.gz
-PLATFORM_LINUX="linux-$ARCH"
-BUILDNAME="${BUILD_NAME}-${PLATFORM_LINUX}"
+step "copy inno updater" \
+	npm run gulp -- "vscode-win32-$ARCH-copy-inno-updater"
+
+############# create zip
+PLATFORM_WIN32="win32-$ARCH"
+BUILDNAME="${BUILD_NAME}-${PLATFORM_WIN32}"
 
 TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.tar.gz"
 TARBALL_PATH="${RELEASE_ROOT}/${TARBALL_FILENAME}"
 
-step "Create tar.gz archive" \
-	tar -czf "${TARBALL_PATH}" "${BUILDNAME}"
+Zip="${Repo}\.release\win32-${ARCH}\archive\VSCode-win32-${ARCH}.zip"
+
+step "Create archive" \
+	npm run gulp -- "vscode-win32-${ARCH}-archive" "vscode-win32-${ARCH}-system-setup" "vscode-win32-${ARCH}-user-setup"
+
