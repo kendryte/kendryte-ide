@@ -17,9 +17,11 @@ import { ICssStyleCollector, ITheme, IThemeService, registerThemingParticipant }
 import { TerminalFindWidget } from 'vs/workbench/parts/maix/serialPort/terminal/browser/terminalFindWidget';
 import { editorForeground, editorHoverBackground, editorHoverBorder } from 'vs/platform/theme/common/colorRegistry';
 import {
-	ClearTerminalAction, ConfigNewTerminalAction,
+	ClearTerminalAction,
+	ConfigNewTerminalAction,
 	CopyTerminalSelectionAction,
 	CreateNewTerminalAction,
+	FocusTerminalFindWidgetAction,
 	KillTerminalAction,
 	SelectAllTerminalAction,
 	SwitchTerminalAction,
@@ -146,6 +148,7 @@ export class TerminalPanel extends Panel {
 				this._instantiationService.createInstance(SwitchTerminalAction, SwitchTerminalAction.ID, SwitchTerminalAction.LABEL),
 				this._instantiationService.createInstance(CreateNewTerminalAction, CreateNewTerminalAction.ID, CreateNewTerminalAction.SHORT_LABEL),
 				this._instantiationService.createInstance(ConfigNewTerminalAction, ConfigNewTerminalAction.ID, ConfigNewTerminalAction.SHORT_LABEL),
+				this._instantiationService.createInstance(FocusTerminalFindWidgetAction, FocusTerminalFindWidgetAction.ID, FocusTerminalFindWidgetAction.SHORT_LABEL),
 				this._instantiationService.createInstance(KillTerminalAction, KillTerminalAction.ID, KillTerminalAction.PANEL_LABEL),
 			];
 			this._actions.forEach(a => {

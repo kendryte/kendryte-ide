@@ -8,7 +8,7 @@ import 'vs/css!./media/terminal';
 import 'vs/css!./media/xterm';
 import 'vs/css!./media/widgets';
 import * as nls from 'vs/nls';
-import * as panel from 'vs/workbench/browser/panel';
+import { Extensions as PanelExtensions, PanelDescriptor, PanelRegistry } from 'vs/workbench/browser/panel';
 import * as platform from 'vs/base/common/platform';
 import {
 	ISerialMonitorService,
@@ -110,12 +110,12 @@ actionBarRegistry.registerActionBarContributor(Scope.VIEWER, QuickOpenActionTerm
 
 registerSingleton(ISerialMonitorService, TerminalService);
 
-(<panel.PanelRegistry>Registry.as(panel.Extensions.Panels)).registerPanel(new panel.PanelDescriptor(
+Registry.as<PanelRegistry>(PanelExtensions.Panels).registerPanel(new PanelDescriptor(
 	TerminalPanel,
 	TERMINAL_PANEL_ID,
 	nls.localize('serial port', 'Serial Port'),
-	'terminal',
-	40,
+	'markersPanel',
+	99,
 	SERIAL_MONITOR_COMMAND_ID.TOGGLE,
 ));
 

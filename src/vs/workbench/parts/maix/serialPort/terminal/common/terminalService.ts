@@ -122,7 +122,8 @@ export abstract class TerminalService implements ISerialMonitorService {
 		doCreateProcess: boolean,
 	): ISerialPortInstance;
 
-	public abstract getActiveOrCreateInstance(wasNewTerminalAction?: boolean): ISerialPortInstance;
+	public abstract getActiveOrCreateInstance(wasNewTerminalAction: true): TPromise<ISerialPortInstance>;
+	public abstract getActiveOrCreateInstance(): ISerialPortInstance;
 
 	public abstract selectDefaultWindowsShell(): TPromise<string>;
 

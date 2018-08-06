@@ -55,8 +55,8 @@ export class ToggleTerminalAction extends TogglePanelAction {
 export class KillTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.KILL;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.kill', 'Kill the Active Terminal Instance');
-	public static readonly PANEL_LABEL = nls.localize('workbench.action.terminal.kill.short', 'Kill Terminal');
+	public static readonly LABEL = nls.localize('workbench.action.terminal.kill', 'Kill the Active Monitor Instance');
+	public static readonly PANEL_LABEL = nls.localize('workbench.action.terminal.kill.short', 'Kill Monitor');
 
 	constructor(
 		id: string, label: string,
@@ -243,8 +243,8 @@ export class ConfigNewTerminalAction extends Action {
 export class CreateNewTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.NEW;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.new', 'Create New Integrated Terminal');
-	public static readonly SHORT_LABEL = nls.localize('workbench.action.terminal.new.short', 'New Terminal');
+	public static readonly LABEL = nls.localize('workbench.action.terminal.new', 'Create New Serial Monitor');
+	public static readonly SHORT_LABEL = nls.localize('workbench.action.terminal.new.short', 'New Monitor');
 
 	constructor(
 		id: string, label: string,
@@ -395,8 +395,8 @@ export class FocusActiveTerminalAction extends Action {
 		super(id, label);
 	}
 
-	public run(event?: any): TPromise<any> {
-		const instance = this.terminalService.getActiveOrCreateInstance(true);
+	public async run(event?: any): TPromise<any> {
+		const instance = await this.terminalService.getActiveOrCreateInstance(true);
 		if (!instance) {
 			return TPromise.as(void 0);
 		}
@@ -793,12 +793,13 @@ export class FocusTerminalFindWidgetAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.FIND_WIDGET_FOCUS;
 	public static readonly LABEL = nls.localize('workbench.action.terminal.focusFindWidget', 'Focus Find Widget');
+	public static readonly SHORT_LABEL = nls.localize('workbench.action.terminal.find', 'Find');
 
 	constructor(
 		id: string, label: string,
 		@ISerialMonitorService private terminalService: ISerialMonitorService,
 	) {
-		super(id, label);
+		super(id, label, 'terminal-action octicon octicon-search');
 	}
 
 	public run(): TPromise<any> {

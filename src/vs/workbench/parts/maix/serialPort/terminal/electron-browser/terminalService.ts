@@ -37,6 +37,7 @@ import { ipcRenderer as ipc } from 'electron';
 import { IOpenFileRequest } from 'vs/platform/windows/common/windows';
 import { TerminalInstance } from 'vs/workbench/parts/maix/serialPort/terminal/electron-browser/terminalInstance';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
+import { ISerialPortService } from 'vs/workbench/parts/maix/serialPort/common/type';
 
 export class TerminalService extends AbstractTerminalService implements ISerialMonitorService {
 	private _configHelper: TerminalConfigHelper;
@@ -60,6 +61,7 @@ export class TerminalService extends AbstractTerminalService implements ISerialM
 		@INotificationService private readonly _notificationService: INotificationService,
 		@IDialogService private readonly _dialogService: IDialogService,
 		@IExtensionService private readonly _extensionService: IExtensionService,
+		@ISerialPortService private serialPortService: ISerialPortService,
 	) {
 		super(contextKeyService, panelService, partService, lifecycleService, storageService);
 
@@ -278,9 +280,32 @@ export class TerminalService extends AbstractTerminalService implements ISerialM
 		});
 	}
 
-	public getActiveOrCreateInstance(wasNewTerminalAction?: boolean): ISerialPortInstance {
+	public getActiveOrCreateInstance(wasNewTerminalAction: true): TPromise<ISerialPortInstance>;
+	public getActiveOrCreateInstance(): ISerialPortInstance;
+	public getActiveOrCreateInstance(wasNewTerminalAction?: boolean): ISerialPortInstance | TPromise<ISerialPortInstance> {
 		const activeInstance = this.getActiveInstance();
-		return activeInstance ? activeInstance : this.createTerminal(undefined, wasNewTerminalAction);
+		if (!activeInstance && !wasNewTerminalAction) {
+			return activeInstance;
+		} else {
+			return this.serialPortService.quickOpenDevice().then((dev) => {
+				if (!dev) {
+					return null;
+				}
+
+				const instance = this.createTerminal({
+					name: dev,
+					serialDevice: dev,
+				}, true);
+
+				if (!instance) {
+					return null;
+				}
+
+				this.setActiveInstance(instance);
+
+				return instance;
+			});
+		}
 	}
 
 	protected _showTerminalCloseConfirmation(): TPromise<boolean> {

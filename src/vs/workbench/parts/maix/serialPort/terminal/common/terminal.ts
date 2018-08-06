@@ -131,7 +131,9 @@ export interface ISerialMonitorService {
 
 	setActiveInstanceByIndex(terminalIndex: number): void;
 
-	getActiveOrCreateInstance(wasNewTerminalAction?: boolean): ISerialPortInstance;
+	getActiveOrCreateInstance(wasNewTerminalAction: true): TPromise<ISerialPortInstance>;
+
+	getActiveOrCreateInstance(): ISerialPortInstance;
 
 	splitInstance(instance: ISerialPortInstance, shell?: ISerialLaunchConfig): void;
 
