@@ -8,7 +8,9 @@ if [ "$(id -u)" = "0" ]; then
 fi
 
 function prepare_arch() {
-	export ARCH="$1"
+	local SYSTEM="$1"
+	
+	export ARCH="$2"
 	export npm_config_arch="$ARCH"
 	source common.sh "${ARCH}"
 	
@@ -17,7 +19,7 @@ function prepare_arch() {
 	
 	### install nodejs
 	if [ ! -e "${NODEJS}" ]; then
-		install_node "${ARCH}" "${RELEASE_ROOT}/nodejs/${ARCH}"
+		"install_node_${SYSTEM}" "${ARCH}" "${RELEASE_ROOT}/nodejs/${ARCH}"
 	fi
 	echo "Node.js version: $("${NODEJS}" -v)"
 	
@@ -29,18 +31,36 @@ function prepare_arch() {
 	fi
 }
 
-function install_node() {
+function install_node_linux() {
 	echo "install nodejs $1 to $2"
 	local ARCH="$1"
 	local INSTALL_NODE="$2"
 	mkdir -p "${INSTALL_NODE}"
-	if [ ! -e "${INSTALL_NODE}.tar.gz" ]; then
-		wget -c -O "${INSTALL_NODE}.tar.gz.downloading" "https://nodejs.org/dist/v8.11.2/node-v8.11.2-linux-${ARCH}.tar.xz"
-		mv "${INSTALL_NODE}.tar.gz.downloading" "${INSTALL_NODE}.tar.gz"
+	if [ ! -e "${INSTALL_NODE}.tar.xz" ]; then
+		wget -c -O "${INSTALL_NODE}.tar.xz.downloading" "https://nodejs.org/dist/v8.11.2/node-v8.11.2-linux-${ARCH}.tar.xz"
+		mv "${INSTALL_NODE}.tar.xz.downloading" "${INSTALL_NODE}.tar.xz"
 	fi
 	
-	tar xf "${INSTALL_NODE}.tar.gz" --strip-components=1 -C "${INSTALL_NODE}"
+	tar xf "${INSTALL_NODE}.tar.xz" --strip-components=1 -C "${INSTALL_NODE}"
+}
+function install_node_windows() {
+	echo "install nodejs $1 to $2"
+	local ARCH="$1"
+	local INSTALL_NODE="$2"
+	mkdir -p "${INSTALL_NODE}"
+	if [ ! -e "${INSTALL_NODE}.zip" ]; then
+		wget -c -O "${INSTALL_NODE}.zip.downloading" "https://nodejs.org/dist/v8.11.2/node-v8.11.2-win-${ARCH}.zip"
+		mv "${INSTALL_NODE}.zip.downloading" "${INSTALL_NODE}.zip"
+	fi
+	
+	unzip x "${INSTALL_NODE}.zip" -d "${INSTALL_NODE}"
+	mv ${INSTALL_NODE}/node-v8.11.2-win-x64/* "${INSTALL_NODE}/"
 }
 
-prepare_arch x64
-prepare_arch ia32
+if find /bin -name 'cygwin*.dll' &>/dev/null ; then
+	SYSTEM="windows"
+else
+	SYSTEM="linux"
+fi
+
+prepare_arch "$SYSTEM" x64
