@@ -9,7 +9,7 @@ source "./my-scripts/common.sh"
 
 for I in ./custom-extensions/*/package.json ; do
 	DIR_NAME="$(dirname "$I")"
-	EXT_NAME="$(basename "$I")"
+	EXT_NAME="$(basename "$DIR_NAME")"
 	if hash_deps_check_changed "${EXT_NAME}" "${I}" ; then
 		echo "installing dependencies: $EXT_NAME ..."
 		pushd "$DIR_NAME" &>/dev/null
@@ -25,4 +25,5 @@ for I in ./custom-extensions/*/tsconfig.json ; do
 	./node_modules/.bin/tsc -p "$I"
 done
 
+echo ++ cp -ru ./custom-extensions/*/ "${TARGET}/resources/app/extensions"
 cp -ru ./custom-extensions/*/ "${TARGET}/resources/app/extensions"

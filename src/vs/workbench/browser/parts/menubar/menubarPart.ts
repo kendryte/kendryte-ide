@@ -72,6 +72,7 @@ export class MenubarPart extends Part {
 		'Go': IMenu;
 		'Terminal': IMenu;
 		'Debug': IMenu;
+		'Maix': IMenu;
 		'Tasks': IMenu;
 		'Window'?: IMenu;
 		'Help': IMenu;
@@ -86,6 +87,7 @@ export class MenubarPart extends Part {
 		'Go': nls.localize({ key: 'mGoto', comment: ['&& denotes a mnemonic'] }, "&&Go"),
 		'Terminal': nls.localize({ key: 'mTerminal', comment: ['&& denotes a mnemonic'] }, "Ter&&minal"),
 		'Debug': nls.localize({ key: 'mDebug', comment: ['&& denotes a mnemonic'] }, "&&Debug"),
+		'Maix': nls.localize({ key: 'mMaix', comment: ['&& denotes a mnemonic'] }, "&&Maix"),
 		'Tasks': nls.localize({ key: 'mTasks', comment: ['&& denotes a mnemonic'] }, "&&Tasks"),
 		'Help': nls.localize({ key: 'mHelp', comment: ['&& denotes a mnemonic'] }, "&&Help")
 	};
@@ -135,6 +137,7 @@ export class MenubarPart extends Part {
 			'Go': this._register(this.menuService.createMenu(MenuId.MenubarGoMenu, this.contextKeyService)),
 			'Terminal': this._register(this.menuService.createMenu(MenuId.MenubarTerminalMenu, this.contextKeyService)),
 			'Debug': this._register(this.menuService.createMenu(MenuId.MenubarDebugMenu, this.contextKeyService)),
+			'Maix': this._register(this.menuService.createMenu(MenuId.MenubarMaixMenu, this.contextKeyService)),
 			'Tasks': this._register(this.menuService.createMenu(MenuId.MenubarTasksMenu, this.contextKeyService)),
 			'Help': this._register(this.menuService.createMenu(MenuId.MenubarHelpMenu, this.contextKeyService))
 		};

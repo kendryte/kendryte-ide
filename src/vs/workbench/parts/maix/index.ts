@@ -20,3 +20,5 @@ import 'vs/workbench/parts/maix/serialPort/common/reloadAction';
 // Serial Monitor
 import 'vs/workbench/parts/maix/serialPort/terminal/electron-browser/terminal.contribution';
 import 'vs/workbench/parts/maix/serialPort/panel/electron-browser/serialPanelContribution';
+// menus
+import 'vs/workbench/parts/maix/_library/electron-browser/menuContribution';

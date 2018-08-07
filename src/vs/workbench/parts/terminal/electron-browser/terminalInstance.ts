@@ -43,36 +43,36 @@ const NUMBER_OF_FRAMES_TO_MEASURE = 20;
 let Terminal: typeof XTermTerminal;
 
 export class TerminalInstance implements ITerminalInstance {
-	protected static readonly EOL_REGEX = /\r?\n/g;
+	private static readonly EOL_REGEX = /\r?\n/g;
 
-	protected static _lastKnownDimensions: dom.Dimension = null;
-	protected static _idCounter = 1;
+	private static _lastKnownDimensions: dom.Dimension = null;
+	private static _idCounter = 1;
 
-	protected _processManager: ITerminalProcessManager | undefined;
+	private _processManager: ITerminalProcessManager | undefined;
 
-	protected _id: number;
-	protected _isExiting: boolean;
-	protected _hadFocusOnExit: boolean;
-	protected _isVisible: boolean;
-	protected _isDisposed: boolean;
-	protected _skipTerminalCommands: string[];
-	protected _title: string;
-	protected _wrapperElement: HTMLDivElement;
-	protected _xterm: XTermTerminal;
-	protected _xtermElement: HTMLDivElement;
-	protected _terminalHasTextContextKey: IContextKey<boolean>;
-	protected _cols: number;
-	protected _rows: number;
-	protected _dimensionsOverride: ITerminalDimensions;
-	protected _windowsShellHelper: WindowsShellHelper;
-	protected _xtermReadyPromise: Promise<void>;
+	private _id: number;
+	private _isExiting: boolean;
+	private _hadFocusOnExit: boolean;
+	private _isVisible: boolean;
+	private _isDisposed: boolean;
+	private _skipTerminalCommands: string[];
+	private _title: string;
+	private _wrapperElement: HTMLDivElement;
+	private _xterm: XTermTerminal;
+	private _xtermElement: HTMLDivElement;
+	private _terminalHasTextContextKey: IContextKey<boolean>;
+	private _cols: number;
+	private _rows: number;
+	private _dimensionsOverride: ITerminalDimensions;
+	private _windowsShellHelper: WindowsShellHelper;
+	private _xtermReadyPromise: Promise<void>;
 
-	protected _disposables: lifecycle.IDisposable[];
-	protected _messageTitleDisposable: lifecycle.IDisposable;
+	private _disposables: lifecycle.IDisposable[];
+	private _messageTitleDisposable: lifecycle.IDisposable;
 
-	protected _widgetManager: TerminalWidgetManager;
-	protected _linkHandler: TerminalLinkHandler;
-	protected _commandTracker: TerminalCommandTracker;
+	private _widgetManager: TerminalWidgetManager;
+	private _linkHandler: TerminalLinkHandler;
+	private _commandTracker: TerminalCommandTracker;
 
 	public disableLayout: boolean;
 	public get id(): number { return this._id; }
@@ -89,44 +89,44 @@ export class TerminalInstance implements ITerminalInstance {
 	public get shellLaunchConfig(): IShellLaunchConfig { return this._shellLaunchConfig; }
 	public get commandTracker(): TerminalCommandTracker { return this._commandTracker; }
 
-	protected readonly _onExit: Emitter<number> = new Emitter<number>();
+	private readonly _onExit: Emitter<number> = new Emitter<number>();
 	public get onExit(): Event<number> { return this._onExit.event; }
-	protected readonly _onDisposed: Emitter<ITerminalInstance> = new Emitter<ITerminalInstance>();
+	private readonly _onDisposed: Emitter<ITerminalInstance> = new Emitter<ITerminalInstance>();
 	public get onDisposed(): Event<ITerminalInstance> { return this._onDisposed.event; }
-	protected readonly _onFocused: Emitter<ITerminalInstance> = new Emitter<ITerminalInstance>();
+	private readonly _onFocused: Emitter<ITerminalInstance> = new Emitter<ITerminalInstance>();
 	public get onFocused(): Event<ITerminalInstance> { return this._onFocused.event; }
-	protected readonly _onProcessIdReady: Emitter<ITerminalInstance> = new Emitter<ITerminalInstance>();
+	private readonly _onProcessIdReady: Emitter<ITerminalInstance> = new Emitter<ITerminalInstance>();
 	public get onProcessIdReady(): Event<ITerminalInstance> { return this._onProcessIdReady.event; }
-	protected readonly _onTitleChanged: Emitter<string> = new Emitter<string>();
+	private readonly _onTitleChanged: Emitter<string> = new Emitter<string>();
 	public get onTitleChanged(): Event<string> { return this._onTitleChanged.event; }
-	protected readonly _onData: Emitter<string> = new Emitter<string>();
+	private readonly _onData: Emitter<string> = new Emitter<string>();
 	public get onData(): Event<string> { return this._onData.event; }
-	protected readonly _onLineData: Emitter<string> = new Emitter<string>();
+	private readonly _onLineData: Emitter<string> = new Emitter<string>();
 	public get onLineData(): Event<string> { return this._onLineData.event; }
-	protected readonly _onRendererInput: Emitter<string> = new Emitter<string>();
+	private readonly _onRendererInput: Emitter<string> = new Emitter<string>();
 	public get onRendererInput(): Event<string> { return this._onRendererInput.event; }
-	protected readonly _onRequestExtHostProcess: Emitter<ITerminalInstance> = new Emitter<ITerminalInstance>();
+	private readonly _onRequestExtHostProcess: Emitter<ITerminalInstance> = new Emitter<ITerminalInstance>();
 	public get onRequestExtHostProcess(): Event<ITerminalInstance> { return this._onRequestExtHostProcess.event; }
-	protected readonly _onDimensionsChanged: Emitter<void> = new Emitter<void>();
+	private readonly _onDimensionsChanged: Emitter<void> = new Emitter<void>();
 	public get onDimensionsChanged(): Event<void> { return this._onDimensionsChanged.event; }
-	protected readonly _onFocus: Emitter<ITerminalInstance> = new Emitter<ITerminalInstance>();
+	private readonly _onFocus: Emitter<ITerminalInstance> = new Emitter<ITerminalInstance>();
 	public get onFocus(): Event<ITerminalInstance> { return this._onFocus.event; }
 
 	public constructor(
-		protected readonly _terminalFocusContextKey: IContextKey<boolean>,
-		protected readonly _configHelper: TerminalConfigHelper,
-		protected _container: HTMLElement,
-		protected _shellLaunchConfig: IShellLaunchConfig,
-		@IContextKeyService protected readonly _contextKeyService: IContextKeyService,
-		@IKeybindingService protected readonly _keybindingService: IKeybindingService,
-		@INotificationService protected readonly _notificationService: INotificationService,
-		@IPanelService protected readonly _panelService: IPanelService,
-		@IInstantiationService protected readonly _instantiationService: IInstantiationService,
-		@IClipboardService protected readonly _clipboardService: IClipboardService,
-		@IThemeService protected readonly _themeService: IThemeService,
-		@IConfigurationService protected readonly _configurationService: IConfigurationService,
-		@ILogService protected _logService: ILogService,
-		@IStorageService protected readonly _storageService: IStorageService
+		private readonly _terminalFocusContextKey: IContextKey<boolean>,
+		private readonly _configHelper: TerminalConfigHelper,
+		private _container: HTMLElement,
+		private _shellLaunchConfig: IShellLaunchConfig,
+		@IContextKeyService private readonly _contextKeyService: IContextKeyService,
+		@IKeybindingService private readonly _keybindingService: IKeybindingService,
+		@INotificationService private readonly _notificationService: INotificationService,
+		@IPanelService private readonly _panelService: IPanelService,
+		@IInstantiationService private readonly _instantiationService: IInstantiationService,
+		@IClipboardService private readonly _clipboardService: IClipboardService,
+		@IThemeService private readonly _themeService: IThemeService,
+		@IConfigurationService private readonly _configurationService: IConfigurationService,
+		@ILogService private _logService: ILogService,
+		@IStorageService private readonly _storageService: IStorageService
 	) {
 		this._disposables = [];
 		this._skipTerminalCommands = [];
@@ -169,7 +169,7 @@ export class TerminalInstance implements ITerminalInstance {
 		this._disposables.push(disposable);
 	}
 
-	protected _initDimensions(): void {
+	private _initDimensions(): void {
 		// The terminal panel needs to have been created
 		if (!this._container) {
 			return;
@@ -187,7 +187,7 @@ export class TerminalInstance implements ITerminalInstance {
 	 * @param height The height of the container.
 	 * @return The terminal's width if it requires a layout.
 	 */
-	protected _evaluateColsAndRows(width: number, height: number): number {
+	private _evaluateColsAndRows(width: number, height: number): number {
 		// Ignore if dimensions are undefined or 0
 		if (!width || !height) {
 			return null;
@@ -222,7 +222,7 @@ export class TerminalInstance implements ITerminalInstance {
 		return dimension.width;
 	}
 
-	protected _getDimension(width: number, height: number): dom.Dimension {
+	private _getDimension(width: number, height: number): dom.Dimension {
 		// The font needs to have been initialized
 		const font = this._configHelper.getFont(this._xterm);
 		if (!font || !font.charWidth || !font.charHeight) {
@@ -465,7 +465,7 @@ export class TerminalInstance implements ITerminalInstance {
 		});
 	}
 
-	protected _measureRenderTime(): void {
+	private _measureRenderTime(): void {
 		const frameTimes: number[] = [];
 		const textRenderLayer = this._xterm._core.renderer._renderLayers[0];
 		const originalOnGridChanged = textRenderLayer.onGridChanged;
@@ -701,7 +701,7 @@ export class TerminalInstance implements ITerminalInstance {
 		this._xterm.clear();
 	}
 
-	protected _refreshSelectionContextKey() {
+	private _refreshSelectionContextKey() {
 		const activePanel = this._panelService.getActivePanel();
 		const isActive = activePanel && activePanel.getId() === TERMINAL_PANEL_ID;
 
@@ -735,7 +735,7 @@ export class TerminalInstance implements ITerminalInstance {
 		}
 	}
 
-	protected _onProcessData(data: string): void {
+	private _onProcessData(data: string): void {
 		if (this._widgetManager) {
 			this._widgetManager.closeMessage();
 		}
@@ -744,7 +744,7 @@ export class TerminalInstance implements ITerminalInstance {
 		}
 	}
 
-	protected _onProcessExit(exitCode: number): void {
+	private _onProcessExit(exitCode: number): void {
 		this._logService.debug(`Terminal process exit (id: ${this.id}) with code ${exitCode}`);
 
 		// Prevent dispose functions being triggered multiple times
@@ -811,7 +811,7 @@ export class TerminalInstance implements ITerminalInstance {
 		this._onExit.fire(exitCode);
 	}
 
-	protected _attachPressAnyKeyToCloseListener() {
+	private _attachPressAnyKeyToCloseListener() {
 		this._processManager.addDisposable(dom.addDisposableListener(this._xterm.textarea, 'keypress', (event: KeyboardEvent) => {
 			this.dispose();
 			event.preventDefault();
@@ -849,7 +849,7 @@ export class TerminalInstance implements ITerminalInstance {
 		this._shellLaunchConfig = shell;
 	}
 
-	protected _sendRendererInput(input: string): void {
+	private _sendRendererInput(input: string): void {
 		if (this._processManager) {
 			throw new Error('onRendererInput attempted to be used on a regular terminal');
 		}
@@ -858,7 +858,7 @@ export class TerminalInstance implements ITerminalInstance {
 		this._onRendererInput.fire(input);
 	}
 
-	protected _onLineFeed(): void {
+	private _onLineFeed(): void {
 		const buffer = (<any>this._xterm._core.buffer);
 		const newLine = buffer.lines.get(buffer.ybase + buffer.y);
 		if (!newLine.isWrapped) {
@@ -866,7 +866,7 @@ export class TerminalInstance implements ITerminalInstance {
 		}
 	}
 
-	protected _sendLineData(buffer: any, lineIndex: number): void {
+	private _sendLineData(buffer: any, lineIndex: number): void {
 		let lineData = buffer.translateBufferLineToString(lineIndex, true);
 		while (lineIndex >= 0 && buffer.lines.get(lineIndex--).isWrapped) {
 			lineData = buffer.translateBufferLineToString(lineIndex, false) + lineData;
@@ -892,14 +892,14 @@ export class TerminalInstance implements ITerminalInstance {
 		this._xterm.setOption('screenReaderMode', value === 'on');
 	}
 
-	protected _setCursorBlink(blink: boolean): void {
+	private _setCursorBlink(blink: boolean): void {
 		if (this._xterm && this._xterm.getOption('cursorBlink') !== blink) {
 			this._xterm.setOption('cursorBlink', blink);
 			this._xterm.refresh(0, this._xterm.rows - 1);
 		}
 	}
 
-	protected _setCursorStyle(style: string): void {
+	private _setCursorStyle(style: string): void {
 		if (this._xterm && this._xterm.getOption('cursorStyle') !== style) {
 			// 'line' is used instead of bar in VS Code to be consistent with editor.cursorStyle
 			const xtermOption = style === 'line' ? 'bar' : style;
@@ -907,11 +907,11 @@ export class TerminalInstance implements ITerminalInstance {
 		}
 	}
 
-	protected _setCommandsToSkipShell(commands: string[]): void {
+	private _setCommandsToSkipShell(commands: string[]): void {
 		this._skipTerminalCommands = commands;
 	}
 
-	protected _setEnableBell(isEnabled: boolean): void {
+	private _setEnableBell(isEnabled: boolean): void {
 		if (this._xterm) {
 			if (this._xterm.getOption('bellStyle') === 'sound') {
 				if (!this._configHelper.config.enableBell) {
@@ -925,7 +925,7 @@ export class TerminalInstance implements ITerminalInstance {
 		}
 	}
 
-	protected _safeSetOption(key: string, value: any): void {
+	private _safeSetOption(key: string, value: any): void {
 		if (!this._xterm) {
 			return;
 		}
@@ -952,7 +952,7 @@ export class TerminalInstance implements ITerminalInstance {
 		this._resize();
 	}
 
-	protected _resize(): void {
+	private _resize(): void {
 		let cols = this._cols;
 		let rows = this._rows;
 		if (this._dimensionsOverride && this._dimensionsOverride.cols && this._dimensionsOverride.rows) {
@@ -1030,7 +1030,7 @@ export class TerminalInstance implements ITerminalInstance {
 		this._resize();
 	}
 
-	protected _getXtermTheme(theme?: ITheme): any {
+	private _getXtermTheme(theme?: ITheme): any {
 		if (!theme) {
 			theme = this._themeService.getTheme();
 		}
@@ -1066,7 +1066,7 @@ export class TerminalInstance implements ITerminalInstance {
 		};
 	}
 
-	protected _updateTheme(theme?: ITheme): void {
+	private _updateTheme(theme?: ITheme): void {
 		this._xterm.setOption('theme', this._getXtermTheme(theme));
 	}
 
