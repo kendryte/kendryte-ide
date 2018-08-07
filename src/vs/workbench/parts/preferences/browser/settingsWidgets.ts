@@ -15,7 +15,7 @@ import { Disposable, dispose, IDisposable } from 'vs/base/common/lifecycle';
 import 'vs/css!./media/settingsWidgets';
 import { localize } from 'vs/nls';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
-import { foreground, inputBackground, inputBorder, inputForeground, listHoverBackground, registerColor, selectBackground, selectBorder, selectForeground, textLinkForeground, listHoverForeground, listActiveSelectionBackground, listActiveSelectionForeground, listInactiveSelectionBackground, listInactiveSelectionForeground } from 'vs/platform/theme/common/colorRegistry';
+import { foreground, inputBackground, inputBorder, inputForeground, listActiveSelectionBackground, listActiveSelectionForeground, listHoverBackground, listHoverForeground, listInactiveSelectionBackground, listInactiveSelectionForeground, registerColor, selectBackground, selectBorder, selectForeground, textLinkForeground, textPreformatForeground } from 'vs/platform/theme/common/colorRegistry';
 import { attachButtonStyler, attachInputBoxStyler } from 'vs/platform/theme/common/styler';
 import { ICssStyleCollector, ITheme, IThemeService, registerThemingParticipant } from 'vs/platform/theme/common/themeService';
 
@@ -89,7 +89,7 @@ registerThemingParticipant((theme: ITheme, collector: ICssStyleCollector) => {
 
 	const listSelectBackgroundColor = theme.getColor(listActiveSelectionBackground);
 	if (listSelectBackgroundColor) {
-		collector.addRule(`.settings-editor > .settings-body > .settings-tree-container .setting-item.setting-item-exclude .setting-exclude-row:focus { background-color: ${listSelectBackgroundColor}; }`);
+		collector.addRule(`.settings-editor > .settings-body > .settings-tree-container .setting-item.setting-item-exclude .setting-exclude-row.selected:focus { background-color: ${listSelectBackgroundColor}; }`);
 	}
 
 	const listInactiveSelectionBackgroundColor = theme.getColor(listInactiveSelectionBackground);
@@ -104,7 +104,12 @@ registerThemingParticipant((theme: ITheme, collector: ICssStyleCollector) => {
 
 	const listSelectForegroundColor = theme.getColor(listActiveSelectionForeground);
 	if (listSelectForegroundColor) {
-		collector.addRule(`.settings-editor > .settings-body > .settings-tree-container .setting-item.setting-item-exclude .setting-exclude-row.selected { color: ${listSelectForegroundColor}; }`);
+		collector.addRule(`.settings-editor > .settings-body > .settings-tree-container .setting-item.setting-item-exclude .setting-exclude-row.selected:focus { color: ${listSelectForegroundColor}; }`);
+	}
+
+	const codeTextForegroundColor = theme.getColor(textPreformatForeground);
+	if (codeTextForegroundColor) {
+		collector.addRule(`.settings-editor > .settings-body > .settings-tree-container .setting-item .setting-item-description-markdown code { color: ${codeTextForegroundColor} }`);
 	}
 });
 
@@ -145,6 +150,10 @@ export class ExcludeSettingListModel {
 
 	select(idx: number): void {
 		this._selectedIdx = idx;
+	}
+
+	getSelected(): number {
+		return this._selectedIdx;
 	}
 
 	selectNext(): void {
@@ -201,12 +210,18 @@ export class ExcludeSettingWidget extends Disposable {
 				return;
 			}
 
-			const targetIdx = element.getAttribute('data-index');
-			if (!targetIdx) {
+			const targetIdxStr = element.getAttribute('data-index');
+			if (!targetIdxStr) {
 				return;
 			}
 
-			this.model.select(parseInt(targetIdx));
+			const targetIdx = parseInt(targetIdxStr);
+
+			if (this.model.getSelected() === targetIdx) {
+				return;
+			}
+
+			this.model.select(targetIdx);
 			this.renderList();
 			e.preventDefault();
 			e.stopPropagation();
