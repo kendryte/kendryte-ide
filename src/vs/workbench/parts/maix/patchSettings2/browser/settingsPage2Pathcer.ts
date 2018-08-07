@@ -15,18 +15,14 @@ function createFeedbackButton(original) {
 	};
 }
 
-PatchClassMethodFunction(SettingsEditor2, createHeader);
-PatchClassMethodFunction(SettingsEditor2, createFeedbackButton);
+PatchClassMethodFunction(SettingsEditor2, 'createHeader', createHeader);
+PatchClassMethodFunction(SettingsEditor2, 'createFeedbackButton', createFeedbackButton);
 
-function PatchClassMethodFunction<T extends Function>(Class: any, wrapper: (original: T) => T) {
-	const name = wrapper['name'];
-	if (!name) {
-		throw new TypeError('function must have name.');
-	}
-	const original = Class.prototype[name];
+function PatchClassMethodFunction<T extends Function>(Class: any, wrapperName: string, wrapper: (original: T) => T) {
+	const original = Class.prototype[wrapperName];
 	if (!original) {
-		throw new TypeError('function ' + name + ' is not found in original class.');
+		throw new TypeError('function ' + wrapperName + ' is not found in original class.');
 	}
 
-	Class.prototype[name] = wrapper(original);
+	Class.prototype[wrapperName] = wrapper(original);
 }

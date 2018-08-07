@@ -69,14 +69,18 @@ step "copy inno updater" \
 	npm run gulp -- "vscode-win32-$ARCH-copy-inno-updater"
 
 ############# create zip
-PLATFORM_WIN32="win32-$ARCH"
-BUILDNAME="${BUILD_NAME}-${PLATFORM_WIN32}"
-
-TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.tar.gz"
+TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.exe"
 TARBALL_PATH="${RELEASE_ROOT}/${TARBALL_FILENAME}"
 
-Zip="${Repo}\.release\win32-${ARCH}\archive\VSCode-win32-${ARCH}.zip"
-
-step "Create archive" \
+step "Create archive folder" \
 	npm run gulp -- "vscode-win32-${ARCH}-archive"
 
+RESULT="${RELEASE_ROOT}/VSCode-win32-${ARCH}"
+
+step "Compile custom extensions" \
+	bash my-scripts/build-env/custom-extensions-build-all.sh "${RESULT}"
+
+step "Create archive file" \
+	7za a -y -sfx "${TARBALL_PATH}" "${RESULT}"
+
+echo "Build success, the result file is ${TARBALL_PATH}"

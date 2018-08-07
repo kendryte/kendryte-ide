@@ -6,9 +6,8 @@ cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 source fn.sh
 source common.sh "$@"
 
-if [ "$(id -u)" = "0" ]; then
-	die "Do not use root."
-fi
+echo 8000000 > /proc/sys/fs/file-max
+ulimit -n 1000000
 
 if [ ! -e "${NODEJS}" ]; then
 	bash ./prepare-release.sh
@@ -84,5 +83,12 @@ BUILDNAME="${BUILD_NAME}-${PLATFORM_LINUX}"
 TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.tar.gz"
 TARBALL_PATH="${RELEASE_ROOT}/${TARBALL_FILENAME}"
 
-step "Create tar.gz archive" \
-	tar -czf "${TARBALL_PATH}" "${BUILDNAME}"
+RESULT="${BUILDNAME}"
+
+step "Compile custom extensions" \
+	bash my-scripts/build-env/custom-extensions-build-all.sh "${RESULT}"
+
+step "Create ${RESULT} archive to ${TARBALL_PATH}" \
+	tar -czf "${TARBALL_PATH}" "${RESULT}"
+
+echo "Build success, the result file is ${TARBALL_PATH}"
