@@ -13,33 +13,20 @@ fi
 mkdir -p "${ARCH_RELEASE_ROOT}"
 cd "${ARCH_RELEASE_ROOT}"
 
-############# cleanup dist dir (leave node_modules folder)
-find . -maxdepth 1 ! -name node_modules ! -name . -exec rm -rf "{}" \;
-
-############# copy source files to dist dir
-pushd "${VSCODE_ROOT}" &>/dev/null
-git archive --format tar HEAD | tar x -C "${ARCH_RELEASE_ROOT}"
-popd &>/dev/null
-
 ############# define const to create filenames
-BUILD_VERSION=$(node -p "require(\"${VSCODE_ROOT}/package.json\").version")
-BUILD_NAME=$(node -p "require(\"${VSCODE_ROOT}/product.json\").applicationName")
-BUILD_QUALITY=$(node -p "require(\"${VSCODE_ROOT}/product.json\").quality")
-BUILD_COMMIT=$(node -p "require(\"${VSCODE_ROOT}/product.json\").commit")
+pushd "${VSCODE_ROOT}" &>/dev/null
+BUILD_VERSION=$(node -p "require(\"./package.json\").version")
+BUILD_NAME=$(node -p "require(\"./product.json\").applicationName")
+BUILD_QUALITY=$(node -p "require(\"./product.json\").quality")
+BUILD_COMMIT=$(node -p "require(\"./product.json\").commit")
+popd &>/dev/null
 
 ############# ./build/tfs/linux/build.sh
 # !!! NO node.sh HERE !!!
 source ./scripts/env.sh
-source ./build/tfs/common/common.sh
 
 step "Yarn" \
 	yarn
-
-step "Hygiene" \
-	npm run gulp -- hygiene
-
-step "Monaco Editor Check" \
-	./node_modules/.bin/tsc -p ./src/tsconfig.monaco.json --noEmit
 
 step "Mix in repository from vscode-distro" \
 	npm run gulp -- mixin
@@ -72,5 +59,5 @@ TARBALL_PATH="${RELEASE_ROOT}/${TARBALL_FILENAME}"
 Zip="${Repo}\.release\win32-${ARCH}\archive\VSCode-win32-${ARCH}.zip"
 
 step "Create archive" \
-	npm run gulp -- "vscode-win32-${ARCH}-archive" "vscode-win32-${ARCH}-system-setup" "vscode-win32-${ARCH}-user-setup"
+	npm run gulp -- "vscode-win32-${ARCH}-archive"
 
