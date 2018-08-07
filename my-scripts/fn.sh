@@ -78,3 +78,34 @@ function step_end() {
 	done
 	echo "=========================="
 }
+
+function hash_files_check_changed() {
+	local HASH="${RELEASE_ROOT}/head_hash.md5"
+	[ -e "${HASH}" ] && ( git archive head | md5sum -c "${HASH}" )
+	RET=$?
+	[ ${RET} -ne 0 ] && echo "source code has changed" || echo "source code not changed"
+	[ ${RET} -ne 0 ]
+}
+
+function hash_files_save() {
+	local HASH="${RELEASE_ROOT}/head_hash.md5"
+	git archive head | md5sum > "${HASH}"
+}
+
+
+function hash_deps_check_changed() {
+	local DEP_NAME="$1"
+	local DEP_FILE="$2"
+	local HASH="${RELEASE_ROOT}/dep_${DEP_NAME}_hash.md5"
+	[ -e "${HASH}" ] && ( cat "$DEP_FILE" | md5sum -c "${HASH}" )
+	RET=$?
+	[ ${RET} -ne 0 ] && echo "dependency ${DEP_NAME} has changed" || echo "dependency ${DEP_NAME} not changed"
+	[ ${RET} -ne 0 ]
+}
+
+function hash_deps_save() {
+	local DEP_NAME="$1"
+	local DEP_FILE="$2"
+	local HASH="${RELEASE_ROOT}/dep_${DEP_NAME}_hash.md5"
+	cat "$DEP_FILE" | md5sum > "${HASH}"
+}
