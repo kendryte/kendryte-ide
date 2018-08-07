@@ -2,6 +2,7 @@
 
 set -e
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+source fn.sh
 
 if [ "$(id -u)" = "0" ]; then
 	die "Do not use root."
@@ -32,7 +33,7 @@ function prepare_arch() {
 }
 
 function install_node_linux() {
-	echo "install nodejs $1 to $2"
+	echo "install nodejs on linux $1 to $2"
 	local ARCH="$1"
 	local INSTALL_NODE="$2"
 	mkdir -p "${INSTALL_NODE}"
@@ -51,7 +52,7 @@ function install_node_windows() {
 	if [ -e "${INSTALL_NODE}/node.exe" ]; then
 		return
 	fi
-	echo "install nodejs $1 to $2"
+	echo "install nodejs on windows $1 to $2"
 	mkdir -p "${INSTALL_NODE}"
 	if [ ! -e "${INSTALL_NODE}.zip" ]; then
 		wget -c -O "${INSTALL_NODE}.zip.downloading" "https://nodejs.org/dist/v8.11.2/node-v8.11.2-win-${ARCH}.zip"
@@ -63,7 +64,8 @@ function install_node_windows() {
 	mv "${INSTALL_NODE}/../node-v8.11.2-win-x64" "${INSTALL_NODE}"
 }
 
-if find /bin -name 'cygwin*.dll' &>/dev/null ; then
+FOUND_CYGWIN=$(find /bin -name 'cygwin*.dll')
+if [ -n "${FOUND_CYGWIN}" ]; then
 	SYSTEM="windows"
 else
 	SYSTEM="linux"

@@ -3,7 +3,8 @@
 ############# prepare
 set -e
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-source common.sh
+source fn.sh
+source common.sh "$@"
 
 if [ ! -e "${NODEJS}" ]; then
 	die "没有运行prepare-release.sh，请按照文档执行。
@@ -12,6 +13,20 @@ fi
 
 mkdir -p "${ARCH_RELEASE_ROOT}"
 cd "${ARCH_RELEASE_ROOT}"
+echo "\e[38;5;14mCWD: ${ARCH_RELEASE_ROOT}\e[0m"
+
+source ./scripts/env.sh
+
+############# cleanup dist dir (leave node_modules folder)
+step "Cleanup dist folder" \
+	find . -maxdepth 1 ! -name node_modules ! -name . -exec rm -rf "{}" \;
+
+############# copy source files to dist dir
+pushd "${VSCODE_ROOT}" &>/dev/null
+step "Extract source code" \
+	git archive --format tar HEAD | tar x -C "${ARCH_RELEASE_ROOT}"
+popd &>/dev/null
+
 
 ############# define const to create filenames
 pushd "${VSCODE_ROOT}" &>/dev/null
@@ -21,15 +36,9 @@ BUILD_QUALITY=$(node -p "require(\"./product.json\").quality")
 BUILD_COMMIT=$(node -p "require(\"./product.json\").commit")
 popd &>/dev/null
 
-############# ./build/tfs/linux/build.sh
-# !!! NO node.sh HERE !!!
-source ./scripts/env.sh
 
 step "Yarn" \
 	yarn
-
-step "Mix in repository from vscode-distro" \
-	npm run gulp -- mixin
 
 step "Get Electron" \
 	npm run gulp -- "electron-$ARCH"
