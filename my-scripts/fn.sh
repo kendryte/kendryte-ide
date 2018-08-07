@@ -27,14 +27,24 @@ function step(){
 	echo -e "\e[38;5;14mStep ${SN}: $title:\e[0m"
 	echo " -- $*"
 
-	bash -c "while true; do sleep 1; echo -ne \"\rRunning: $title\r\"; done" &
+	"$@" &
+	local STAT_PID=$!
+
+	bash -c "dd=''
+while true; do
+	sleep 1
+	[ -d /proc/$STAT_PID ] || exit
+	[ \"\${#dd}\" -gt 10 ] && { dd=''; echo -ne '\r\e[K'; }
+	dd+='.'
+	echo -ne \"\rRunning: $title\${dd}\r\"
+done" &
 	STAT_SHOW=$!
 
-	"$@"
+	wait ${STAT_PID}
 	local RET=$?
 
-	kill -9 "${STAT_SHOW}"
-
+	kill -2 "${STAT_SHOW}" &>/dev/null
+	
 	if [ ${RET} -eq 0 ] ; then
 		echo -e "\e[38;5;10mStep ${SN}: $title Susccess.\e[0m"
 		SN_LIST+=("$title: \e[38;5;10mSusccess\e[0m")
@@ -52,7 +62,7 @@ function step_end() {
 		return
 	fi
 	echo "Stopping Running task..."
-	kill -9 "${STAT_SHOW}"
+	kill -2 "${STAT_SHOW}" &>/dev/null
 	sleep 1
 	echo "=========================="
 	for I in "${SN_LIST[@]}" ; do

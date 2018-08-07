@@ -1,4 +1,3 @@
-import 'vs/css!vs/workbench/parts/maix/serialPort/electron-browser/panel/panel';
 import { Panel } from 'vs/workbench/browser/panel';
 import { $, append, Dimension } from 'vs/base/browser/dom';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
