@@ -7,26 +7,34 @@ source fn.sh
 source common.sh "$@"
 
 if [ ! -e "${NODEJS}" ]; then
-	die "没有运行prepare-release.sh，请按照文档执行。
-	https://doc.b-bug.org/pages/viewpage.action?pageId=4228204"
+	bash ./prepare-release.sh
+
+	source common.sh "$@"
+	if [ ! -e "${NODEJS}" ]; then
+		die "没有运行prepare-release.sh，请按照文档执行。
+		https://doc.b-bug.org/pages/viewpage.action?pageId=4228204"
+	fi
 fi
+
+cd ..
+source ./scripts/env.sh
 
 mkdir -p "${ARCH_RELEASE_ROOT}"
 cd "${ARCH_RELEASE_ROOT}"
-echo "\e[38;5;14mCWD: ${ARCH_RELEASE_ROOT}\e[0m"
-
-source ./scripts/env.sh
+echo -e "\e[38;5;14mCWD: ${ARCH_RELEASE_ROOT}\e[0m"
 
 ############# cleanup dist dir (leave node_modules folder)
 step "Cleanup dist folder" \
 	find . -maxdepth 1 ! -name node_modules ! -name . -exec rm -rf "{}" \;
 
+step "Cleanup gypt folder" \
+	rm -rf "${HOME}/.node-gyp"
+
 ############# copy source files to dist dir
 pushd "${VSCODE_ROOT}" &>/dev/null
 step "Extract source code" \
-	git archive --format tar HEAD | tar x -C "${ARCH_RELEASE_ROOT}"
+	bash -c "git archive --format tar HEAD | tar x -C \"${ARCH_RELEASE_ROOT}\""
 popd &>/dev/null
-
 
 ############# define const to create filenames
 pushd "${VSCODE_ROOT}" &>/dev/null
@@ -36,25 +44,27 @@ BUILD_QUALITY=$(node -p "require(\"./product.json\").quality")
 BUILD_COMMIT=$(node -p "require(\"./product.json\").commit")
 popd &>/dev/null
 
-
+############# install or check dependencies
 step "Yarn" \
 	yarn
 
+############# download electron executable
 step "Get Electron" \
 	npm run gulp -- "electron-$ARCH"
 
+############# install production deps
 step "Install distro dependencies" \
 	node build/tfs/common/installDistro.js
 
+############# build internal extensions
 step "Build extensions" \
 	node build/lib/builtInExtensions.js
 
+############# minify source code
 step "Build minified" \
 	npm run gulp -- "vscode-win32-$ARCH-min"
 
-step "Run unit tests" \
-	./scripts/test.sh --build --reporter dot
-
+############# copy updater
 step "copy inno updater" \
 	npm run gulp -- "vscode-win32-$ARCH-copy-inno-updater"
 

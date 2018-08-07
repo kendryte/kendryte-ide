@@ -8,7 +8,15 @@ function die() {
 }
 
 function nodeBinPath() {
-	echo "${RELEASE_ROOT}/nodejs/${ARCH}/bin/$1"
+	echo "${NODEJS_BIN}/$1"
+}
+
+function nodeBinPathForRequire() {
+	if [ -n "${FOUND_CYGWIN}" ]; then
+		cygpath -m "${NODEJS_BIN}/$1"
+	else
+		echo "${NODEJS_BIN}/$1"
+	fi
 }
 
 trap step_end EXIT INT TERM
@@ -44,7 +52,7 @@ done" &
 	local RET=$?
 
 	kill -2 "${STAT_SHOW}" &>/dev/null
-	
+
 	if [ ${RET} -eq 0 ] ; then
 		echo -e "\e[38;5;10mStep ${SN}: $title Susccess.\e[0m"
 		SN_LIST+=("$title: \e[38;5;10mSusccess\e[0m")

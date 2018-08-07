@@ -12,19 +12,21 @@ export REAL_HOME="$HOME"
 export HOME="${RELEASE_ROOT}/FAKE_HOME"
 
 if [ -z "$ARCH" ]; then
-	die "no ARCH param."
+	ARCH=x64
 fi
 
 P="$PATH"
 P="${RELEASE_ROOT}/nodejs/${ARCH}/bin:$P"
 
-FOUND_CYGWIN=$(find /bin -name 'cygwin*.dll')
+export FOUND_CYGWIN=$(find /bin -name 'cygwin*.dll')
 if [ -n "${FOUND_CYGWIN}" ]; then
 	SYSTEM="windows"
 	export NODEJS="${RELEASE_ROOT}/nodejs/${ARCH}/node.exe"
+	export NODEJS_BIN="${RELEASE_ROOT}/nodejs/${ARCH}"
 else
 	SYSTEM="linux"
 	export NODEJS="${RELEASE_ROOT}/nodejs/${ARCH}/bin/node"
+	export NODEJS_BIN="${RELEASE_ROOT}/nodejs/${ARCH}/bin"
 fi
 
 P="${RELEASE_ROOT}/toolchain-multilib/bin:$P"

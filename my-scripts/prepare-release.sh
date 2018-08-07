@@ -27,8 +27,8 @@ function prepare_arch() {
 	### install yarn (local install)
 	local YARN=$(nodeBinPath yarn)
 	if ! command -v "${YARN}" &>/dev/null ; then
-		echo "install yarn..."
-		${NODEJS} "$(nodeBinPath npm)" -g install yarn
+		echo "install yarn to $YARN..."
+		"$(nodeBinPath npm)" -g install yarn
 	fi
 }
 
@@ -59,9 +59,8 @@ function install_node_windows() {
 		mv "${INSTALL_NODE}.zip.downloading" "${INSTALL_NODE}.zip"
 	fi
 
-	mv "${INSTALL_NODE}/node-v8.11.2-win-x64/" "${INSTALL_NODE}/.."
-	rm -rf "${INSTALL_NODE}/"
-	mv "${INSTALL_NODE}/../node-v8.11.2-win-x64" "${INSTALL_NODE}"
+	unzip -u "${INSTALL_NODE}.zip" -d "${INSTALL_NODE}/.."
+	cp -ru "${INSTALL_NODE}/../node-v8.11.2-win-x64/." "${INSTALL_NODE}"
 }
 
 FOUND_CYGWIN=$(find /bin -name 'cygwin*.dll')
