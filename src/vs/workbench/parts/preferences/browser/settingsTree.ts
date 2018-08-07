@@ -393,7 +393,7 @@ export class SettingsDataSource implements IDataSource {
 	}
 
 	getParent(tree: ITree, element: SettingsTreeElement): TPromise<any, any> {
-		return TPromise.wrap(element.parent);
+		return TPromise.wrap(element && element.parent);
 	}
 
 	shouldAutoexpand(): boolean {
@@ -1236,7 +1236,7 @@ function cleanRenderedMarkdown(element: Node): void {
 }
 
 function fixSettingLinks(text: string): string {
-	return text.replace(/`#(.*)#`/g, (match, settingName) => `[\`${settingName}\`](#${settingName})`);
+	return text.replace(/`#([^#]*)#`/g, (match, settingName) => `[\`${settingName}\`](#${settingName})`);
 }
 
 function getDisplayEnumOptions(setting: ISetting): string[] {
@@ -1250,7 +1250,9 @@ function getDisplayEnumOptions(setting: ISetting): string[] {
 			});
 	}
 
-	return setting.enum.map(escapeInvisibleChars);
+	return setting.enum
+		.map(String)
+		.map(escapeInvisibleChars);
 }
 
 function escapeInvisibleChars(enumValue: string): string {
@@ -1462,12 +1464,13 @@ export class SettingsTree extends NonExpandableTree {
 	) {
 		const treeClass = 'settings-editor-tree';
 
+		const controller = instantiationService.createInstance(SettingsTreeController);
 		const fullConfiguration = <ITreeConfiguration>{
 			dataSource: instantiationService.createInstance(SettingsDataSource, viewState),
-			controller: instantiationService.createInstance(SettingsTreeController),
+			controller,
 			accessibilityProvider: instantiationService.createInstance(SettingsAccessibilityProvider),
 			filter: instantiationService.createInstance(SettingsTreeFilter, viewState),
-			styler: new DefaultTreestyler(DOM.createStyleSheet(), treeClass),
+			styler: new DefaultTreestyler(DOM.createStyleSheet(container), treeClass),
 
 			...configuration
 		};
@@ -1487,6 +1490,8 @@ export class SettingsTree extends NonExpandableTree {
 			themeService,
 			instantiationService,
 			configurationService);
+
+		this.disposables.push(controller);
 
 		this.disposables.push(registerThemingParticipant((theme: ITheme, collector: ICssStyleCollector) => {
 			const activeBorderColor = theme.getColor(focusBorder);
@@ -1557,7 +1562,9 @@ export class SettingsTree extends NonExpandableTree {
 			current = nav.next();
 		} while (current instanceof SettingsTreeGroupElement);
 
-		this.setFocus(current, eventPayload);
+		if (current) {
+			this.setFocus(current, eventPayload);
+		}
 	}
 
 	public focusPrevious(count?: number, eventPayload?: any): void {

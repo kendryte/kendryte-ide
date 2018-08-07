@@ -70,6 +70,7 @@ import { SuggestController } from 'vs/editor/contrib/suggest/suggestController';
 import { ContextMenuController } from 'vs/editor/contrib/contextmenu/contextmenu';
 import { MenuPreventer } from 'vs/workbench/parts/codeEditor/electron-browser/menuPreventer';
 import { SnippetController2 } from 'vs/editor/contrib/snippet/snippetController2';
+import { isMacintosh } from 'vs/base/common/platform';
 
 interface SearchInputEvent extends Event {
 	target: HTMLInputElement;
@@ -362,24 +363,30 @@ export class ExtensionsViewlet extends ViewContainerViewlet implements IExtensio
 		this.searchBox.setModel(this.modelService.createModel('', null, uri.parse('extensions:searchinput'), true));
 
 		this.disposables.push(this.searchBox.onDidPaste(() => {
-			this.searchBox.setValue(this.searchBox.getValue().replace(/\s+/g, ' '));
+			let trimmed = this.searchBox.getValue().replace(/\s+/g, ' ');
+			this.searchBox.setValue(trimmed);
 			this.searchBox.setScrollTop(0);
+			this.searchBox.setPosition(new Position(1, trimmed.length + 1));
 		}));
+
 		this.disposables.push(this.searchBox.onDidFocusEditorText(() => addClass(this.monacoStyleContainer, 'synthetic-focus')));
 		this.disposables.push(this.searchBox.onDidBlurEditorText(() => removeClass(this.monacoStyleContainer, 'synthetic-focus')));
 
 		const onKeyDownMonaco = chain(this.searchBox.onKeyDown);
 		onKeyDownMonaco.filter(e => e.keyCode === KeyCode.Enter).on(e => e.preventDefault(), this, this.disposables);
-		onKeyDownMonaco.filter(e => e.keyCode === KeyCode.DownArrow && e.ctrlKey).on(() => this.focusListView(), this, this.disposables);
+		onKeyDownMonaco.filter(e => e.keyCode === KeyCode.DownArrow && (isMacintosh ? e.metaKey : e.ctrlKey)).on(() => this.focusListView(), this, this.disposables);
 
 		const searchChangeEvent = new Emitter<string>();
 		this.onSearchChange = searchChangeEvent.event;
 
+		let existingContent = this.searchBox.getValue().trim();
 		this.disposables.push(this.searchBox.getModel().onDidChangeContent(() => {
+			this.placeholderText.style.visibility = this.searchBox.getValue() ? 'hidden' : 'visible';
+			let content = this.searchBox.getValue().trim();
+			if (existingContent === content) { return; }
 			this.triggerSearch();
-			const content = this.searchBox.getValue();
 			searchChangeEvent.fire(content);
-			this.placeholderText.style.visibility = content ? 'hidden' : 'visible';
+			existingContent = content;
 		}));
 
 		return super.create(this.extensionsBox)
