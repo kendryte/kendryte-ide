@@ -93,7 +93,7 @@ class SerialPortService implements ISerialPortService {
 			};
 		});
 
-		const picked = await this.quickInputService.pick(TPromise.as(pickMap));
+		const picked = await this.quickInputService.pick(TPromise.as(pickMap), { canPickMany: false });
 		return picked ? picked.id : '';
 	}
 }

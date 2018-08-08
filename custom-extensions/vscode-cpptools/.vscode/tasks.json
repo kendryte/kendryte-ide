@@ -1,0 +1,60 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "TypeScript Compile",
+            "identifier": "compile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "isBackground": true,
+            "type": "shell",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            },
+            "command": "npm",
+            "args": [
+                "run",
+                "compile",
+                "--loglevel",
+                "silent"
+            ],
+            "problemMatcher": "$tsc-watch"
+        },
+        {
+            "label": "TypeScript Lint",
+            "identifier": "tslint",
+            "group": "build",
+            "isBackground": false,
+            "type": "shell",
+            "command": "npm",
+            "args": [
+                "run",
+                "tslint"
+            ],
+            "problemMatcher": {
+                "fileLocation": "absolute",
+                "source": "tslint",
+                "pattern": [
+                    {
+                        "regexp": "(ERROR:) ([a-zA-Z/:\\-\\.]*)\\[(\\d+), (\\d+)\\]: (.*)",
+                        "severity": 1,
+                        "file": 2,
+                        "line": 3,
+                        "column": 4,
+                        "message": 5
+                    }
+                ]
+            },
+            "dependsOn": [
+                "compile"
+            ]
+        }
+    ]
+}

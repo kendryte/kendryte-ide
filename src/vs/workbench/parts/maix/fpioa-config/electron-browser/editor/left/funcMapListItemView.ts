@@ -102,7 +102,7 @@ export class FuncMapListItemRender implements IRenderer<IListFuncMapEntry, IFunc
 		if (!this.pinToIO) {
 			return;
 		}
-		template.currentFunc = entry.full;
+		template.currentFunc = entry.fnCallArgName;
 
 		const io = this.pinToIO[entry.currentPin];
 		const select = Object.keys(this.ioToPin).indexOf(io) + 1; // padding for --

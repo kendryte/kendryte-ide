@@ -18,6 +18,7 @@ export type PinId = PIN_IO | PIN_NC | PIN_POWER;
 export interface IFuncPin {
 	name: string;
 	funcNumber: number;
+	ignoreFnName?: boolean;
 	description?: string;
 }
 

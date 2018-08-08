@@ -67,15 +67,15 @@ export class FpioaLeftPanel extends Disposable implements IView {
 				focusOnMouseDown: false,
 				selectOnMouseDown: false,
 				keyboardSupport: false,
-				mouseSupport: false
-			}
+				mouseSupport: false,
+			},
 		)) as WorkbenchList<IFpioaLeftListEntry>;
 
 		this.setCurrentChip(undefined);
 
 		this.list.splice(0, 2, [
 			{ id: null, templateId: TEMPLATE_ID.CHIP_SELECT, selected: undefined },
-			{ id: null, templateId: TEMPLATE_ID.SPLIT }
+			{ id: null, templateId: TEMPLATE_ID.SPLIT },
 		]);
 	}
 
@@ -86,7 +86,7 @@ export class FpioaLeftPanel extends Disposable implements IView {
 	updateList(currentFuncMap: IFuncPinMap) {
 		this.currentFuncMap = currentFuncMap;
 		this.chipIOList.forEach((item: IListFuncMapEntry) => {
-			item.currentPin = this.getExistsFuncPin(item.full);
+			item.currentPin = this.getExistsFuncPin(item.fnCallArgName);
 		});
 		this.list.splice(2, this.list.length, this.chipIOList);
 	}
@@ -112,13 +112,20 @@ export class FpioaLeftPanel extends Disposable implements IView {
 		chip.usableFunctions.forEach(({ name: funName, ios, description }) => {
 			newList.push({ id: funName.toUpperCase(), templateId: TEMPLATE_ID.FUNC_MAP_GROUP, description });
 
-			ios.forEach(({ name: pinName, funcNumber, description }) => {
-				const funcFullName = funName.toUpperCase() + '_' + pinName.toUpperCase();
+			ios.forEach(({ name: pinName, funcNumber, description, ignoreFnName }) => {
+				const funcFullName: string = funName.toUpperCase() + '_' + pinName.toUpperCase();
+				let funcCallName: string;
+				if (ignoreFnName) {
+					funcCallName = pinName.toUpperCase();
+				} else {
+					funcCallName = funName.toUpperCase() + '_' + pinName.toUpperCase();
+				}
 				newList.push(<IListFuncMapEntry>{
 					templateId: TEMPLATE_ID.FUNC_MAP_HIDE,
 					currentPin: this.getExistsFuncPin(funcFullName),
 					id: pinName.toUpperCase(),
-					full: funcFullName,
+					fullId: funcFullName,
+					fnCallArgName: funcCallName,
 					description,
 				});
 			});

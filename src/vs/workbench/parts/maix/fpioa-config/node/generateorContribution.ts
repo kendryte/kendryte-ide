@@ -88,5 +88,5 @@ CommandsRegistry.registerCommand({
 			notificationService.error(e);
 			throw e;
 		});
-	}
+	},
 });

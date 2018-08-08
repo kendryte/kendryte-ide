@@ -35,7 +35,12 @@ cd "${ROOT}/${TARGET}"
 export TMUX_TMPDIR="$ROOT/HOME"
 
 export EXTENSION_DIR="$ROOT/HOME/.maix-dev/extensions"
-mkdir -p "${EXTENSION_DIR}"
+if [ -L "${EXTENSION_DIR}" ]; then
+	unlink "${EXTENSION_DIR}"
+elif [ -d "${EXTENSION_DIR}" ]; then
+	rm -rf "${EXTENSION_DIR}"
+fi
+ln -s "${VSCODE_ROOT}/custom-extensions" "${EXTENSION_DIR}"
 
 if test -z "$DBUS_SESSION_BUS_ADDRESS" ; then
 	## if not found, launch a new one
@@ -62,22 +67,9 @@ function sushell() {
 	fi
 }
 
-function link_extension() {
-	local NAME="$1"
-	if [ -L "${EXTENSION_DIR}/${NAME}" ]; then
-		unlink "${EXTENSION_DIR}/${NAME}"
-	fi
-	if [ -e "${EXTENSION_DIR}/${NAME}" ]; then
-		rm -rf "${EXTENSION_DIR}/${NAME}"
-	fi
-	ln -s "${VSCODE_ROOT}/custom-extensions/${NAME}" "${EXTENSION_DIR}/${NAME}"
-}
-
-link_extension code-debug
-link_extension vscode-cmake-tools
-
 sushell compile 'yarn watch'
-sushell ext-cmake 'bash ./my-scripts/ext-cmake.sh'
+sushell ext-cmake 'bash ./my-scripts/ext/cmake.sh'
+sushell ext-cpptools 'bash ./my-scripts/ext/cpptools.sh'
 sushell vscode 'bash ./scripts/code.sh'
 
 /bin/tmux kill-window -t 'bash' || true

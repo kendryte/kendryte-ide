@@ -6,7 +6,7 @@
 import * as errors from 'vs/base/common/errors';
 import { Emitter, Event } from 'vs/base/common/event';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
-import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
+import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { IPanelService } from 'vs/workbench/services/panel/common/panelService';
 import { IPartService } from 'vs/workbench/services/part/common/partService';
 import {
@@ -23,9 +23,7 @@ import {
 	TERMINAL_PANEL_ID,
 } from 'vs/workbench/parts/maix/serialPort/terminal/common/terminal';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
-
-const TERMINAL_STATE_STORAGE_KEY = 'terminal.state';
+import { IStorageService } from 'vs/platform/storage/common/storage';
 
 export abstract class TerminalService implements ISerialMonitorService {
 	public _serviceBrand: any;
@@ -93,8 +91,6 @@ export abstract class TerminalService implements ISerialMonitorService {
 		this._findWidgetVisible = KEYBINDING_CONTEXT_TERMINAL_FIND_WIDGET_VISIBLE.bindTo(this._contextKeyService);
 		this.onTabDisposed(tab => this._removeTab(tab));
 
-		lifecycleService.when(LifecyclePhase.Restoring).then(() => this._restoreTabs());
-
 		this._handleContextKeys();
 	}
 
@@ -131,32 +127,6 @@ export abstract class TerminalService implements ISerialMonitorService {
 
 	public abstract requestExtHostProcess(proxy: ITerminalProcessExtHostProxy, shellLaunchConfig: ISerialLaunchConfig, cols: number, rows: number): void;
 
-	private _restoreTabs(): void {
-		if (!this.configHelper.config.experimentalRestore) {
-			return;
-		}
-
-		const tabConfigsJson = this._storageService.get(TERMINAL_STATE_STORAGE_KEY, StorageScope.WORKSPACE);
-		if (!tabConfigsJson) {
-			return;
-		}
-
-		const tabConfigs = <{ instances: ISerialLaunchConfig[] }[]>JSON.parse(tabConfigsJson);
-		if (!Array.isArray(tabConfigs)) {
-			return;
-		}
-
-		tabConfigs.forEach(tabConfig => {
-			const instance = this.createTerminal(tabConfig.instances[0]);
-			if (!instance) {
-				return;
-			}
-			for (let i = 1; i < tabConfig.instances.length; i++) {
-				this.splitInstance(instance, tabConfig.instances[i]);
-			}
-		});
-	}
-
 	private _onWillShutdown(): boolean | TPromise<boolean> {
 		if (this.terminalInstances.length === 0) {
 			// No terminal instances, don't veto
@@ -179,16 +149,6 @@ export abstract class TerminalService implements ISerialMonitorService {
 	}
 
 	private _onShutdown(): void {
-		// Store terminal tab layout
-		if (this.configHelper.config.experimentalRestore) {
-			const configs = this.terminalTabs.map(tab => {
-				return {
-					instances: tab.terminalInstances.map(instance => instance.shellLaunchConfig),
-				};
-			});
-			this._storageService.store(TERMINAL_STATE_STORAGE_KEY, JSON.stringify(configs), StorageScope.WORKSPACE);
-		}
-
 		// Dispose of all instances
 		this.terminalInstances.forEach(instance => instance.dispose());
 	}

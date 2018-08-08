@@ -3,13 +3,18 @@ import { BaseAny } from 'vs/workbench/parts/maix/fpioa-config/common/baseAny';
 
 export class PinBuilder {
 	static gpio(count: number, base: number, idPrefix: string, descPrefix: string): IFuncPin[] {
-		return PinBuilder.dataPin(count, base, `gpio${idPrefix}`, descPrefix);
+		return PinBuilder.dataPin(count, base, `${idPrefix}`, descPrefix, 0, { ignoreFnName: true });
 	}
 
-	static dataPin(count: number, base: number, idPrefix: string, descPrefix: string, nameBase: number = 0): IFuncPin[] {
+	static dataPin(count: number, base: number, idPrefix: string, descPrefix: string, nameBase: number = 0, extra: Partial<IFuncPin> = {}): IFuncPin[] {
 		const ret: IFuncPin[] = [];
 		for (let i = 0; i < count; i++) {
-			ret.push({ name: `${idPrefix}${i + nameBase}`, funcNumber: base + i, description: `${descPrefix} ${i + nameBase}` });
+			ret.push({
+				name: `${idPrefix}${i + nameBase}`,
+				funcNumber: base + i,
+				description: `${descPrefix} ${i + nameBase}`,
+				...extra,
+			});
 		}
 		return ret;
 	}
@@ -20,7 +25,7 @@ export class PinBuilder {
 			ios: [
 				{ name: 'rx', funcNumber: base, description: 'Receiver' },
 				{ name: 'tx', funcNumber: base + 1, description: 'Transmitter' },
-			]
+			],
 		};
 	}
 
@@ -32,7 +37,7 @@ export class PinBuilder {
 				...PinBuilder.dataPin(4, base + 8, 'cs', 'Chip Select'),
 				{ name: 'arb', funcNumber: base + 8 + 4, description: 'Arbitration' },
 				{ name: 'sclk', funcNumber: base + 8 + 4 + 1, description: 'Serial Clock' },
-			]
+			],
 		};
 	}
 
@@ -43,7 +48,7 @@ export class PinBuilder {
 				{ name: 'd0', funcNumber: base + 1, description: 'Data 0' },
 				{ name: 'cs', funcNumber: base + 2, description: 'Chip Select' },
 				{ name: 'sclk', funcNumber: base + 31, description: 'Serial Clock' },
-			]
+			],
 		};
 	}
 
@@ -56,7 +61,7 @@ export class PinBuilder {
 				{ name: 'ws', funcNumber: base + 2, description: 'Word Select(LRCLK)' },
 				...this.dataPin(input, base + 3, 'in_d', 'Serial Data Input'),
 				...this.dataPin(output, base + 3 + input, 'out_d', 'Serial Data Output'),
-			]
+			],
 		};
 	}
 
@@ -66,7 +71,7 @@ export class PinBuilder {
 			ios: [
 				{ name: 'sclk', funcNumber: base, description: 'Serial Clock' },
 				{ name: 'sda', funcNumber: base + 1, description: 'Serial Data' },
-			]
+			],
 		};
 	}
 }

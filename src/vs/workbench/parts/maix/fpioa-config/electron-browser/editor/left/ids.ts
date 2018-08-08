@@ -23,7 +23,8 @@ export interface IListFuncMapEntry extends IListSplitEntry {
 	currentPin: string; // A3 B7 ...
 	templateId: TEMPLATE_ID.FUNC_MAP | TEMPLATE_ID.FUNC_MAP_HIDE;
 	description: string;
-	full: string;
+	fullId: string;
+	fnCallArgName: string;
 }
 
 export interface IListChipSelectEntry extends IListSplitEntry {

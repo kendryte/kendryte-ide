@@ -21,7 +21,7 @@ const test: IChipPackagingDefine = {
 		{
 			name: 'gpio', description: 'GPIO',
 			ios: [
-				...PinBuilder.gpio(14, 0, '', 'Pin'),
+				...PinBuilder.gpio(14, 0, 'gpio', 'Pin'),
 			]
 		},
 	]

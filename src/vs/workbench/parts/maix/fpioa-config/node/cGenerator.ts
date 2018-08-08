@@ -9,7 +9,7 @@ export class SourceGenerator implements IGenerator {
 		const generatedConfigSections: string[] = [];
 
 		funcPinMap.forEach((io, pinFuncID) => {
-			generatedConfigSections.push(`configASSERT(${config.setterFuncName}(${io}, ${config.funcNamePrefix}${pinFuncID}) == 0)`);
+			generatedConfigSections.push(`ret += ${config.setterFuncName}(${io}, ${config.funcNamePrefix}${pinFuncID})`);
 		});
 
 		return `/**
@@ -19,15 +19,10 @@ export class SourceGenerator implements IGenerator {
 #include "${config.libraryName}.h"
 #include "fpioa-config.h"
 
-#ifndef configASSERT
-	#define configASSERT( x )
-	#define configASSERT_DEFINED 0
-#else
-	#define configASSERT_DEFINED 1
-#endif
-
-void configure_fpioa() {
-	${generatedConfigSections.join(';\n\t')}
+int configure_fpioa() {
+	int ret = 0;
+	${generatedConfigSections.map(line => line + ';\n\t').join('')}
+	return ret;
 }
 `;
 	}
@@ -47,7 +42,7 @@ export class HeaderGenerator implements IGenerator {
 #define GUI_FPIOA_CONFIGURE \
 	gui_configure_fpioa();
 
-void configure_fpioa();
+int configure_fpioa();
 
 #endif /* _MAIX_FPIOA_CONFIG_H */
 `;

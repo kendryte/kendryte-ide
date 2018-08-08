@@ -1,0 +1,59 @@
+// A launch configuration that compiles the extension and then opens it inside a new window
+{
+	"version": "0.1.0",
+	"configurations": [
+		{
+			"name": "Launch Extension",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}"
+			],
+			"stopOnEntry": false,
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceFolder}/out/**/*.js"
+			],
+			"preLaunchTask": "compile",
+		},
+		{
+			"name": "Launch Tests",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionTestsPath=${workspaceFolder}/out/test/unitTests"
+			],
+			"stopOnEntry": false,
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceFolder}/out/test/**/*.js"
+			],
+			"preLaunchTask": "compile"
+		},
+		{
+			"name": "Node Attach",
+			"type": "node",
+			"request": "attach",
+			"port": 5858
+		},
+		{
+			"name": "Launch Integration Tests",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"${workspaceFolder}/test/integrationTests/testAssets/SimpleCppProject",
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionTestsPath=${workspaceFolder}/out/test/integrationTests"
+			],
+			"stopOnEntry": false,
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceFolder}/out/test/**/*.js"
+			]
+		},
+	]
+}

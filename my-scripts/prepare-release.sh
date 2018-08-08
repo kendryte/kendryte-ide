@@ -4,10 +4,6 @@ set -e
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 source fn.sh
 
-if [ "$(id -u)" = "0" ]; then
-	die "Do not use root."
-fi
-
 function prepare_arch() {
 	local SYSTEM="$1"
 

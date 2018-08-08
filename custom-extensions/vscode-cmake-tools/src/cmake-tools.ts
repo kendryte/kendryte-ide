@@ -582,6 +582,11 @@ export class CMakeTools implements vscode.Disposable, api.CMakeToolsAPI {
         build_log.info('Build was terminated');
       } else {
         build_log.info('Build finished with exit code', rc);
+        if (rc === 0) {
+          build_log.info('==========================');
+          build_log.info('    Build Success !');
+          build_log.info('==========================');
+        }
       }
       const file_diags = consumer.compileConsumer.createDiagnostics(drv.binaryDir);
       populateCollection(this._buildDiagnostics, file_diags);

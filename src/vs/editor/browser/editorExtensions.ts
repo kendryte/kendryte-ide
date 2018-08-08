@@ -178,13 +178,11 @@ export interface IEditorCommandMenuOptions {
 	order: number;
 	when?: ContextKeyExpr;
 }
-
 export interface IActionOptions extends ICommandOptions {
 	label: string;
 	alias: string;
 	menuOpts?: IEditorCommandMenuOptions;
 }
-
 export abstract class EditorAction extends EditorCommand {
 
 	public label: string;
@@ -247,7 +245,6 @@ export function registerLanguageCommand(id: string, handler: (accessor: Services
 interface IDefaultArgs {
 	resource: URI;
 	position: IPosition;
-
 	[name: string]: any;
 }
 
@@ -351,5 +348,4 @@ class EditorContributionRegistry {
 	}
 
 }
-
 Registry.add(Extensions.EditorCommonContributions, EditorContributionRegistry.INSTANCE);

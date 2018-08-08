@@ -1,0 +1,15 @@
+obj/**
+.vscode/**
+typings/**
+out/test/**
+test/**
+src/**
+**/*.map
+.gitignore
+tsconfig.json
+CMakeLists.txt
+debugAdapters/install.lock*
+out/src/Debugger/copyScript.js
+tools/**
+out/tools/**
+notices/**

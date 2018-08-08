@@ -22,7 +22,7 @@ const Maix1BGAPackageDefine: IChipPackagingDefine = {
 	name: 'Maix',
 	geometry: BGA_IO_GEOMETRY(graph),
 	generator: {
-		funcNamePrefix: 'fpioa_function_e::FUNC_',
+		funcNamePrefix: 'FUNC_',
 		setterFuncName: 'fpioa_set_function',
 		libraryName: 'fpioa',
 	},
@@ -52,8 +52,8 @@ const Maix1BGAPackageDefine: IChipPackagingDefine = {
 		{
 			name: 'gpio', description: 'GPIO',
 			ios: [
-				...PinBuilder.gpio(32, 24, 'hs', 'High speed'),
-				...PinBuilder.gpio(8, 56, '', 'Pin'),
+				...PinBuilder.gpio(32, 24, 'gpiohs', 'High speed'),
+				...PinBuilder.gpio(8, 56, 'gpio', 'Pin'),
 			]
 		},
 		PinBuilder.spi(1, 70),
