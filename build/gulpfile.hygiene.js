@@ -335,6 +335,7 @@ if (require.main === module) {
 		cp.exec('git diff --cached --name-only', { maxBuffer: 2000 * 1024 }, (err, out) => {
 			if (err) {
 				console.error();
+				console.error('  pwd:', process.cwd());
 				console.error(err);
 				process.exit(1);
 				return;
@@ -353,6 +354,7 @@ if (require.main === module) {
 						.on('error', e)))
 					.catch(err => {
 						console.error();
+						console.error('  pwd:', process.cwd());
 						console.error(err);
 						process.exit(1);
 					});

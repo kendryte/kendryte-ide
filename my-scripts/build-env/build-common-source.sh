@@ -21,6 +21,10 @@ if hash_files_check_changed ; then
 	hash_files_save
 fi
 
+if [ ! -e "${RELEASE_ROOT}/.git" ]; then
+	git init "${RELEASE_ROOT}"
+fi
+
 LOCK="${VSCODE_ROOT}/yarn.lock"
 if hash_deps_check_changed yarn "${LOCK}" ; then
 	############# install or check dependencies
