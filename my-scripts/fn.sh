@@ -79,28 +79,45 @@ function step_end() {
 	echo "=========================="
 }
 
-function hash_files_check_changed() {
+function hash_files_check_changed() { # change return 0 ( test success )
 	local HASH="${RELEASE_ROOT}/head_hash.md5"
-	[ -e "${HASH}" ] && ( git archive head | md5sum --quiet -c "${HASH}" )
+	if [ -e "${HASH}" ]; then
+		pushd "${VSCODE_ROOT}" &>/dev/null
+		if git archive HEAD | md5sum --status -c "${HASH}" ; then
+			RET=1
+			echo "source code not changed: $(< "${HASH}")"
+		else
+			RET=0
+			echo "source code has changed: $(< "${HASH}")"
+		fi
+		popd &>/dev/null
+	else
+		echo "source code not exists."
+		RET=0
+	fi
 	RET=$?
-	[ ${RET} -ne 0 ] && echo "source code has changed" || echo "source code not changed"
-	[ ${RET} -ne 0 ]
+	return ${RET}
 }
 
 function hash_files_save() {
 	local HASH="${RELEASE_ROOT}/head_hash.md5"
+	pushd "${VSCODE_ROOT}" &>/dev/null
 	git archive head | md5sum > "${HASH}"
+	popd &>/dev/null
 }
 
 
-function hash_deps_check_changed() {
+function hash_deps_check_changed() { # change return 0 ( test success )
 	local DEP_NAME="$1"
 	local DEP_FILE="$2"
 	local HASH="${RELEASE_ROOT}/dep_${DEP_NAME}_hash.md5"
-	[ -e "${HASH}" ] && ( cat "$DEP_FILE" | md5sum --quiet -c "${HASH}" )
-	RET=$?
-	[ ${RET} -ne 0 ] && echo "dependency ${DEP_NAME} has changed" || echo "dependency ${DEP_NAME} not changed"
-	[ ${RET} -ne 0 ]
+	if [ -e "${HASH}" ] && ( cat "$DEP_FILE" | md5sum --status -c "${HASH}" ) ; then
+		echo "dependency ${DEP_NAME} not changed"
+		return 1
+	else
+		echo "dependency ${DEP_NAME} has changed"
+		return 0
+	fi
 }
 
 function hash_deps_save() {

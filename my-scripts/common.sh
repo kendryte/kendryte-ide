@@ -20,7 +20,6 @@ if [ -z "${RELEASE_ROOT}" ]; then
 	P="${RELEASE_ROOT}/nodejs/${ARCH}/bin:$P"
 	P="${RELEASE_ROOT}/toolchain-multilib/bin:$P"
 	export PATH="$P"
-	echo -e "\e[38;5;14mPATH=$PATH\e[0m"
 fi
 
 if [ -z "${REAL_HOME}" ]; then
@@ -40,3 +39,19 @@ if [ -z "${FOUND_CYGWIN}" ] || [ -z "${NODEJS}" ] ; then
 		export NODEJS_BIN="${RELEASE_ROOT}/nodejs/${ARCH}/bin"
 	fi
 fi
+
+
+printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
+echo -e "\e[1;38;5;9mARCH\e[0m=\e[2m${ARCH}\e[0m"
+echo -e "\e[1;38;5;9mVSCODE_ROOT\e[0m=\e[2m${VSCODE_ROOT}\e[0m"
+echo -e "\e[1;38;5;9mYARN_CACHE_FOLDER\e[0m=\e[2m${YARN_CACHE_FOLDER}\e[0m"
+echo -e "\e[1;38;5;9mRELEASE_ROOT\e[0m=\e[2m${RELEASE_ROOT}\e[0m"
+echo -e "\e[1;38;5;9mARCH_RELEASE_ROOT\e[0m=\e[2m${ARCH_RELEASE_ROOT}\e[0m"
+echo -e "\e[1;38;5;9mPATH\e[0m=\e[2m${PATH}\e[0m"
+echo -e "\e[1;38;5;9mREAL_HOME\e[0m=\e[2m${REAL_HOME}\e[0m"
+echo -e "\e[1;38;5;9mHOME\e[0m=\e[2m${HOME}\e[0m"
+echo -e "\e[1;38;5;9mFOUND_CYGWIN\e[0m=\e[2m${FOUND_CYGWIN}\e[0m"
+echo -e "\e[1;38;5;9mSYSTEM\e[0m=\e[2m${SYSTEM}\e[0m"
+echo -e "\e[1;38;5;9mNODEJS\e[0m=\e[2m${NODEJS}\e[0m"
+echo -e "\e[1;38;5;9mNODEJS_BIN\e[0m=\e[2m${NODEJS_BIN}\e[0m"
+printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
