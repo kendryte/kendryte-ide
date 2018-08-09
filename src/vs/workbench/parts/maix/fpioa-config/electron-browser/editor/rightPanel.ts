@@ -1,5 +1,5 @@
 import { IView } from 'vs/base/browser/ui/splitview/splitview';
-import { Disposable } from 'vs/base/common/lifecycle';
+import { Disposable, dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { Emitter, Event } from 'vs/base/common/event';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { $, addClasses, append } from 'vs/base/browser/dom';
@@ -8,8 +8,9 @@ import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { editorWidgetBackground, editorWidgetBorder } from 'vs/platform/theme/common/colorRegistry';
 import { getChipPackaging } from 'vs/workbench/parts/maix/fpioa-config/common/packagingRegistry';
 import { chipRenderFactory } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/right/factory';
-import { AbstractTableRender } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/right/abstract';
+import { AbstractTableRender, ContextMenuData } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/right/abstract';
 import { IFuncPinMap } from 'vs/workbench/parts/maix/fpioa-config/common/types';
+import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 
 export class FpioaRightPanel extends Disposable implements IView, IThemable {
 	element: HTMLElement;
@@ -22,9 +23,11 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 	private table: AbstractTableRender<any>;
 	private $table: HTMLElement;
 	private tableDrawed = false;
+	private contextEvent: IDisposable;
 
 	constructor(
 		@IInstantiationService instantiationService: IInstantiationService,
+		@IContextMenuService contextMenuService: IContextMenuService,
 		@IThemeService private themeService: IThemeService,
 	) {
 		super();
@@ -37,7 +40,6 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 			background: editorWidgetBackground,
 			leftLine: editorWidgetBorder,
 		}, this));
-		/// create table
 	}
 
 	style(colors: any) {
@@ -58,6 +60,7 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 	}
 
 	private destroyTable() {
+		this.table.dispose();
 		this.$table.innerHTML = '<h1 style="text-align:center;">Select a chip to start.</h1>';
 		this.tableDrawed = false;
 	}
@@ -78,6 +81,10 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 
 		this.table = chipRenderFactory(getChipPackaging(chipName), this.themeService);
 
+		this.contextEvent = this.table.onContextMenu((data: ContextMenuData) => {
+			console.log(data);
+		});
+
 		this.$table.innerHTML = '';
 		this.table.render(this.$table);
 		this.tableDrawed = true;
@@ -88,7 +95,7 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 	dispose() {
 		super.dispose();
 		if (this.table) {
-			this.table.dispose();
+			dispose(this.contextEvent, this.table);
 			delete this.table;
 		}
 	}

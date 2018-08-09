@@ -73,12 +73,6 @@ export class FpioaLeftPanel extends Disposable implements IView {
 
 		this.setCurrentChip(undefined);
 
-		const original = this.list.splice.bind(this.list);
-		this.list.splice = (index, count, list) => {
-			console.warn('splice(%s, %s, %s)', index, count, list.length);
-			return original(index, count, list);
-		};
-
 		this.list.splice(0, 2, [
 			{ id: null, templateId: TEMPLATE_ID.CHIP_SELECT, selected: undefined },
 			{ id: null, templateId: TEMPLATE_ID.SPLIT },

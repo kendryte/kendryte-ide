@@ -1,5 +1,4 @@
 import { $, addClass, addClasses, append } from 'vs/base/browser/dom';
-import { IPin2DNumber } from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
 import { stringifyPin } from 'vs/workbench/parts/maix/fpioa-config/common/builder';
 import { AbstractTableRender, ColorMap, grid } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/right/abstract';
 import { memoize } from 'vs/base/common/decorators';
@@ -11,10 +10,6 @@ export type BGAPinList = Map<string, CellRender>;
 
 export class BGATableRender extends AbstractTableRender<BGAPinList> {
 	private $trList: HTMLElement[];
-
-	_getPin(list: BGAPinList, pin: IPin2DNumber) {
-		return list.get(`x:${pin.x}y:${pin.y}`);
-	}
 
 	@memoize
 	get styleMap(): IColorMapping {
@@ -76,7 +71,7 @@ export class BGATableRender extends AbstractTableRender<BGAPinList> {
 
 				tData[r][c] = $td;
 				if (cell) {
-					cellList.set(`x:${c}y:${r}`, cell);
+					cellList.set(cell.id, cell);
 					// this._register(cell.click);
 				}
 			}
@@ -101,9 +96,8 @@ export class BGATableRender extends AbstractTableRender<BGAPinList> {
 		addClasses($td, grid(y, 'row'), grid(x, 'col'), 'pin');
 
 		if (typeof ioNum === 'number') {
-			$td.setAttribute('x', x.toString());
-			$td.setAttribute('y', y.toString());
-			cell = this.renderIO($td, ioNum);
+			cell = new CellRender($td, { x, y });
+			cell.title = 'IO_' + ioNum.toString();
 		} else {
 			addClass($td, 'ignored');
 		}
@@ -117,12 +111,6 @@ export class BGATableRender extends AbstractTableRender<BGAPinList> {
 		addClasses(ret, ...classes);
 		ret.innerText = text;
 
-		return ret;
-	}
-
-	private renderIO($td: HTMLTableDataCellElement, ioNum: number) {
-		const ret = new CellRender($td);
-		ret.title = 'IO_' + ioNum.toString();
 		return ret;
 	}
 }

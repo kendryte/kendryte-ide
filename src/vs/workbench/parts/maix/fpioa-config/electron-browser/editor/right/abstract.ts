@@ -1,12 +1,14 @@
-import { $, addClasses, append } from 'vs/base/browser/dom';
+import { $, addClasses, addDisposableListener, append } from 'vs/base/browser/dom';
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { IChipPackagingCalculated, IPin, IPin2DNumber } from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { attachStyler, IColorMapping } from 'vs/platform/theme/common/styler';
 import { Color } from 'vs/base/common/color';
-import { normalizePin } from 'vs/workbench/parts/maix/fpioa-config/common/builder';
+import { normalizePin, stringifyPin } from 'vs/workbench/parts/maix/fpioa-config/common/builder';
 import { CellRender } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/right/cell';
 import { IFuncPinMap } from 'vs/workbench/parts/maix/fpioa-config/common/types';
+import { ContextMenuEvent } from 'vs/base/parts/tree/browser/tree';
+import { Emitter } from 'vs/base/common/event';
 
 export interface ChipTableCreator {
 	new(chip: IChipPackagingCalculated): AbstractTableRender<any>;
@@ -18,10 +20,19 @@ export interface IEachDisposable {
 
 export interface IEach<T> {
 	forEach(callback: (item: T) => void): void;
+
+	get(id: string): T;
 }
 
 export interface ColorMap {
 	[p: string]: Color;
+}
+
+export interface ContextMenuData {
+	dom: HTMLTableDataCellElement;
+	pin: IPin2DNumber;
+	pinName: string;
+	ioNum: number;
 }
 
 export abstract class AbstractTableRender<T extends IEach<CellRender>> extends Disposable {
@@ -33,13 +44,12 @@ export abstract class AbstractTableRender<T extends IEach<CellRender>> extends D
 
 	private _cellList: T;
 
-	private styleAttached = false;
+	private readonly _onContextMenu = new Emitter<ContextMenuData>();
+	public readonly onContextMenu = this._onContextMenu.event;
 
 	protected abstract readonly styleMap: IColorMapping; // only for overwrite
 
 	protected abstract createTableTemplate(): T;
-
-	protected abstract _getPin(list: T, pin: IPin2DNumber): CellRender;
 
 	protected abstract frameStyle(colors: ColorMap);
 
@@ -82,18 +92,44 @@ export abstract class AbstractTableRender<T extends IEach<CellRender>> extends D
 
 	render(element: HTMLElement) {
 		if (!this.hasRendered) {
-			this.hasRendered = true;
-			this.disposeCells();
 			this._cellList = this.createTableTemplate();
-			// todo: actions
+			this.hasRendered = true;
 		}
 
+		this.dispose();
+
+		this.show(true);
 		append(element, this.$table);
 
-		if (!this.styleAttached) {
-			this._register(attachStyler(this.themeService, this.styleMap, this));
-			this.styleAttached = true;
-		}
+		this._register(attachStyler(this.themeService, this.styleMap, this));
+
+		this._register(addDisposableListener(this.$table, 'contextmenu', (event: ContextMenuEvent) => {
+			let dom = event.target;
+			while (true) {
+				if (dom.tagName === 'TD') {
+					break;
+				}
+				if (dom === this.$table || !dom.parentElement) {
+					return;
+				}
+				dom = dom.parentElement;
+			}
+			const id: string = dom.getAttribute('pinId');
+			if (!id) { // click on info area or empty pin
+				return;
+			}
+			const obj = this._cellList.get(id);
+
+			const pinLocName = stringifyPin(this.chip.ROW, obj.pin);
+			const io = this.chip.geometry.IOPinPlacement[pinLocName];
+
+			this._onContextMenu.fire({
+				dom: obj.$cell,
+				pin: obj.pin,
+				pinName: pinLocName,
+				ioNum: io,
+			});
+		}));
 	}
 
 	show(show: boolean = true) {
@@ -105,23 +141,27 @@ export abstract class AbstractTableRender<T extends IEach<CellRender>> extends D
 	}
 
 	getPin(pin: IPin) {
-		return this._getPin(this._cellList, normalizePin(this.chip.ROW, pin));
+		pin = normalizePin(this.chip.ROW, pin);
+		return this._cellList.get(`x:${pin.x}y:${pin.y}`);
 	}
 
 	dispose() {
+		if (this.$table.parentElement) {
+			this.$table.parentElement.removeChild(this.$table);
+		}
+		this.show(false);
 		super.dispose();
 		this.disposeCells();
+		this.hasRendered = false;
 	}
 
 	disposeCells() {
-		/*
-		if (this._cellList) {
-			this._cellList.forEach(e => e.dispose());
-		}
-		*/
+		// if (this._cellList) {
+		// 	this._cellList.forEach(e => e.dispose());
+		// }
 	}
 }
 
-export function grid(num: number, type: 'col' | 'row') {
-	return type + '-' + (num % 2 === 0 ? 'even' : 'odd');
+export function grid(num: number, type: 'col'|'row') {
+	return type + '-' + (num % 2 === 0? 'even' : 'odd');
 }

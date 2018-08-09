@@ -2,6 +2,7 @@ import { ColorMap } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/
 import { $, addClass, append } from 'vs/base/browser/dom';
 import { CountBadge } from 'vs/base/browser/ui/countBadge/countBadge';
 import { Color } from 'vs/base/common/color';
+import { IPin2DNumber } from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
 
 export interface ICellStyle extends ColorMap {
 	funcBackground: Color;
@@ -13,11 +14,16 @@ export class CellRender {
 	private $h3: HTMLElement;
 	private $fnContainer: HTMLElement;
 	private functionBadge: CountBadge;
+	public readonly id: string;
 
-	constructor($parent: HTMLTableDataCellElement) {
-		addClass($parent, 'IO');
-		this.$h3 = append($parent, $('h3'));
-		this.$fnContainer = append($parent, $('div.functions'));
+	constructor(public readonly $cell: HTMLTableDataCellElement, public readonly pin: IPin2DNumber) {
+		this.id = `x:${pin.x}y:${pin.y}`;
+		$cell.setAttribute('x', pin.x.toString());
+		$cell.setAttribute('y', pin.y.toString());
+		$cell.setAttribute('pinId', this.id);
+		addClass($cell, 'IO');
+		this.$h3 = append($cell, $('h3'));
+		this.$fnContainer = append($cell, $('div.functions'));
 	}
 
 	set title(value: string) {
