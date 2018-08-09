@@ -30,7 +30,7 @@ export class FpioaLeftPanel extends Disposable implements IView {
 	readonly onSetPinFunc: Event<PinFuncSetEvent> = this._onSetPinFunc.event;
 
 	private list: WorkbenchList<IFpioaLeftListEntry>;
-	private chipIOList: (IListGroupEntry | IListFuncMapEntry)[] = [];
+	private chipIOList: (IListGroupEntry|IListFuncMapEntry)[] = [];
 	private funcMapListItemRender: FuncMapListItemRender;
 
 	private chipName: string;
@@ -73,6 +73,12 @@ export class FpioaLeftPanel extends Disposable implements IView {
 
 		this.setCurrentChip(undefined);
 
+		const original = this.list.splice.bind(this.list);
+		this.list.splice = (index, count, list) => {
+			console.warn('splice(%s, %s, %s)', index, count, list.length);
+			return original(index, count, list);
+		};
+
 		this.list.splice(0, 2, [
 			{ id: null, templateId: TEMPLATE_ID.CHIP_SELECT, selected: undefined },
 			{ id: null, templateId: TEMPLATE_ID.SPLIT },
@@ -84,17 +90,21 @@ export class FpioaLeftPanel extends Disposable implements IView {
 	}
 
 	updateList(currentFuncMap: IFuncPinMap) {
+		console.warn('list update event!');
 		this.currentFuncMap = currentFuncMap;
-		this.chipIOList.forEach((item: IListFuncMapEntry) => {
-			item.currentPin = this.getExistsFuncPin(item.fnCallArgName);
+		this.chipIOList.forEach((item: IListFuncMapEntry, index) => {
+			if (currentFuncMap[item.fnCallArgName] !== item.currentPin) {
+				item.currentPin = currentFuncMap[item.fnCallArgName];
+				this.list.splice(index + 2, 1, [item]);
+			}
 		});
-		this.list.splice(2, this.list.length, this.chipIOList);
 	}
 
 	setCurrentChip(chipName: string) {
 		if (this.chipName === chipName) {
 			return;
 		}
+		console.warn('new chip selected:', chipName);
 		this.chipName = chipName;
 
 		this.list.splice(0, 1, [{ id: null, templateId: TEMPLATE_ID.CHIP_SELECT, selected: chipName }]);
@@ -107,7 +117,8 @@ export class FpioaLeftPanel extends Disposable implements IView {
 	}
 
 	private changeList(chip: IChipPackagingCalculated) {
-		const newList: (IListGroupEntry | IListFuncMapEntry)[] = [];
+		console.warn('pin map is changing');
+		const newList: (IListGroupEntry|IListFuncMapEntry)[] = [];
 
 		chip.usableFunctions.forEach(({ name: funName, ios, description }) => {
 			newList.push({ id: funName.toUpperCase(), templateId: TEMPLATE_ID.FUNC_MAP_GROUP, description });
@@ -120,9 +131,10 @@ export class FpioaLeftPanel extends Disposable implements IView {
 				} else {
 					funcCallName = funName.toUpperCase() + '_' + pinName.toUpperCase();
 				}
+				let currentPin = this.getExistsFuncPin(funcFullName);
 				newList.push(<IListFuncMapEntry>{
 					templateId: TEMPLATE_ID.FUNC_MAP_HIDE,
-					currentPin: this.getExistsFuncPin(funcFullName),
+					currentPin,
 					id: pinName.toUpperCase(),
 					fullId: funcFullName,
 					fnCallArgName: funcCallName,
@@ -146,30 +158,28 @@ export class FpioaLeftPanel extends Disposable implements IView {
 	}
 
 	private onTitleClick(funcId: string) { // show/hide items under this title
-		let state = false, start: number, count = 0;
-		for (const item of this.chipIOList) {
-			if (state) {
-				if (item.templateId === TEMPLATE_ID.FUNC_MAP) { // to find next title
-					item.templateId = TEMPLATE_ID.FUNC_MAP_HIDE;
-					count++;
-				} else if (item.templateId === TEMPLATE_ID.FUNC_MAP_HIDE) { // to find next title
-					item.templateId = TEMPLATE_ID.FUNC_MAP;
-					count++;
-				} else {
-					break;
-				}
-			}
-			if (item.id === funcId) {
-				start = this.chipIOList.indexOf(item) + 1;
-				state = true;
+		const titleLocation = this.chipIOList.findIndex((item) => {
+			return item.id === funcId && item.templateId === TEMPLATE_ID.FUNC_MAP_GROUP;
+		});
+		if (titleLocation === -1) {
+			return;
+		}
+
+		let count = 1; // title it self
+		for (let index = titleLocation + 1; index < this.chipIOList.length; index++) {
+			const item = this.chipIOList[index];
+			if (item.templateId === TEMPLATE_ID.FUNC_MAP) { // to find next title
+				item.templateId = TEMPLATE_ID.FUNC_MAP_HIDE;
+				count++;
+			} else if (item.templateId === TEMPLATE_ID.FUNC_MAP_HIDE) { // to find next title
+				item.templateId = TEMPLATE_ID.FUNC_MAP;
+				count++;
+			} else {
+				break;
 			}
 		}
 
-		if (!state) {
-			return; // ???
-		}
-
-		this.list.splice(start + 2, count, this.chipIOList.slice(start, start + count));
+		this.list.splice(titleLocation + 2, count, this.chipIOList.slice(titleLocation, titleLocation + count));
 	}
 }
 

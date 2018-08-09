@@ -55,7 +55,7 @@ step "copy inno updater" \
 	npm run gulp -- "vscode-win32-$ARCH-copy-inno-updater"
 
 ############# create zip
-TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.exe"
+TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.7z"
 TARBALL_PATH="${RELEASE_ROOT}/${TARBALL_FILENAME}"
 
 step "Create archive folder" \
@@ -67,6 +67,6 @@ step "Compile custom extensions" \
 	bash my-scripts/build-env/custom-extensions-build-all.sh "${RESULT}"
 
 step "Create archive file" \
-	7za a -y -sfx "${TARBALL_PATH}" "${RESULT}"
+	7za a -y "${TARBALL_PATH}" "${RESULT}"
 
 echo "Build success, the result file is ${TARBALL_PATH}"

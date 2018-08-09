@@ -2,7 +2,11 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { Extensions, IConfigCategoryRegistry } from 'vs/workbench/parts/maix/_library/common/type';
 import { commonlyUsedData } from 'vs/workbench/parts/preferences/browser/settingsLayout';
 
+console.log('get config of ConfigCategory');
 const CategoryRegistry = Registry.as<IConfigCategoryRegistry>(Extensions.ConfigCategory);
+if (!CategoryRegistry) {
+	debugger;
+}
 
 CategoryRegistry.registerCategory({ id: 'build-deploy', category: '构建、部署' });
 CategoryRegistry.registerCategory({ id: 'toolchain', category: 'Toolchain', parent: 'build-deploy' });

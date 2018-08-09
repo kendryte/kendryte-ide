@@ -14,23 +14,19 @@ if [ -z "$DISPLAY" ]; then
 	exit 1
 fi
 
+cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+source fn.sh
+source common.sh
+cd ..
+
 # dnf install -y wget curl tar xz libstdc++ python2 \
 #	 make gcc-c++ libsecret-devel libX11-devel libxkbfile-devel \
 #	 gtk2 libXtst libXScrnSaver GConf2 alsa-lib \
 #	 wqy-zenhei-fonts wqy-unibit-fonts wqy-bitmap-fonts
-
-VSCODE_ROOT="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")"
 ROOT="$(dirname "${VSCODE_ROOT}")"
 
 TARGET="${1-maix-ide}"
 TARGET="${TARGET%/}"
-
-echo $PATH
-P=$(echo "$PATH" | sed 's#:/usr/nodejs/bin##g')
-P+=":${ROOT}/nodejs/bin"
-P+=":${VSCODE_ROOT}/.build/electron/toolchain"
-
-cd "${ROOT}/${TARGET}"
 
 export TMUX_TMPDIR="$ROOT/HOME"
 
@@ -67,9 +63,21 @@ function sushell() {
 	fi
 }
 
+function lnext(){
+	node "./my-scripts/build-env/ln-extension.js" "$1"
+}
+
 sushell compile 'yarn watch'
+
+lnext cmake-tools
 sushell ext-cmake 'bash ./my-scripts/ext/cmake.sh'
+
+lnext cmake-tools-helper
+sushell ext-cmake-helper 'bash ./my-scripts/ext/cmake-helper.sh'
+
+lnext cpptools
 sushell ext-cpptools 'bash ./my-scripts/ext/cpptools.sh'
+
 sushell vscode 'bash ./scripts/code.sh'
 
 /bin/tmux kill-window -t 'bash' || true

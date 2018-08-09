@@ -1,0 +1,122 @@
+{
+  "name": "cmake-tools-helper",
+  "displayName": "CMake Tools Helper",
+  "description": "Enables cpptools to automatically know the information parsed by CMake Tools (e.g. include directories and defines)",
+  "version": "666.6.6",
+  "publisher": "maix",
+  "license": "BSD-3-Clause",
+  "icon": "res/icon.png",
+  "bugs": {
+    "url": "https://github.com/maddouri/vscode-cmake-tools-helper/issues"
+  },
+  "homepage": "https://github.com/maddouri/vscode-cmake-tools-helper/blob/master/README.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maddouri/vscode-cmake-tools-helper.git"
+  },
+  "engines": {
+    "vscode": "^1.22.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "cmake",
+    "tools",
+    "helper",
+    "build",
+    "c++"
+  ],
+  "activationEvents": [
+    "onCommand:cmake.update_cpptools",
+    "onCommand:cmake.show_active_cmake_config_name",
+    "onCommand:cmake.install_cmake",
+    "onCommand:cmake.change_cmake_version",
+    "workspaceContains:CMakeLists.txt",
+    "workspaceContains:CMakelists.txt",
+    "workspaceContains:cmakelists.txt",
+    "onCommand:cmake.buildWithTarget",
+    "onCommand:cmake.cleanConfigure",
+    "onCommand:cmake.configure",
+    "onCommand:cmake.setBuildType",
+    "onCommand:cmake.setDefaultTarget"
+  ],
+  "main": "./out/src/extension",
+  "contributes": {
+    "commands": [
+      {
+        "command": "cmake.show_active_cmake_config_name",
+        "title": "Show active CMake config name",
+        "category": "CMake"
+      },
+      {
+        "command": "cmake.update_cpptools",
+        "title": "Update cpptools",
+        "category": "CMake"
+      },
+      {
+        "command": "cmake.install_cmake",
+        "title": "Install CMake",
+        "category": "CMake"
+      },
+      {
+        "command": "cmake.change_cmake_version",
+        "title": "Change CMake version",
+        "category": "CMake"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "CMake Helper Configuration",
+      "properties": {
+        "cmake-tools-helper.auto_set_cpptools_target": {
+          "type": "boolean",
+          "default": true,
+          "description": "If 'true', this extension will automatically set the target of cpptools to be the same as the current CMake target."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "npm run compile && node ./node_modules/vscode/bin/test"
+  },
+  "extensionDependencies": [
+    "maix.cpptools",
+    "twxs.cmake",
+    "maix.cmake-tools"
+  ],
+  "dependencies": {
+    "mkdirp": "^0.5.1",
+    "@octokit/rest": "^15.2.5",
+    "request-progress": "^3.0.0",
+    "request": "^2.85.0",
+    "decompress": "^4.2.0",
+    "url-exists": "^1.0.3",
+    "compare-versions": "^3.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^2.7.2",
+    "vscode": "^1.1.14",
+    "mkdirp": "^0.5.1",
+    "mocha": "^5.0.5",
+    "@types/node": "^9.6.0",
+    "@types/mocha": "^5.0.0",
+    "@octokit/rest": "^15.2.5",
+    "request-progress": "^3.0.0",
+    "request": "^2.85.0",
+    "decompress": "^4.2.0",
+    "url-exists": "^1.0.3",
+    "compare-versions": "^3.1.0"
+  },
+  "__metadata": {
+    "id": "d9e5be9b-00ce-a4d8-1eab-f02ec357a6f1",
+    "publisherDisplayName": "Maix IDE",
+    "publisherId": "54e8304d-0605-d908-f300-fb98b128b868"
+  },
+  "publisherOriginal": "maddouri",
+  "upstreamVersion": "0.2.1"
+}

@@ -91,6 +91,7 @@ export class FpioaEditor extends BaseEditor {
 		const model: FpioaModel = this.input.model;
 		this.applyChip(model.currentChip);
 		if (model.isChipSelected) {
+			console.log('fill GUI with function map:', model.currentFuncMap);
 			this.leftPan.updateList(model.currentFuncMap);
 			this.rightPan.fillTable(model.currentFuncMap);
 		}

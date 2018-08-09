@@ -6,7 +6,6 @@ import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { Emitter, Event } from 'vs/base/common/event';
 import { $, addClass, append } from 'vs/base/browser/dom';
 import { PinFuncSetEvent } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/fpioaEditor';
-import { selectValueCache } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/lib/selectValueCache';
 import { IOPinPlacement } from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
 import { attachSelectBoxStyler } from 'vs/platform/theme/common/styler';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
@@ -16,7 +15,6 @@ export interface IFuncMapTemplate {
 	toDispose: IDisposable[];
 	$id: HTMLDivElement;
 	$desc: HTMLDivElement;
-	currentFunc?: string;
 }
 
 export class FuncMapListItemRender implements IRenderer<IListFuncMapEntry, IFuncMapTemplate> {
@@ -26,8 +24,8 @@ export class FuncMapListItemRender implements IRenderer<IListFuncMapEntry, IFunc
 	private readonly _firePinMapChange = new Emitter<IOPinPlacement>();
 	readonly notifyPinMapChange = this._firePinMapChange.fire.bind(this._firePinMapChange);
 
-	protected pinToIO: { [id: string]: string }; // A4 => IO_7
-	protected ioToPin: { [id: string]: string };
+	protected pinToIO: {[id: string]: string}; // A4 => IO_7
+	protected ioToPin: {[id: string]: string};
 	private cacheMap: IOPinPlacement;
 	private changeEvent: IDisposable;
 	// to cache
@@ -71,49 +69,69 @@ export class FuncMapListItemRender implements IRenderer<IListFuncMapEntry, IFunc
 		const $input = append($header, $('div.select')) as HTMLDivElement;
 		const $desc = append(parent, $('div.desc')) as HTMLDivElement;
 
-		const input = new SelectBox([], undefined, this.contextViewService);
+		const input = new SelectBox(['--'].concat(Object.keys(this.ioToPin)), 0, this.contextViewService);
 		input.render($input);
 		const styler = attachSelectBoxStyler(input, this.themeService);
 
-		const selectEvent = selectValueCache(input, ({ index, selected }) => {
-			if (ret.currentFunc) {
-				this._onSetPin.fire({
-					pin: index === 0 ? undefined : this.ioToPin[selected],
-					func: ret.currentFunc,
-				});
-			}
-		});
-
-		input.setOptions(['--'].concat(Object.keys(this.ioToPin)));
 		const setOptions = this._firePinMapChange.event((ioplace: IOPinPlacement) => {
 			input.setOptions(['--'].concat(Object.keys(this.ioToPin)));
 		});
 
-		const ret: IFuncMapTemplate = {
+		return {
 			$id,
 			$desc,
 			input,
-			toDispose: [styler, selectEvent, setOptions],
+			toDispose: [styler, setOptions],
 		};
-		return ret;
 	}
 
 	renderElement(entry: IListFuncMapEntry, index: number, template: IFuncMapTemplate): void {
 		if (!this.pinToIO) {
+			console.log('not ready yet.');
+			debugger;
 			return;
 		}
-		template.currentFunc = entry.fnCallArgName;
 
-		const io = this.pinToIO[entry.currentPin];
-		const select = Object.keys(this.ioToPin).indexOf(io) + 1; // padding for --
+		if (entry.selectEvent) {
+			debugger;
+		}
+
+		let select = 0;
+		if (entry.currentPin !== undefined) {
+			console.log('func[%s] -> pin[%s:%s]', entry.fnCallArgName, entry.currentPin, this.pinToIO[entry.currentPin]);
+			const io = this.pinToIO[entry.currentPin];
+			select = Object.keys(this.ioToPin).indexOf(io) + 1; // padding for --
+		} else {
+			console.log('func[%s] -> nil', entry.fnCallArgName);
+		}
 		template.input.select(select);
+
+		entry.selectEvent = template.input.onDidSelect(({ index, selected }) => {
+			if (this.ioToPin) {
+				if (index !== 0 && !this.ioToPin[selected]) {
+					console.log('invalid select.');
+					template.input.select(0);
+					return;
+				}
+				console.log('pin function select: pin[%s:%s] func[%s]', this.ioToPin[selected], selected, entry.fnCallArgName);
+				this._onSetPin.fire({
+					pin: index === 0? undefined : this.ioToPin[selected],
+					func: entry.fnCallArgName,
+				});
+			} else {
+				console.log('empty select.');
+				debugger;
+			}
+		});
 
 		template.$id.innerText = entry.id;
 		template.$desc.innerText = entry.description;
 	}
 
-	public disposeElement(element: IListFuncMapEntry, index: number, templateData: IFuncMapTemplate): void {
-		// noop?
+	public disposeElement(entry: IListFuncMapEntry, index: number, templateData: IFuncMapTemplate): void {
+		dispose(entry.selectEvent);
+		entry.selectEvent = null;
+		templateData.input.select(0);
 	}
 
 	disposeTemplate(template: IFuncMapTemplate): void {

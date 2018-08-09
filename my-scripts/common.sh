@@ -5,6 +5,8 @@ if [ -z "$ARCH" ]; then
 	ARCH=x64
 fi
 
+P="$PATH"
+
 export npm_config_arch="$ARCH"
 
 if [ -z "${VSCODE_ROOT}" ]; then
@@ -15,16 +17,16 @@ export YARN_CACHE_FOLDER="${VSCODE_ROOT}/.build/yarn-cache"
 if [ -z "${RELEASE_ROOT}" ]; then
 	export RELEASE_ROOT="${VSCODE_ROOT}/.release"
 	export ARCH_RELEASE_ROOT="${VSCODE_ROOT}/.release/maix-ide-release-${ARCH}"
-
-	P="$PATH"
-	P="${RELEASE_ROOT}/nodejs/${ARCH}/bin:$P"
-	P="${RELEASE_ROOT}/toolchain-multilib/bin:$P"
-	export PATH="$P"
 fi
 
 if [ -z "${REAL_HOME}" ]; then
 	export REAL_HOME="${HOME}"
 	export HOME="${RELEASE_ROOT}/FAKE_HOME"
+fi
+
+if [ -z "${TOOLCHAIN_BIN}" ]; then
+	export TOOLCHAIN_BIN="${VSCODE_ROOT}/packages/toolchain/bin"
+	P="${TOOLCHAIN_BIN}:$P"
 fi
 
 if [ -z "${FOUND_CYGWIN}" ] || [ -z "${NODEJS}" ] ; then
@@ -38,8 +40,10 @@ if [ -z "${FOUND_CYGWIN}" ] || [ -z "${NODEJS}" ] ; then
 		export NODEJS="${RELEASE_ROOT}/nodejs/${ARCH}/bin/node"
 		export NODEJS_BIN="${RELEASE_ROOT}/nodejs/${ARCH}/bin"
 	fi
+	P="${NODEJS_BIN}:$P"
 fi
 
+export PATH="$P"
 
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
 echo -e "\e[1;38;5;9mARCH\e[0m=\e[2m${ARCH}\e[0m"

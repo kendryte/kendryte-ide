@@ -84,7 +84,7 @@
 			"properties": {
 				"cmake.cmakePath": {
 					"type": "string",
-					"default": "cmake",
+					"default": "",
 					"description": "The path to CMake generator executable"
 				}
 			}

@@ -1,7 +1,8 @@
-import { dirname, join, resolve } from 'path';
+import { resolve } from 'path';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import product from 'vs/platform/node/product';
-import { existsSync } from 'fs';
+import { isWindows } from 'vs/base/common/platform';
+import { lstatSync } from 'fs';
 
 export function getInstallPath(environmentService: IEnvironmentService) {
 	return resolve(environmentService.execPath, '..');
@@ -11,61 +12,22 @@ export function getDataPath(environmentService: IEnvironmentService) {
 	return resolve(environmentService.userHome, product.dataFolderName);
 }
 
+export function exeFile(filePath: string) {
+	return isWindows? filePath + '.exe' : filePath;
+}
+
 let pathCache: string;
 
 export function getSDKPath(environmentService: IEnvironmentService) {
-	if (pathCache) {
-		return pathCache;
-	}
-	pathCache = findFirstExistsSync(expandToRoot(getInstallPath(environmentService), 'SDK'));
-	if (pathCache) {
-		return pathCache;
-	}
-	pathCache = findFirstExistsSync(expandToRoot(getInstallPath(environmentService), 'maix-sdk/build/archive'));
-	if (pathCache) {
-		return pathCache;
-	}
-	return null;
-}
-
-// return some path like node_modules
-export function expandToRoot(currentDir: string, fileName: string): string[] {
-	const ret: string[] = [];
-
-	currentDir = resolve(currentDir);
-	while (true) {
-		const abs = currentDir + '/' + fileName;
-		const linuxPath = abs.replace(/\\/, '/').replace('//', '/');
-		ret.push(linuxPath);
-
-		const parent = dirname(currentDir);
-		if (currentDir === parent) { // must be root
-			break;
-		}
-		currentDir = parent;
-	}
-	return ret;
-}
-
-export function CMakeToolsConfigPath() {
-	let userLocalDir = '';
-	if (process.platform === 'win32') {
-		userLocalDir = process.env['AppData']!;
-	} else {
-		userLocalDir = process.env['XDG_DATA_HOME'];
-		if (!userLocalDir) {
-			const home = process.env['HOME'] || process.env['PROFILE']!;
-			userLocalDir = join(home, '.local/share');
+	if (!pathCache) {
+		let path = resolve(getInstallPath(environmentService), 'packages/SDK');
+		try {
+			if (lstatSync(path).isDirectory()) {
+				pathCache = path;
+			}
+		} catch (e) {
+			// noop
 		}
 	}
-	return join(userLocalDir, 'CMakeTools', 'cmake-kits.json');
-}
-
-export function findFirstExistsSync(paths: string[]) {
-	for (const item of paths) {
-		if (existsSync(item)) {
-			return item;
-		}
-	}
-	return undefined;
+	return pathCache;
 }

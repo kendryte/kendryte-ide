@@ -1,4 +1,5 @@
 import { IListEntry } from 'vs/workbench/services/preferences/common/keybindingsEditorModel';
+import { IDisposable } from 'vs/base/common/lifecycle';
 
 export enum TEMPLATE_ID {
 	CHIP_SELECT = 'template.left.chip.select',
@@ -20,8 +21,9 @@ export interface IListGroupEntry extends IListSplitEntry {
 }
 
 export interface IListFuncMapEntry extends IListSplitEntry {
+	selectEvent: IDisposable;
 	currentPin: string; // A3 B7 ...
-	templateId: TEMPLATE_ID.FUNC_MAP | TEMPLATE_ID.FUNC_MAP_HIDE;
+	templateId: TEMPLATE_ID.FUNC_MAP|TEMPLATE_ID.FUNC_MAP_HIDE;
 	description: string;
 	fullId: string;
 	fnCallArgName: string;
@@ -32,4 +34,4 @@ export interface IListChipSelectEntry extends IListSplitEntry {
 	selected: string;
 }
 
-export type IFpioaLeftListEntry = IListSplitEntry | IListFuncMapEntry | IListChipSelectEntry;
+export type IFpioaLeftListEntry = IListSplitEntry|IListFuncMapEntry|IListChipSelectEntry;

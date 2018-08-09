@@ -8,6 +8,7 @@ export class NullRenderer implements IRenderer<IListFuncMapEntry, any> {
 
 	renderTemplate(parent: HTMLElement): void {
 		parent.style.display = 'none';
+		// parent.style.background = 'red';
 	}
 
 	renderElement(entry: IListFuncMapEntry, index: number, template: void): void {

@@ -73,6 +73,7 @@
     "event-stream": "^3.1.7",
     "express": "^4.13.1",
     "glob": "^5.0.13",
+    "guid": "^0.0.12",
     "gulp": "^3.8.9",
     "gulp-atom-electron": "^1.16.1",
     "gulp-azure-storage": "^0.7.0",

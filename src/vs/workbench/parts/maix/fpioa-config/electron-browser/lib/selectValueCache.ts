@@ -2,7 +2,7 @@ import { ISelectData, SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
 import { IDisposable } from 'vs/base/common/lifecycle';
 
 export interface SelectDataCallback {
-	(event: ISelectData & {last: number}): void;
+	(event: ISelectData&{last: number}): void;
 }
 
 export function selectValueCache(input: SelectBox, targetEvent: SelectDataCallback): IDisposable {
@@ -12,6 +12,7 @@ export function selectValueCache(input: SelectBox, targetEvent: SelectDataCallba
 	const oldSelect = input.select.bind(input);
 
 	input.select = (index: number) => {
+		console.log('raw select:', index);
 		if (current === index) {
 			return;
 		}
@@ -20,6 +21,7 @@ export function selectValueCache(input: SelectBox, targetEvent: SelectDataCallba
 	};
 
 	return input.onDidSelect((sel: ISelectData) => {
+		console.log('raw onDidSelect:', sel.index);
 		if (firing) {
 			current = sel.index;
 			return;
@@ -29,7 +31,7 @@ export function selectValueCache(input: SelectBox, targetEvent: SelectDataCallba
 			try {
 				targetEvent({
 					...sel,
-					last: current
+					last: current,
 				});
 			} catch (e) {
 				firing = false;

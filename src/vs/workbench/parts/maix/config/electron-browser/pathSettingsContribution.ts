@@ -1,5 +1,4 @@
-import { expandToRoot, getDataPath, getInstallPath, getSDKPath } from 'vs/workbench/parts/maix/_library/node/nodePath';
-import { resolve } from 'path';
+import { getSDKPath } from 'vs/workbench/parts/maix/_library/node/nodePath';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ConfigurationTarget, IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { Extensions as CategoryExtensions, IConfigCategoryRegistry } from 'vs/workbench/parts/maix/_library/common/type';
@@ -13,9 +12,9 @@ interface SettingsOverwiter<T> {
 	(this: IEnvironmentService, old: T): T;
 }
 
-const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
-	'cmake-tools-helper.cmake_download_path'() {
-		return resolve(getDataPath(this), 'cmakeDownload');
+const configOverwrites: {[id: string]: SettingsOverwiter<any>} = {
+	'cmake.generator'() {
+		return 'Unix Makefiles';
 	},
 	'C_Cpp.default.includePath'(def: string[]) {
 		const sdk = getSDKPath(this);
@@ -26,7 +25,7 @@ const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
 		if (def && def.indexOf(sdkInclude) !== -1) {
 			return undefined;
 		}
-		return def ? [...def, sdkInclude] : [sdkInclude];
+		return def? [...def, sdkInclude] : [sdkInclude];
 	},
 };
 
@@ -39,8 +38,6 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 		@IEnvironmentService private environmentService: IEnvironmentService,
 		@IConfigurationService private configurationService: IConfigurationService,
 	) {
-		registerSystemSearchPath(this.environmentService);
-
 		Object.keys(this.registry.getConfigurationProperties()).forEach((key: string) => this.checkCategory(key));
 		this.registry.onDidRegisterConfiguration((keys: string[]) => keys.forEach(this.checkCategory, this));
 	}
@@ -68,7 +65,7 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 
 	private hideBuildDirectory() {
 		const inspect = this.configurationService.inspect<any>('files.exclude');
-		let data = inspect.user ? { ...inspect.user } : { ...inspect.default };
+		let data = inspect.user? { ...inspect.user } : { ...inspect.default };
 		let changed = { change: false };
 
 		ignore(data, '.idea', changed);
@@ -82,7 +79,7 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 	}
 }
 
-function ignore(data: any, name: string, changed: { change: boolean }) {
+function ignore(data: any, name: string, changed: {change: boolean}) {
 	if (!data.hasOwnProperty(name)) {
 		changed.change = true;
 		data[name] = true;
@@ -90,28 +87,4 @@ function ignore(data: any, name: string, changed: { change: boolean }) {
 }
 
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
-	.registerWorkbenchContribution(SettingCategoryContribution, LifecyclePhase.Running);
-
-function registerSystemSearchPath(environmentService: IEnvironmentService) {
-	// Not only MinGW, but all platform.
-	const r = [];
-	if (typeof process.env.MAIX_TOOLCHAIN_ROOT === 'string') {
-		r.push(process.env.MAIX_TOOLCHAIN_ROOT);
-	}
-	if (process.env['VSCODE_DEV']) {
-		r.push(...expandToRoot(getInstallPath(environmentService), 'maix-toolchain/dist'));
-	}
-	r.push(...expandToRoot(getInstallPath(environmentService), 'toolchain'));
-
-	Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration)
-		.registerConfiguration({
-			id: 'maix',
-			properties: {
-				'cmake.systemSearchDirs': {
-					type: 'array',
-					default: r,
-					overridable: false,
-				},
-			},
-		} as any);
-}
+        .registerWorkbenchContribution(SettingCategoryContribution, LifecyclePhase.Running);
