@@ -9,20 +9,21 @@ if [ "$(id -u)" -eq 0 ]; then
 	echo "" >&2
 	exit 1
 fi
-if [ -z "$DISPLAY" ]; then
-	echo "no DISPLAY environment variable." >&2
-	exit 1
-fi
 
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 source fn.sh
 source common.sh
 cd ..
 
-# dnf install -y wget curl tar xz libstdc++ python2 \
-#	 make gcc-c++ libsecret-devel libX11-devel libxkbfile-devel \
-#	 gtk2 libXtst libXScrnSaver GConf2 alsa-lib \
-#	 wqy-zenhei-fonts wqy-unibit-fonts wqy-bitmap-fonts
+if [ -z "${FOUND_CYGWIN}" ] ; then
+	echo "running on windows." >&2
+elif [ -z "${DISPLAY}" ]; then
+	echo "no DISPLAY environment variable." >&2
+	exit 1
+fi
+
+mkdir -p "${HOME}/.maix-dev/extensions"
+
 ROOT="$(dirname "${VSCODE_ROOT}")"
 
 TARGET="${1-maix-ide}"
@@ -40,26 +41,32 @@ ln -s "${VSCODE_ROOT}/custom-extensions" "${EXTENSION_DIR}"
 
 if test -z "$DBUS_SESSION_BUS_ADDRESS" ; then
 	## if not found, launch a new one
-	eval $(dbus-launch --sh-syntax)
-	echo "D-Bus per-session daemon address is: $DBUS_SESSION_BUS_ADDRESS"
+	eval $(dbus-launch --sh-syntax) || true
+	if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+		echo "D-Bus per-session daemon address is: $DBUS_SESSION_BUS_ADDRESS"
+	else
+		echo "D-Bus was not found"
+	fi
 fi
 
-if ! tmux has -t "=${TARGET}" ; then
-	/bin/tmux -2 new-session -d -s "${TARGET}"
+TMUX=/usr/bin/tmux
+
+if ! ${TMUX} has -t "=${TARGET}" ; then
+	${TMUX} -2 new-session -d -s "${TARGET}"
 	
-	/bin/tmux set-option mouse on
-	/bin/tmux setenv HOME "$ROOT/HOME"
-	/bin/tmux setenv PATH "$P"
-	/bin/tmux setenv HISTFILE "/dev/null"
-	/bin/tmux setenv HTTP_PROXY "http://127.0.0.1:8080"
-	/bin/tmux setenv HTTPS_PROXY "http://127.0.0.1:8080"
+	${TMUX} set-option mouse on
+	${TMUX} setenv HOME "$ROOT/HOME"
+	${TMUX} setenv PATH "$P"
+	${TMUX} setenv HISTFILE "/dev/null"
+	${TMUX} setenv HTTP_PROXY "http://127.0.0.1:8080"
+	${TMUX} setenv HTTPS_PROXY "http://127.0.0.1:8080"
 fi
 
 function sushell() {
 	if ! tmux list-windows -t "=${TARGET}" | grep "$1" ; then
-		/bin/tmux new-window -n "$1"
-		/bin/tmux set-window-option allow-rename off
-		/bin/tmux send-keys "$2" Enter
+		${TMUX} new-window -n "$1"
+		${TMUX} set-window-option allow-rename off
+		${TMUX} send-keys "$2" Enter
 	fi
 }
 
@@ -80,6 +87,6 @@ sushell ext-cpptools 'bash ./my-scripts/ext/cpptools.sh'
 
 sushell vscode 'bash ./scripts/code.sh'
 
-/bin/tmux kill-window -t 'bash' || true
+${TMUX} kill-window -t 'bash' || true
 
-/bin/tmux attach -E -t "=${TARGET}"
+${TMUX} attach -E -t "=${TARGET}"

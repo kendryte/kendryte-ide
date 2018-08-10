@@ -26,6 +26,12 @@ function prepare_arch() {
 		echo "install yarn to $YARN..."
 		"$(nodeBinPath npm)" -g install yarn
 	fi
+	
+	if [ "$SYSTEM" = "windows" ]; then
+		if ! npm list -g windows-build-tools &>/dev/null ; then
+			npm install -g windows-build-tools
+		fi
+	fi
 }
 
 function install_node_linux() {
