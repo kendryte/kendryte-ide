@@ -43,7 +43,7 @@ step "Get Electron" \
 	npm run gulp -- "electron-$ARCH"
 
 ############# install production deps
-if [ ! -e build/tfs/common/installDistro.js ] && hash_deps_check_changed "build" "build/package.json"; then
+if [ ! -e build/tfs/common/installDistro.js ] || hash_deps_check_changed "build" "build/package.json"; then
 	step "Build 'The Build' folder" \
 		bash -c "cd build ; yarn"
 	hash_deps_save "build" "build/package.json"
