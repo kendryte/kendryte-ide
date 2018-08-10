@@ -1,8 +1,11 @@
-import { ColorMap } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/right/abstract';
-import { $, addClass, append } from 'vs/base/browser/dom';
+import { $, addClass, addDisposableListener, append } from 'vs/base/browser/dom';
 import { CountBadge } from 'vs/base/browser/ui/countBadge/countBadge';
 import { Color } from 'vs/base/common/color';
 import { IPin2DNumber } from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
+import { ColorMap, ContextMenuData } from 'vs/workbench/parts/maix/fpioa-config/common/types';
+import { Disposable } from 'vs/base/common/lifecycle';
+import { Emitter } from 'vs/base/common/event';
+import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 
 export interface ICellStyle extends ColorMap {
 	funcBackground: Color;
@@ -10,20 +13,45 @@ export interface ICellStyle extends ColorMap {
 	funcBorder: Color;
 }
 
-export class CellRender {
+export class CellRender extends Disposable {
 	private $h3: HTMLElement;
 	private $fnContainer: HTMLElement;
 	private functionBadge: CountBadge;
-	public readonly id: string;
+	private _funcId: string;
+	private _pinName: string;
+
+	private readonly _onContextMenu = new Emitter<ContextMenuData>();
+	public readonly onContextMenu = this._onContextMenu.event;
 
 	constructor(public readonly $cell: HTMLTableDataCellElement, public readonly pin: IPin2DNumber) {
-		this.id = `x:${pin.x}y:${pin.y}`;
+		super();
 		$cell.setAttribute('x', pin.x.toString());
 		$cell.setAttribute('y', pin.y.toString());
-		$cell.setAttribute('pinId', this.id);
 		addClass($cell, 'IO');
 		this.$h3 = append($cell, $('h3'));
 		this.$fnContainer = append($cell, $('div.functions'));
+
+		this._register(addDisposableListener(this.$cell, 'contextmenu', (event: MouseEvent) => {
+
+			const mouseEvent = new StandardMouseEvent(event);
+
+			this._onContextMenu.fire({
+				pinName: this.pinName,
+				pointer: { x: mouseEvent.posx, y: mouseEvent.posy },
+				currentFunctionId: this._funcId,
+			});
+		}));
+	}
+
+	get pinName() {
+		return this._pinName;
+	}
+
+	assignPinName(v) {
+		if (this._pinName) {
+			throw new TypeError('re-assign pin name');
+		}
+		this._pinName = v;
 	}
 
 	set title(value: string) {
@@ -34,10 +62,28 @@ export class CellRender {
 		return this.$h3.innerText;
 	}
 
-	setFunction(fnName: string) {
-		this.$fnContainer.innerHTML = '';
-		this.$fnContainer.title = fnName;
-		this.functionBadge = new CountBadge(this.$fnContainer, { countFormat: fnName });
+	assignFunctionId(funcId: string) {
+		if (!funcId) {
+			funcId = undefined;
+		}
+		if (this._funcId === funcId) {
+			return;
+		}
+		this._funcId = funcId;
+		this.$fnContainer.title = funcId? funcId : '';
+		if (funcId) {
+			if (this.functionBadge) {
+				this.functionBadge.setCountFormat(funcId);
+			} else {
+				this.functionBadge = new CountBadge(this.$fnContainer, { countFormat: funcId });
+			}
+		} else {
+			this.clean();
+		}
+	}
+
+	get functionId() {
+		return this._funcId;
 	}
 
 	style(colors: ICellStyle) {
@@ -51,6 +97,7 @@ export class CellRender {
 	}
 
 	clean() {
+		this._funcId = undefined;
 		if (this.functionBadge) {
 			this.$fnContainer.innerHTML = '';
 			delete this.functionBadge;

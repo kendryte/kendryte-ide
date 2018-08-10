@@ -8,9 +8,14 @@ import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { editorWidgetBackground, editorWidgetBorder } from 'vs/platform/theme/common/colorRegistry';
 import { getChipPackaging } from 'vs/workbench/parts/maix/fpioa-config/common/packagingRegistry';
 import { chipRenderFactory } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/right/factory';
-import { AbstractTableRender, ContextMenuData } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/right/abstract';
-import { IFuncPinMap } from 'vs/workbench/parts/maix/fpioa-config/common/types';
+import { AbstractTableRender } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/right/abstract';
+import { ContextMenuData, IFuncPinMap, PinFuncSetEvent } from 'vs/workbench/parts/maix/fpioa-config/common/types';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
+import { TPromise } from 'vs/base/common/winjs.base';
+import { IMenuService } from 'vs/platform/actions/common/actions';
+import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
+import { Separator } from 'vs/base/browser/ui/actionbar/actionbar';
+import { ContextSubMenuSelector } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/contextMenu';
 
 export class FpioaRightPanel extends Disposable implements IView, IThemable {
 	element: HTMLElement;
@@ -20,15 +25,20 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 	private readonly _onDidChange = new Emitter<undefined>();
 	readonly onDidChange: Event<undefined> = this._onDidChange.event;
 
+	private readonly _onSetPinFunc = new Emitter<PinFuncSetEvent>();
+	readonly onSetPinFunc: Event<PinFuncSetEvent> = this._onSetPinFunc.event;
+
 	private table: AbstractTableRender<any>;
 	private $table: HTMLElement;
-	private tableDrawed = false;
 	private contextEvent: IDisposable;
+	private funcSetActions: ContextSubMenuSelector;
 
 	constructor(
-		@IInstantiationService instantiationService: IInstantiationService,
-		@IContextMenuService contextMenuService: IContextMenuService,
-		@IThemeService private themeService: IThemeService,
+		@IInstantiationService protected instantiationService: IInstantiationService,
+		@IContextMenuService protected contextMenuService: IContextMenuService,
+		@IThemeService protected themeService: IThemeService,
+		@IMenuService  menuService: IMenuService,
+		@IContextKeyService contextKeyService: IContextKeyService,
 	) {
 		super();
 		this.element = $('div');
@@ -60,9 +70,8 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 	}
 
 	private destroyTable() {
-		this.table.dispose();
+		this.disposeTable();
 		this.$table.innerHTML = '<h1 style="text-align:center;">Select a chip to start.</h1>';
-		this.tableDrawed = false;
 	}
 
 	drawChip(chipName: string) {
@@ -71,32 +80,41 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 			return;
 		}
 
-		if (this.tableDrawed && this.table.chipName === chipName) {
+		if (this.table && this.table.chipName === chipName) {
 			return;
 		}
 
-		if (this.table) {
-			this.table.dispose();
-		}
+		this.disposeTable();
 
 		this.table = chipRenderFactory(getChipPackaging(chipName), this.themeService);
+		this.funcSetActions = this.instantiationService.createInstance(ContextSubMenuSelector, chipName);
 
 		this.contextEvent = this.table.onContextMenu((data: ContextMenuData) => {
-			console.log(data);
+			this.funcSetActions.select(data.currentFunctionId);
+
+			this.contextMenuService.showContextMenu({
+				getAnchor: () => data.pointer,
+				getActions: () => TPromise.as([this.funcSetActions, new Separator]),
+				getActionsContext: () => [data, this._onSetPinFunc.fire.bind(this._onSetPinFunc)],
+			});
 		});
 
 		this.$table.innerHTML = '';
 		this.table.render(this.$table);
-		this.tableDrawed = true;
 
 		this.layout();
 	}
 
-	dispose() {
-		super.dispose();
+	private disposeTable() {
 		if (this.table) {
 			dispose(this.contextEvent, this.table);
 			delete this.table;
+			delete this.funcSetActions;
 		}
+	}
+
+	dispose() {
+		super.dispose();
+		this.disposeTable();
 	}
 }

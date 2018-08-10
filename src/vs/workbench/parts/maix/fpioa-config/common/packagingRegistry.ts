@@ -1,7 +1,15 @@
 import { deepClone } from 'vs/base/common/objects';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { BaseAny } from 'vs/workbench/parts/maix/fpioa-config/common/baseAny';
-import { IChipPackagingCalculated, IChipPackagingDefine, IPin, IPinRange } from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
+import {
+	IChipPackagingCalculated,
+	IChipPackagingDefinition,
+	IFuncPin,
+	IFunc,
+	IPin,
+	IPinRange,
+	pickKeys,
+} from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
 import { normalizePin } from 'vs/workbench/parts/maix/fpioa-config/common/builder';
 
 const FirstPin: IPin = 1;
@@ -11,18 +19,18 @@ export enum Extensions {
 }
 
 export interface IChipPackagingRegistry {
-	addPackaging(packaging: IChipPackagingDefine): void;
+	addPackaging(packaging: IChipPackagingDefinition): void;
 
 	getByName(name: string): IChipPackagingCalculated;
 
 	getList(): IChipPackagingCalculated[];
 }
 
-export function registryChipPackaging(packaging: IChipPackagingDefine) {
+export function registryChipPackaging(packaging: IChipPackagingDefinition) {
 	Registry.as<IChipPackagingRegistry>(Extensions.ChipPackaging).addPackaging(packaging);
 }
 
-export function getChipPackaging(name: string): IChipPackagingCalculated | null;
+export function getChipPackaging(name: string): IChipPackagingCalculated|null;
 export function getChipPackaging(): IChipPackagingCalculated[];
 
 export function getChipPackaging(name?: string) {
@@ -36,7 +44,7 @@ export function getChipPackaging(name?: string) {
 const registry = new class implements IChipPackagingRegistry {
 	private map = new Map<string, IChipPackagingCalculated>();
 
-	addPackaging(packaging: IChipPackagingDefine) {
+	addPackaging(packaging: IChipPackagingDefinition) {
 		const copy = deepClone(packaging);
 
 		const base = BaseAny.fromRevert(copy.geometry.missingRows);
@@ -51,11 +59,33 @@ const registry = new class implements IChipPackagingRegistry {
 			pinCount -= pinCountWithin(base, item);
 		}
 
-		this.map.set(copy.name, {
-			...copy,
-			pinCount,
-			ROW: base
+		const wrappedUsableFunctions = copy.usableFunctions.map((fun): IFunc => {
+			const wrappedIOs = fun.ios.map((pin): IFuncPin => {
+				const newPin: IFuncPin = {} as any;
+				for (const key of pickKeys) {
+					newPin[key] = pin[key];
+				}
+				if (pin.overwriteParentId) {
+					newPin.funcIdFull = `${pin.overwriteParentId}${newPin.funcId.toUpperCase()}`;
+				} else {
+					newPin.funcIdFull = `${fun.funcBaseId.toUpperCase()}_${pin.funcId.toUpperCase()}`;
+				}
+				return newPin;
+			});
+			return {
+				...fun,
+				ios: wrappedIOs,
+			};
 		});
+
+		const obj: IChipPackagingCalculated = {
+			...copy,
+			usableFunctions: wrappedUsableFunctions,
+			pinCount,
+			ROW: base,
+		};
+
+		this.map.set(copy.name, obj);
 	}
 
 	getList() {

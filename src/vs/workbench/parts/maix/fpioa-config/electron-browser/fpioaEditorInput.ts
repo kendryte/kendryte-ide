@@ -1,4 +1,5 @@
 import { TPromise } from 'vs/base/common/winjs.base';
+import * as nls from 'vs/nls';
 import { localize } from 'vs/nls';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ConfirmResult, EditorInput, IEditorInputFactory, IRevertOptions } from 'vs/workbench/common/editor';
@@ -13,6 +14,7 @@ import { SaveAllAction } from 'vs/workbench/parts/files/electron-browser/fileAct
 import { Emitter, Event } from 'vs/base/common/event';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
+import { PinFuncSetEvent } from 'vs/workbench/parts/maix/fpioa-config/common/types';
 
 const fpioaInputTypeId = 'workbench.input.fpioaInput';
 
@@ -116,37 +118,82 @@ export class FpioaEditorInput extends EditorInput {
 		}
 	}
 
-	async mapPinFunc(funcId: string, ioPin: string) {
-		const beforeNotDirty = this._model.isDirty();
+	private async _ask(oldTag, old, newTag, newLeft, newRight) {
+		return await this.dialogService.confirm({
+			title: localize('alert', 'Alert'),
+			message: localize(
+				'io.select.overwrite.alert',
+				'Reassign {0} "{1}" from {2} "{3}" to {4} "{5}"?',
+				oldTag, old,
+				newTag, newLeft,
+				newTag, newRight,
+			),
+			type: 'question',
+			primaryButton: nls.localize('yes', 'Yes'),
+			secondaryButton: localize('cancel', 'Cancel'),
+		}).then(({ confirmed }) => {
+			return confirmed;
+		}, () => {
+			return false;
+		});
+	}
 
-		const used = this._model.getPinFunc(ioPin);
-		if (used) {
-			const overwrite = await this.dialogService.confirm({
-				title: localize('alert', 'Alert'),
-				message: localize('io.select.overwrite.alert', 'This pin is assigned to function "{0}", overwrite?', used),
-				type: 'question',
-			}).then(({ confirmed }) => {
-				return confirmed;
-			}, () => {
-				return false;
-			});
-			if (overwrite) {
-				this._model.unsetFunc(used);
-			} else {
-				this._onDidChange.fire(); // cause refresh
-				return;
+	// 当这个功能已经分配给了其他pin
+	private async _overwritePin(funcId: string, newIoPin: string) {
+		const alreadyAssigned = this._model.getFuncPin(funcId);
+		if (!alreadyAssigned) {
+			return;
+		}
+
+		const confirm = await this._ask(
+			localize('function', 'function'), funcId,
+			localize('pin', 'pin'), alreadyAssigned, newIoPin,
+		);
+		if (confirm) {
+			this._model.unsetFunc(funcId);
+		}
+	}
+
+	private async _overwriteFunc(ioPin: string, funcId: string) {
+		const alreadyAssigned = this._model.getPinFunc(ioPin);
+		if (!alreadyAssigned) {
+			return;
+		}
+
+		const confirm = await this._ask(
+			localize('pin', 'pin'), ioPin,
+			localize('function', 'function'), alreadyAssigned, funcId,
+		);
+		if (confirm) {
+			this._model.unsetFunc(alreadyAssigned);
+		}
+	}
+
+	async mapPinFunc({ func: funcId, pin: ioPin, triggerBy }: PinFuncSetEvent) {
+		const changed = funcId !== this._model.getPinFunc(ioPin);
+
+		if (!changed) {
+			return;
+		}
+		const beforeDirty = this._model.isDirty();
+
+		if (triggerBy === 'pin') { // 如果 设置某个pin为特定新功能
+			if (funcId) {
+				await this._overwritePin(funcId, ioPin);
+			}
+		} else if (triggerBy === 'func') { // 如果 设置某个功能到一个新pin
+			if (ioPin) {
+				await this._overwriteFunc(ioPin, funcId); // 当目标pin已经分配了其他功能
 			}
 		}
 
-		const changed = this._model.setPinFunc(funcId, ioPin);
+		this._model.setPinFunc(funcId, ioPin);
 
-		if (beforeNotDirty !== this._model.isDirty()) {
+		if (beforeDirty !== this._model.isDirty()) {
 			this._onDidChangeDirty.fire();
 		}
 
-		if (changed) {
-			this._onDidChange.fire();
-		}
+		this._onDidChange.fire();
 	}
 
 	isDirty() {

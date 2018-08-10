@@ -19,11 +19,6 @@ import { SAVE_FILE_COMMAND_ID } from 'vs/workbench/parts/files/electron-browser/
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IEditorGroup } from 'vs/workbench/services/group/common/editorGroupsService';
 
-export interface PinFuncSetEvent {
-	pin: string; // IPin
-	func: string; // name of func
-}
-
 export class FpioaEditor extends BaseEditor {
 	public static readonly ID: string = 'workbench.editor.fpioaEditor';
 	input: FpioaEditorInput;
@@ -58,7 +53,12 @@ export class FpioaEditor extends BaseEditor {
 
 		this._register(leftPan.onChipChange((newChip) => this.input.selectChip(newChip)));
 		this._register(leftPan.onSetPinFunc((map) => {
-			this.input.mapPinFunc(map.func, map.pin).catch((e) => {
+			this.input.mapPinFunc(map).catch((e) => {
+				this.notifyService.error(e);
+			});
+		}));
+		this._register(rightPan.onSetPinFunc((map) => {
+			this.input.mapPinFunc(map).catch((e) => {
 				this.notifyService.error(e);
 			});
 		}));

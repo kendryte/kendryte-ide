@@ -10,6 +10,7 @@
       <excludeFolder url="file://$MODULE_DIR$/custom-extensions/maix.cmake-tools-666.6.6/node_modules" />
       <excludeFolder url="file://$MODULE_DIR$/custom-extensions/ms-ceintl.vscode-language-pack-zh-hans-1.26.1" />
       <excludeFolder url="file://$MODULE_DIR$/custom-extensions/ms-ceintl.vscode-language-pack-zh-hans-1.26.2" />
+      <excludeFolder url="file://$MODULE_DIR$/custom-extensions/ms-ceintl.vscode-language-pack-zh-hans-1.26.3" />
       <excludeFolder url="file://$MODULE_DIR$/custom-extensions/ms-vscode.cpptools-0.17.7" />
       <excludeFolder url="file://$MODULE_DIR$/custom-extensions/ms-vscode.cpptools-0.17.8-mastera" />
       <excludeFolder url="file://$MODULE_DIR$/custom-extensions/twxs.cmake-0.0.17" />

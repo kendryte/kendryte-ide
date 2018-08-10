@@ -26,7 +26,6 @@ export interface IListFuncMapEntry extends IListSplitEntry {
 	templateId: TEMPLATE_ID.FUNC_MAP|TEMPLATE_ID.FUNC_MAP_HIDE;
 	description: string;
 	fullId: string;
-	fnCallArgName: string;
 }
 
 export interface IListChipSelectEntry extends IListSplitEntry {

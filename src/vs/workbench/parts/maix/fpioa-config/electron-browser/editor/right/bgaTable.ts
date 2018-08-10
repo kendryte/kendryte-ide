@@ -1,14 +1,13 @@
 import { $, addClass, addClasses, append } from 'vs/base/browser/dom';
 import { stringifyPin } from 'vs/workbench/parts/maix/fpioa-config/common/builder';
-import { AbstractTableRender, ColorMap, grid } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/right/abstract';
+import { AbstractTableRender, grid } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/right/abstract';
 import { memoize } from 'vs/base/common/decorators';
 import { IColorMapping } from 'vs/platform/theme/common/styler';
 import { badgeBackground, badgeForeground, contrastBorder } from 'vs/platform/theme/common/colorRegistry';
 import { CellRender } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/right/cell';
+import { ColorMap } from 'vs/workbench/parts/maix/fpioa-config/common/types';
 
-export type BGAPinList = Map<string, CellRender>;
-
-export class BGATableRender extends AbstractTableRender<BGAPinList> {
+export class BGATableRender extends AbstractTableRender<CellRender> {
 	private $trList: HTMLElement[];
 
 	@memoize
@@ -36,9 +35,7 @@ export class BGATableRender extends AbstractTableRender<BGAPinList> {
 		});
 	}
 
-	createTableTemplate(): BGAPinList {
-		const cellList = new Map<string, CellRender>();
-
+	* createTableTemplate() {
 		const { x, y } = this.chip.geometry.maxPin;
 		const base = this.chip.ROW;
 
@@ -71,8 +68,7 @@ export class BGATableRender extends AbstractTableRender<BGAPinList> {
 
 				tData[r][c] = $td;
 				if (cell) {
-					cellList.set(cell.id, cell);
-					// this._register(cell.click);
+					yield cell;
 				}
 			}
 		}
@@ -82,8 +78,6 @@ export class BGATableRender extends AbstractTableRender<BGAPinList> {
 			append($tr, ...$tds);
 			return $tr;
 		});
-
-		return cellList;
 	}
 
 	private createCellData(x: number, y: number): [HTMLTableDataCellElement, CellRender] {

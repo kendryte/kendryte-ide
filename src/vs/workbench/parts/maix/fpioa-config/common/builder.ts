@@ -1,16 +1,16 @@
-import { ChipPackageType, IChipGeometry, IFunc, IFuncPin, IPin, IPin2DNumber } from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
+import { ChipPackageType, IChipGeometry, IFuncDefinition, IFuncPinDefinition, IPin, IPin2DNumber } from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
 import { BaseAny } from 'vs/workbench/parts/maix/fpioa-config/common/baseAny';
 
 export class PinBuilder {
-	static gpio(count: number, base: number, idPrefix: string, descPrefix: string): IFuncPin[] {
-		return PinBuilder.dataPin(count, base, `${idPrefix}`, descPrefix, 0, { ignoreFnName: true });
+	static gpio(count: number, base: number, idPrefix: string, descPrefix: string): IFuncPinDefinition[] {
+		return PinBuilder.dataPin(count, base, `${idPrefix}`, descPrefix, 0, { overwriteParentId: 'GPIO' });
 	}
 
-	static dataPin(count: number, base: number, idPrefix: string, descPrefix: string, nameBase: number = 0, extra: Partial<IFuncPin> = {}): IFuncPin[] {
-		const ret: IFuncPin[] = [];
+	static dataPin(count: number, base: number, idPrefix: string, descPrefix: string, nameBase: number = 0, extra: Partial<IFuncPinDefinition> = {}): IFuncPinDefinition[] {
+		const ret: IFuncPinDefinition[] = [];
 		for (let i = 0; i < count; i++) {
 			ret.push({
-				name: `${idPrefix}${i + nameBase}`,
+				funcId: `${idPrefix}${i + nameBase}`,
 				funcNumber: base + i,
 				description: `${descPrefix} ${i + nameBase}`,
 				...extra,
@@ -19,58 +19,58 @@ export class PinBuilder {
 		return ret;
 	}
 
-	static uart(id: string, desc: string, base: number): IFunc {
+	static uart(id: string, desc: string, base: number): IFuncDefinition {
 		return {
-			name: `uart${id}`, description: `UART ${desc}`,
+			funcBaseId: `uart${id}`, description: `UART ${desc}`,
 			ios: [
-				{ name: 'rx', funcNumber: base, description: 'Receiver' },
-				{ name: 'tx', funcNumber: base + 1, description: 'Transmitter' },
+				{ funcId: 'rx', funcNumber: base, description: 'Receiver' },
+				{ funcId: 'tx', funcNumber: base + 1, description: 'Transmitter' },
 			],
 		};
 	}
 
-	static spi(id: number, base: number, description: string = `SPI ${id}`): IFunc {
+	static spi(id: number, base: number, description: string = `SPI ${id}`): IFuncDefinition {
 		return {
-			name: `spi${id}`, description,
+			funcBaseId: `spi${id}`, description,
 			ios: [
 				...PinBuilder.dataPin(8, base, 'd', 'Data'),
 				...PinBuilder.dataPin(4, base + 8, 'cs', 'Chip Select'),
-				{ name: 'arb', funcNumber: base + 8 + 4, description: 'Arbitration' },
-				{ name: 'sclk', funcNumber: base + 8 + 4 + 1, description: 'Serial Clock' },
+				{ funcId: 'arb', funcNumber: base + 8 + 4, description: 'Arbitration' },
+				{ funcId: 'sclk', funcNumber: base + 8 + 4 + 1, description: 'Serial Clock' },
 			],
 		};
 	}
 
-	static spiSlave(base: number): IFunc {
+	static spiSlave(base: number): IFuncDefinition {
 		return {
-			name: 'spi_slave', description: 'SPI Slave',
+			funcBaseId: 'spi_slave', description: 'SPI Slave',
 			ios: [
-				{ name: 'd0', funcNumber: base + 1, description: 'Data 0' },
-				{ name: 'cs', funcNumber: base + 2, description: 'Chip Select' },
-				{ name: 'sclk', funcNumber: base + 31, description: 'Serial Clock' },
+				{ funcId: 'd0', funcNumber: base + 1, description: 'Data 0' },
+				{ funcId: 'cs', funcNumber: base + 2, description: 'Chip Select' },
+				{ funcId: 'sclk', funcNumber: base + 31, description: 'Serial Clock' },
 			],
 		};
 	}
 
-	static i2s(id: number, base: number, input: number, output: number): IFunc {
+	static i2s(id: number, base: number, input: number, output: number): IFuncDefinition {
 		return {
-			name: `i2s${id}`, description: `I2S${id}`,
+			funcBaseId: `i2s${id}`, description: `I2S${id}`,
 			ios: [
-				{ name: 'mclk', funcNumber: base, description: 'Master Clock' },
-				{ name: 'sclk', funcNumber: base + 1, description: 'Serial Clock(BCLK)' },
-				{ name: 'ws', funcNumber: base + 2, description: 'Word Select(LRCLK)' },
+				{ funcId: 'mclk', funcNumber: base, description: 'Master Clock' },
+				{ funcId: 'sclk', funcNumber: base + 1, description: 'Serial Clock(BCLK)' },
+				{ funcId: 'ws', funcNumber: base + 2, description: 'Word Select(LRCLK)' },
 				...this.dataPin(input, base + 3, 'in_d', 'Serial Data Input'),
 				...this.dataPin(output, base + 3 + input, 'out_d', 'Serial Data Output'),
 			],
 		};
 	}
 
-	static i2c(id: number | string, base: number): IFunc {
+	static i2c(id: number|string, base: number): IFuncDefinition {
 		return {
-			name: `i2c${id}`, description: `I2C${id}`,
+			funcBaseId: `i2c${id}`, description: `I2C${id}`,
 			ios: [
-				{ name: 'sclk', funcNumber: base, description: 'Serial Clock' },
-				{ name: 'sda', funcNumber: base + 1, description: 'Serial Data' },
+				{ funcId: 'sclk', funcNumber: base, description: 'Serial Clock' },
+				{ funcId: 'sda', funcNumber: base + 1, description: 'Serial Data' },
 			],
 		};
 	}
@@ -90,7 +90,7 @@ export function BGA_IO_GEOMETRY(pinMap: string): IChipGeometry {
 		missingRows: '',
 		IOPinPlacement: {},
 	};
-	const ioPins = new Map<{ row: string; col: number; }, number>();
+	const ioPins = new Map<{row: string; col: number;}, number>();
 
 	pinMap = pinMap.replace(/^\s+|\s+$/mg, '').trim(); // clear space around
 
@@ -172,6 +172,6 @@ export function normalizePin(base: BaseAny, pin: IPin): IPin2DNumber {
 		}
 		return { x: parseInt(p[2]), y: base.toBase10(p[1] || 'A') };
 	} else {
-		return { x: pin.x, y: typeof pin.y === 'string' ? base.toBase10(pin.y) : pin.y };
+		return { x: pin.x, y: typeof pin.y === 'string'? base.toBase10(pin.y) : pin.y };
 	}
 }

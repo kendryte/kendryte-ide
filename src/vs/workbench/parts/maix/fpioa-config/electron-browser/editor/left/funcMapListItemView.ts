@@ -5,10 +5,10 @@ import { SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { Emitter, Event } from 'vs/base/common/event';
 import { $, addClass, append } from 'vs/base/browser/dom';
-import { PinFuncSetEvent } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/fpioaEditor';
 import { IOPinPlacement } from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
 import { attachSelectBoxStyler } from 'vs/platform/theme/common/styler';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
+import { PinFuncSetEvent } from 'vs/workbench/parts/maix/fpioa-config/common/types';
 
 export interface IFuncMapTemplate {
 	input: SelectBox;
@@ -98,11 +98,11 @@ export class FuncMapListItemRender implements IRenderer<IListFuncMapEntry, IFunc
 
 		let select = 0;
 		if (entry.currentPin !== undefined) {
-			console.log('func[%s] -> pin[%s:%s]', entry.fnCallArgName, entry.currentPin, this.pinToIO[entry.currentPin]);
+			console.log('func[%s] -> pin[%s:%s]', entry.fullId, entry.currentPin, this.pinToIO[entry.currentPin]);
 			const io = this.pinToIO[entry.currentPin];
 			select = Object.keys(this.ioToPin).indexOf(io) + 1; // padding for --
 		} else {
-			console.log('func[%s] -> nil', entry.fnCallArgName);
+			console.log('func[%s] -> nil', entry.fullId);
 		}
 		template.input.select(select);
 
@@ -113,10 +113,11 @@ export class FuncMapListItemRender implements IRenderer<IListFuncMapEntry, IFunc
 					template.input.select(0);
 					return;
 				}
-				console.log('pin function select: pin[%s:%s] func[%s]', this.ioToPin[selected], selected, entry.fnCallArgName);
+				console.log('pin function select: pin[%s:%s] func[%s]', this.ioToPin[selected], selected, entry.fullId);
 				this._onSetPin.fire({
 					pin: index === 0? undefined : this.ioToPin[selected],
-					func: entry.fnCallArgName,
+					func: entry.fullId,
+					triggerBy: 'func',
 				});
 			} else {
 				console.log('empty select.');

@@ -6,6 +6,7 @@ console.log('get config of ConfigCategory');
 const CategoryRegistry = Registry.as<IConfigCategoryRegistry>(Extensions.ConfigCategory);
 if (!CategoryRegistry) {
 	debugger;
+	require('electron').remote.getCurrentWindow().reload();
 }
 
 CategoryRegistry.registerCategory({ id: 'build-deploy', category: '构建、部署' });

@@ -129,6 +129,10 @@ export class FpioaModel extends EditorModel {
 		return true;
 	}
 
+	getFuncPin(funcId: string) {
+		return this.content.funcPinMap[funcId];
+	}
+
 	getPinFunc(ioPin: string) {
 		for (const fn of Object.keys(this.content.funcPinMap)) {
 			if (ioPin === this.content.funcPinMap[fn]) {
@@ -139,7 +143,10 @@ export class FpioaModel extends EditorModel {
 	}
 
 	unsetFunc(funcId: string) {
-		delete this.content.funcPinMap[funcId];
+		if (this.content.funcPinMap.hasOwnProperty(funcId)) {
+			delete this.content.funcPinMap[funcId];
+			this.dirty = true;
+		}
 	}
 
 	setPinFunc(funcId: string, ioPin: string) {

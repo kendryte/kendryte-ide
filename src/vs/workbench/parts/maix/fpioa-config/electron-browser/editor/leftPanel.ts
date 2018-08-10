@@ -14,8 +14,7 @@ import { getChipPackaging } from 'vs/workbench/parts/maix/fpioa-config/common/pa
 import { IChipPackagingCalculated } from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
 import { GroupTitleRenderer } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/left/groupTitleView';
 import { NullRenderer } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/left/nullView';
-import { PinFuncSetEvent } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/fpioaEditor';
-import { IFuncPinMap } from 'vs/workbench/parts/maix/fpioa-config/common/types';
+import { IFuncPinMap, PinFuncSetEvent } from 'vs/workbench/parts/maix/fpioa-config/common/types';
 
 export class FpioaLeftPanel extends Disposable implements IView {
 	onDidChange = Event.None;
@@ -87,8 +86,8 @@ export class FpioaLeftPanel extends Disposable implements IView {
 		console.warn('list update event!');
 		this.currentFuncMap = currentFuncMap;
 		this.chipIOList.forEach((item: IListFuncMapEntry, index) => {
-			if (currentFuncMap[item.fnCallArgName] !== item.currentPin) {
-				item.currentPin = currentFuncMap[item.fnCallArgName];
+			if (currentFuncMap[item.fullId] !== item.currentPin) {
+				item.currentPin = currentFuncMap[item.fullId];
 				this.list.splice(index + 2, 1, [item]);
 			}
 		});
@@ -114,24 +113,16 @@ export class FpioaLeftPanel extends Disposable implements IView {
 		console.warn('pin map is changing');
 		const newList: (IListGroupEntry|IListFuncMapEntry)[] = [];
 
-		chip.usableFunctions.forEach(({ name: funName, ios, description }) => {
+		chip.usableFunctions.forEach(({ funcBaseId: funName, ios, description }) => {
 			newList.push({ id: funName.toUpperCase(), templateId: TEMPLATE_ID.FUNC_MAP_GROUP, description });
 
-			ios.forEach(({ name: pinName, funcNumber, description, ignoreFnName }) => {
-				const funcFullName: string = funName.toUpperCase() + '_' + pinName.toUpperCase();
-				let funcCallName: string;
-				if (ignoreFnName) {
-					funcCallName = pinName.toUpperCase();
-				} else {
-					funcCallName = funName.toUpperCase() + '_' + pinName.toUpperCase();
-				}
-				let currentPin = this.getExistsFuncPin(funcFullName);
+			ios.forEach(({ funcId, funcNumber, description, funcIdFull }) => {
+				let currentPin = this.getExistsFuncPin(funcIdFull);
 				newList.push(<IListFuncMapEntry>{
 					templateId: TEMPLATE_ID.FUNC_MAP_HIDE,
 					currentPin,
-					id: pinName.toUpperCase(),
-					fullId: funcFullName,
-					fnCallArgName: funcCallName,
+					id: funcId.toUpperCase(),
+					fullId: funcIdFull,
 					description,
 				});
 			});

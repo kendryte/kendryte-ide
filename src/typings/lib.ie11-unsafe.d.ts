@@ -16,3 +16,20 @@ interface ObjectConstructor {
 
 	assign(target: object, ...sources: any[]): any;
 }
+
+interface IterableIterator<T> extends Iterator<T> {
+	[Symbol.iterator](): IterableIterator<T>;
+}
+
+interface Iterator<T> {
+	next(value?: any): IteratorResult<T>;
+
+	return?(value?: any): IteratorResult<T>;
+
+	throw?(e?: any): IteratorResult<T>;
+}
+
+interface IteratorResult<T> {
+	done: boolean;
+	value: T;
+}

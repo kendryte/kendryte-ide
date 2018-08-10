@@ -13,7 +13,7 @@ import { FpioaEditor } from 'vs/workbench/parts/maix/fpioa-config/electron-brows
 const category = localize('maix', 'Maix');
 
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(FpioaEditorAction, FpioaEditorAction.ID, FpioaEditorAction.LABEL), 'Maix: fpioa Editor', category);
+        .registerWorkbenchAction(new SyncActionDescriptor(FpioaEditorAction, FpioaEditorAction.ID, FpioaEditorAction.LABEL), 'Maix: fpioa Editor', category);
 
 MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {
@@ -23,7 +23,7 @@ MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 });
 
 Registry.as<IEditorInputFactoryRegistry>(EditorInputExtensions.EditorInputFactories)
-	.registerEditorInputFactory(FpioaInputFactory.ID, FpioaInputFactory);
+        .registerEditorInputFactory(FpioaInputFactory.ID, FpioaInputFactory);
 
 Registry.as<IEditorRegistry>(EditorExtensions.Editors).registerEditor(
 	new EditorDescriptor(
