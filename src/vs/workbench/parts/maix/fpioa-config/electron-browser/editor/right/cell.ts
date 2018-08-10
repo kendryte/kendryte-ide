@@ -2,7 +2,7 @@ import { $, addClass, addDisposableListener, append } from 'vs/base/browser/dom'
 import { CountBadge } from 'vs/base/browser/ui/countBadge/countBadge';
 import { Color } from 'vs/base/common/color';
 import { IPin2DNumber } from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
-import { ColorMap, ContextMenuData } from 'vs/workbench/parts/maix/fpioa-config/common/types';
+import { ColorMap, ContextMenuData, ID_NO_FUNCTION } from 'vs/workbench/parts/maix/fpioa-config/common/types';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { Emitter } from 'vs/base/common/event';
 import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
@@ -17,7 +17,7 @@ export class CellRender extends Disposable {
 	private $h3: HTMLElement;
 	private $fnContainer: HTMLElement;
 	private functionBadge: CountBadge;
-	private _funcId: string;
+	private _funcId: string = ID_NO_FUNCTION;
 	private _pinName: string;
 
 	private readonly _onContextMenu = new Emitter<ContextMenuData>();
@@ -64,7 +64,7 @@ export class CellRender extends Disposable {
 
 	assignFunctionId(funcId: string) {
 		if (!funcId) {
-			funcId = undefined;
+			funcId = ID_NO_FUNCTION;
 		}
 		if (this._funcId === funcId) {
 			return;
@@ -97,7 +97,7 @@ export class CellRender extends Disposable {
 	}
 
 	clean() {
-		this._funcId = undefined;
+		this._funcId = ID_NO_FUNCTION;
 		if (this.functionBadge) {
 			this.$fnContainer.innerHTML = '';
 			delete this.functionBadge;

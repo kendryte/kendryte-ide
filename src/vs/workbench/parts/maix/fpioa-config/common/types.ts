@@ -46,3 +46,5 @@ export interface ContextMenuData {
 	ioNum?: number;
 	currentFunctionId: string;
 }
+
+export const ID_NO_FUNCTION = null;
