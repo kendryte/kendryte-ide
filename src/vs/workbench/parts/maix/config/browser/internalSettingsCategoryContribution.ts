@@ -2,7 +2,6 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { Extensions, IConfigCategoryRegistry } from 'vs/workbench/parts/maix/_library/common/type';
 import { commonlyUsedData } from 'vs/workbench/parts/preferences/browser/settingsLayout';
 
-console.log('get config of ConfigCategory');
 const CategoryRegistry = Registry.as<IConfigCategoryRegistry>(Extensions.ConfigCategory);
 if (!CategoryRegistry) {
 	debugger;

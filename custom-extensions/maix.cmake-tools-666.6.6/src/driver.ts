@@ -837,8 +837,8 @@ Please install or configure a preferred generator, or update settings.json or yo
     if (this._sdkPathCache) {
       return this._sdkPathCache;
     }
-    const rootProd = await findItem('SDK');
-    if (!rootProd) {
+    const { item: rootProd, found } = await findItem('SDK');
+    if (!found) {
       if (await fs.exists(this.mainListFile)) {
         const content = await fs.readFile(this.mainListFile, 'utf-8');
         if (/BUILDING_SDK/.test(content)) {

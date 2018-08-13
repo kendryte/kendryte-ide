@@ -1,26 +1,26 @@
 import * as vscode from 'vscode';
 import * as util from 'util';
 
-const chan = vscode.window.createOutputChannel('CMake/Build');
+const chan = vscode.window.createOutputChannel('cmake-tools-helper');
 
 export function log(f: any, ...args: any[]) {
-    console.log(f, ...args);
     if (typeof f === 'string') {
-        chan.appendLine(util.format('[cmake-helper] LOG: ' + f, ...args));
+        console.log(util.format('[cmake-tools-helper] LOG: ' + f, ...args));
     } else {
-        chan.appendLine(util.format('[cmake-helper] LOG:', f, ...args));
+        console.log(util.format('[cmake-tools-helper] LOG:', f, ...args));
     }
+    chan.appendLine(util.format(f, ...args));
 }
 
 export function error(f: any, ...args: any[]) {
-    console.error(f, ...args);
     if (typeof f === 'string') {
-        chan.appendLine(util.format('[cmake-helper] ERROR: ' + f, ...args));
+        console.error(util.format('[cmake-tools-helper] ERROR: ' + f, ...args));
     } else {
-        chan.appendLine(util.format('[cmake-helper] ERROR:', f, ...args));
+        console.error(util.format('[cmake-tools-helper] ERROR:', f, ...args));
     }
+    chan.appendLine(util.format(f, ...args));
 }
 
-export function debug(...args: any[]) {
-    console.log(...args);
+export function debug(f: any, ...args: any[]) {
+    chan.appendLine(util.format(f, ...args));
 }

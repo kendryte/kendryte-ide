@@ -7,10 +7,12 @@ import * as fs from 'fs';
 import * as helper from './helper';
 import * as state from './state';
 import * as console from './log';
+import { safeEnsurePackagesRootDir } from './root-dir';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext): state.CMakeToolsHelper {
+export async function activate(context: vscode.ExtensionContext): Promise<state.CMakeToolsHelper> {
+    await safeEnsurePackagesRootDir();
 
     let cmakeToolsHelper = new state.CMakeToolsHelper();
 

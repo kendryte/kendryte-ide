@@ -2,17 +2,22 @@ import * as child_process from 'child_process';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import {EnvironmentVariables, execute} from './proc';
+import { EnvironmentVariables, execute } from './proc';
 import { fs } from '@cmt/pr';
+import { getPackagesRoot } from '@cmt/root-dir';
+
+export interface FindItemResult {
+  found: boolean;
+  item: string;
+}
 
 /** get sdk or toolcahin path */
-export async function findItem(item: string): Promise<string> {
-  const wantPath = path.resolve(vscode.env.appRoot, 'packages', item);
-
+export async function findItem(item: string): Promise<FindItemResult> {
+  const wantPath = path.resolve(getPackagesRoot(), item);
   if (await fs.exists(wantPath)) {
-    return wantPath;
+    return { found: true, item: wantPath };
   } else {
-    return '';
+    return { found: false, item: wantPath };
   }
 }
 
@@ -116,24 +121,24 @@ export function reduce<In, Out>(iter: Iterable<In>, init: Out, mapper: (acc: Out
  */
 export function randint(min: number, max: number): number { return Math.floor(Math.random() * (max - min) + min); }
 
-
 export function product<T>(arrays: T[][]): T[][] {
   // clang-format off
-  return arrays.reduce((acc, curr) =>
-    acc
+  return arrays.reduce(
+    (acc, curr) =>
+      acc
       // Append each element of the current array to each list already accumulated
-      .map(
-        prev => curr.map(
-          item => prev.concat(item)
+        .map(
+          prev => curr.map(
+            item => prev.concat(item),
+          ),
         )
-      )
-      .reduce(
-        // Join all the lists
-        (a, b) => a.concat(b),
-        []
-      ),
-      [[]] as T[][]
-    );
+        .reduce(
+          // Join all the lists
+          (a, b) => a.concat(b),
+          [],
+        ),
+    [[]] as T[][],
+  );
   // clang-format on
 }
 
@@ -149,7 +154,7 @@ export function cmakeify(value: (string|boolean|number|string[])): CMakeValue {
   };
   if (value === true || value === false) {
     ret.type = 'BOOL';
-    ret.value = value ? 'TRUE' : 'FALSE';
+    ret.value = value? 'TRUE' : 'FALSE';
   } else if (typeof (value) === 'string') {
     ret.type = 'STRING';
     ret.value = replaceAll(value, ';', '\\;');
@@ -165,7 +170,6 @@ export function cmakeify(value: (string|boolean|number|string[])): CMakeValue {
   return ret;
 }
 
-
 export async function termProc(child: child_process.ChildProcess) {
   // Stopping the process isn't as easy as it may seem. cmake --build will
   // spawn child processes, and CMake won't forward signals to its
@@ -178,13 +182,15 @@ export async function termProc(child: child_process.ChildProcess) {
 async function _killTree(pid: number) {
   if (process.platform !== 'win32') {
     let children: number[] = [];
-    const stdout = (await execute('pgrep', ['-P', pid.toString()], null, {silent: true}).result).stdout.trim();
+    const stdout = (await execute('pgrep', ['-P', pid.toString()], null, { silent: true }).result).stdout.trim();
     if (!!stdout.length) {
       children = stdout.split('\n').map(line => Number.parseInt(line));
     }
     for (const other of children) {
-      if (other)
-        await _killTree(other);
+      if (other) {
+        await
+          _killTree(other);
+      }
     }
     try {
       process.kill(pid, 'SIGINT');
@@ -216,12 +222,12 @@ export function isMultiConfGenerator(gen: string): boolean {
   return gen.includes('Visual Studio') || gen.includes('Xcode');
 }
 
-
 export interface Version {
   major: number;
   minor: number;
   patch: number;
 }
+
 export function parseVersion(str: string): Version {
   const version_re = /(\d+)\.(\d+)\.(\d+)/;
   const mat = version_re.exec(str);
@@ -283,15 +289,15 @@ export function mergeEnvironment(...env: EnvironmentVariables[]): EnvironmentVar
         acc2[key.toUpperCase()] = vars[key];
         return acc2;
       }, {});
-      return {...acc, ...norm_vars};
+      return { ...acc, ...norm_vars };
     } else {
-      return {...acc, ...vars};
+      return { ...acc, ...vars };
     }
   }, {});
 }
 
 export function normalizeEnvironmentVarname(varname: string) {
-  return process.platform == 'win32' ? varname.toLocaleLowerCase() : varname;
+  return process.platform == 'win32'? varname.toLocaleLowerCase() : varname;
 }
 
 export function parseCompileDefinition(str: string): [string, string|null] {

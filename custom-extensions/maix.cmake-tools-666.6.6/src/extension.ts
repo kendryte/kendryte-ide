@@ -6,9 +6,13 @@
 
 require('module-alias/register');
 
+import { safeEnsurePackagesRootDir } from '@cmt/root-dir';
 import * as vscode from 'vscode';
 import * as logging from './logging';
 import * as util from './util';
+import CMakeTools from './cmake-tools';
+import { DirectoryContext } from '@cmt/workspace';
+import { StateManager } from '@cmt/state';
 
 const log = logging.createLogger('extension');
 
@@ -16,10 +20,6 @@ const log = logging.createLogger('extension');
 // import { CMakeToolsWrapper } from './wrapper';
 // import { log } from './logging';
 // import { outputChannels } from "./util";
-
-import CMakeTools from './cmake-tools';
-import {DirectoryContext} from '@cmt/workspace';
-import {StateManager} from '@cmt/state';
 
 let INSTANCE: CMakeTools|null = null;
 
@@ -29,6 +29,7 @@ let INSTANCE: CMakeTools|null = null;
  * @returns A promise that will resolve when the extension is ready for use
  */
 export async function activate(context: vscode.ExtensionContext): Promise<CMakeTools> {
+  await safeEnsurePackagesRootDir();
   // Create a WorkspaceContext for the current workspace. In the future, this will
   // instantiate for each directory in a workspace
   const ws = DirectoryContext.createForDirectory(vscode.workspace.rootPath!, new StateManager(context));
@@ -46,7 +47,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<CMakeT
         const ret = await fn();
         try {
           log.debug(`[${id}] cmake.${name} finished (returned ${JSON.stringify(ret)})`);
-        } catch (e) { log.debug(`[${id}] cmake.${name} finished (returned an unserializable value)`); }
+        } catch (e) {
+          log.debug(`[${id}] cmake.${name} finished (returned an unserializable value)`);
+        }
         return ret;
       })();
       return pr;
@@ -55,11 +58,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<CMakeT
 
   // List of functions that will be bound commands
   const funs: (keyof CMakeTools)[] = [
-    'editKits',     'scanForKits',      'selectKit',        'cleanConfigure', 'configure',
-    'build',        'setVariant',       'install',          'editCache',      'clean',
-    'cleanRebuild', 'buildWithTarget',  'setDefaultTarget', 'ctest',          'stop',
-    'quickStart',   'launchTargetPath', 'debugTarget',      'launchTarget',   'selectLaunchTarget',
-    'resetState',   'viewLog',
+    'editKits', 'scanForKits', 'selectKit', 'cleanConfigure', 'configure',
+    'build', 'setVariant', 'install', 'editCache', 'clean',
+    'cleanRebuild', 'buildWithTarget', 'setDefaultTarget', 'ctest', 'stop',
+    'quickStart', 'launchTargetPath', 'debugTarget', 'launchTarget', 'selectLaunchTarget',
+    'resetState', 'viewLog',
     // 'toggleCoverageDecorations', // XXX: Should coverage decorations be revived?
   ];
 

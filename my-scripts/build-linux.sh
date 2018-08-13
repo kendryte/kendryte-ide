@@ -72,6 +72,10 @@ RESULT="${RELEASE_ROOT}/VSCode-linux-${ARCH}"
 step "Compile custom extensions" \
 	bash my-scripts/build-env/custom-extensions-build-all.sh "${RESULT}"
 
+mkdir -p "${RESULT}/packages/"
+step "Copy Staff (Linux)" \
+	cp -r "${VSCODE_ROOT}/my-scripts/staff/packages" "${VSCODE_ROOT}/my-scripts/staff/_linux/." "${RESULT}"
+
 step "Create ${RESULT} archive to ${TARBALL_PATH}" \
 	tar -czf "${TARBALL_PATH}" "${RESULT}"
 

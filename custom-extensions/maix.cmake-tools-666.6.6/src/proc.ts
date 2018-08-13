@@ -113,6 +113,7 @@ export function execute(
   if (options && options.cwd) {
     spawn_opts.cwd = options.cwd;
   }
+  log.info('spawn process:', command, ...args);
   const child: proc.ChildProcess = proc.spawn(command, args, spawn_opts);
   if (options.encoding) {
     child.stdout.setEncoding(options.encoding);

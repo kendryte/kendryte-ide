@@ -17,6 +17,7 @@ import { loadSchema } from './schema';
 import { compare, dropNulls, Ordering, thisExtensionPath } from './util';
 import { MultiWatcher } from './watcher';
 import { findItem } from '@cmt/util';
+import { getPackagesRoot } from './root-dir';
 
 const log = logging.createLogger('kit');
 
@@ -650,7 +651,7 @@ export class KitManager implements vscode.Disposable {
    */
   constructor(readonly state: StateManager, readonly config: ConfigurationReader) {
     log.debug('Constructing KitManager');
-    this._userKitsPath = path.join(vscode.env.appRoot, 'packages', 'cmake-kits.json');
+    this._userKitsPath = path.join(getPackagesRoot(), 'cmake-kits.json');
 
     // Re-read the kits file when it is changed
     this._kitsWatcher = new MultiWatcher(this._userKitsPath);
@@ -773,9 +774,9 @@ export class KitManager implements vscode.Disposable {
   async rescanForKits() {
     log.debug('Rescanning for Kits');
     // clang-format off
-    const toolchainPath = await findItem('toolchain/bin');
-    if (!toolchainPath) {
-      log.error('Kits folder did not exists');
+    const { found, item: toolchainPath } = await findItem('toolchain/bin');
+    if (!found) {
+      log.error('Kits folder did not exists: %s', toolchainPath);
       await fs.writeFile(this._userKitsPath, '[]');
       return;
     }

@@ -19,7 +19,7 @@ export enum LogLevel {
   Fatal,
 }
 
-export type LogLevelKey = 'trace' | 'debug' | 'info' | 'note' | 'warning' | 'error' | 'fatal';
+export type LogLevelKey = 'trace'|'debug'|'info'|'note'|'warning'|'error'|'fatal';
 
 /**
  * Get the name of a logging level
@@ -27,20 +27,20 @@ export type LogLevelKey = 'trace' | 'debug' | 'info' | 'note' | 'warning' | 'err
  */
 function levelName(level: LogLevel): LogLevelKey {
   switch (level) {
-    case LogLevel.Trace:
-      return 'trace';
-    case LogLevel.Debug:
-      return 'debug';
-    case LogLevel.Info:
-      return 'info';
-    case LogLevel.Note:
-      return 'note';
-    case LogLevel.Warning:
-      return 'warning';
-    case LogLevel.Error:
-      return 'error';
-    case LogLevel.Fatal:
-      return 'fatal';
+  case LogLevel.Trace:
+    return 'trace';
+  case LogLevel.Debug:
+    return 'debug';
+  case LogLevel.Info:
+    return 'info';
+  case LogLevel.Note:
+    return 'note';
+  case LogLevel.Warning:
+    return 'warning';
+  case LogLevel.Error:
+    return 'error';
+  case LogLevel.Fatal:
+    return 'fatal';
   }
 }
 
@@ -51,24 +51,24 @@ function levelName(level: LogLevel): LogLevelKey {
 function levelEnabled(level: LogLevel): boolean {
   const strlevel = vscode.workspace.getConfiguration('cmake').get<LogLevelKey>('loggingLevel', 'info');
   switch (strlevel) {
-    case 'trace':
-      return level >= LogLevel.Trace;
-    case 'debug':
-      return level >= LogLevel.Debug;
-    case 'info':
-      return level >= LogLevel.Info;
-    case 'note':
-      return level >= LogLevel.Note;
-    case 'warning':
-      return level >= LogLevel.Warning;
-    case 'error':
-      return level >= LogLevel.Error;
-    case 'fatal':
-      return level >= LogLevel.Fatal;
-    default:
-      // tslint:disable-next-line
-      console.error('Invalid logging level in settings.json');
-      return true;
+  case 'trace':
+    return level >= LogLevel.Trace;
+  case 'debug':
+    return level >= LogLevel.Debug;
+  case 'info':
+    return level >= LogLevel.Info;
+  case 'note':
+    return level >= LogLevel.Note;
+  case 'warning':
+    return level >= LogLevel.Warning;
+  case 'error':
+    return level >= LogLevel.Error;
+  case 'fatal':
+    return level >= LogLevel.Fatal;
+  default:
+    // tslint:disable-next-line
+    console.error('Invalid logging level in settings.json');
+    return true;
   }
 }
 
@@ -127,9 +127,9 @@ async function _openLogFile() {
       const fpath = logFilePath();
       await fs.mkdir_p(path.dirname(fpath));
       if (await fs.exists(fpath)) {
-        return node_fs.createWriteStream(fpath, {flags: 'r+'});
+        return node_fs.createWriteStream(fpath, { flags: 'r+' });
       } else {
-        return node_fs.createWriteStream(fpath, {flags: 'w'});
+        return node_fs.createWriteStream(fpath, { flags: 'w' });
       }
     })();
   }
@@ -152,27 +152,28 @@ class SingletonLogger {
       return;
     }
     const user_message = args.map(a => a.toString()).join(' ');
-    const prefix = new Date().toISOString() + ` [${levelName(level)}]`;
+    const prefix = `[${levelName(level)}]`;
     const raw_message = `${prefix} ${user_message}`;
     switch (level) {
-      case LogLevel.Trace:
-      case LogLevel.Debug:
-      case LogLevel.Info:
-      case LogLevel.Note:
-        // tslint:disable-next-line
-        console.info('[CMakeTools] ' + raw_message);
-        break;
-      case LogLevel.Warning:
-        // tslint:disable-next-line
-        console.warn('[CMakeTools] ' + raw_message);
-        break;
-      case LogLevel.Error:
-      case LogLevel.Fatal:
-        // tslint:disable-next-line
-        console.error('[CMakeTools] ' + raw_message);
-        break;
-      default:
-        console.log('[CMakeTools] ' + raw_message);
+    case LogLevel.Trace:
+    case LogLevel.Info:
+    case LogLevel.Note:
+      // tslint:disable-next-line
+      console.info('[CMakeTools] ' + raw_message);
+      break;
+    case LogLevel.Warning:
+      // tslint:disable-next-line
+      console.warn('[CMakeTools] ' + raw_message);
+      break;
+    case LogLevel.Error:
+    case LogLevel.Fatal:
+      // tslint:disable-next-line
+      console.error('[CMakeTools] ' + raw_message);
+      break;
+    case LogLevel.Debug:
+      break;
+    default:
+      console.log('[CMakeTools] ' + raw_message);
     }
     // Write to the logfile asynchronously.
     this._logStream.then(strm => strm.write(raw_message + '\n')).catch(e => {
@@ -221,7 +222,7 @@ class SingletonLogger {
     this._channel.show();
   }
 
-  private static _inst: SingletonLogger | null = null;
+  private static _inst: SingletonLogger|null = null;
 
   static instance(): SingletonLogger {
     if (SingletonLogger._inst === null) {

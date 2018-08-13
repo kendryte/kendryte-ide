@@ -12,6 +12,7 @@ import * as request_progress from 'request-progress';
 import * as url_exists from 'url-exists';
 import * as child_process from 'child_process';
 import * as console from './log';
+import { getPackagesRoot, isFile } from './root-dir';
 import compare_versions = require('compare-versions');
 
 export function cmakeArchBits(): number {
@@ -87,16 +88,18 @@ export function vscodeFolderPath(): string {
     return path.join(vscode.workspace.rootPath || '~', '.vscode');
 }
 
-export async function installAtLeaseOneCmake() {
+export async function installAtLeaseOneCmake(): Promise<string> {
     const installedVers = getInstalledCMakeVersions();
     if (installedVers && installedVers.length) {
         console.log('found %d installed cmake.', installedVers.length);
-        return;
+        if (await isFile(installedVers[0].path)) {
+            return installedVers[0].path;
+        }
     }
 
     await vscode.workspace.getConfiguration('cmake').update('cmakePath', '', true);
 
-    await vscode.window.withProgress({
+    return await vscode.window.withProgress({
         location: vscode.ProgressLocation.Notification,
         title: '',
         cancellable: false,
@@ -113,17 +116,12 @@ export async function installAtLeaseOneCmake() {
         if (!installedCMakeRootDir) {
             throw new Error(`Failed to download CMake ${versionToDownload}`);
         }
-        const installedCMakePath = `${installedCMakeRootDir}${path.sep}bin${path.sep}cmake`;
-
-        await vscode.workspace.getConfiguration('cmake').update('cmakePath', `${installedCMakePath}`, true);
-        const useCMakeServer = compare_versions(versionToDownload, '3.7.1') > 0;
-        await vscode.workspace.getConfiguration('cmake').update('useCMakeServer', useCMakeServer, true);
+        return `${installedCMakeRootDir}${path.sep}bin${path.sep}cmake`;
     });
 }
 
-export const CMakeDownloadPath = path.resolve(vscode.env.appRoot, 'packages/cmake');
-
 export function initCMakeDownloadDir() {
+    const CMakeDownloadPath = path.resolve(getPackagesRoot(), 'cmake');
     if (!fs.existsSync(CMakeDownloadPath)) {
         mkdirp.sync(CMakeDownloadPath);
         if (!fs.existsSync(CMakeDownloadPath)) {
@@ -218,6 +216,7 @@ export function downloadAndInstallCMake(versionName: string) {
     const versionMajor = versionArray[0];
     const versionMinor = versionArray[1];
     const versionDirUrl = `http://cmake.org/files/v${versionMajor}.${versionMinor}/`;
+    const CMakeDownloadPath = path.resolve(getPackagesRoot(), 'cmake');
 
     return downloadAndInstallCMake_actual(
         versionDirUrl, versionNumber, cmakePlatformNames(), cmakePlatformExtension(),
@@ -328,6 +327,7 @@ export async function changeCMakeVersion() {
 }
 
 export function getInstalledCMakeVersions() {
+    const CMakeDownloadPath = path.resolve(getPackagesRoot(), 'cmake');
     const cmakeDirs = fs.readdirSync(CMakeDownloadPath).filter(file => fs.lstatSync(path.join(CMakeDownloadPath, file)).isDirectory());
     if (cmakeDirs === null || cmakeDirs.length < 1) {
         return null;

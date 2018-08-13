@@ -8,6 +8,7 @@ import { ISerialPortService, SerialPortItem } from 'vs/workbench/parts/maix/seri
 import { array_has_diff } from 'vs/workbench/parts/maix/_library/common/utils';
 import { RawContextKey } from 'vs/platform/contextkey/common/contextkey';
 import { IQuickInputService, IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
+import { ILogService } from 'vs/platform/log/common/log';
 
 export const KEYBINDING_CONTEXT_SERIAL_TERMINAL_FOCUS = new RawContextKey<boolean>('terminalFocus', undefined);
 
@@ -24,12 +25,12 @@ class SerialPortService implements ISerialPortService {
 		@IInstantiationService protected instantiationService: IInstantiationService,
 		@ILifecycleService lifecycleService: ILifecycleService,
 		@IQuickInputService protected quickInputService: IQuickInputService,
+		@ILogService protected logService: ILogService,
 	) {
 		this.refreshDevices();
 	}
 
 	public refreshDevices() {
-		console.info('refreshing COM device list');
 		if (this.cachedPromise) {
 			return this.cachedPromise;
 		}
@@ -40,8 +41,10 @@ class SerialPortService implements ISerialPortService {
 	}
 
 	private async _refreshDevices(): TPromise<void> {
+		this.logService.info('Refreshing COM device list...');
 		this.memSerialDevices = await SerialPort.list();
 		Object.freeze(this.memSerialDevices);
+		this.logService.info('COM device list: ', this.memSerialDevices);
 
 		const last = this.memSerialDeviceNames;
 		this.memSerialDeviceNames = this.memSerialDevices.map((item) => {
@@ -94,7 +97,7 @@ class SerialPortService implements ISerialPortService {
 		});
 
 		const picked = await this.quickInputService.pick(TPromise.as(pickMap), { canPickMany: false });
-		return picked ? picked.id : '';
+		return picked? picked.id : '';
 	}
 }
 

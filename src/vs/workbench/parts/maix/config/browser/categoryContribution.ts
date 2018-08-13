@@ -8,8 +8,6 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { ITOCEntry, tocData } from 'vs/workbench/parts/preferences/browser/settingsLayout';
 import { Extensions, ICategoryConfig, IConfigCategoryRegistry } from 'vs/workbench/parts/maix/_library/common/type';
 
-console.log('create config of ConfigCategory');
-
 Registry.add(Extensions.ConfigCategory, new class implements IConfigCategoryRegistry {
 	private map: { [id: string]: ITOCEntry } = {};
 	private root: ITOCEntry = tocData;

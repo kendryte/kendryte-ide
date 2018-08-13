@@ -5,7 +5,11 @@ import { isWindows } from 'vs/base/common/platform';
 import { lstatSync } from 'fs';
 
 export function getInstallPath(environmentService: IEnvironmentService) {
-	return resolve(environmentService.execPath, '..');
+	if (environmentService.isBuilt) {
+		return resolve(environmentService.execPath, '..');
+	} else {
+		return resolve(environmentService.execPath, '../../..');
+	}
 }
 
 export function getDataPath(environmentService: IEnvironmentService) {
@@ -17,6 +21,7 @@ export function exeFile(filePath: string) {
 }
 
 let pathCache: string;
+let warn: boolean = false;
 
 export function getSDKPath(environmentService: IEnvironmentService) {
 	if (!pathCache) {
@@ -25,8 +30,15 @@ export function getSDKPath(environmentService: IEnvironmentService) {
 			if (lstatSync(path).isDirectory()) {
 				pathCache = path;
 			}
-		} catch (e) {
-			// noop
+		} catch (e) { // noop
+		}
+		if (!warn) {
+			warn = true;
+			if (pathCache) {
+				console.log('%cSDK is found at %s.', 'color:green', path);
+			} else {
+				console.log('%cSDK is expected to be found at %s, But not found.', 'color:red', path);
+			}
 		}
 	}
 	return pathCache;
