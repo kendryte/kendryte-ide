@@ -29,6 +29,11 @@ if [ -z "${TOOLCHAIN_BIN}" ]; then
 	P="${TOOLCHAIN_BIN}:$P"
 fi
 
+if [ -n "${HTTP_PROXY}${http_proxy}" ]; then
+	export HTTP_PROXY="${HTTP_PROXY-"${http_proxy}"}"
+	export HTTPS_PROXY="${HTTP_PROXY}" http_proxy="${HTTP_PROXY}" https_proxy="${HTTP_PROXY}"
+fi
+
 if [ -z "${FOUND_CYGWIN}" ] || [ -z "${NODEJS}" ] ; then
 	export FOUND_CYGWIN=$(find /bin -name 'cygwin*.dll')
 	if [ -n "${FOUND_CYGWIN}" ]; then
@@ -58,4 +63,5 @@ echo -e "\e[1;38;5;9mFOUND_CYGWIN\e[0m=\e[2m${FOUND_CYGWIN}\e[0m"
 echo -e "\e[1;38;5;9mSYSTEM\e[0m=\e[2m${SYSTEM}\e[0m"
 echo -e "\e[1;38;5;9mNODEJS\e[0m=\e[2m${NODEJS}\e[0m"
 echo -e "\e[1;38;5;9mNODEJS_BIN\e[0m=\e[2m${NODEJS_BIN}\e[0m"
+echo -e "\e[1;38;5;9mHTTP_PROXY\e[0m=\e[2m${HTTP_PROXY}\e[0m"
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
