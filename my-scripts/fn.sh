@@ -95,7 +95,6 @@ function hash_files_check_changed() { # change return 0 ( test success )
 		echo "source code not exists."
 		RET=0
 	fi
-	RET=$?
 	return ${RET}
 }
 
