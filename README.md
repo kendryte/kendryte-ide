@@ -39,7 +39,19 @@ bash ./my-scripts/prepare-development.sh
 	bash ./my-scripts/start-tmux.sh
 	```
 
-## Release
+#### Run From Source Note:
+1. you must have a "workspace" like this:
+```
+📁New Folder *<-- the "workspace"*    
+   📁 maix-ide *<-- this project*    
+   📁 HOME *<-- this will auto create during run*    
+```
+1. you need an user:
+	* non-root
+	* have write permission to the "workspace"
+
+
+## Make Release
 
 After install, you can run: (no `yarn install` is need)
 
@@ -52,16 +64,25 @@ bash ./my-scripts/build-linux.sh
 Compressed release file will in .release folder.    
 `.rpm`/`.deb`/`.msi` files will not generate.
 
-#### Note:
-1. you must have a "workspace" like this:
+## maix SDK & toolchain
+sdk and toolchain must found inside a folder `packages/`:
+* when developing: inside source root, next to `package.json`.
+* when released: inside application root, next to `Maix IDE.exe`
+
+On linux, [maix-toolchain](https://github.com/Canaan-Creative/maix-toolchain) can be build with:
+```bash
+cd maix-toolchain
+./configure --prefix=`pwd`/dist
+make -j$(nproc)
+\cp -r dist/. /path/to/maix-ide/packages/toolchain
 ```
-📁New Folder *<-- the "workspace"*    
-   📁 maix-ide *<-- this project*    
-   📁 HOME *<-- this will auto create during run*    
-```
-1. you need an user:
-	* non-root
-	* have write permission to the "workspace"
+
+[maix-sdk](https://github.com/Canaan-Creative/maix-sdk) can be build with:
+After toolchain is ready for use
+ 1. open IDE
+ 1. open folder of the SDK source
+ 1. click "Build" button
+ 1. copy "build/archive/" folder to `packages/` and rename to "SDK" (Uppercase)
 
 ## License
 
