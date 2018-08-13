@@ -4,6 +4,7 @@
 set -e
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 source fn.sh
+clear_environment
 source common.sh "$@"
 
 echo 8000000 > /proc/sys/fs/file-max

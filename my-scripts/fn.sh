@@ -25,6 +25,12 @@ SN=0
 SN_LIST=()
 STAT_SHOW=
 function step(){
+	if [ "$1" == "-s" ]; then
+		cd "${VSCODE_ROOT}"
+		shift
+	else
+		cd "${ARCH_RELEASE_ROOT}"
+	fi
 	local oldEset=${-//[^e]/}
 	set +e
 
@@ -124,4 +130,13 @@ function hash_deps_save() {
 	local DEP_FILE="$2"
 	local HASH="${RELEASE_ROOT}/dep_${DEP_NAME}_hash.md5"
 	cat "$DEP_FILE" | md5sum > "${HASH}"
+}
+
+function clear_environment(){
+	unset VSCODE_ROOT
+	unset RELEASE_ROOT
+	unset REAL_HOME
+	unset TOOLCHAIN_BIN
+	unset FOUND_CYGWIN
+	unset NODEJS
 }

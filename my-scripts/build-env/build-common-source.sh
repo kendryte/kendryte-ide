@@ -14,7 +14,7 @@ if hash_files_check_changed ; then
 
 	############# copy source files to dist dir
 	pushd "${VSCODE_ROOT}" &>/dev/null
-	step "Extract source code" \
+	step -s "Extract source code" \
 		bash -c "git archive --format tar HEAD | tar x -C \"${ARCH_RELEASE_ROOT}\""
 	popd &>/dev/null
 	
