@@ -68,7 +68,10 @@ step "Compile custom extensions" \
 
 mkdir -p "${RESULT}/packages/"
 step "Copy Staff (Windows)" \
-	cp -r "${VSCODE_ROOT}/my-scripts/staff/packages" "${VSCODE_ROOT}/my-scripts/staff/_windows/." "${RESULT}"
+	bash -c "
+	cp -r '${VSCODE_ROOT}/my-scripts/staff/packages_skel/.' '${RESULT}/packages/'
+	cp -r '${VSCODE_ROOT}/my-scripts/staff/_windows/*' '${RESULT}/'
+"
 
 step "Create archive file" \
 	7za a -y "${TARBALL_PATH}" "${RESULT}"
