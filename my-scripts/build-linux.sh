@@ -76,8 +76,8 @@ step "Compile custom extensions" \
 mkdir -p "${RESULT}/packages/"
 step "Copy Staff (Linux)" \
 	bash -c "
-	cp -r '${VSCODE_ROOT}'/my-scripts/staff/packages_skel/. '${RESULT}/packages/'
-	cp -r '${VSCODE_ROOT}'/my-scripts/staff/_linux/* '${RESULT}/'
+	cp -r ./my-scripts/staff/packages_skel/. '${RESULT}/packages/'
+	cp -r ./my-scripts/staff/_linux/* '${RESULT}/'
 "
 
 step "Create ${RESULT} archive to ${TARBALL_PATH}" \

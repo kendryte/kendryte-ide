@@ -70,8 +70,8 @@ step "Compile custom extensions" \
 mkdir -p "${RESULT}/packages/"
 step "Copy Staff (Windows)" \
 	bash -c "
-	cp -r '${VSCODE_ROOT}'/my-scripts/staff/packages_skel/. '${RESULT}/packages/'
-	cp -r '${VSCODE_ROOT}'/my-scripts/staff/_windows/* '${RESULT}/'
+	cp -r ./my-scripts/staff/packages_skel/. '${RESULT}/packages/'
+	cp -r ./my-scripts/staff/_windows/* '${RESULT}/'
 "
 
 step "Create archive file" \

@@ -20,6 +20,13 @@ function mkdir(f: string) {
   });
 }
 
+export async function isFile(f: string) {
+  return new Promise<boolean>(resolve => {
+    const wrappedCallback = (err: Error, data: fs.Stats) => err? resolve(false) : resolve(data.isFile());
+    fs.lstat(f, wrappedCallback);
+  });
+}
+
 async function exists(f: string) {
   return new Promise<boolean>(resolve => {
     const wrappedCallback = (err: Error, data: fs.Stats) => err? resolve(false) : resolve(data.isFile() || data.isDirectory() || data.isSymbolicLink());
@@ -41,8 +48,7 @@ export async function safeEnsurePackagesRootDir(): Promise<void> {
   }
 
   // release mode
-  const ext = os.platform() === 'win32'? '.exe' : '';
-  const wantExe = `maix-ide${ext}`;
+  const wantExe = os.platform() === 'win32'? 'Maix IDE.exe' : 'maix-ide';
   const rootDir1 = path.resolve(vscode.env.appRoot, '../..', wantExe);
   log('detecting resolve root dir: %s', rootDir1);
   if (await exists(rootDir1)) {
