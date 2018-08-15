@@ -70,8 +70,10 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 
 		ignore(data, '.idea', changed);
 		ignore(data, 'config/fpioa.cfg', changed);
-		for (const part of ['CMakeCache.txt', 'CMakeFiles', 'cmake_install.cmake', 'CMakeLists.txt', 'compile_commands.json', 'Makefile']) {
-			ignore(data, 'build/' + part, changed);
+		if (this.environmentService.isBuilt) {
+			for (const part of ['CMakeCache.txt', 'CMakeFiles', 'cmake_install.cmake', 'CMakeLists.txt', 'compile_commands.json', 'Makefile']) {
+				ignore(data, 'build/' + part, changed);
+			}
 		}
 		if (changed.change) {
 			this.configurationService.updateValue('files.exclude', data, ConfigurationTarget.USER);

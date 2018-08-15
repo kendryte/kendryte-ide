@@ -566,6 +566,13 @@ Please install or configure a preferred generator, or update settings.json or yo
       settings.CMAKE_INSTALL_PREFIX = this.installDir;
     }
 
+    settings.MAIX_IDE = 'yes';
+    const { production, root } = await this.getSdkPath();
+    settings.SDK_ROOT = root;
+    if (production) {
+      settings.PRODUCTION = 'yes';
+    }
+
     const settings_flags
       = util.objectPairs(settings).map(([key, value]) => _makeFlag(key, util.cmakeify(value as string)));
     const flags = ['--no-warn-unused-cli'].concat(extra_args, this.ws.config.configureArgs);
@@ -578,13 +585,6 @@ Please install or configure a preferred generator, or update settings.json or yo
       log.debug('Using compilers in', this._kit.name, 'for configure');
       flags.push(
         ...util.objectPairs(this._kit.compilers).map(([lang, comp]) => `-DCMAKE_${lang}_COMPILER:FILEPATH=${comp}`));
-    }
-
-    settings.MAIX_IDE = 'yes';
-    const { production, root } = await this.getSdkPath();
-    settings.SDK_ROOT = root;
-    if (production) {
-      settings.PRODUCTION = 'yes';
     }
 
     if (this._kit.toolchainFile) {
@@ -837,7 +837,7 @@ Please install or configure a preferred generator, or update settings.json or yo
     if (this._sdkPathCache) {
       return this._sdkPathCache;
     }
-    const { item: rootProd, found } = await findItem('SDK');
+    const { item: rootProd, found } = await findItem('SDK', 'libmaix.a');
     if (!found) {
       if (await fs.exists(this.mainListFile)) {
         const content = await fs.readFile(this.mainListFile, 'utf-8');

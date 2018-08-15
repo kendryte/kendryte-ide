@@ -12,9 +12,10 @@ export interface FindItemResult {
 }
 
 /** get sdk or toolcahin path */
-export async function findItem(item: string): Promise<FindItemResult> {
+export async function findItem(item: string, mustExists: string): Promise<FindItemResult> {
   const wantPath = path.resolve(getPackagesRoot(), item).replace(/\\/g, '/');
-  if (await fs.exists(wantPath)) {
+  const signalFilePath = path.resolve(wantPath, mustExists);
+  if (await fs.exists(signalFilePath)) {
     return { found: true, item: wantPath };
   } else {
     return { found: false, item: wantPath };
