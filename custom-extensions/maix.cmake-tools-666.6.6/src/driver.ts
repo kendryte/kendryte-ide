@@ -842,7 +842,7 @@ Please install or configure a preferred generator, or update settings.json or yo
       if (await fs.exists(this.mainListFile)) {
         const content = await fs.readFile(this.mainListFile, 'utf-8');
         if (/BUILDING_SDK/.test(content)) {
-          log.info('compiling sdk library.');
+          log.warning(`compiling sdk library ${this.sourceDir}.`);
           return {
             // Well, current project is just the SDK
             production: false,
@@ -852,8 +852,10 @@ Please install or configure a preferred generator, or update settings.json or yo
           };
         }
       }
+      log.warning('Maix SDK not found.');
       throw new Error('Maix SDK not found. Please re-install IDE.');
     }
+    log.warning(`Maix SDK found at ${rootProd}.`);
     this._sdkPathCache = {
       production: true,
       root: rootProd,

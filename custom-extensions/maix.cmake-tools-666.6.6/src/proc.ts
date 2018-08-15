@@ -91,17 +91,6 @@ export function execute(
   outputConsumer?: OutputConsumer|null,
   options?: ExecutionOptions,
 ): Subprocess {
-  if (options && options.silent !== true) {
-    log.info('Executing command: '
-             // We do simple quoting of arguments with spaces.
-             // This is only shown to the user,
-             // and doesn't have to be 100% correct.
-             + [command]
-               .concat(args)
-               .map(a => a.replace('"', '\"'))
-               .map(a => /[ \n\r\f;\t]/.test(a)? `"${a}"` : a)
-               .join(' '));
-  }
   if (!options) {
     options = {};
   }
@@ -113,7 +102,7 @@ export function execute(
   if (options && options.cwd) {
     spawn_opts.cwd = options.cwd;
   }
-  log.info('spawn process:', command, ...args);
+  log.info(`spawn process in wd ${spawn_opts.cwd || 'Unknown'}: \n\t${command} ${args.join(' ')}`);
   const child: proc.ChildProcess = proc.spawn(command, args, spawn_opts);
   if (options.encoding) {
     child.stdout.setEncoding(options.encoding);

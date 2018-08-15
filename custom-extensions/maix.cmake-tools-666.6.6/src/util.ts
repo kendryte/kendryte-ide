@@ -13,7 +13,7 @@ export interface FindItemResult {
 
 /** get sdk or toolcahin path */
 export async function findItem(item: string): Promise<FindItemResult> {
-  const wantPath = path.resolve(getPackagesRoot(), item);
+  const wantPath = path.resolve(getPackagesRoot(), item).replace(/\\/g, '/');
   if (await fs.exists(wantPath)) {
     return { found: true, item: wantPath };
   } else {
