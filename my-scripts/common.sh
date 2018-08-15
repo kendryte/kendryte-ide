@@ -21,8 +21,8 @@ fi
 if [ -z "${REAL_HOME}" ]; then
 	export REAL_HOME="${HOME}"
 	export HOME="${RELEASE_ROOT}/FAKE_HOME"
-	export YARN_CACHE_FOLDER="${HOME}/yarn-cache"
 fi
+export YARN_CACHE_FOLDER="${HOME}/yarn-cache"
 
 if [ -z "${TOOLCHAIN_BIN}" ]; then
 	export TOOLCHAIN_BIN="${VSCODE_ROOT}/packages/toolchain/bin"

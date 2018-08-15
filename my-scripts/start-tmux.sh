@@ -11,6 +11,10 @@ if [ "$(id -u)" -eq 0 ]; then
 fi
 
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
+export REAL_HOME="${HOME}"
+export HOME=$(realpath "`pwd`/../../FAKE_HOME")
+
 source fn.sh
 source common.sh
 cd ..
@@ -29,9 +33,9 @@ ROOT="$(dirname "${VSCODE_ROOT}")"
 TARGET="${1-maix-ide}"
 TARGET="${TARGET%/}"
 
-export TMUX_TMPDIR="$ROOT/HOME"
+export TMUX_TMPDIR="$HOME"
 
-export EXTENSION_DIR="$ROOT/HOME/.maix-dev/extensions"
+export EXTENSION_DIR="$HOME/.maix-dev/extensions"
 if [ -L "${EXTENSION_DIR}" ]; then
 	unlink "${EXTENSION_DIR}"
 elif [ -d "${EXTENSION_DIR}" ]; then
@@ -55,8 +59,8 @@ if ! ${TMUX} has -t "=${TARGET}" ; then
 	${TMUX} -2 new-session -d -s "${TARGET}"
 	
 	${TMUX} set-option mouse on
-	${TMUX} setenv HOME "$ROOT/HOME"
-	${TMUX} setenv PATH "$P"
+	${TMUX} setenv HOME "$HOME"
+	${TMUX} setenv PATH "$PATH"
 	${TMUX} setenv HISTFILE "/dev/null"
 	${TMUX} setenv HTTP_PROXY "http://127.0.0.1:8080"
 	${TMUX} setenv HTTPS_PROXY "http://127.0.0.1:8080"

@@ -71,6 +71,7 @@ export function normalizePath(p: string, normalize_case = true): string {
   while (norm.includes('//')) {
     norm = replaceAll(norm, '//', '/');
   }
+  norm = norm.replace(/\\/g, '/');
   return norm;
 }
 

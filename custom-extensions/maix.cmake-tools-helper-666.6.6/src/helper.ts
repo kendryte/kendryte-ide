@@ -15,6 +15,8 @@ import * as console from './log';
 import { getPackagesRoot, isFile } from './root-dir';
 import compare_versions = require('compare-versions');
 
+const ext = os.platform() === 'win32'? '.exe' : '';
+
 export function cmakeArchBits(): number {
     const archName = os.arch();
     switch (archName) {
@@ -92,8 +94,11 @@ export async function installAtLeaseOneCmake(): Promise<string> {
     const installedVers = getInstalledCMakeVersions();
     if (installedVers && installedVers.length) {
         console.log('found %d installed cmake.', installedVers.length);
-        if (await isFile(installedVers[0].path)) {
-            return installedVers[0].path;
+        const exeFile = installedVers[0].path;
+        if (await isFile(exeFile)) {
+            return exeFile;
+        } else {
+            console.error('installed cmake not found: %s.', exeFile);
         }
     }
 
@@ -116,7 +121,7 @@ export async function installAtLeaseOneCmake(): Promise<string> {
         if (!installedCMakeRootDir) {
             throw new Error(`Failed to download CMake ${versionToDownload}`);
         }
-        return `${installedCMakeRootDir}${path.sep}bin${path.sep}cmake`;
+        return `${installedCMakeRootDir}/bin/cmake${ext}`;
     });
 }
 
@@ -312,7 +317,7 @@ export async function changeCMakeVersion() {
         return;
     }
 
-    await vscode.workspace.getConfiguration('cmake').update('cmakePath', path.join(cmakeVersion.description, 'bin', 'cmake'), true);
+    await vscode.workspace.getConfiguration('cmake').update('cmakePath', path.join(cmakeVersion.description), true);
     const useCMakeServer = (() => {
         try {
             return compare_versions(cmakeVersion.label, '3.7.1') > 0;  // fails if rhs is not a valid SemVer
@@ -334,7 +339,7 @@ export function getInstalledCMakeVersions() {
     }
 
     return cmakeDirs.map(d => {
-        const absPath = path.join(CMakeDownloadPath, d);
+        const absPath = path.join(CMakeDownloadPath, d, `bin/cmake${ext}`);
         return {
             version: computeCMakeVersion(absPath),
             path: absPath,
@@ -343,7 +348,7 @@ export function getInstalledCMakeVersions() {
 }
 
 export function computeCMakeVersion(cmakeInstallDir: string): string {
-    const cmd = `"${cmakeInstallDir}${path.sep}bin${path.sep}cmake" --version`;
+    const cmd = `"${cmakeInstallDir}" --version`;
     const cmakeOutput = child_process.execSync(cmd).toString();
     // sample outputs: (obtained after some trial&error)
     //  cmake version 2.4-patch 2 (the last "2" won't be matched...)

@@ -815,7 +815,7 @@ Please install or configure a preferred generator, or update settings.json or yo
     await fs.writeFile(this.mainListFile, SDK.PREPEND + cmakeFileContent + SDK.APPEND, 'utf-8');
     await this._refreshExpansions();
 
-    log.warning('PATCH CMakeList.txt');
+    log.warning('PATCH CMakeList.txt in dir: ' + this.buildDir);
     const p = cb();
 
     await p.then(async () => {
@@ -847,8 +847,8 @@ Please install or configure a preferred generator, or update settings.json or yo
             // Well, current project is just the SDK
             production: false,
             root: this.sourceDir,
-            PREPEND: `include(${this.sourceDir}/cmake/common.cmake)\n`,
-            APPEND: `include(${this.sourceDir}/cmake/executable.cmake)\n`,
+            PREPEND: `include("${this.sourceDir}/cmake/common.cmake")\n`,
+            APPEND: `include("${this.sourceDir}/cmake/executable.cmake")\n`,
           };
         }
       }
