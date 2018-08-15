@@ -22,7 +22,6 @@ if [ -z "${REAL_HOME}" ]; then
 	export REAL_HOME="${HOME}"
 	export HOME="${RELEASE_ROOT}/FAKE_HOME"
 fi
-export YARN_CACHE_FOLDER="${HOME}/yarn-cache"
 
 if [ -z "${TOOLCHAIN_BIN}" ]; then
 	export TOOLCHAIN_BIN="${VSCODE_ROOT}/packages/toolchain/bin"
@@ -36,10 +35,12 @@ fi
 
 if [ -z "${FOUND_CYGWIN}" ] || [ -z "${NODEJS}" ] ; then
 	export FOUND_CYGWIN=$(find /bin -name 'cygwin*.dll')
+	export YARN_CACHE_FOLDER="${HOME}/yarn-cache"
 	if [ -n "${FOUND_CYGWIN}" ]; then
 		SYSTEM="windows"
 		export NODEJS="${RELEASE_ROOT}/nodejs/${ARCH}/node.exe"
 		export NODEJS_BIN="${RELEASE_ROOT}/nodejs/${ARCH}"
+		export YARN_CACHE_FOLDER="$(cygpath -m "${YARN_CACHE_FOLDER}")"
 	else
 		SYSTEM="linux"
 		export NODEJS="${RELEASE_ROOT}/nodejs/${ARCH}/bin/node"
@@ -64,5 +65,4 @@ echo -e "\e[1;38;5;9mSYSTEM\e[0m=\e[2m${SYSTEM}\e[0m"
 echo -e "\e[1;38;5;9mNODEJS\e[0m=\e[2m${NODEJS}\e[0m"
 echo -e "\e[1;38;5;9mNODEJS_BIN\e[0m=\e[2m${NODEJS_BIN}\e[0m"
 echo -e "\e[1;38;5;9mHTTP_PROXY\e[0m=\e[2m${HTTP_PROXY}\e[0m"
-echo -e "\e[1;38;5;9mYARN_CACHE_FOLDER\e[0m=\e[2m${YARN_CACHE_FOLDER}\e[0m"
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
