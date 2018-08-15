@@ -27,7 +27,7 @@ export function getSDKPath(environmentService: IEnvironmentService) {
 	if (!pathCache) {
 		let path = resolve(getInstallPath(environmentService), 'packages/SDK');
 		try {
-			if (lstatSync(path).isDirectory()) {
+			if (lstatSync(resolve(path, 'cmake/')).isDirectory()) {
 				pathCache = path;
 			}
 		} catch (e) { // noop
