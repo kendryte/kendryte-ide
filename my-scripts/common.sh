@@ -12,7 +12,6 @@ export npm_config_arch="$ARCH"
 if [ -z "${VSCODE_ROOT}" ]; then
 	export VSCODE_ROOT="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")"
 fi
-export YARN_CACHE_FOLDER="${VSCODE_ROOT}/.build/yarn-cache"
 
 if [ -z "${RELEASE_ROOT}" ]; then
 	export RELEASE_ROOT="${VSCODE_ROOT}/.release"
@@ -22,6 +21,7 @@ fi
 if [ -z "${REAL_HOME}" ]; then
 	export REAL_HOME="${HOME}"
 	export HOME="${RELEASE_ROOT}/FAKE_HOME"
+	export YARN_CACHE_FOLDER="${HOME}/yarn-cache"
 fi
 
 if [ -z "${TOOLCHAIN_BIN}" ]; then
@@ -64,4 +64,5 @@ echo -e "\e[1;38;5;9mSYSTEM\e[0m=\e[2m${SYSTEM}\e[0m"
 echo -e "\e[1;38;5;9mNODEJS\e[0m=\e[2m${NODEJS}\e[0m"
 echo -e "\e[1;38;5;9mNODEJS_BIN\e[0m=\e[2m${NODEJS_BIN}\e[0m"
 echo -e "\e[1;38;5;9mHTTP_PROXY\e[0m=\e[2m${HTTP_PROXY}\e[0m"
+echo -e "\e[1;38;5;9mYARN_CACHE_FOLDER\e[0m=\e[2m${YARN_CACHE_FOLDER}\e[0m"
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
