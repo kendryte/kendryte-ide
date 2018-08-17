@@ -1,7 +1,6 @@
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { IMaixBuildSystemService } from 'vs/workbench/parts/maix/cmake/common/type';
-import { addStatusBarCmakeButtons } from 'vs/workbench/parts/maix/cmake/common/buttons';
 import { EnablementState, IExtensionEnablementService, IExtensionGalleryService, IExtensionManagementService } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { TPromise } from 'vs/base/common/winjs.base';
@@ -11,12 +10,10 @@ import { IWindowService, IWindowsService } from 'vs/platform/windows/common/wind
 import { IProgress } from 'vs/platform/progress/common/progress';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IOutputService } from 'vs/workbench/parts/output/common/output';
-import { StatusBarController } from 'vs/workbench/parts/maix/cmake/common/statusBarController';
 
 export class MaixBuildSystemService implements IMaixBuildSystemService {
 	_serviceBrand: any;
 	protected cmakeInstaller: CMakeInstaller;
-	protected statusBarController: StatusBarController;
 
 	constructor(
 		@IInstantiationService protected instantiationService: IInstantiationService,
@@ -33,14 +30,6 @@ export class MaixBuildSystemService implements IMaixBuildSystemService {
 	) {
 		this.cmakeInstaller = instantiationService.createInstance(CMakeInstaller);
 		lifecycleService.when(LifecyclePhase.Running).then(_ => this.init());
-	}
-
-	public setDisplayTarget(title: string) {
-		this.statusBarController.setSelectedTargetTitle(title);
-	}
-
-	public setDisplayVariant(title: string) {
-		this.statusBarController.setSelectedVariant(title);
 	}
 
 	public getCmakeToRun() {
@@ -71,8 +60,6 @@ export class MaixBuildSystemService implements IMaixBuildSystemService {
 		}, (err) => {
 			this.notifyService.error(err);
 		});
-
-		this.statusBarController = this.instantiationService.invokeFunction(addStatusBarCmakeButtons);
 	}
 
 	private async _installExtension(id: string, reporter: IProgress<IProgressStep>): TPromise<boolean> {

@@ -1,4 +1,5 @@
 import { StatusBarItem } from 'vs/workbench/parts/maix/cmake/common/statusBarButton';
+import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD } from 'vs/workbench/parts/maix/cmake/common/type';
 
 enum State {
 	Lock,
@@ -19,7 +20,7 @@ export class StatusBarController {
 		this.setSelectedTargetTitle(null);
 	}
 
-	protected emptyState() {
+	protected emptyState(message: string, command: string) {
 		if (this.state === State.Lock) {
 			return;
 		}
@@ -27,8 +28,8 @@ export class StatusBarController {
 
 		this.lastArgs = this.messageButton.sleep();
 
-		this.messageButton.text = '$(file-directory) Open any project to start.';
-		this.messageButton.command = 'workbench.action.files.openFolder';
+		this.messageButton.text = message;
+		this.messageButton.command = command;
 		this.messageButton.show(true);
 
 		this.showWorkspace(false);
@@ -59,11 +60,21 @@ export class StatusBarController {
 		this.messageButton.text = message;
 	}
 
-	setEmptyState(empty: boolean) {
+	setEmptyState(empty: false, cmakeProject: boolean);
+	setEmptyState(empty: true);
+	setEmptyState(empty: boolean, cmakeProject?: boolean) {
 		if (empty) {
-			this.emptyState();
-		} else {
+			this.emptyState(
+				'$(file-directory) Open any project to start.',
+				'workbench.action.files.openFolder',
+			);
+		} else if (cmakeProject) {
 			this.showWorkspace(true);
+		} else {
+			this.emptyState(
+				'$(plus) Create CMakeFiles.txt to start a project.',
+				ACTION_ID_MAIX_CMAKE_HELLO_WORLD,
+			);
 		}
 	}
 

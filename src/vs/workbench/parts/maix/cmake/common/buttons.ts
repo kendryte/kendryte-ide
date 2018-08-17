@@ -2,7 +2,6 @@ import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { StatusbarAlignment } from 'vs/platform/statusbar/common/statusbar';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
-import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { StatusBarItem } from 'vs/workbench/parts/maix/cmake/common/statusBarButton';
 import {
 	ACTION_ID_MAIX_CMAKE_BUILD,
@@ -20,7 +19,6 @@ let entries: IDisposable[] = [];
 export function addStatusBarCmakeButtons(access: ServicesAccessor) {
 	const instantiationService: IInstantiationService = access.get(IInstantiationService);
 	const lifecycleService: ILifecycleService = access.get(ILifecycleService);
-	const workspaceContextService: IWorkspaceContextService = access.get(IWorkspaceContextService);
 
 	lifecycleService.onShutdown(() => {
 		entries.forEach((item) => {
@@ -72,7 +70,7 @@ export function addStatusBarCmakeButtons(access: ServicesAccessor) {
 	const statusTip = instantiationService.createInstance(StatusBarItem, StatusbarAlignment.LEFT, 4);
 	entries.push(statusTip);
 
-	const controller = new StatusBarController(
+	return new StatusBarController(
 		statusTip,
 		selectVariantButton,
 		selectTargetButton,
@@ -86,13 +84,4 @@ export function addStatusBarCmakeButtons(access: ServicesAccessor) {
 			cleanButton,
 		],
 	);
-
-	const statusUpdate = (state) => {
-		controller.setEmptyState(state === WorkbenchState.EMPTY);
-	};
-	const tipUpdate = workspaceContextService.onDidChangeWorkbenchState(statusUpdate);
-	statusUpdate(workspaceContextService.getWorkbenchState());
-	entries.push(tipUpdate);
-
-	return controller;
 }

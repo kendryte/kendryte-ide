@@ -8,7 +8,7 @@ class StatusBarItemLogic implements IDisposable {
 	protected _text: string;
 	protected _command: string;
 	protected _tooltip: string;
-	protected _color: string|ThemeColor;
+	protected _color: string | ThemeColor;
 	protected _arguments: any[];
 	protected _showBeak: string;
 
@@ -38,13 +38,6 @@ class StatusBarItemLogic implements IDisposable {
 			if (!this._text) {
 				console.error('button show without text, will not visible.');
 			}
-			console.log({
-				text: this._text,
-				command: this._command,
-				tooltip: this._tooltip,
-				color: this._color,
-				arguments: this._arguments,
-			}, this.align, this.position);
 			this._entry = this.statusbarService.addEntry({
 				text: this._text,
 				command: this._command,
@@ -74,7 +67,7 @@ export class StatusBarItem extends StatusBarItemLogic {
 	public text: string;
 	public command: string;
 	public tooltip: string;
-	public color: string|ThemeColor;
+	public color: string | ThemeColor;
 	public arguments: any[];
 	public showBeak: string;
 
