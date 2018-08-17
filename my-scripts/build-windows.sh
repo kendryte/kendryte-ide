@@ -64,9 +64,6 @@ step "Create archive folder" \
 
 RESULT="${RELEASE_ROOT}/VSCode-win32-${ARCH}"
 
-step "Compile custom extensions" \
-	bash my-scripts/build-env/custom-extensions-build-all.sh "${RESULT}"
-
 mkdir -p "${RESULT}/packages/"
 step "Copy Staff (Windows)" \
 	bash -c "

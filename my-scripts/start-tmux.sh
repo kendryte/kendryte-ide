@@ -19,7 +19,7 @@ source fn.sh
 source common.sh
 cd ..
 
-if [ -z "${FOUND_CYGWIN}" ] ; then
+if [ -n "${FOUND_CYGWIN}" ] ; then
 	echo "running on windows." >&2
 elif [ -z "${DISPLAY}" ]; then
 	echo "no DISPLAY environment variable." >&2
@@ -34,14 +34,6 @@ TARGET="${1-maix-ide}"
 TARGET="${TARGET%/}"
 
 export TMUX_TMPDIR="$HOME"
-
-export EXTENSION_DIR="$HOME/.maix-dev/extensions"
-if [ -L "${EXTENSION_DIR}" ]; then
-	unlink "${EXTENSION_DIR}"
-elif [ -d "${EXTENSION_DIR}" ]; then
-	rm -rf "${EXTENSION_DIR}"
-fi
-ln -s "${VSCODE_ROOT}/custom-extensions" "${EXTENSION_DIR}"
 
 if test -z "$DBUS_SESSION_BUS_ADDRESS" ; then
 	## if not found, launch a new one
@@ -61,6 +53,7 @@ if ! ${TMUX} has -t "=${TARGET}" ; then
 	${TMUX} set-option mouse on
 	${TMUX} setenv HOME "$HOME"
 	${TMUX} setenv PATH "$PATH"
+	${TMUX} setenv DISPLAY "$DISPLAY"
 	${TMUX} setenv HISTFILE "/dev/null"
 	${TMUX} setenv HTTP_PROXY "http://127.0.0.1:8080"
 	${TMUX} setenv HTTPS_PROXY "http://127.0.0.1:8080"
@@ -79,15 +72,6 @@ function lnext(){
 }
 
 sushell compile 'yarn watch'
-
-lnext cmake-tools
-sushell ext-cmake 'bash ./my-scripts/ext/cmake.sh'
-
-lnext cmake-tools-helper
-sushell ext-cmake-helper 'bash ./my-scripts/ext/cmake-helper.sh'
-
-lnext cpptools
-sushell ext-cpptools 'bash ./my-scripts/ext/cpptools.sh'
 
 sushell vscode 'bash ./scripts/code.sh'
 

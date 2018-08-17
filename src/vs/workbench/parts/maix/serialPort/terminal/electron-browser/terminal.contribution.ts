@@ -28,7 +28,6 @@ import {
 	CreateNewTerminalAction,
 	DeleteWordLeftTerminalAction,
 	DeleteWordRightTerminalAction,
-	FocusActiveTerminalAction,
 	FocusNextPaneTerminalAction,
 	FocusNextTerminalAction,
 	FocusPreviousPaneTerminalAction,
@@ -95,11 +94,11 @@ quickOpenRegistry.registerQuickOpenHandler(
 	),
 );
 
-const quickOpenNavigateNextInTerminalPickerId = 'workbench.action.quickOpenNavigateNextInTerminalPicker';
+const quickOpenNavigateNextInTerminalPickerId = 'workbench.action.maix.quickOpenNavigateNextInTerminalPicker';
 CommandsRegistry.registerCommand(
 	{ id: quickOpenNavigateNextInTerminalPickerId, handler: getQuickNavigateHandler(quickOpenNavigateNextInTerminalPickerId, true) });
 
-const quickOpenNavigatePreviousInTerminalPickerId = 'workbench.action.quickOpenNavigatePreviousInTerminalPicker';
+const quickOpenNavigatePreviousInTerminalPickerId = 'workbench.action.maix.quickOpenNavigatePreviousInTerminalPicker';
 CommandsRegistry.registerCommand(
 	{ id: quickOpenNavigatePreviousInTerminalPickerId, handler: getQuickNavigateHandler(quickOpenNavigatePreviousInTerminalPickerId, false) });
 
@@ -135,7 +134,6 @@ actionRegistry.registerWorkbenchAction(new SyncActionDescriptor(ClearSelectionTe
 	primary: KeyCode.Escape,
 	linux: { primary: KeyCode.Escape },
 }, ContextKeyExpr.and(KEYBINDING_CONTEXT_TERMINAL_FOCUS, KEYBINDING_CONTEXT_TERMINAL_TEXT_SELECTED, KEYBINDING_CONTEXT_TERMINAL_FIND_WIDGET_NOT_VISIBLE)), 'Terminal: Escape selection', category);
-actionRegistry.registerWorkbenchAction(new SyncActionDescriptor(FocusActiveTerminalAction, FocusActiveTerminalAction.ID, FocusActiveTerminalAction.LABEL), 'Terminal: Focus Terminal', category);
 actionRegistry.registerWorkbenchAction(new SyncActionDescriptor(FocusNextTerminalAction, FocusNextTerminalAction.ID, FocusNextTerminalAction.LABEL), 'Terminal: Focus Next Terminal', category);
 actionRegistry.registerWorkbenchAction(new SyncActionDescriptor(FocusPreviousTerminalAction, FocusPreviousTerminalAction.ID, FocusPreviousTerminalAction.LABEL), 'Terminal: Focus Previous Terminal', category);
 actionRegistry.registerWorkbenchAction(new SyncActionDescriptor(TerminalPasteAction, TerminalPasteAction.ID, TerminalPasteAction.LABEL, {
@@ -156,8 +154,8 @@ actionRegistry.registerWorkbenchAction(new SyncActionDescriptor(SelectAllTermina
 actionRegistry.registerWorkbenchAction(new SyncActionDescriptor(RunSelectedTextInTerminalAction, RunSelectedTextInTerminalAction.ID, RunSelectedTextInTerminalAction.LABEL), 'Terminal: Run Selected Text In Active Terminal', category);
 actionRegistry.registerWorkbenchAction(new SyncActionDescriptor(RunActiveFileInTerminalAction, RunActiveFileInTerminalAction.ID, RunActiveFileInTerminalAction.LABEL), 'Terminal: Run Active File In Active Terminal', category);
 actionRegistry.registerWorkbenchAction(new SyncActionDescriptor(ToggleTerminalAction, ToggleTerminalAction.ID, ToggleTerminalAction.LABEL, {
-	primary: KeyMod.CtrlCmd | KeyCode.US_BACKTICK,
-	mac: { primary: KeyMod.WinCtrl | KeyCode.US_BACKTICK },
+	primary: KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.KEY_S,
+	mac: { primary: KeyMod.WinCtrl | KeyMod.Alt | KeyCode.KEY_S },
 }), 'View: Toggle Integrated Terminal', nls.localize('viewCategory', 'View'));
 actionRegistry.registerWorkbenchAction(new SyncActionDescriptor(ScrollDownTerminalAction, ScrollDownTerminalAction.ID, ScrollDownTerminalAction.LABEL, {
 	primary: KeyMod.CtrlCmd | KeyMod.Alt | KeyCode.PageDown,

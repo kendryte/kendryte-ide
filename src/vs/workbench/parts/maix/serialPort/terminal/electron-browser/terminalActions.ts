@@ -32,7 +32,7 @@ export const TERMINAL_PICKER_PREFIX = 'term ';
 export class ToggleTerminalAction extends TogglePanelAction {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.TOGGLE;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.toggleTerminal', 'Toggle Integrated Terminal');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.toggleTerminal', 'Toggle Integrated Terminal');
 
 	constructor(
 		id: string, label: string,
@@ -55,8 +55,8 @@ export class ToggleTerminalAction extends TogglePanelAction {
 export class KillTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.KILL;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.kill', 'Kill the Active Monitor Instance');
-	public static readonly PANEL_LABEL = nls.localize('workbench.action.terminal.kill.short', 'Kill Monitor');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.kill', 'Kill the Active Monitor Instance');
+	public static readonly PANEL_LABEL = nls.localize('workbench.action.maix.terminal.kill.short', 'Kill Monitor');
 
 	constructor(
 		id: string, label: string,
@@ -80,7 +80,7 @@ export class KillTerminalAction extends Action {
 export class QuickKillTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.QUICK_KILL;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.quickKill', 'Kill Terminal Instance');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.quickKill', 'Kill Terminal Instance');
 
 	constructor(
 		id: string, label: string,
@@ -106,8 +106,8 @@ export class QuickKillTerminalAction extends Action {
 export class CopyTerminalSelectionAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.COPY_SELECTION;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.copySelection', 'Copy Selection');
-	public static readonly SHORT_LABEL = nls.localize('workbench.action.terminal.copySelection.short', 'Copy');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.copySelection', 'Copy Selection');
+	public static readonly SHORT_LABEL = nls.localize('workbench.action.maix.terminal.copySelection.short', 'Copy');
 
 	constructor(
 		id: string, label: string,
@@ -128,7 +128,7 @@ export class CopyTerminalSelectionAction extends Action {
 export class SelectAllTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.SELECT_ALL;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.selectAll', 'Select All');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.selectAll', 'Select All');
 
 	constructor(
 		id: string, label: string,
@@ -167,7 +167,7 @@ export abstract class BaseSendTextTerminalAction extends Action {
 
 export class DeleteWordLeftTerminalAction extends BaseSendTextTerminalAction {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.DELETE_WORD_LEFT;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.deleteWordLeft', 'Delete Word Left');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.deleteWordLeft', 'Delete Word Left');
 
 	constructor(
 		id: string,
@@ -181,7 +181,7 @@ export class DeleteWordLeftTerminalAction extends BaseSendTextTerminalAction {
 
 export class DeleteWordRightTerminalAction extends BaseSendTextTerminalAction {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.DELETE_WORD_RIGHT;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.deleteWordRight', 'Delete Word Right');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.deleteWordRight', 'Delete Word Right');
 
 	constructor(
 		id: string,
@@ -195,7 +195,7 @@ export class DeleteWordRightTerminalAction extends BaseSendTextTerminalAction {
 
 export class MoveToLineStartTerminalAction extends BaseSendTextTerminalAction {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.MOVE_TO_LINE_START;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.moveToLineStart', 'Move To Line Start');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.moveToLineStart', 'Move To Line Start');
 
 	constructor(
 		id: string,
@@ -209,7 +209,7 @@ export class MoveToLineStartTerminalAction extends BaseSendTextTerminalAction {
 
 export class MoveToLineEndTerminalAction extends BaseSendTextTerminalAction {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.MOVE_TO_LINE_END;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.moveToLineEnd', 'Move To Line End');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.moveToLineEnd', 'Move To Line End');
 
 	constructor(
 		id: string,
@@ -224,8 +224,8 @@ export class MoveToLineEndTerminalAction extends BaseSendTextTerminalAction {
 export class ConfigNewTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.CONFIG;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.config', 'Config Serial Monitor');
-	public static readonly SHORT_LABEL = nls.localize('workbench.action.terminal.config.short', 'Config Monitor');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.config', 'Config Serial Monitor');
+	public static readonly SHORT_LABEL = nls.localize('workbench.action.maix.terminal.config.short', 'Config Monitor');
 
 	constructor(
 		id: string, label: string,
@@ -243,8 +243,8 @@ export class ConfigNewTerminalAction extends Action {
 export class CreateNewTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.NEW;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.new', 'Create New Serial Monitor');
-	public static readonly SHORT_LABEL = nls.localize('workbench.action.terminal.new.short', 'New Monitor');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.new', 'Create New Serial Monitor');
+	public static readonly SHORT_LABEL = nls.localize('workbench.action.maix.terminal.new.short', 'New Monitor');
 
 	constructor(
 		id: string, label: string,
@@ -277,7 +277,7 @@ export class CreateNewTerminalAction extends Action {
 
 export class FocusPreviousPaneTerminalAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.FOCUS_PREVIOUS_PANE;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.focusPreviousPane', 'Focus Previous Pane');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.focusPreviousPane', 'Focus Previous Pane');
 
 	constructor(
 		id: string, label: string,
@@ -298,7 +298,7 @@ export class FocusPreviousPaneTerminalAction extends Action {
 
 export class FocusNextPaneTerminalAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.FOCUS_NEXT_PANE;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.focusNextPane', 'Focus Next Pane');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.focusNextPane', 'Focus Next Pane');
 
 	constructor(
 		id: string, label: string,
@@ -337,7 +337,7 @@ export abstract class BaseFocusDirectionTerminalAction extends Action {
 
 export class ResizePaneLeftTerminalAction extends BaseFocusDirectionTerminalAction {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.RESIZE_PANE_LEFT;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.resizePaneLeft', 'Resize Pane Left');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.resizePaneLeft', 'Resize Pane Left');
 
 	constructor(
 		id: string, label: string,
@@ -349,7 +349,7 @@ export class ResizePaneLeftTerminalAction extends BaseFocusDirectionTerminalActi
 
 export class ResizePaneRightTerminalAction extends BaseFocusDirectionTerminalAction {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.RESIZE_PANE_RIGHT;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.resizePaneRight', 'Resize Pane Right');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.resizePaneRight', 'Resize Pane Right');
 
 	constructor(
 		id: string, label: string,
@@ -361,7 +361,7 @@ export class ResizePaneRightTerminalAction extends BaseFocusDirectionTerminalAct
 
 export class ResizePaneUpTerminalAction extends BaseFocusDirectionTerminalAction {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.RESIZE_PANE_UP;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.resizePaneUp', 'Resize Pane Up');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.resizePaneUp', 'Resize Pane Up');
 
 	constructor(
 		id: string, label: string,
@@ -373,7 +373,7 @@ export class ResizePaneUpTerminalAction extends BaseFocusDirectionTerminalAction
 
 export class ResizePaneDownTerminalAction extends BaseFocusDirectionTerminalAction {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.RESIZE_PANE_DOWN;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.resizePaneDown', 'Resize Pane Down');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.resizePaneDown', 'Resize Pane Down');
 
 	constructor(
 		id: string, label: string,
@@ -383,32 +383,10 @@ export class ResizePaneDownTerminalAction extends BaseFocusDirectionTerminalActi
 	}
 }
 
-export class FocusActiveTerminalAction extends Action {
-
-	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.FOCUS;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.focus', 'Focus Terminal');
-
-	constructor(
-		id: string, label: string,
-		@ISerialMonitorService private terminalService: ISerialMonitorService,
-	) {
-		super(id, label);
-	}
-
-	public async run(event?: any): TPromise<any> {
-		const instance = await this.terminalService.getActiveOrCreateInstance(true);
-		if (!instance) {
-			return TPromise.as(void 0);
-		}
-		this.terminalService.setActiveInstance(instance);
-		return this.terminalService.showPanel(true);
-	}
-}
-
 export class FocusNextTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.FOCUS_NEXT;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.focusNext', 'Focus Next Terminal');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.focusNext', 'Focus Next Terminal');
 
 	constructor(
 		id: string, label: string,
@@ -426,7 +404,7 @@ export class FocusNextTerminalAction extends Action {
 export class FocusPreviousTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.FOCUS_PREVIOUS;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.focusPrevious', 'Focus Previous Terminal');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.focusPrevious', 'Focus Previous Terminal');
 
 	constructor(
 		id: string, label: string,
@@ -444,8 +422,8 @@ export class FocusPreviousTerminalAction extends Action {
 export class TerminalPasteAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.PASTE;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.paste', 'Paste into Active Terminal');
-	public static readonly SHORT_LABEL = nls.localize('workbench.action.terminal.paste.short', 'Paste');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.paste', 'Paste into Active Terminal');
+	public static readonly SHORT_LABEL = nls.localize('workbench.action.maix.terminal.paste.short', 'Paste');
 
 	constructor(
 		id: string, label: string,
@@ -466,7 +444,7 @@ export class TerminalPasteAction extends Action {
 export class SelectDefaultShellWindowsTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.SELECT_DEFAULT_SHELL;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.selectDefaultShell', 'Select Default Shell');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.selectDefaultShell', 'Select Default Shell');
 
 	constructor(
 		id: string, label: string,
@@ -483,7 +461,7 @@ export class SelectDefaultShellWindowsTerminalAction extends Action {
 export class RunSelectedTextInTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.RUN_SELECTED_TEXT;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.runSelectedText', 'Run Selected Text In Active Terminal');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.runSelectedText', 'Run Selected Text In Active Terminal');
 
 	constructor(
 		id: string, label: string,
@@ -518,7 +496,7 @@ export class RunSelectedTextInTerminalAction extends Action {
 export class RunActiveFileInTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.RUN_ACTIVE_FILE;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.runActiveFile', 'Run Active File In Active Terminal');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.runActiveFile', 'Run Active File In Active Terminal');
 
 	constructor(
 		id: string, label: string,
@@ -540,7 +518,7 @@ export class RunActiveFileInTerminalAction extends Action {
 		}
 		const uri = editor.getModel().uri;
 		if (uri.scheme !== 'file') {
-			this.notificationService.warn(nls.localize('workbench.action.terminal.runActiveFile.noFile', 'Only files on disk can be run in the terminal'));
+			this.notificationService.warn(nls.localize('workbench.action.maix.terminal.runActiveFile.noFile', 'Only files on disk can be run in the terminal'));
 			return TPromise.as(void 0);
 		}
 		instance.sendText(uri.fsPath, true);
@@ -551,7 +529,7 @@ export class RunActiveFileInTerminalAction extends Action {
 export class SwitchTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.SWITCH_TERMINAL;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.switchTerminal', 'Switch Terminal');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.switchTerminal', 'Switch Terminal');
 
 	constructor(
 		id: string, label: string,
@@ -594,7 +572,7 @@ export class SwitchTerminalActionItem extends SelectActionItem {
 export class ScrollDownTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.SCROLL_DOWN_LINE;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.scrollDown', 'Scroll Down (Line)');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.scrollDown', 'Scroll Down (Line)');
 
 	constructor(
 		id: string, label: string,
@@ -615,7 +593,7 @@ export class ScrollDownTerminalAction extends Action {
 export class ScrollDownPageTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.SCROLL_DOWN_PAGE;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.scrollDownPage', 'Scroll Down (Page)');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.scrollDownPage', 'Scroll Down (Page)');
 
 	constructor(
 		id: string, label: string,
@@ -636,7 +614,7 @@ export class ScrollDownPageTerminalAction extends Action {
 export class ScrollToBottomTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.SCROLL_TO_BOTTOM;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.scrollToBottom', 'Scroll to Bottom');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.scrollToBottom', 'Scroll to Bottom');
 
 	constructor(
 		id: string, label: string,
@@ -657,7 +635,7 @@ export class ScrollToBottomTerminalAction extends Action {
 export class ScrollUpTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.SCROLL_UP_LINE;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.scrollUp', 'Scroll Up (Line)');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.scrollUp', 'Scroll Up (Line)');
 
 	constructor(
 		id: string, label: string,
@@ -678,7 +656,7 @@ export class ScrollUpTerminalAction extends Action {
 export class ScrollUpPageTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.SCROLL_UP_PAGE;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.scrollUpPage', 'Scroll Up (Page)');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.scrollUpPage', 'Scroll Up (Page)');
 
 	constructor(
 		id: string, label: string,
@@ -699,7 +677,7 @@ export class ScrollUpPageTerminalAction extends Action {
 export class ScrollToTopTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.SCROLL_TO_TOP;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.scrollToTop', 'Scroll to Top');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.scrollToTop', 'Scroll to Top');
 
 	constructor(
 		id: string, label: string,
@@ -720,7 +698,7 @@ export class ScrollToTopTerminalAction extends Action {
 export class ClearTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.CLEAR;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.clear', 'Clear');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.clear', 'Clear');
 
 	constructor(
 		id: string, label: string,
@@ -741,7 +719,7 @@ export class ClearTerminalAction extends Action {
 export class ClearSelectionTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.CLEAR_SELECTION;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.clearSelection', 'Clear Selection');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.clearSelection', 'Clear Selection');
 
 	constructor(
 		id: string, label: string,
@@ -762,7 +740,7 @@ export class ClearSelectionTerminalAction extends Action {
 export class RenameTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.RENAME;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.rename', 'Rename');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.rename', 'Rename');
 
 	constructor(
 		id: string, label: string,
@@ -780,7 +758,7 @@ export class RenameTerminalAction extends Action {
 		}
 		return this.quickInputService.input({
 			value: terminalInstance.title,
-			prompt: nls.localize('workbench.action.terminal.rename.prompt', 'Enter terminal name'),
+			prompt: nls.localize('workbench.action.maix.terminal.rename.prompt', 'Enter terminal name'),
 		}).then(name => {
 			if (name) {
 				terminalInstance.setTitle(name, false);
@@ -792,8 +770,8 @@ export class RenameTerminalAction extends Action {
 export class FocusTerminalFindWidgetAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.FIND_WIDGET_FOCUS;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.focusFindWidget', 'Focus Find Widget');
-	public static readonly SHORT_LABEL = nls.localize('workbench.action.terminal.find', 'Find');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.focusFindWidget', 'Focus Find Widget');
+	public static readonly SHORT_LABEL = nls.localize('workbench.action.maix.terminal.find', 'Find');
 
 	constructor(
 		id: string, label: string,
@@ -810,7 +788,7 @@ export class FocusTerminalFindWidgetAction extends Action {
 export class HideTerminalFindWidgetAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.FIND_WIDGET_HIDE;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.hideFindWidget', 'Hide Find Widget');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.hideFindWidget', 'Hide Find Widget');
 
 	constructor(
 		id: string, label: string,
@@ -888,7 +866,7 @@ export class RenameTerminalQuickOpenAction extends RenameTerminalAction {
 
 export class ScrollToPreviousCommandAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.SCROLL_TO_PREVIOUS_COMMAND;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.scrollToPreviousCommand', 'Scroll To Previous Command');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.scrollToPreviousCommand', 'Scroll To Previous Command');
 
 	constructor(
 		id: string, label: string,
@@ -909,7 +887,7 @@ export class ScrollToPreviousCommandAction extends Action {
 
 export class ScrollToNextCommandAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.SCROLL_TO_NEXT_COMMAND;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.scrollToNextCommand', 'Scroll To Next Command');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.scrollToNextCommand', 'Scroll To Next Command');
 
 	constructor(
 		id: string, label: string,
@@ -930,7 +908,7 @@ export class ScrollToNextCommandAction extends Action {
 
 export class SelectToPreviousCommandAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.SELECT_TO_PREVIOUS_COMMAND;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.selectToPreviousCommand', 'Select To Previous Command');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.selectToPreviousCommand', 'Select To Previous Command');
 
 	constructor(
 		id: string, label: string,
@@ -951,7 +929,7 @@ export class SelectToPreviousCommandAction extends Action {
 
 export class SelectToNextCommandAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.SELECT_TO_NEXT_COMMAND;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.selectToNextCommand', 'Select To Next Command');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.selectToNextCommand', 'Select To Next Command');
 
 	constructor(
 		id: string, label: string,
@@ -972,7 +950,7 @@ export class SelectToNextCommandAction extends Action {
 
 export class SelectToPreviousLineAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.SELECT_TO_PREVIOUS_LINE;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.selectToPreviousLine', 'Select To Previous Line');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.selectToPreviousLine', 'Select To Previous Line');
 
 	constructor(
 		id: string, label: string,
@@ -993,7 +971,7 @@ export class SelectToPreviousLineAction extends Action {
 
 export class SelectToNextLineAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.SELECT_TO_NEXT_LINE;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.selectToNextLine', 'Select To Next Line');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.selectToNextLine', 'Select To Next Line');
 
 	constructor(
 		id: string, label: string,
@@ -1014,7 +992,7 @@ export class SelectToNextLineAction extends Action {
 
 export class ToggleEscapeSequenceLoggingAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.TOGGLE_ESCAPE_SEQUENCE_LOGGING;
-	public static readonly LABEL = nls.localize('workbench.action.terminal.toggleEscapeSequenceLogging', 'Toggle Escape Sequence Logging');
+	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.toggleEscapeSequenceLogging', 'Toggle Escape Sequence Logging');
 
 	constructor(
 		id: string, label: string,

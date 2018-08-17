@@ -70,9 +70,6 @@ TARBALL_PATH="${RELEASE_ROOT}/${TARBALL_FILENAME}"
 
 RESULT="${RELEASE_ROOT}/VSCode-linux-${ARCH}"
 
-step "Compile custom extensions" \
-	bash my-scripts/build-env/custom-extensions-build-all.sh "${RESULT}"
-
 mkdir -p "${RESULT}/packages/"
 step "Copy Staff (Linux)" \
 	bash -c "

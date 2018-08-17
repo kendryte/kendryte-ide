@@ -16,7 +16,7 @@ export function addStatusBarButtons(access: ServicesAccessor) {
 
 	const entry2 = statusbarService.addEntry({
 		text: '$(plug) $(terminal)',
-		command: SERIAL_MONITOR_COMMAND_ID.FOCUS,
+		command: SERIAL_MONITOR_COMMAND_ID.TOGGLE,
 	}, StatusbarAlignment.RIGHT, 100);
 	entries.push(entry2);
 }

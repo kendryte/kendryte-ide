@@ -7,6 +7,28 @@ interface Array<T> {
 	findIndex(predicate: (value: T, index: number, obj: T[]) => boolean, thisArg?: any): number;
 }
 
+interface ArrayConstructor {
+	/**
+	 * Creates an array from an iterable object.
+	 * @param iterable An iterable object to convert to an array.
+	 * @param mapfn A mapping function to call on every element of the array.
+	 * @param thisArg Value of 'this' used to invoke the mapfn.
+	 */
+	from<T, U = T>(iterable: Iterable<T>, mapfn?: (v: T, k: number) => U, thisArg?: any): U[];
+}
+
+interface Map<K, V> {
+	entries(): IterableIterator<[K, V]>;
+
+	keys(): IterableIterator<K>;
+
+	values(): IterableIterator<V>;
+
+	[Symbol.iterator](): IterableIterator<[K, V]>;
+
+	// [Symbol.toStringTag]: string;
+}
+
 interface ObjectConstructor {
 	assign<T, U>(target: T, source: U): T&U;
 
