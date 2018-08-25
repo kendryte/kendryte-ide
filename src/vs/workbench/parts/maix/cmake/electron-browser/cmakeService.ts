@@ -1,6 +1,6 @@
 import { CMAKE_CHANNEL, CMakeInternalVariants, CurrentItem, ICMakeService, IMaixBuildSystemService } from 'vs/workbench/parts/maix/cmake/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
+import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
@@ -43,10 +43,11 @@ import { Executable } from 'vs/base/common/processes';
 import { cpus } from 'os';
 import { addStatusBarCmakeButtons } from 'vs/workbench/parts/maix/cmake/common/buttons';
 import { StatusBarController } from 'vs/workbench/parts/maix/cmake/common/statusBarController';
+import { CMAKE_TARGET_TYPE } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/config';
 
 export class Deferred extends TPromise<ICMakeResponse, ICMakeProtocolProgress> {
 	private _resolver: (value: ICMakeResponse) => void;
-	private _rejecter: (value: Error | ICMakeProtocolError) => void;
+	private _rejecter: (value: Error|ICMakeProtocolError) => void;
 	private _progresser: (value: ICMakeProtocolProgress) => void;
 
 	constructor() {
@@ -65,7 +66,7 @@ export class Deferred extends TPromise<ICMakeResponse, ICMakeProtocolProgress> {
 		this._resolver(response);
 	}
 
-	reject(err: ICMakeProtocolError | Error): void {
+	reject(err: ICMakeProtocolError|Error): void {
 		this._rejecter(err);
 	}
 
@@ -97,7 +98,7 @@ export class CMakeService implements ICMakeService {
 	protected _mainCMakeList: string;
 	protected _buildingSDK: boolean;
 
-	private cmakeRequests: { [cookie: string]: Deferred } = {};
+	private cmakeRequests: {[cookie: string]: Deferred} = {};
 
 	private readonly _onCMakeEvent = new Emitter<ICMakeProtocol>();
 	public readonly onCMakeEvent: Event<ICMakeProtocol> = this._onCMakeEvent.event;
@@ -129,18 +130,27 @@ export class CMakeService implements ICMakeService {
 		}
 		this.localDefine.push(`-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE`);
 
-		this.statusBarController = this.instantiationService.invokeFunction(addStatusBarCmakeButtons);
-
-		workspaceContextService.onDidChangeWorkspaceFolders(_ => {
-			this.onFolderChange().then(undefined, (e) => {
+		lifecycleService.when(LifecyclePhase.Running).then(() => {
+			this.init().then(undefined, (e) => {
 				this.notificationService.error(e);
+				console.log(e);
 				return this.shutdown();
 			});
 		});
-		this.onFolderChange().then(undefined, (e) => {
-			this.notificationService.error(e);
-			return this.shutdown();
+	}
+
+	async init() {
+		this.workspaceContextService.onDidChangeWorkspaceFolders(_ => {
+			this.onFolderChange().then(undefined, (e) => {
+				this.notificationService.error(e);
+				console.log(e);
+				return this.shutdown();
+			});
 		});
+
+		this.statusBarController = this.instantiationService.invokeFunction(addStatusBarCmakeButtons);
+
+		await this.onFolderChange();
 	}
 
 	get readyState() {
@@ -292,7 +302,7 @@ export class CMakeService implements ICMakeService {
 	}
 
 	private handleProtocolInput(msg: string) {
-		const protocolData: ICMakeProtocol & ICMakeProtocolAny = JSON.parse(msg);
+		const protocolData: ICMakeProtocol&ICMakeProtocolAny = JSON.parse(msg);
 		this._onCMakeEvent.fire(protocolData);
 		// console.log('cmake <<< %O', protocolData);
 
@@ -302,41 +312,41 @@ export class CMakeService implements ICMakeService {
 				console.error('cannot handle.');
 			}
 			switch (protocolData.type) {
-				case CMAKE_EVENT_TYPE.REPLY:
-					dfd.resolve(protocolData as ICMakeProtocolReply);
-					return;
-				case CMAKE_EVENT_TYPE.ERROR:
-					const err = protocolData as ICMakeProtocolError;
-					dfd.reject({ ...err, message: err.errorMessage } as any);
-					return;
-				case CMAKE_EVENT_TYPE.PROGRESS:
-					dfd.notify(protocolData as ICMakeProtocolProgress);
-					return;
+			case CMAKE_EVENT_TYPE.REPLY:
+				dfd.resolve(protocolData as ICMakeProtocolReply);
+				return;
+			case CMAKE_EVENT_TYPE.ERROR:
+				const err = protocolData as ICMakeProtocolError;
+				dfd.reject({ ...err, message: err.errorMessage } as any);
+				return;
+			case CMAKE_EVENT_TYPE.PROGRESS:
+				dfd.notify(protocolData as ICMakeProtocolProgress);
+				return;
 			}
 		}
 
 		switch (protocolData.type) {
-			case CMAKE_EVENT_TYPE.HELLO:
-				this.initBaseConfigWhenHello(protocolData as ICMakeProtocolHello).then(() => {
-					this.cmakeConnectionStablePromise.resolve(void 0);
-				}, (e) => {
-					this.cmakeConnectionStablePromise.reject(e);
-				});
+		case CMAKE_EVENT_TYPE.HELLO:
+			this.initBaseConfigWhenHello(protocolData as ICMakeProtocolHello).then(() => {
+				this.cmakeConnectionStablePromise.resolve(void 0);
+			}, (e) => {
+				this.cmakeConnectionStablePromise.reject(e);
+			});
+			return;
+		case CMAKE_EVENT_TYPE.MESSAGE:
+			const message = protocolData as ICMakeProtocolMessage;
+			this.log(message.message);
+			return;
+		case CMAKE_EVENT_TYPE.SIGNAL:
+			switch ((protocolData as ICMakeProtocolSignal).name) {
+			case CMAKE_SIGNAL_TYPE.DIRTY:
+				console.log('dirty event: %O', protocolData);
+				this.alreadyConfigured = false;
 				return;
-			case CMAKE_EVENT_TYPE.MESSAGE:
-				const message = protocolData as ICMakeProtocolMessage;
-				this.log(message.message);
+			case CMAKE_SIGNAL_TYPE.FILECHANGE:
+				console.log('change event: %O', protocolData);
 				return;
-			case CMAKE_EVENT_TYPE.SIGNAL:
-				switch ((protocolData as ICMakeProtocolSignal).name) {
-					case CMAKE_SIGNAL_TYPE.DIRTY:
-						console.log('dirty event: %O', protocolData);
-						this.alreadyConfigured = false;
-						return;
-					case CMAKE_SIGNAL_TYPE.FILECHANGE:
-						console.log('change event: %O', protocolData);
-						return;
-				}
+			}
 		}
 		debugger;
 		console.error('Unknown CMake Event: %O', protocolData);
@@ -398,7 +408,7 @@ ${JSON.stringify(payload)}
 	}
 
 	get buildPath() {
-		return resolve(this._currentFolder, '_build');
+		return resolve(this._currentFolder, 'build');
 	}
 
 	private async initBaseConfigWhenHello(hello: ICMakeProtocolHello) {
@@ -408,8 +418,8 @@ ${JSON.stringify(payload)}
 			type: CMAKE_EVENT_TYPE.HANDSHAKE,
 			buildDirectory: buildFolder,
 			protocolVersion: hello.supportedProtocolVersions[0],
-			sourceDirectory: this._buildingSDK ? resolve(this._currentFolder, 'cmake') : this._currentFolder,
-			generator: isWindows ? 'MinGW Makefiles' : 'Unix Makefiles',
+			sourceDirectory: this._buildingSDK? resolve(this._currentFolder, 'cmake') : this._currentFolder,
+			generator: isWindows? 'MinGW Makefiles' : 'Unix Makefiles',
 		};
 
 		const tmpCache = await CMakeCache.fromPath(resolve(buildFolder, 'CMakeCache.txt'));
@@ -587,15 +597,8 @@ ${JSON.stringify(payload)}
 		return variants;
 	}
 
-	async getTargetList(): TPromise<CurrentItem[]> {
+	private async getCurrentVariant() {
 		const codeModel = await this.ensureConfiguration();
-		let ret: CurrentItem[] = [
-			{
-				id: '',
-				label: '<default>',
-				description: 'Build the default target',
-			},
-		];
 
 		let findCurrent: boolean;
 		for (const variant of codeModel.configurations) {
@@ -605,27 +608,35 @@ ${JSON.stringify(payload)}
 			if (!findCurrent) {
 				continue;
 			}
-			for (const project of variant.projects) {
-				ret.push({
-					id: project.name,
-					label: project.name,
-					description: 'Build everything in ' + project.name + ' project',
-				});
 
-				/*for (const target of project.targets) {
-					ret.push({
-						id: target.name,
-						label: project.name + ': ' + target.fullName,
-						description: target.sourceDirectory,
-					});
-				}*/
-			}
-			break;
+			return variant;
 		}
-		if (!findCurrent) {
+		return null;
+	}
+
+	async getTargetList(): TPromise<CurrentItem[]> {
+		let ret: CurrentItem[] = [
+			{
+				id: '',
+				label: '<default>',
+				description: 'Build the default target',
+			},
+		];
+
+		const variant = await this.getCurrentVariant();
+
+		if (!variant) {
 			const e = new Error('No build variant named: ' + this.selectedVariant);
 			this.notificationService.error(e);
 			throw e;
+		}
+
+		for (const project of variant.projects) {
+			ret.push({
+				id: project.name,
+				label: project.name,
+				description: 'Build everything in ' + project.name + ' project',
+			});
 		}
 
 		ret.push({
@@ -637,7 +648,23 @@ ${JSON.stringify(payload)}
 		return ret;
 	}
 
-	public async getOutputFile(): TPromise<any> {
-		await this.ensureConfiguration();
+	private async getCurrentProject() {
+		const variant = await this.getCurrentVariant();
+		for (const proj of variant.projects) {
+			if (this.selectedTarget === proj.name) {
+				return proj;
+			}
+		}
+		return variant.projects[0];
+	}
+
+	public async getOutputFile(): TPromise<string> {
+		const proj = await this.getCurrentProject();
+		for (const item of proj.targets) {
+			if (item.type === CMAKE_TARGET_TYPE.EXECUTABLE) {
+				return item.artifacts[0];
+			}
+		}
+		throw new Error('Error: can not find an executable item, please select one.');
 	}
 }

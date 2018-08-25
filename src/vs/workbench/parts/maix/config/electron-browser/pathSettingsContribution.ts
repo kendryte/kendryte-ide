@@ -1,4 +1,4 @@
-import { getSDKPath } from 'vs/workbench/parts/maix/_library/node/nodePath';
+import { getSDKPath, getToolchainPath } from 'vs/workbench/parts/maix/_library/node/nodePath';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ConfigurationTarget, IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { Extensions as CategoryExtensions, IConfigCategoryRegistry } from 'vs/workbench/parts/maix/_library/common/type';
@@ -7,6 +7,8 @@ import { Extensions as WorkbenchExtensions, IWorkbenchContribution, IWorkbenchCo
 import { Registry } from 'vs/platform/registry/common/platform';
 import { LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
+import { readdirSync } from 'vs/base/node/extfs';
+import { resolve } from 'path';
 
 interface SettingsOverwiter<T> {
 	(this: IEnvironmentService, old: T): T;
@@ -16,16 +18,26 @@ const configOverwrites: {[id: string]: SettingsOverwiter<any>} = {
 	'cmake.generator'() {
 		return 'Unix Makefiles';
 	},
-	'C_Cpp.default.includePath'(def: string[]) {
+	'C_Cpp.default.includePath'() {
+		const ret: string[] = [];
 		const sdk = getSDKPath(this);
-		if (!sdk) {
-			return undefined;
+		if (sdk) {
+			ret.push(sdk + '/include');
 		}
-		const sdkInclude = sdk + '/include';
-		if (def && def.indexOf(sdkInclude) !== -1) {
-			return undefined;
+		const toolchain = getToolchainPath(this);
+		if (toolchain) {
+			ret.push(resolve(toolchain, 'riscv64-unknown-elf/include'));
+
+			const libgcc = resolve(toolchain, 'lib/gcc/riscv64-unknown-elf');
+			const libgccVersion = readdirSync(libgcc)[0];
+			ret.push(resolve(libgcc, libgccVersion, 'include'));
+
+			const libcpp = resolve(toolchain, 'riscv64-unknown-elf/include/c++');
+			const libcppVersion = readdirSync(libcpp)[0];
+			ret.push(resolve(libcpp, libcppVersion));
+			ret.push(resolve(libcpp, libcppVersion, 'riscv64-unknown-elf'));
 		}
-		return def? [...def, sdkInclude] : [sdkInclude];
+		return ret;
 	},
 };
 

@@ -23,7 +23,7 @@ export interface ICMakeService {
 
 	cleanupMake(): TPromise<void>;
 
-	getOutputFile(): TPromise<any>;
+	getOutputFile(): TPromise<string>;
 
 	configure(): TPromise<void>;
 

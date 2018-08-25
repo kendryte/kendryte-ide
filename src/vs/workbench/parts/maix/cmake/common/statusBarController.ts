@@ -7,7 +7,7 @@ enum State {
 }
 
 export class StatusBarController {
-	protected state: State = State.Unlock;
+	protected state: State;
 	protected lastArgs: any;
 
 	constructor(
@@ -64,13 +64,16 @@ export class StatusBarController {
 	setEmptyState(empty: true);
 	setEmptyState(empty: boolean, cmakeProject?: boolean) {
 		if (empty) {
+			console.log('empty, need open folder.');
 			this.emptyState(
 				'$(file-directory) Open any project to start.',
 				'workbench.action.files.openFolder',
 			);
 		} else if (cmakeProject) {
-			this.showWorkspace(true);
+			console.log('CMake project found');
+			this.notEmptyState();
 		} else {
+			console.log('no cmake file, need create hello_world.');
 			this.emptyState(
 				'$(plus) Create CMakeFiles.txt to start a project.',
 				ACTION_ID_MAIX_CMAKE_HELLO_WORLD,

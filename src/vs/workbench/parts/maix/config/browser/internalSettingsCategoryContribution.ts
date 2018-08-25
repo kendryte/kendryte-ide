@@ -8,27 +8,9 @@ if (!CategoryRegistry) {
 	require('electron').remote.getCurrentWindow().reload();
 }
 
-CategoryRegistry.registerCategory({ id: 'build-deploy', category: '构建、部署' });
-CategoryRegistry.registerCategory({ id: 'toolchain', category: 'Toolchain', parent: 'build-deploy' });
-CategoryRegistry.registerCategory({ id: 'cmake', category: 'CMake', parent: 'build-deploy' });
+CategoryRegistry.registerCategory({ id: 'build-deploy', category: '构建与调试' });
 CategoryRegistry.registerCategory({ id: 'debugger', category: '调试器', parent: 'build-deploy' });
-CategoryRegistry.registerCategory({ id: 'deployment', category: '部署', parent: 'build-deploy' });
-
-// CategoryRegistry.registerCategory({ id: 'appearance', category: '界面设置' });
-// CategoryRegistry.registerCategory({ id: 'appearance.theme', category: '图标、颜色', parent: 'appearance' });
-// CategoryRegistry.registerCategory({ id: 'appearance.editor', category: '编辑器', parent: 'appearance' });
-// CategoryRegistry.addSettings('appearance.theme', [
-// 	'workbench.colorTheme',
-// 	'workbench.editor.showIcons',
-// 	'workbench.iconTheme',
-// 	'editor.fontFamily',
-// ]);
-// CategoryRegistry.addSettings('appearance.editor', [
-// 	'editor.fontSize',
-// 	'editor.cursorBlinking',
-// 	'editor.cursorStyle',
-// 	'editor.cursorWidth',
-// ]);
+CategoryRegistry.registerCategory({ id: 'deployment', category: '上传', parent: 'build-deploy' });
 
 commonlyUsedData.settings = [
 	'workbench.colorTheme',
@@ -40,11 +22,6 @@ commonlyUsedData.settings = [
 	'editor.cursorStyle',
 	'editor.cursorWidth',
 ];
-
-CategoryRegistry.addSettings('cmake', [
-	'cmake.toolchainSearchDirs',
-	'cmake.cmakePath',
-]);
 
 CategoryRegistry.addSettings('debugger', [
 	'debugger.target',

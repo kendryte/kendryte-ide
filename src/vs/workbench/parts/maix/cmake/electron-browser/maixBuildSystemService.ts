@@ -10,6 +10,9 @@ import { IWindowService, IWindowsService } from 'vs/platform/windows/common/wind
 import { IProgress } from 'vs/platform/progress/common/progress';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IOutputService } from 'vs/workbench/parts/output/common/output';
+import { IDebugService } from 'vs/workbench/parts/debug/common/debug';
+import { IWorkspaceConfigurationService } from 'vs/workbench/services/configuration/common/configuration';
+import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 
 export class MaixBuildSystemService implements IMaixBuildSystemService {
 	_serviceBrand: any;
@@ -26,10 +29,18 @@ export class MaixBuildSystemService implements IMaixBuildSystemService {
 		@IWindowsService protected windowsService: IWindowsService,
 		@IWindowService protected windowService: IWindowService,
 		@IEnvironmentService protected environmentService: IEnvironmentService,
+		@IWorkspaceContextService protected workspaceContextService: IWorkspaceContextService,
+		@IDebugService protected debugService: IDebugService,
+		@IWorkspaceConfigurationService protected configurationService: IWorkspaceConfigurationService,
 		@IOutputService outputService: IOutputService,
 	) {
 		this.cmakeInstaller = instantiationService.createInstance(CMakeInstaller);
 		lifecycleService.when(LifecyclePhase.Running).then(_ => this.init());
+
+		// this.workspaceContextService.onDidChangeWorkspaceFolders(_ => {
+		// 	this.setDebugConfig();
+		// });
+		// this.setDebugConfig();
 	}
 
 	public getCmakeToRun() {
@@ -40,6 +51,7 @@ export class MaixBuildSystemService implements IMaixBuildSystemService {
 		this.installExtension(
 			'twxs.cmake',
 			'ms-vscode.cpptools',
+			'webfreak.debug',
 			'ms-ceintl.vscode-language-pack-zh-hans',
 		).then((changed) => {
 			if (changed.indexOf('ms-ceintl.vscode-language-pack-zh-hans') !== -1) {
@@ -118,4 +130,27 @@ export class MaixBuildSystemService implements IMaixBuildSystemService {
 
 		return changed;
 	}
+
+	// private setDebugConfig() {
+	// 	if (!this.workspaceContextService.getWorkspace().folders.length) {
+	// 		return;
+	// 	}
+	// 	const resource = this.workspaceContextService.getWorkspace().folders[0].toResource('.vscode/launch.json');
+	//
+	// 	const launchJson = this.configurationService.getValue<IGlobalConfig>('launch', {
+	// 		resource,
+	// 	});
+	//
+	// 	const exists = launchJson.configurations.findIndex((item) => {
+	// 		return item.hasOwnProperty('maix');
+	// 	});
+	//
+	// 	// todo: insert startup config?
+	//
+	// 	if (exists === -1) {
+	// 		this.configurationService.updateValue('configurations', {
+	// 			resource,
+	// 		}, ConfigurationTarget.WORKSPACE);
+	// 	}
+	// }
 }
