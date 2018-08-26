@@ -53,10 +53,11 @@ if ! ${TMUX} has -t "=${TARGET}" ; then
 	${TMUX} set-option mouse on
 	${TMUX} setenv HOME "$HOME"
 	${TMUX} setenv PATH "$PATH"
-	${TMUX} setenv DISPLAY "$DISPLAY"
+	${TMUX} setenv DISPLAY "${DISPLAY}"
 	${TMUX} setenv HISTFILE "/dev/null"
-	${TMUX} setenv HTTP_PROXY "http://127.0.0.1:8080"
-	${TMUX} setenv HTTPS_PROXY "http://127.0.0.1:8080"
+	${TMUX} setenv ALL_PROXY "${HTTP_PROXY}"
+	${TMUX} setenv HTTP_PROXY "${HTTP_PROXY}"
+	${TMUX} setenv HTTPS_PROXY "${HTTP_PROXY}"
 fi
 
 function sushell() {

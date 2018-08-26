@@ -21,3 +21,6 @@ yarn-error.log
 .release/
 .dockerignore
 packages/
+.idea/workspace.xml
+.idea/inspectionProfiles
+run.sh

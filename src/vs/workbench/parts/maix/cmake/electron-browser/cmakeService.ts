@@ -1,5 +1,5 @@
-import { CMAKE_CHANNEL, CMakeInternalVariants, CurrentItem, ICMakeService, IMaixBuildSystemService } from 'vs/workbench/parts/maix/cmake/common/type';
-import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { CMAKE_CHANNEL, CMakeInternalVariants, CurrentItem, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
+import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
@@ -44,6 +44,8 @@ import { cpus } from 'os';
 import { addStatusBarCmakeButtons } from 'vs/workbench/parts/maix/cmake/common/buttons';
 import { StatusBarController } from 'vs/workbench/parts/maix/cmake/common/statusBarController';
 import { CMAKE_TARGET_TYPE } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/config';
+import { MaixBuildSystemPrepare, MaixBuildSystemReload } from 'vs/workbench/parts/maix/cmake/electron-browser/maixBuildSystemService';
+import { MaixPackagesUpdate } from 'vs/workbench/parts/maix/_library/node/updatePackages';
 
 export class Deferred extends TPromise<ICMakeResponse, ICMakeProtocolProgress> {
 	private _resolver: (value: ICMakeResponse) => void;
@@ -108,9 +110,7 @@ export class CMakeService implements ICMakeService {
 	constructor(
 		@IInstantiationService protected instantiationService: IInstantiationService,
 		@IWorkspaceContextService protected workspaceContextService: IWorkspaceContextService,
-		@IMaixBuildSystemService protected maixBuildSystemService: IMaixBuildSystemService,
 		@INotificationService protected notificationService: INotificationService,
-		@IEnvironmentService protected environmentService: IEnvironmentService,
 		@ILifecycleService lifecycleService: ILifecycleService,
 		@IOutputService protected outputService: IOutputService,
 	) {
@@ -120,8 +120,6 @@ export class CMakeService implements ICMakeService {
 			return e.veto(this.shutdown(true));
 		});
 		this.localEnv = {};
-		this.localEnv.TOOLCHAIN = getToolchainBinPath(environmentService);
-		this.localEnv.SDK = getSDKPath(environmentService);
 		this.localEnv.MAIX_IDE = 'yes';
 
 		this.localDefine = [];
@@ -131,15 +129,23 @@ export class CMakeService implements ICMakeService {
 		this.localDefine.push(`-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE`);
 
 		lifecycleService.when(LifecyclePhase.Running).then(() => {
-			this.init().then(undefined, (e) => {
-				this.notificationService.error(e);
-				console.log(e);
-				return this.shutdown();
+			TPromise.join([
+				instantiationService.invokeFunction(MaixBuildSystemPrepare),
+				instantiationService.createInstance(MaixPackagesUpdate).run(),
+			]).then(() => {
+				return instantiationService.invokeFunction(MaixBuildSystemReload);
+			}).then(() => {
+				return instantiationService.invokeFunction(this.init.bind(this));
 			});
 		});
 	}
 
-	async init() {
+	init(access: ServicesAccessor) {
+		this.localEnv.TOOLCHAIN = getToolchainBinPath(access.get(IEnvironmentService));
+		this.localEnv.SDK = getSDKPath(access.get(IEnvironmentService));
+
+		this.statusBarController = this.instantiationService.invokeFunction(addStatusBarCmakeButtons);
+
 		this.workspaceContextService.onDidChangeWorkspaceFolders(_ => {
 			this.onFolderChange().then(undefined, (e) => {
 				this.notificationService.error(e);
@@ -148,9 +154,7 @@ export class CMakeService implements ICMakeService {
 			});
 		});
 
-		this.statusBarController = this.instantiationService.invokeFunction(addStatusBarCmakeButtons);
-
-		await this.onFolderChange();
+		this.onFolderChange();
 	}
 
 	get readyState() {
@@ -162,7 +166,7 @@ export class CMakeService implements ICMakeService {
 			return;
 		}
 		this.outputChannel.clear();
-		const cmakePath = this.maixBuildSystemService.getCmakeToRun();
+		const cmakePath = this.getCMakeToRun();
 
 		await mkdirp(resolve(this._currentFolder, '.vscode'));
 
@@ -504,7 +508,7 @@ ${JSON.stringify(payload)}
 
 		await this.ensureConfiguration();
 
-		let make: string = this.maixBuildSystemService.getCmakeToRun().cmake;
+		let make: string = this.getCMakeToRun().cmake;
 
 		let procNumber = cpus().length - 1;
 		if (procNumber <= 0) {
@@ -666,5 +670,9 @@ ${JSON.stringify(payload)}
 			}
 		}
 		throw new Error('Error: can not find an executable item, please select one.');
+	}
+
+	private getCMakeToRun(): {root: string, bins: string, cmake: string} {
+		throw new Error('getCmakeToRun');
 	}
 }

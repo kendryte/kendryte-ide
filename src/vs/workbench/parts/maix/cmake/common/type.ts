@@ -4,14 +4,6 @@ import { IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
 
 export const CMAKE_CHANNEL = 'maix-make-run';
 
-export interface IMaixBuildSystemService {
-	_serviceBrand: any;
-
-	getCmakeToRun(): { root: string, bins: string, cmake: string };
-}
-
-export const IMaixBuildSystemService = createDecorator<IMaixBuildSystemService>('IMaixBuildSystemService');
-
 export interface CurrentItem extends IQuickPickItem {
 	current?: boolean;
 }
@@ -92,4 +84,17 @@ export function CMakeInternalVariants(): CurrentItem[] {
 			description: 'Perform optimizations AND include debugging information',
 		},
 	];
+}
+
+export interface IPackageVersionPlatform {
+	32: string;
+	64: string;
+	generic: string;
+}
+
+export interface IPackageVersion {
+	version: string;
+	windows: IPackageVersionPlatform;
+	linux: IPackageVersionPlatform;
+	mac: IPackageVersionPlatform;
 }

@@ -24,3 +24,5 @@ import 'vs/workbench/parts/maix/serialPort/panel/electron-browser/serialPanelCon
 import 'vs/workbench/parts/maix/_library/electron-browser/menuContribution';
 // cmake
 import 'vs/workbench/parts/maix/cmake/electron-browser/cmakeContribution';
+// misc
+import 'vs/workbench/parts/maix/_library/node/nodePathService';

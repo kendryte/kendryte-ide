@@ -4,6 +4,7 @@ import product from 'vs/platform/node/product';
 import { isWindows } from 'vs/base/common/platform';
 import { lstatSync } from 'fs';
 
+/** @deprecated */
 export function getInstallPath(environmentService: IEnvironmentService) {
 	if (environmentService.isBuilt) {
 		return resolve(environmentService.execPath, '..');
@@ -12,10 +13,12 @@ export function getInstallPath(environmentService: IEnvironmentService) {
 	}
 }
 
+/** @deprecated */
 export function getDataPath(environmentService: IEnvironmentService) {
 	return resolve(environmentService.userHome, product.dataFolderName);
 }
 
+/** @deprecated */
 export function exeFile(filePath: string) {
 	return isWindows? filePath + '.exe' : filePath;
 }
@@ -23,10 +26,13 @@ export function exeFile(filePath: string) {
 let sdkPathCache: string;
 let toolchainPathCache: string;
 
+/** @deprecated */
 export function getToolchainBinPath(environmentService: IEnvironmentService) {
-	return resolve(getToolchainPath(environmentService), 'bin');
+	const rel = getToolchainPath(environmentService);
+	return rel? resolve(rel, 'bin') : '';
 }
 
+/** @deprecated */
 export function getToolchainPath(environmentService: IEnvironmentService) {
 	if (!toolchainPathCache) {
 		let path = resolve(getInstallPath(environmentService), 'packages/toolchain');
@@ -42,9 +48,10 @@ export function getToolchainPath(environmentService: IEnvironmentService) {
 			console.log('%cToolchain is expected to be found at %s, But not found.', 'color:red', path);
 		}
 	}
-	return toolchainPathCache;
+	return toolchainPathCache || '';
 }
 
+/** @deprecated */
 export function getSDKPath(environmentService: IEnvironmentService) {
 	if (!sdkPathCache) {
 		let path = resolve(getInstallPath(environmentService), 'packages/SDK');
