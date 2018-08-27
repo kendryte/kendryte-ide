@@ -20,7 +20,7 @@ export function getDataPath(environmentService: IEnvironmentService) {
 
 /** @deprecated */
 export function exeFile(filePath: string) {
-	return isWindows? filePath + '.exe' : filePath;
+	return isWindows ? filePath + '.exe' : filePath;
 }
 
 let sdkPathCache: string;
@@ -29,7 +29,7 @@ let toolchainPathCache: string;
 /** @deprecated */
 export function getToolchainBinPath(environmentService: IEnvironmentService) {
 	const rel = getToolchainPath(environmentService);
-	return rel? resolve(rel, 'bin') : '';
+	return rel ? resolve(rel, 'bin') : '';
 }
 
 /** @deprecated */

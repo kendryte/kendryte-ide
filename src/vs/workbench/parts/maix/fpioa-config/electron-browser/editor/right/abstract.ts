@@ -109,6 +109,6 @@ export abstract class AbstractTableRender<T extends CellRender> extends Disposab
 	}
 }
 
-export function grid(num: number, type: 'col'|'row') {
-	return type + '-' + (num % 2 === 0? 'even' : 'odd');
+export function grid(num: number, type: 'col' | 'row') {
+	return type + '-' + (num % 2 === 0 ? 'even' : 'odd');
 }

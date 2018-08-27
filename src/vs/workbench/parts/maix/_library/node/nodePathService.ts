@@ -34,7 +34,7 @@ class NodePathService implements INodePathService {
 
 	constructor(
 		@IEnvironmentService protected environmentService: IEnvironmentService,
-	) {}
+	) { }
 
 	getPackagesPath(project?: string) {
 		if (project) {
@@ -57,12 +57,12 @@ class NodePathService implements INodePathService {
 	}
 
 	exeFile(filePath: string) {
-		return isWindows? filePath + '.exe' : filePath;
+		return isWindows ? filePath + '.exe' : filePath;
 	}
 
 	getToolchainBinPath() {
 		const rel = this.getToolchainPath();
-		return rel? resolve(rel, 'bin') : '';
+		return rel ? resolve(rel, 'bin') : '';
 	}
 
 	getToolchainPath() {

@@ -1,6 +1,5 @@
 import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
-import * as nls from 'vs/nls';
 import { localize } from 'vs/nls';
 import { ACTION_ID_MAIX_CMAKE_RUN, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
 import { IOutputService } from 'vs/workbench/parts/output/common/output';
@@ -38,7 +37,7 @@ class WorkspaceMaixLaunch implements ILaunch {
 	}
 
 	public get name(): string {
-		return nls.localize('workspace', 'workspace');
+		return localize('workspace', 'workspace');
 	}
 
 	public get hidden(): boolean {
@@ -70,7 +69,7 @@ class WorkspaceMaixLaunch implements ILaunch {
 		} as IConfig;
 	}
 
-	openConfigFile(sideBySide: boolean, type?: string): TPromise<{editor: IEditor, created: boolean}> {
+	openConfigFile(sideBySide: boolean, type?: string): TPromise<{ editor: IEditor, created: boolean }> {
 		return this.editorService.openEditor({
 			resource: this.contextService.getWorkspace().folders[0].toResource('.vscode/maix.json'),
 		}).then(editor => ({ editor, created: false }));

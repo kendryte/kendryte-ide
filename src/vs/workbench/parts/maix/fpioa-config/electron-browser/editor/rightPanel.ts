@@ -37,7 +37,7 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 		@IInstantiationService protected instantiationService: IInstantiationService,
 		@IContextMenuService protected contextMenuService: IContextMenuService,
 		@IThemeService protected themeService: IThemeService,
-		@IMenuService  menuService: IMenuService,
+		@IMenuService menuService: IMenuService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 	) {
 		super();

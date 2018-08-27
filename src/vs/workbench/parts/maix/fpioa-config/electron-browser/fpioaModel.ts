@@ -60,7 +60,7 @@ export class FpioaModel extends EditorModel {
 		if (await this.fileService.existsFile(this.uri)) {
 			let data: IContent;
 			await this.fileService.resolveContent(this.uri, {
-				etag: options.forceReadFromDisk? '' : this.contentHash,
+				etag: options.forceReadFromDisk ? '' : this.contentHash,
 				encoding: 'utf8',
 				position: 4,
 			}).then((dd) => {

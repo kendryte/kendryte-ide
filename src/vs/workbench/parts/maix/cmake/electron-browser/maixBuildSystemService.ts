@@ -17,12 +17,12 @@ let reloadType: ReloadType = ReloadType.NO_NEED;
 
 export function MaixBuildSystemReload(access: ServicesAccessor) {
 	switch (reloadType) {
-	case ReloadType.RELAUNCH:
-		const windowsService: IWindowsService = access.get(IWindowsService);
-		return windowsService.relaunch({});
-	case  ReloadType.RELOAD:
-		const windowService: IWindowService = access.get(IWindowService);
-		return windowService.reloadWindow();
+		case ReloadType.RELAUNCH:
+			const windowsService: IWindowsService = access.get(IWindowsService);
+			return windowsService.relaunch({});
+		case ReloadType.RELOAD:
+			const windowService: IWindowService = access.get(IWindowService);
+			return windowService.reloadWindow();
 	}
 	return TPromise.as(void 0);
 }

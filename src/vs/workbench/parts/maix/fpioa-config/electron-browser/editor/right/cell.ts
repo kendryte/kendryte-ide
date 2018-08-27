@@ -70,7 +70,7 @@ export class CellRender extends Disposable {
 			return;
 		}
 		this._funcId = funcId;
-		this.$fnContainer.title = funcId? funcId : '';
+		this.$fnContainer.title = funcId ? funcId : '';
 		if (funcId) {
 			if (this.functionBadge) {
 				this.functionBadge.setCountFormat(funcId);

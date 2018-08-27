@@ -29,7 +29,7 @@ export class FpioaLeftPanel extends Disposable implements IView {
 	readonly onSetPinFunc: Event<PinFuncSetEvent> = this._onSetPinFunc.event;
 
 	private list: WorkbenchList<IFpioaLeftListEntry>;
-	private chipIOList: (IListGroupEntry|IListFuncMapEntry)[] = [];
+	private chipIOList: (IListGroupEntry | IListFuncMapEntry)[] = [];
 	private funcMapListItemRender: FuncMapListItemRender;
 
 	private chipName: string;
@@ -111,7 +111,7 @@ export class FpioaLeftPanel extends Disposable implements IView {
 
 	private changeList(chip: IChipPackagingCalculated) {
 		console.warn('pin map is changing');
-		const newList: (IListGroupEntry|IListFuncMapEntry)[] = [];
+		const newList: (IListGroupEntry | IListFuncMapEntry)[] = [];
 
 		chip.usableFunctions.forEach(({ funcBaseId: funName, ios, description }) => {
 			newList.push({ id: funName.toUpperCase(), templateId: TEMPLATE_ID.FUNC_MAP_GROUP, description });

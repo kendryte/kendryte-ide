@@ -20,7 +20,7 @@ import {
 } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/cmakeProtocol';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { format } from 'util';
-import { resolveFrom } from 'vs/workbench/parts/maix/_library/common/resource';
+import { resolveFrom } from 'vs/workbench/parts/maix/_library/node/resource';
 import { unlinkSync } from 'fs';
 import { Emitter, Event } from 'vs/base/common/event';
 import { ICMakeProtocolError } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/error';

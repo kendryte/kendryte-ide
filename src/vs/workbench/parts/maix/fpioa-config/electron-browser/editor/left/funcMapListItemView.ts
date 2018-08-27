@@ -24,8 +24,8 @@ export class FuncMapListItemRender implements IRenderer<IListFuncMapEntry, IFunc
 	private readonly _firePinMapChange = new Emitter<IOPinPlacement>();
 	readonly notifyPinMapChange = this._firePinMapChange.fire.bind(this._firePinMapChange);
 
-	protected pinToIO: {[id: string]: string}; // A4 => IO_7
-	protected ioToPin: {[id: string]: string};
+	protected pinToIO: { [id: string]: string }; // A4 => IO_7
+	protected ioToPin: { [id: string]: string };
 	private cacheMap: IOPinPlacement;
 	private changeEvent: IDisposable;
 	// to cache
@@ -115,7 +115,7 @@ export class FuncMapListItemRender implements IRenderer<IListFuncMapEntry, IFunc
 				}
 				console.log('pin function select: pin[%s:%s] func[%s]', this.ioToPin[selected], selected, entry.fullId);
 				this._onSetPin.fire({
-					pin: index === 0? undefined : this.ioToPin[selected],
+					pin: index === 0 ? undefined : this.ioToPin[selected],
 					func: entry.fullId,
 					triggerBy: 'func',
 				});

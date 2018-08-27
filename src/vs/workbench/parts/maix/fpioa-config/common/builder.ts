@@ -65,7 +65,7 @@ export class PinBuilder {
 		};
 	}
 
-	static i2c(id: number|string, base: number): IFuncDefinition {
+	static i2c(id: number | string, base: number): IFuncDefinition {
 		return {
 			funcBaseId: `i2c${id}`, description: `I2C${id}`,
 			ios: [
@@ -90,7 +90,7 @@ export function BGA_IO_GEOMETRY(pinMap: string): IChipGeometry {
 		missingRows: '',
 		IOPinPlacement: {},
 	};
-	const ioPins = new Map<{row: string; col: number;}, number>();
+	const ioPins = new Map<{ row: string; col: number; }, number>();
 
 	pinMap = pinMap.replace(/^\s+|\s+$/mg, '').trim(); // clear space around
 
@@ -172,6 +172,6 @@ export function normalizePin(base: BaseAny, pin: IPin): IPin2DNumber {
 		}
 		return { x: parseInt(p[2]), y: base.toBase10(p[1] || 'A') };
 	} else {
-		return { x: pin.x, y: typeof pin.y === 'string'? base.toBase10(pin.y) : pin.y };
+		return { x: pin.x, y: typeof pin.y === 'string' ? base.toBase10(pin.y) : pin.y };
 	}
 }

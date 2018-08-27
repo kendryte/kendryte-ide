@@ -1,5 +1,4 @@
 import { TPromise } from 'vs/base/common/winjs.base';
-import * as nls from 'vs/nls';
 import { localize } from 'vs/nls';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ConfirmResult, EditorInput, IEditorInputFactory, IRevertOptions } from 'vs/workbench/common/editor';
@@ -129,7 +128,7 @@ export class FpioaEditorInput extends EditorInput {
 				newTag, newRight,
 			),
 			type: 'question',
-			primaryButton: nls.localize('yes', 'Yes'),
+			primaryButton: localize('yes', 'Yes'),
 			secondaryButton: localize('cancel', 'Cancel'),
 		}).then(({ confirmed }) => {
 			return confirmed;

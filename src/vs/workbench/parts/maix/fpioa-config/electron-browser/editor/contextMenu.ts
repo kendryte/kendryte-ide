@@ -13,8 +13,8 @@ class SetPinFunctionAction extends Action implements ICommandAction {
 	public static readonly ID = 'fpioaEditor.action.setPinFunc';
 	public static readonly LABEL = localize('MaixIOEditorSetPinFunc', 'assign function to selected io pin');
 
-	constructor(protected readonly pinFunc: IFuncPin|null) {
-		super(SetPinFunctionAction.ID, pinFunc? pinFunc.description : MENU_TITLE_UNSET_FUNC);
+	constructor(protected readonly pinFunc: IFuncPin | null) {
+		super(SetPinFunctionAction.ID, pinFunc ? pinFunc.description : MENU_TITLE_UNSET_FUNC);
 	}
 
 	async run([data, callback]: [ContextMenuData, PinFuncSetEventEmitter]): TPromise<any> {

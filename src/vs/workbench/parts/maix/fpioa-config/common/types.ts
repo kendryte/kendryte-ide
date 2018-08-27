@@ -19,7 +19,7 @@ export interface ISavedJson {
 export interface PinFuncSetEvent {
 	pin: string; // IPin
 	func: string; // name of func
-	triggerBy: 'pin'|'func';
+	triggerBy: 'pin' | 'func';
 }
 
 export interface PinFuncSetEventEmitter {
@@ -41,7 +41,7 @@ export interface ColorMap {
 }
 
 export interface ContextMenuData {
-	pointer: {x: number; y: number;};
+	pointer: { x: number; y: number; };
 	pinName: string;
 	ioNum?: number;
 	currentFunctionId: string;

@@ -23,7 +23,7 @@ export interface IListGroupEntry extends IListSplitEntry {
 export interface IListFuncMapEntry extends IListSplitEntry {
 	selectEvent: IDisposable;
 	currentPin: string; // A3 B7 ...
-	templateId: TEMPLATE_ID.FUNC_MAP|TEMPLATE_ID.FUNC_MAP_HIDE;
+	templateId: TEMPLATE_ID.FUNC_MAP | TEMPLATE_ID.FUNC_MAP_HIDE;
 	description: string;
 	fullId: string;
 }
@@ -33,4 +33,4 @@ export interface IListChipSelectEntry extends IListSplitEntry {
 	selected: string;
 }
 
-export type IFpioaLeftListEntry = IListSplitEntry|IListFuncMapEntry|IListChipSelectEntry;
+export type IFpioaLeftListEntry = IListSplitEntry | IListFuncMapEntry | IListChipSelectEntry;

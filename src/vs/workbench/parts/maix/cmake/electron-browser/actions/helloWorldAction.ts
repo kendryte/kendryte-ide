@@ -5,7 +5,7 @@ import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD, CMAKE_CHANNEL, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
-import { resolveFrom, startsWithFileSchema } from 'vs/workbench/parts/maix/_library/common/resource';
+import { resolveFrom, startsWithFileSchema } from 'vs/workbench/parts/maix/_library/node/resource';
 import { exists, mkdirp, readFile, writeFile } from 'vs/base/node/pfs';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 

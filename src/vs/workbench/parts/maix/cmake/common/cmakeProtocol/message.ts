@@ -82,5 +82,5 @@ export interface ICMakeProtocolCache extends ICMakeResponse {
 export interface ICMakeProtocolFilesystemWatchers extends ICMakeResponse {
 	type: CMAKE_EVENT_TYPE.FILESYSTEMWATCHERS;
 	watchedFiles: string[];
-	watchedDirectories: string [];
+	watchedDirectories: string[];
 }

@@ -14,7 +14,7 @@ interface SettingsOverwiter<T> {
 	(this: IEnvironmentService, old: T): T;
 }
 
-const configOverwrites: {[id: string]: SettingsOverwiter<any>} = {
+const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
 	'cmake.generator'() {
 		return 'Unix Makefiles';
 	},
@@ -77,7 +77,7 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 
 	private hideBuildDirectory() {
 		const inspect = this.configurationService.inspect<any>('files.exclude');
-		let data = inspect.user? { ...inspect.user } : { ...inspect.default };
+		let data = inspect.user ? { ...inspect.user } : { ...inspect.default };
 		let changed = { change: false };
 
 		ignore(data, '.idea', changed);
@@ -93,7 +93,7 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 	}
 }
 
-function ignore(data: any, name: string, changed: {change: boolean}) {
+function ignore(data: any, name: string, changed: { change: boolean }) {
 	if (!data.hasOwnProperty(name)) {
 		changed.change = true;
 		data[name] = true;
@@ -101,4 +101,4 @@ function ignore(data: any, name: string, changed: {change: boolean}) {
 }
 
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
-        .registerWorkbenchContribution(SettingCategoryContribution, LifecyclePhase.Running);
+	.registerWorkbenchContribution(SettingCategoryContribution, LifecyclePhase.Running);

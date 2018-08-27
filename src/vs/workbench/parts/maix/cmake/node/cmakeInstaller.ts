@@ -23,7 +23,7 @@ import { IStatusbarService } from 'vs/platform/statusbar/common/statusbar';
 
 const lstat_ = promisify(lstat);
 const readdir_ = promisify(readdir);
-const execFile_ = (file: string, args?: string[]): TPromise<{stderr: string, stdout: string}> => {
+const execFile_ = (file: string, args?: string[]): TPromise<{ stderr: string, stdout: string }> => {
 	return new TPromise((resolve, reject) => {
 		execFile(file, args, {
 			encoding: 'utf8',
@@ -96,7 +96,7 @@ export class CMakeInstaller {
 	}
 
 	/** path is to cmake.exe */
-	async getInstalledCMakeVersions(): Promise<{version: string, path: string}[]> {
+	async getInstalledCMakeVersions(): Promise<{ version: string, path: string }[]> {
 		await this.initCMakeDownloadDir();
 
 		const cmakeDirs = await readdir_(this.CMakeDownloadPath);
@@ -214,7 +214,7 @@ export class CMakeInstaller {
 		return p;
 	}
 
-	protected async detectPath(versionName: string): TPromise<string|void> {
+	protected async detectPath(versionName: string): TPromise<string | void> {
 		for (const { version, path } of await this.getInstalledCMakeVersions()) {
 			if (version === versionName) {
 				return path;
@@ -230,14 +230,14 @@ export class CMakeInstaller {
 		const versionDirUrl = `http://cmake.org/files/v${versionMajor}.${versionMinor}/`;
 		const fileNameBase = `cmake-${versionNumber}-`;
 
-		const platformExt = isWindows? '.zip' : '.tar.gz';
+		const platformExt = isWindows ? '.zip' : '.tar.gz';
 		let packageName: string;
 		if (isWindows) {
-			packageName = is64Bit? 'win64-x64' : 'win32-x86';
+			packageName = is64Bit ? 'win64-x64' : 'win32-x86';
 		} else if (isLinux) {
-			packageName = is64Bit? 'Linux-x86_64' : 'Linux-i386';
+			packageName = is64Bit ? 'Linux-x86_64' : 'Linux-i386';
 		} else if (isMacintosh) {
-			packageName = is64Bit? 'Darwin-x86_64' : 'Darwin-universal';
+			packageName = is64Bit ? 'Darwin-x86_64' : 'Darwin-universal';
 		} else {
 			throw new Error('Your platform is not supported.');
 		}
@@ -320,7 +320,7 @@ export class CMakeInstaller {
 		};
 	}
 
-	async setCurrentByCMakePath(path: string): TPromise<string|void> {
+	async setCurrentByCMakePath(path: string): TPromise<string | void> {
 		const ver = await this.computeCMakeVersion(path);
 		await this.setCurrent(ver, path);
 		return ver;

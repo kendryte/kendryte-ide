@@ -30,7 +30,7 @@ export function registryChipPackaging(packaging: IChipPackagingDefinition) {
 	Registry.as<IChipPackagingRegistry>(Extensions.ChipPackaging).addPackaging(packaging);
 }
 
-export function getChipPackaging(name: string): IChipPackagingCalculated|null;
+export function getChipPackaging(name: string): IChipPackagingCalculated | null;
 export function getChipPackaging(): IChipPackagingCalculated[];
 
 export function getChipPackaging(name?: string) {

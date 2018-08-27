@@ -13,7 +13,7 @@ export const PIN_NC: PIN_NC = -2;
 export const PIN_SPECIAL: PIN_SPECIAL = -3;
 
 export type PIN_IO = number;
-export type PinId = PIN_IO|PIN_NC|PIN_POWER;
+export type PinId = PIN_IO | PIN_NC | PIN_POWER;
 
 /**
  * 功能定义，一开始就会被转换成 IFunc，没有别的作用
@@ -36,7 +36,7 @@ export interface IFuncPinDefinition {
 
 export interface IPin2D {
 	x: number;
-	y: string|number;
+	y: string | number;
 }
 
 export interface IPin2DNumber {
@@ -44,7 +44,7 @@ export interface IPin2DNumber {
 	y: number;
 }
 
-export type IPin = string|number|IPin2D;
+export type IPin = string | number | IPin2D;
 
 export interface IPinRange {
 	from: IPin;
@@ -77,7 +77,7 @@ export interface IChipGeneratorConfig {
 	libraryName: string;
 }
 
-export type pickKeys = 'funcId'|'funcNumber'|'description';
+export type pickKeys = 'funcId' | 'funcNumber' | 'description';
 export const pickKeys: pickKeys[] = ['funcId', 'funcNumber', 'description'];
 
 export interface IFuncPin extends Pick<IFuncPinDefinition, pickKeys> {

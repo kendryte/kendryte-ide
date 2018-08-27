@@ -3,7 +3,7 @@ import { CMAKE_VAE_TYPE } from 'vs/workbench/parts/maix/cmake/common/cmakeProtoc
 
 const falseValue = /^(FALSE|OFF|0|NOTFOUND|NO|N|IGNORE|.*-NOTFOUND)$/;
 
-export function isTruthy(value: (boolean|string|null|undefined|number)) {
+export function isTruthy(value: (boolean | string | null | undefined | number)) {
 	if (typeof value === 'string' && value) {
 		return !falseValue.test(value);
 	}
@@ -78,7 +78,7 @@ export class CMakeCache {
 		private readonly _path: string,
 		private readonly _exists: boolean,
 		private readonly _entries: Map<string, Entry>,
-	) {}
+	) { }
 
 	/**
 	 * `true` if the file exists when this instance was created.
@@ -107,8 +107,8 @@ export class CMakeCache {
 	 */
 	static parseCache(content: string): Map<string, Entry> {
 		const lines = content.split(/\r\n|\n|\r/)
-		                     .filter(line => !!line.length)
-		                     .filter(line => !/^\s*#/.test(line));
+			.filter(line => !!line.length)
+			.filter(line => !/^\s*#/.test(line));
 
 		const entries = new Map<string, Entry>();
 		let docs_acc = '';
@@ -149,7 +149,7 @@ export class CMakeCache {
 	 * @param key The name of a cache entry
 	 * @returns The cache entry, or `null` if the cache entry is not present.
 	 */
-	get(key: string): Entry|null {
+	get(key: string): Entry | null {
 		return this._entries.get(key) || null;
 	}
 }
