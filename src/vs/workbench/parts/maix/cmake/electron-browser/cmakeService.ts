@@ -45,11 +45,11 @@ import { addStatusBarCmakeButtons } from 'vs/workbench/parts/maix/cmake/common/b
 import { StatusBarController } from 'vs/workbench/parts/maix/cmake/common/statusBarController';
 import { CMAKE_TARGET_TYPE } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/config';
 import { MaixBuildSystemPrepare, MaixBuildSystemReload } from 'vs/workbench/parts/maix/cmake/electron-browser/maixBuildSystemService';
-import { MaixPackagesUpdate } from 'vs/workbench/parts/maix/_library/node/updatePackages';
+import { IPackagesUpdateService } from 'vs/workbench/parts/maix/_library/node/packagesUpdateService';
 
 export class Deferred extends TPromise<ICMakeResponse, ICMakeProtocolProgress> {
 	private _resolver: (value: ICMakeResponse) => void;
-	private _rejecter: (value: Error|ICMakeProtocolError) => void;
+	private _rejecter: (value: Error | ICMakeProtocolError) => void;
 	private _progresser: (value: ICMakeProtocolProgress) => void;
 
 	constructor() {
@@ -68,7 +68,7 @@ export class Deferred extends TPromise<ICMakeResponse, ICMakeProtocolProgress> {
 		this._resolver(response);
 	}
 
-	reject(err: ICMakeProtocolError|Error): void {
+	reject(err: ICMakeProtocolError | Error): void {
 		this._rejecter(err);
 	}
 
@@ -100,7 +100,7 @@ export class CMakeService implements ICMakeService {
 	protected _mainCMakeList: string;
 	protected _buildingSDK: boolean;
 
-	private cmakeRequests: {[cookie: string]: Deferred} = {};
+	private cmakeRequests: { [cookie: string]: Deferred } = {};
 
 	private readonly _onCMakeEvent = new Emitter<ICMakeProtocol>();
 	public readonly onCMakeEvent: Event<ICMakeProtocol> = this._onCMakeEvent.event;
@@ -113,6 +113,7 @@ export class CMakeService implements ICMakeService {
 		@INotificationService protected notificationService: INotificationService,
 		@ILifecycleService lifecycleService: ILifecycleService,
 		@IOutputService protected outputService: IOutputService,
+		@IPackagesUpdateService packagesUpdateService: IPackagesUpdateService,
 	) {
 		this.outputChannel = outputService.getChannel(CMAKE_CHANNEL);
 		// this.installExtension('twxs.cmake');
@@ -131,12 +132,12 @@ export class CMakeService implements ICMakeService {
 		lifecycleService.when(LifecyclePhase.Running).then(() => {
 			TPromise.join([
 				instantiationService.invokeFunction(MaixBuildSystemPrepare),
-				instantiationService.createInstance(MaixPackagesUpdate).run(),
+				packagesUpdateService.run(),
 			]).then(() => {
 				return instantiationService.invokeFunction(MaixBuildSystemReload);
 			}).then(() => {
 				return instantiationService.invokeFunction(this.init.bind(this));
-			});
+			}); // handle error?
 		});
 	}
 
@@ -306,7 +307,7 @@ export class CMakeService implements ICMakeService {
 	}
 
 	private handleProtocolInput(msg: string) {
-		const protocolData: ICMakeProtocol&ICMakeProtocolAny = JSON.parse(msg);
+		const protocolData: ICMakeProtocol & ICMakeProtocolAny = JSON.parse(msg);
 		this._onCMakeEvent.fire(protocolData);
 		// console.log('cmake <<< %O', protocolData);
 
@@ -316,41 +317,41 @@ export class CMakeService implements ICMakeService {
 				console.error('cannot handle.');
 			}
 			switch (protocolData.type) {
-			case CMAKE_EVENT_TYPE.REPLY:
-				dfd.resolve(protocolData as ICMakeProtocolReply);
-				return;
-			case CMAKE_EVENT_TYPE.ERROR:
-				const err = protocolData as ICMakeProtocolError;
-				dfd.reject({ ...err, message: err.errorMessage } as any);
-				return;
-			case CMAKE_EVENT_TYPE.PROGRESS:
-				dfd.notify(protocolData as ICMakeProtocolProgress);
-				return;
+				case CMAKE_EVENT_TYPE.REPLY:
+					dfd.resolve(protocolData as ICMakeProtocolReply);
+					return;
+				case CMAKE_EVENT_TYPE.ERROR:
+					const err = protocolData as ICMakeProtocolError;
+					dfd.reject({ ...err, message: err.errorMessage } as any);
+					return;
+				case CMAKE_EVENT_TYPE.PROGRESS:
+					dfd.notify(protocolData as ICMakeProtocolProgress);
+					return;
 			}
 		}
 
 		switch (protocolData.type) {
-		case CMAKE_EVENT_TYPE.HELLO:
-			this.initBaseConfigWhenHello(protocolData as ICMakeProtocolHello).then(() => {
-				this.cmakeConnectionStablePromise.resolve(void 0);
-			}, (e) => {
-				this.cmakeConnectionStablePromise.reject(e);
-			});
-			return;
-		case CMAKE_EVENT_TYPE.MESSAGE:
-			const message = protocolData as ICMakeProtocolMessage;
-			this.log(message.message);
-			return;
-		case CMAKE_EVENT_TYPE.SIGNAL:
-			switch ((protocolData as ICMakeProtocolSignal).name) {
-			case CMAKE_SIGNAL_TYPE.DIRTY:
-				console.log('dirty event: %O', protocolData);
-				this.alreadyConfigured = false;
+			case CMAKE_EVENT_TYPE.HELLO:
+				this.initBaseConfigWhenHello(protocolData as ICMakeProtocolHello).then(() => {
+					this.cmakeConnectionStablePromise.resolve(void 0);
+				}, (e) => {
+					this.cmakeConnectionStablePromise.reject(e);
+				});
 				return;
-			case CMAKE_SIGNAL_TYPE.FILECHANGE:
-				console.log('change event: %O', protocolData);
+			case CMAKE_EVENT_TYPE.MESSAGE:
+				const message = protocolData as ICMakeProtocolMessage;
+				this.log(message.message);
 				return;
-			}
+			case CMAKE_EVENT_TYPE.SIGNAL:
+				switch ((protocolData as ICMakeProtocolSignal).name) {
+					case CMAKE_SIGNAL_TYPE.DIRTY:
+						console.log('dirty event: %O', protocolData);
+						this.alreadyConfigured = false;
+						return;
+					case CMAKE_SIGNAL_TYPE.FILECHANGE:
+						console.log('change event: %O', protocolData);
+						return;
+				}
 		}
 		debugger;
 		console.error('Unknown CMake Event: %O', protocolData);
@@ -422,8 +423,8 @@ ${JSON.stringify(payload)}
 			type: CMAKE_EVENT_TYPE.HANDSHAKE,
 			buildDirectory: buildFolder,
 			protocolVersion: hello.supportedProtocolVersions[0],
-			sourceDirectory: this._buildingSDK? resolve(this._currentFolder, 'cmake') : this._currentFolder,
-			generator: isWindows? 'MinGW Makefiles' : 'Unix Makefiles',
+			sourceDirectory: this._buildingSDK ? resolve(this._currentFolder, 'cmake') : this._currentFolder,
+			generator: isWindows ? 'MinGW Makefiles' : 'Unix Makefiles',
 		};
 
 		const tmpCache = await CMakeCache.fromPath(resolve(buildFolder, 'CMakeCache.txt'));
@@ -672,7 +673,7 @@ ${JSON.stringify(payload)}
 		throw new Error('Error: can not find an executable item, please select one.');
 	}
 
-	private getCMakeToRun(): {root: string, bins: string, cmake: string} {
+	private getCMakeToRun(): { root: string, bins: string, cmake: string } {
 		throw new Error('getCmakeToRun');
 	}
 }

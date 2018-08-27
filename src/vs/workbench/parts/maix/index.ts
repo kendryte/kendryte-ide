@@ -1,5 +1,9 @@
 //// included by "vs/workbench/workbench.main.ts"
 
+// misc
+// import 'vs/workbench/parts/maix/_library/electron-browser/statusbarColor';
+import 'vs/workbench/parts/maix/_library/node/nodePathService';
+import 'vs/workbench/parts/maix/_library/node/packagesUpdateService';
 // Settings sections
 import 'vs/workbench/parts/maix/config/browser/categoryContribution';
 import 'vs/workbench/parts/maix/config/electron-browser/pathSettingsContribution';
@@ -24,5 +28,3 @@ import 'vs/workbench/parts/maix/serialPort/panel/electron-browser/serialPanelCon
 import 'vs/workbench/parts/maix/_library/electron-browser/menuContribution';
 // cmake
 import 'vs/workbench/parts/maix/cmake/electron-browser/cmakeContribution';
-// misc
-import 'vs/workbench/parts/maix/_library/node/nodePathService';

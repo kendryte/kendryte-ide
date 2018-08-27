@@ -94,6 +94,7 @@ export interface IPackageVersionPlatform {
 
 export interface IPackageVersion {
 	version: string;
+	source: string;
 	windows: IPackageVersionPlatform;
 	linux: IPackageVersionPlatform;
 	mac: IPackageVersionPlatform;
