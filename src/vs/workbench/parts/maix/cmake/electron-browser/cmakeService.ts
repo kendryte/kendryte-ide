@@ -45,7 +45,7 @@ import { addStatusBarCmakeButtons } from 'vs/workbench/parts/maix/cmake/common/b
 import { StatusBarController } from 'vs/workbench/parts/maix/cmake/common/statusBarController';
 import { CMAKE_TARGET_TYPE } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/config';
 import { MaixBuildSystemPrepare, MaixBuildSystemReload } from 'vs/workbench/parts/maix/cmake/electron-browser/maixBuildSystemService';
-import { IPackagesUpdateService } from 'vs/workbench/parts/maix/_library/node/packagesUpdateService';
+import { IPackagesUpdateService } from 'vs/workbench/parts/maix/_library/electron-browser/packagesUpdateService';
 
 export class Deferred extends TPromise<ICMakeResponse, ICMakeProtocolProgress> {
 	private _resolver: (value: ICMakeResponse) => void;

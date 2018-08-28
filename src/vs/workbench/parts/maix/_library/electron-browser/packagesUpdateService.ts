@@ -1,5 +1,5 @@
-import decompress = require('decompress');
 import request_progress = require('request-progress');
+import gunzip = require('gunzip-maybe');
 import { IPackageVersion } from 'vs/workbench/parts/maix/cmake/common/type';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { asJson, asText, IRequestOptions } from 'vs/base/node/request';
@@ -8,21 +8,31 @@ import { OperatingSystem, OS } from 'vs/base/common/platform';
 import { is64Bit } from 'vs/workbench/parts/maix/_library/node/versions';
 import { IHTTPConfiguration, IRequestService } from 'vs/platform/request/node/request';
 import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
-import { exists, mkdirp, readFile, rmdir, unlink, writeFile } from 'vs/base/node/pfs';
-import { emptyDir, move } from 'fs-extra';
+import { exists, mkdirp, readdir, readFile, rename, rimraf, unlink, writeFile } from 'vs/base/node/pfs';
+import { move } from 'fs-extra';
 import { IProgressService2, IProgressStep, ProgressLocation } from 'vs/workbench/services/progress/common/progress';
 import { IProgress } from 'vs/platform/progress/common/progress';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { Emitter, Event } from 'vs/base/common/event';
+import { createDecorator, IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { get } from 'request';
 import { extname } from 'path';
-import { createWriteStream } from 'fs';
+import { createReadStream, createWriteStream } from 'fs';
 import * as crypto from 'crypto';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { getProxyAgent } from 'vs/base/node/proxy';
 import { assign } from 'vs/base/common/objects';
-import { IStatusbarService } from 'vs/platform/statusbar/common/statusbar';
+import { IStatusbarService, StatusbarAlignment } from 'vs/platform/statusbar/common/statusbar';
+import { INotificationService } from 'vs/platform/notification/common/notification';
+import Severity from 'vs/base/common/severity';
+import { localize } from 'vs/nls';
+import { IWindowService } from 'vs/platform/windows/common/windows';
+import { extract as extractZip } from 'vs/base/node/zip';
+import { extract as extractTar } from 'tar-fs';
+import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
+import { ChannelLogService } from 'vs/workbench/parts/maix/_library/electron-browser/channelLog';
+import { LogLevel } from 'vs/platform/log/common/log';
+import { IPartService } from 'vs/workbench/services/part/common/partService';
+import { inputValidationErrorBorder } from 'vs/platform/theme/common/colorRegistry';
 
 const distributeUrl = 'https://s3.cn-northwest-1.amazonaws.com.cn/maix-ide/';
 
@@ -36,9 +46,6 @@ export interface IPackagesUpdateService {
 	_serviceBrand: any;
 
 	run(): TPromise<void>;
-
-	readonly hasError: boolean;
-	onDidChangeState: Event<boolean>;
 }
 
 export const IPackagesUpdateService = createDecorator<IPackagesUpdateService>('IPackagesUpdateService');
@@ -50,24 +57,26 @@ interface IProgressFn {
 class PackagesUpdateService implements IPackagesUpdateService {
 	_serviceBrand: any;
 
-	private readonly _onDidChangeState = new Emitter<boolean>();
-	public readonly onDidChangeState: Event<boolean> = this._onDidChangeState.event;
-
 	private platform: string;
 	private arch: string;
 	private localPackage: { [packageName: string]: string } = {};
 	private readonly localConfigFile: string;
-	private _error: Error = null;
+	private runPromise: TPromise<void>;
+	private logService: ChannelLogService;
 
 	constructor(
 		@IRequestService private requestService: IRequestService,
 		@INodePathService private nodePathService: INodePathService,
 		@IConfigurationService private configurationService: IConfigurationService,
-		// @IEnvironmentService private environmentService: IEnvironmentService,
-		// @IConfigurationService private configurationService: IConfigurationService,
+		@INotificationService private notificationService: INotificationService,
+		@IInstantiationService private instantiationService: IInstantiationService,
 		@IProgressService2 private progressService: IProgressService2,
 		@IStatusbarService private statusbarService: IStatusbarService,
+		@ILifecycleService private lifecycleService: ILifecycleService,
+		@IPartService private partService: IPartService,
 	) {
+		this.logService = instantiationService.createInstance(ChannelLogService, 'maix-updator', 'Maix Update');
+		this.logService.setLevel(LogLevel.Trace);
 		switch (OS) {
 			case OperatingSystem.Windows:
 				this.platform = 'windows';
@@ -81,17 +90,16 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			default:
 				return;
 		}
+		this.logService.info('your platform is %s', this.platform);
+
 		if (is64Bit) {
 			this.arch = '64';
 		} else {
 			this.arch = '32';
 		}
+		this.logService.info('your architecture is %s', this.arch);
 
 		this.localConfigFile = this.nodePathService.getPackagesPath('versions.json');
-	}
-
-	public get hasError(): boolean {
-		return !!this._error;
 	}
 
 	protected async writeCache(name: string, value: string) {
@@ -100,27 +108,61 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	}
 
 	run(): TPromise<void> {
+		if (this.runPromise) {
+			return this.runPromise;
+		}
+		this.lifecycleService.onWillShutdown((e) => {
+			if (this.runPromise) {
+				const force = confirm('Update is in progress.\nDo you want to force quit?\nUpdate will continue next time.');
+				e.veto(!force);
+			}
+		});
 		const entry = this.statusbarService.setStatusMessage('$(sync~spin) Updating packages... please wait...');
-		return this._run().then(() => {
+		this.runPromise = this._run();
+		return this.runPromise.then(() => {
 			entry.dispose();
+			delete this.runPromise;
 		}, (error) => {
 			entry.dispose();
-			this.statusbarService.setStatusMessage('$(sync~spin)$(x) Failed to download required packages, please check your internet connection...');
-			this._error = error;
-			this._onDidChangeState.fire(true);
-			alert('Maix Cannot start:\n' + error.message);
+			delete this.runPromise;
+			this.logService.info('======================================');
+			this.logService.info('Update Failed:');
+			this.logService.info(error.stack);
+			this.statusbarService.addEntry({
+				text: '$(sync~spin)$(x) Failed to download required packages, please check your internet connection... (click to retry)',
+				color: inputValidationErrorBorder,
+				command: 'workbench.action.reloadWindow',
+			}, StatusbarAlignment.LEFT, 0);
+			this.notificationService.prompt(Severity.Error, localize('maix.failed-retry', 'Failed to download required packages, do you like to retry?'), [
+				{
+					label: 'Yes (' + localize('recommended', 'Recommended') + ')',
+					run: () => {
+						this.instantiationService.invokeFunction((access: ServicesAccessor) => {
+							const windowService: IWindowService = access.get(IWindowService);
+							windowService.reloadWindow();
+						});
+					},
+				}, {
+					label: 'No',
+					run() { },
+				},
+			]);
 			throw error;
 		});
 	}
 
 	protected async _run(): TPromise<void> {
+		this.logService.info('Starting update...');
 		const needUpdate = await this._checkUpdate();
 
 		if (!needUpdate.length) {
-			console.log('%c%s', 'color:green', 'no packages update needed.');
 			return;
 		}
-		console.log('%c%s', 'color:orange', 'packages update: ', needUpdate);
+		await this.logService.show();
+		if (!this.partService.isPanelMaximized()) {
+			this.partService.toggleMaximizedPanel();
+		}
+
 		return this.progressService.withProgress({
 			location: ProgressLocation.Notification,
 			title: 'updating',
@@ -161,14 +203,11 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	}
 
 	protected async _doUpdate({ project, downloadUrl, version }: IUpdateStatus, progress: IProgressFn) {
+		this.logService.info(' ---- [%s]:', project);
 		progress(null, project);
 
 		const installTarget = this.nodePathService.getPackagesPath(project);
-		if (await exists(installTarget)) {
-			await emptyDir(installTarget);
-		} else {
-			await mkdirp(installTarget);
-		}
+		this.logService.info('installTarget=%s', installTarget);
 
 		await this.downloadAndExtract(project, version, downloadUrl, installTarget, progress);
 
@@ -187,14 +226,17 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		if (await exists(this.localConfigFile)) {
 			this.localPackage = JSON.parse(await readFile(this.localConfigFile, 'utf8'));
 		}
+		this.logService.info('local package versions: %j', this.localPackage);
 
 		const list = await this.getPackageList();
+		this.logService.info('remote package list: %s', list.join(' '));
 		for (const project of list) {
 			if (project.toLowerCase() === 'maixide') {
 				continue;
 			}
 			const remoteVersion = await this.getPackage(project);
 			if (this.localPackage.hasOwnProperty(project) && remoteVersion.version === this.localPackage[project]) {
+				this.logService.info('[%s] not updated', project);
 				continue;
 			}
 
@@ -206,6 +248,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			} else {
 				throw new Error('Platform package is not exists: ' + project);
 			}
+			this.logService.info('[%s] new version [%s] download from: %s', project, remoteVersion.version, downloadUrl);
 
 			needUpdate.push({
 				downloadUrl,
@@ -213,6 +256,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 				version: remoteVersion.version,
 			});
 		}
+		this.logService.info('%d package need update', needUpdate.length);
 		return needUpdate;
 	}
 
@@ -235,14 +279,37 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		await this.extract(zipFile, installTarget);
 	}
 
+	protected async checkHashIfKnown(hash: string, file: string) {
+		const alreadyExists = await exists(file);
+		if (hash && alreadyExists) {
+			const downloadedHash = (await this.hashFile(file)).toLowerCase();
+			if (downloadedHash !== hash.toLowerCase()) {
+				this.logService.error('hash invalid!\nexpect: %s\ngot   : %s', hash.toLowerCase(), downloadedHash);
+				unlink(file);
+				return false;
+			}
+			this.logService.info('hash check pass.');
+			return true;
+		} else {
+			if (alreadyExists) {
+				this.logService.info('hash is not set, skip check.');
+			}
+			return alreadyExists;
+		}
+	}
+
 	protected async download(project: string, version: string, downloadUrl: string, installTarget: string, progress: IProgressFn) {
 		const u = parse(downloadUrl);
-		const ext = extname(u.pathname) || '.invalid';
+		let ext = extname(u.pathname).toLowerCase() || '.invalid';
+		if (/\.tar\.[a-z0-9]+$/i.test(u.pathname)) {
+			ext = '.tar' + ext;
+		}
 		const hash = (u.hash || '').replace(/^#/, '');
 		const targetFile = installTarget + '-' + version + ext;
 		const partFile = targetFile + '.partial';
 
-		if (await exists(targetFile)) {
+		if (await this.checkHashIfKnown(hash, targetFile)) {
+			this.logService.info('file exists, skip.');
 			return targetFile;
 		}
 
@@ -259,8 +326,10 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			assign(headers, { 'Proxy-Authorization': authorization });
 		}
 
+		this.logService.info('proxyUrl=%s', proxyUrl);
+		this.logService.info('strictSSL=%s', strictSSL);
+		this.logService.info('partFile=%s', partFile);
 		const agent = await getProxyAgent(downloadUrl, { proxyUrl, strictSSL });
-		console.info(downloadUrl);
 		const request = get(downloadUrl, {
 			agent,
 			strictSSL,
@@ -270,7 +339,13 @@ class PackagesUpdateService implements IPackagesUpdateService {
 
 		const requestState = request_progress(request, {});
 
+		let notifySize = false;
 		requestState.on('progress', (state: ProgressReport) => {
+			if (!notifySize) {
+				notifySize = true;
+				this.logService.info('got header: size=%s', state.size.total);
+			}
+
 			const progPercent = (state.percent * 100).toFixed(0) + '%';
 			const progSpeed = ((state.speed / 1024) / 8).toFixed(2) + ' KB/s';
 			const percent = Math.floor(state.percent * 100);
@@ -283,19 +358,17 @@ class PackagesUpdateService implements IPackagesUpdateService {
 				reject(new Error(`Error when downloading ${downloadUrl}. ${e}`));
 			});
 			requestState.on('end', () => {
+				this.logService.info('download see EOF');
 				resolve();
 			});
 			requestState.pipe(createWriteStream(partFile));
 		});
 
-		if (hash) {
-			const downloadedHash = (await this.hashFile(partFile)).toLowerCase();
-			if (downloadedHash !== hash.toLowerCase()) {
-				unlink(partFile);
-				throw new Error(`Cannot install ${project}: hash mismatch.`);
-			}
+		if (!this.checkHashIfKnown(hash, partFile)) {
+			throw new Error(`Cannot install ${project}: hash mismatch.`);
 		}
 
+		this.logService.info('move(%s, %s)', partFile, targetFile);
 		await move(partFile, targetFile);
 		return targetFile;
 	}
@@ -304,20 +377,59 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		return crypto.createHash('md5').update(await readFile(file)).digest('hex');
 	}
 
+	public unZip(file: string, target: string) {
+		return extractZip(file, target, { overwrite: true }, this.logService);
+	}
+
+	public unTar(file: string, target: string): TPromise<void> {
+		return new TPromise((resolve, reject) => {
+			const stream = createReadStream(file)
+				.pipe(gunzip())
+				.pipe(extractTar(target));
+
+			stream.on('finish', _ => resolve(void 0));
+			stream.on('error', e => reject(e));
+		});
+	}
+
 	private async extract(zipFile: string, installTarget: string) {
-		await mkdirp(installTarget + '.unzip');
-		const outFile = await decompress(zipFile, installTarget + '.unzip');
-		if (outFile.length === 0) {
-			unlink(zipFile);
-			throw new Error('Cannot decompress: download file invalid.');
+		let unzipTarget = installTarget + '.unzip';
+		this.logService.warn('rmdir(%s)', unzipTarget);
+		await rimraf(unzipTarget);
+		await mkdirp(unzipTarget);
+		try {
+			if (/\.zip$/.test(zipFile)) {
+				this.logService.info(`extract zip to: %s`, installTarget);
+				await this.unZip(zipFile, unzipTarget);
+			} else {
+				this.logService.info(`extract tar to: %s`, installTarget);
+				await this.unTar(zipFile, unzipTarget);
+			}
+			this.logService.info('Extracted complete');
+		} catch (e) {
+			this.logService.debug('decompress throw: %c%s', 'color:red', e.stack);
+			this.logService.warn('rmdir(%s)', unzipTarget);
+			await rimraf(unzipTarget);
+			// await unlink(zipFile);
+			throw new Error('Cannot decompress file: ' + e);
 		}
 
-		if (await exists(installTarget)) {
-			await emptyDir(installTarget);
-			await rmdir(installTarget);
+		const contents = await readdir(unzipTarget);
+		this.logService.info('extracted folder content: [%s]', contents.join(', '));
+		if (contents.length === 1) {
+			this.logService.debug('use only sub folder as root');
+			unzipTarget += `/${contents[0]}`;
+		} else if (contents.length === 0) {
+			throw new Error('Invalid package: empty file');
 		}
 
-		await move(installTarget + '.unzip', installTarget);
+		this.logService.info('rimraf(installTarget)');
+		await rimraf(installTarget);
+
+		this.logService.warn('rename(%s, %s)', unzipTarget, installTarget);
+		await rename(unzipTarget, installTarget);
+
+		rimraf(installTarget + '.unzip'); // remove empty folder when single sub folder mode.
 	}
 }
 

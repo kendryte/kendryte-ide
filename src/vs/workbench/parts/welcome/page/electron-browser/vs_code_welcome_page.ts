@@ -14,8 +14,8 @@ export default () => `
 <div class="welcomePageContainer">
 	<div class="welcomePage">
 		<div class="title">
-			<h1 class="caption">${escape(localize('welcomePage.vscode', "Visual Studio Code"))}</h1>
-			<p class="subtitle detail">${escape(localize({ key: 'welcomePage.editingEvolved', comment: ['Shown as subtitle on the Welcome page.'] }, "Editing evolved"))}</p>
+			<h1 class="caption">Maix IDE</h1>
+			<p class="subtitle detail">Powered by Visual Studio Code</p>
 		</div>
 		<div class="row">
 			<div class="splash">
@@ -50,6 +50,23 @@ export default () => `
 				<p class="showOnStartup"><input type="checkbox" id="showOnStartup" class="checkbox"> <label class="caption" for="showOnStartup">${escape(localize('welcomePage.showOnStartup', "Show welcome page on startup"))}</label></p>
 			</div>
 			<div class="commands">
+				<!--div class="section maix">
+					<h2 class="caption">${escape(localize('maix', "Maix"))}</h2>
+					<ul>
+						<li class="openMaixProject">
+							<button role="group" data-href="command:workbench.action.maix.open">
+								<h3 class="caption">${escape(localize('welcomePage.maixOpen.title', "Start"))}</h3>
+								<span class="detail">${escape(localize('welcomePage.maixOpen.desc', "New Maix Project"))}</span>
+							</button>
+						</li>
+						<li class="checkMaixProject">
+							<button role="group" data-href="command:workbench.action.maix.open">
+								<h3 class="caption">${escape(localize('welcomePage.maixOpen.title', "Start"))}</h3>
+								<span class="detail">${escape(localize('welcomePage.maixOpen.desc', "New Maix Project"))}</span>
+							</button>
+						</li>
+					</ul>
+				</div-->
 				<div class="section customize">
 					<h2 class="caption">${escape(localize('welcomePage.customize', "Customize"))}</h2>
 					<ul>
