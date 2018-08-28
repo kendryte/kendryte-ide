@@ -33,6 +33,9 @@ import { ChannelLogService } from 'vs/workbench/parts/maix/_library/electron-bro
 import { LogLevel } from 'vs/platform/log/common/log';
 import { IPartService } from 'vs/workbench/services/part/common/partService';
 import { inputValidationErrorBorder } from 'vs/platform/theme/common/colorRegistry';
+import product from 'vs/platform/node/product';
+import { Action } from 'vs/base/common/actions';
+import { shell } from 'electron';
 
 const distributeUrl = 'https://s3.cn-northwest-1.amazonaws.com.cn/maix-ide/';
 
@@ -119,6 +122,9 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		});
 		const entry = this.statusbarService.setStatusMessage('$(sync~spin) Updating packages... please wait...');
 		this.runPromise = this._run();
+
+		this.checkMainUpdate();
+
 		return this.runPromise.then(() => {
 			entry.dispose();
 			delete this.runPromise;
@@ -431,6 +437,42 @@ class PackagesUpdateService implements IPackagesUpdateService {
 
 		rimraf(installTarget + '.unzip'); // remove empty folder when single sub folder mode.
 	}
+
+	private async checkMainUpdate() {
+		const data = await this.getPackage('MaixIDE');
+		if (data.version !== product.commit) {
+			this.logService.warn('MaixIDE is update: local %s, remote %s', product.commit, data.version);
+			const homepage = data.homepageUrl || 'https://github.com/Canaan-Creative/maix-ide/releases';
+			this.logService.info('remote url: %s', homepage);
+			this.notificationService.prompt(Severity.Info, 'MaixIDE has updated.\n', [
+				new OpenDownloadAction(homepage),
+				{
+					label: 'Not now',
+					run() { },
+				},
+			]);
+		}
+	}
 }
 
 registerSingleton(IPackagesUpdateService, PackagesUpdateService);
+
+class OpenDownloadAction extends Action {
+	public static readonly ID = 'workbench.action.maix.homepage';
+	public static readonly LABEL = localize('MaixIOEditor', 'Update now');
+
+	constructor(
+		private url: string,
+	) {
+		super(OpenDownloadAction.ID, OpenDownloadAction.LABEL);
+	}
+
+	public run(event?: any): TPromise<boolean> {
+		return new TPromise<boolean>((resolve, reject) => {
+			resolve(shell.openExternal(this.url, undefined, e => reject(e)));
+		});
+	}
+
+	public dispose(): void {
+	}
+}
