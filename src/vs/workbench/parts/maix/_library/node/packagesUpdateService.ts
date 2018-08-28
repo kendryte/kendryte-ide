@@ -24,7 +24,7 @@ import { getProxyAgent } from 'vs/base/node/proxy';
 import { assign } from 'vs/base/common/objects';
 import { IStatusbarService } from 'vs/platform/statusbar/common/statusbar';
 
-const distributeUrl = 'https://raw.githubusercontent.com/Canaan-Creative/release-registry/master/';
+const distributeUrl = 'https://s3.cn-northwest-1.amazonaws.com.cn/maix-ide/';
 
 interface IUpdateStatus {
 	project: string;

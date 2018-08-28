@@ -18,7 +18,7 @@
 	"darwinBundleIdentifier": "io.canaan.maix.ide",
 	"reportIssueUrl": "https://github.com/Canaan-Creative/maix-ide/issues/new",
 	"urlProtocol": "maix-ide",
-	"updateUrl": "https://maix.canaan.io/_update/",
+	"updateUrl": "https://s3.cn-northwest-1.amazonaws.com.cn/maix-ide/",
 	"commit": "git-0.0.1-maix",
 	"quality": "insider",
 	"extensionsGallery": {
