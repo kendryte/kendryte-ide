@@ -25,7 +25,7 @@ import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { ChannelLogService } from 'vs/workbench/parts/maix/_library/electron-browser/channelLog';
 import { IPartService } from 'vs/workbench/services/part/common/partService';
 import { inputValidationErrorBorder } from 'vs/platform/theme/common/colorRegistry';
-import product from 'vs/platform/node/product';
+import packageJson from 'vs/platform/node/package';
 import { Action } from 'vs/base/common/actions';
 import { shell } from 'electron';
 import { INodeRequestService } from 'vs/workbench/parts/maix/_library/node/nodeRequestService';
@@ -417,14 +417,14 @@ class PackagesUpdateService implements IPackagesUpdateService {
 
 	private async checkMainUpdate() {
 		if (!this.environmentService.isBuilt) {
-			this.logService.info('MaixIDE update disabled (dev mode).');
+			this.logService.info('MaixIDE update disabled (dev mode): %s', packageJson.version);
 			return;
 		}
 		const data = await this.getPackage('MaixIDE');
-		if (data.version === product.date) {
+		if (data.version === packageJson.version) {
 			this.logService.info('MaixIDE is up to date: [%s].', data.version);
 		} else {
-			this.logService.warn('MaixIDE is update: local %s, remote %s', product.date, data.version);
+			this.logService.warn('MaixIDE is update: local %s, remote %s', packageJson.version, data.version);
 			const homepage = data.homepageUrl || 'https://github.com/Canaan-Creative/maix-ide/releases';
 			this.logService.info('remote url: %s', homepage);
 			this.notificationService.prompt(Severity.Info, 'MaixIDE has updated.\n', [
