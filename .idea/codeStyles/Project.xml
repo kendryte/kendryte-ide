@@ -35,8 +35,6 @@
       <option name="ENFORCE_TRAILING_COMMA" value="WhenMultiline" />
       <option name="SPACES_WITHIN_OBJECT_LITERAL_BRACES" value="true" />
       <option name="SPACES_WITHIN_IMPORTS" value="true" />
-      <option name="SPACES_WITHIN_UNION_TYPES" value="false" />
-      <option name="SPACES_WITHIN_OBJECT_TYPE_BRACES" value="false" />
       <option name="IMPORT_PREFER_ABSOLUTE_PATH" value="TRUE" />
     </TypeScriptCodeStyleSettings>
     <XML>
@@ -166,11 +164,9 @@
     <codeStyleSettings language="TypeScript">
       <option name="RIGHT_MARGIN" value="180" />
       <option name="KEEP_BLANK_LINES_IN_CODE" value="1" />
-      <option name="INDENT_CASE_FROM_SWITCH" value="false" />
       <option name="ALIGN_MULTILINE_CHAINED_METHODS" value="true" />
       <option name="ALIGN_MULTILINE_BINARY_OPERATION" value="true" />
       <option name="ALIGN_MULTILINE_EXTENDS_LIST" value="true" />
-      <option name="SPACE_BEFORE_QUEST" value="false" />
       <option name="CALL_PARAMETERS_LPAREN_ON_NEXT_LINE" value="true" />
       <option name="CALL_PARAMETERS_RPAREN_ON_NEXT_LINE" value="true" />
       <option name="METHOD_PARAMETERS_WRAP" value="5" />

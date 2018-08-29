@@ -23,7 +23,7 @@
 	"urlProtocol": "maix-ide",
 	"updateUrl": "https://s3.cn-northwest-1.amazonaws.com.cn/maix-ide/",
 	"commit": "git-0.0.1-maix",
-	"quality": "insider",
+	"quality": "beta",
 	"extensionsGallery": {
 		"serviceUrl": "https://marketplace.visualstudio.com/_apis/public/gallery",
 		"cacheUrl": "https://vscode.blob.core.windows.net/gallery/index",

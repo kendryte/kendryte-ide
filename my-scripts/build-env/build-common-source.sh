@@ -26,10 +26,7 @@ if [ ! -e "${RELEASE_ROOT}/.git" ]; then
 fi
 
 LOCK="${VSCODE_ROOT}/yarn.lock"
-if hash_deps_check_changed yarn "${LOCK}" ; then
-	############# install or check dependencies
-	step "Yarn" \
-		yarn
+############# install or check dependencies
+step "Yarn" \
+	yarn
 	
-	hash_deps_save yarn "${LOCK}"
-fi

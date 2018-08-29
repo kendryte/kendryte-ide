@@ -1,8 +1,8 @@
 //// included by "vs/workbench/workbench.main.ts"
 
 // misc
-// import 'vs/workbench/parts/maix/_library/electron-browser/statusbarColor';
 import 'vs/workbench/parts/maix/_library/node/nodePathService';
+import 'vs/workbench/parts/maix/_library/node/nodeRequestService';
 import 'vs/workbench/parts/maix/_library/electron-browser/packagesUpdateService';
 // Settings sections
 import 'vs/workbench/parts/maix/config/browser/categoryContribution';

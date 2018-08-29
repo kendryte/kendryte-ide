@@ -3,9 +3,7 @@ import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiati
 import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { exists, fileExists, mkdirp, readFile } from 'vs/base/node/pfs';
-import { getSDKPath, getToolchainBinPath } from 'vs/workbench/parts/maix/_library/node/nodePath';
+import { exists, fileExists, mkdirp, readFile, rimraf } from 'vs/base/node/pfs';
 import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
 import { createConnection, Socket } from 'net';
 import { TPromise } from 'vs/base/common/winjs.base';
@@ -36,7 +34,6 @@ import {
 } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/message';
 import { resolve } from 'path';
 import { CMakeCache } from 'vs/workbench/parts/maix/cmake/node/cmakeCache';
-import { emptyDir } from 'fs-extra';
 import { isWindows } from 'vs/base/common/platform';
 import { LineData, LineProcess } from 'vs/base/node/processes';
 import { Executable } from 'vs/base/common/processes';
@@ -46,6 +43,8 @@ import { StatusBarController } from 'vs/workbench/parts/maix/cmake/common/status
 import { CMAKE_TARGET_TYPE } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/config';
 import { MaixBuildSystemPrepare, MaixBuildSystemReload } from 'vs/workbench/parts/maix/cmake/electron-browser/maixBuildSystemService';
 import { IPackagesUpdateService } from 'vs/workbench/parts/maix/_library/electron-browser/packagesUpdateService';
+import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
+import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
 
 export class Deferred extends TPromise<ICMakeResponse, ICMakeProtocolProgress> {
 	private _resolver: (value: ICMakeResponse) => void;
@@ -114,6 +113,7 @@ export class CMakeService implements ICMakeService {
 		@ILifecycleService lifecycleService: ILifecycleService,
 		@IOutputService protected outputService: IOutputService,
 		@IPackagesUpdateService packagesUpdateService: IPackagesUpdateService,
+		@INodePathService private nodePathService: INodePathService,
 	) {
 		this.outputChannel = outputService.getChannel(CMAKE_CHANNEL);
 		// this.installExtension('twxs.cmake');
@@ -124,9 +124,6 @@ export class CMakeService implements ICMakeService {
 		this.localEnv.MAIX_IDE = 'yes';
 
 		this.localDefine = [];
-		for (const name of Object.keys(this.localEnv)) {
-			this.localDefine.push(`-D${name}=${this.localEnv[name]}`);
-		}
 		this.localDefine.push(`-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE`);
 
 		lifecycleService.when(LifecyclePhase.Running).then(() => {
@@ -142,8 +139,8 @@ export class CMakeService implements ICMakeService {
 	}
 
 	init(access: ServicesAccessor) {
-		this.localEnv.TOOLCHAIN = getToolchainBinPath(access.get(IEnvironmentService));
-		this.localEnv.SDK = getSDKPath(access.get(IEnvironmentService));
+		this.localEnv.TOOLCHAIN = this.nodePathService.getToolchainBinPath();
+		this.localEnv.SDK = this.nodePathService.getSDKPath();
 
 		this.statusBarController = this.instantiationService.invokeFunction(addStatusBarCmakeButtons);
 
@@ -475,7 +472,7 @@ ${JSON.stringify(payload)}
 		this.log('    the build dir is: %s', buildFolder);
 
 		this.log('deleting files...');
-		await emptyDir(buildFolder);
+		await rimraf(buildFolder);
 		this.log('OK.');
 	}
 
@@ -485,7 +482,17 @@ ${JSON.stringify(payload)}
 			return;
 		}
 
-		const configArgs = ['--no-warn-unused-cli', '-Wno-dev', ...this.localDefine];
+		const envDefine: string[] = [];
+		for (const name of Object.keys(this.localEnv)) {
+			const value = this.localEnv[name];
+			if (value) {
+				envDefine.push(`-D${name}=${value}`);
+			} else {
+				this.log('  empty key: %s', name);
+			}
+		}
+
+		const configArgs = ['--no-warn-unused-cli', '-Wno-dev', ...this.localDefine, ...envDefine];
 		if (this.selectedVariant) {
 			configArgs.push(`-DCMAKE_BUILD_TYPE:STRING=${this.selectedVariant}`);
 		}
@@ -674,6 +681,11 @@ ${JSON.stringify(payload)}
 	}
 
 	private getCMakeToRun(): { root: string, bins: string, cmake: string } {
-		throw new Error('getCmakeToRun');
+		const cmake = this.nodePathService.getPackagesPath('cmake');
+		return {
+			root: cmake,
+			bins: resolve(cmake, 'bin'),
+			cmake: resolve(cmake, 'bin/cmake' + executableExtension),
+		};
 	}
 }

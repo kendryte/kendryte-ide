@@ -24,13 +24,17 @@ export interface INodePathService {
 	getSDKPath(): string;
 
 	getPackagesPath(project?: string): string;
+
+	rawToolchainPath(): string;
+
+	rawSDKPath(): string;
 }
 
 class NodePathService implements INodePathService {
 	_serviceBrand: any;
 
-	private sdkPathCache: string;
-	private toolchainPathCache: string;
+	private sdkPathExists: boolean;
+	private toolchainPathExists: boolean;
 
 	constructor(
 		@IEnvironmentService protected environmentService: IEnvironmentService,
@@ -65,40 +69,52 @@ class NodePathService implements INodePathService {
 		return rel ? resolve(rel, 'bin') : '';
 	}
 
+	rawToolchainPath() {
+		return resolve(this.getInstallPath(), 'packages/toolchain');
+	}
+
 	getToolchainPath() {
-		if (!this.toolchainPathCache) {
-			let path = resolve(this.getInstallPath(), 'packages/toolchain');
-			try {
-				if (lstatSync(resolve(path, 'bin/')).isDirectory()) {
-					this.toolchainPathCache = path;
-				}
-			} catch (e) { // noop
-			}
-			if (this.toolchainPathCache) {
-				console.log('%cToolchain is found at %s.', 'color:green', path);
-			} else {
-				console.log('%cToolchain is expected to be found at %s, But not found.', 'color:red', path);
-			}
+		const path = this.rawToolchainPath();
+		if (this.toolchainPathExists) {
+			return path;
+		} else if (this.toolchainPathExists === false) {
+			return '';
 		}
-		return this.toolchainPathCache || '';
+		try {
+			this.toolchainPathExists = lstatSync(resolve(path, 'bin/')).isDirectory();
+		} catch (e) { // noop
+		}
+		if (this.toolchainPathExists) {
+			console.log('%cToolchain is found at %s.', 'color:green', path);
+			return path;
+		} else {
+			console.log('%cToolchain is expected to be found at %s, But not found.', 'color:red', path);
+			return '';
+		}
+	}
+
+	rawSDKPath() {
+		return resolve(this.getInstallPath(), 'packages/SDK');
 	}
 
 	getSDKPath() {
-		if (!this.sdkPathCache) {
-			let path = resolve(this.getInstallPath(), 'packages/SDK');
-			try {
-				if (lstatSync(resolve(path, 'cmake/')).isDirectory()) {
-					this.sdkPathCache = path;
-				}
-			} catch (e) { // noop
-			}
-			if (this.sdkPathCache) {
-				console.log('%cSDK is found at %s.', 'color:green', path);
-			} else {
-				console.log('%cSDK is expected to be found at %s, But not found.', 'color:red', path);
-			}
+		const path = this.rawSDKPath();
+		if (this.sdkPathExists) {
+			return path;
+		} else if (this.sdkPathExists === false) {
+			return '';
 		}
-		return this.sdkPathCache;
+		try {
+			this.sdkPathExists = lstatSync(resolve(path, 'cmake/')).isDirectory();
+		} catch (e) { // noop
+		}
+		if (this.sdkPathExists) {
+			console.log('%cSDK is found at %s.', 'color:green', path);
+			return path;
+		} else {
+			console.log('%cSDK is expected to be found at %s, But not found.', 'color:red', path);
+			return '';
+		}
 	}
 }
 

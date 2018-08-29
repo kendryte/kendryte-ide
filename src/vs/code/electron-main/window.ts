@@ -191,6 +191,7 @@ export class CodeWindow implements ICodeWindow {
 
 		// Create the browser window.
 		this._win = new BrowserWindow(options);
+		// this._win.webContents.openDevTools({mode:'detach'});
 		this._id = this._win.id;
 
 		if (useCustomTitleStyle) {
@@ -546,7 +547,7 @@ export class CodeWindow implements ICodeWindow {
 
 		// Make window visible if it did not open in N seconds because this indicates an error
 		// Only do this when running out of sources and not when running tests
-		if (!this.environmentService.isBuilt && !this.environmentService.extensionTestsPath) {
+		if (!this.environmentService.extensionTestsPath) {
 			this.showTimeoutHandle = setTimeout(() => {
 				if (this._win && !this._win.isVisible() && !this._win.isMinimized()) {
 					this._win.show();

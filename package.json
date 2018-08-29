@@ -26,10 +26,8 @@
     "check-monaco-editor-compilation": "tsc -p src/tsconfig.monaco.json --noEmit"
   },
   "dependencies": {
-    "@octokit/rest": "^15.9.6",
     "applicationinsights": "0.18.0",
     "fast-plist": "0.1.2",
-    "fs-extra": "^7.0.0",
     "gc-signals": "^0.0.1",
     "getmac": "1.4.1",
     "graceful-fs": "4.1.11",
@@ -44,6 +42,7 @@
     "native-keymap": "1.2.5",
     "native-watchdog": "0.3.0",
     "node-pty": "0.7.6",
+    "request": "^2.88.0",
     "request-progress": "^3.0.0",
     "semver": "^5.5.0",
     "serialport": "^6.2.2",
@@ -51,7 +50,6 @@
     "split2": "^3.0.0",
     "sudo-prompt": "8.2.0",
     "tar-fs": "^1.16.3",
-    "url-exists": "^1.0.3",
     "v8-inspect-profiler": "^0.0.8",
     "vscode-chokidar": "1.6.2",
     "vscode-debugprotocol": "1.31.0",

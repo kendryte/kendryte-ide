@@ -33,11 +33,13 @@ BUILD_COMMIT=$(node -p "require(\"${VSCODE_ROOT}/product.json\").commit")
 
 
 ############# run check
-step "Hygiene" \
-	npm run gulp -- hygiene
-
-step "Monaco Editor Check" \
-	./node_modules/.bin/tsc -p ./src/tsconfig.monaco.json --noEmit
+if ! echo "$*" | grep -q -- '--no-check' ; then
+	step "Hygiene" \
+		npm run gulp -- hygiene
+	
+	step "Monaco Editor Check" \
+		./node_modules/.bin/tsc -p ./src/tsconfig.monaco.json --noEmit
+fi
 
 ############# download electron executable
 step "Get Electron" \

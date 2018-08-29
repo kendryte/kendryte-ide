@@ -2,25 +2,18 @@ import request_progress = require('request-progress');
 import gunzip = require('gunzip-maybe');
 import { IPackageVersion } from 'vs/workbench/parts/maix/cmake/common/type';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { asJson, asText, IRequestOptions } from 'vs/base/node/request';
 import { parse, resolve as resolveUrl } from 'url';
 import { OperatingSystem, OS } from 'vs/base/common/platform';
 import { is64Bit } from 'vs/workbench/parts/maix/_library/node/versions';
-import { IHTTPConfiguration, IRequestService } from 'vs/platform/request/node/request';
 import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
 import { exists, mkdirp, readdir, readFile, rename, rimraf, unlink, writeFile } from 'vs/base/node/pfs';
-import { move } from 'fs-extra';
 import { IProgressService2, IProgressStep, ProgressLocation } from 'vs/workbench/services/progress/common/progress';
 import { IProgress } from 'vs/platform/progress/common/progress';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { createDecorator, IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
-import { get } from 'request';
 import { extname } from 'path';
 import { createReadStream, createWriteStream } from 'fs';
 import * as crypto from 'crypto';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { getProxyAgent } from 'vs/base/node/proxy';
-import { assign } from 'vs/base/common/objects';
 import { IStatusbarService, StatusbarAlignment } from 'vs/platform/statusbar/common/statusbar';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import Severity from 'vs/base/common/severity';
@@ -30,12 +23,13 @@ import { extract as extractZip } from 'vs/base/node/zip';
 import { extract as extractTar } from 'tar-fs';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { ChannelLogService } from 'vs/workbench/parts/maix/_library/electron-browser/channelLog';
-import { LogLevel } from 'vs/platform/log/common/log';
 import { IPartService } from 'vs/workbench/services/part/common/partService';
 import { inputValidationErrorBorder } from 'vs/platform/theme/common/colorRegistry';
 import product from 'vs/platform/node/product';
 import { Action } from 'vs/base/common/actions';
 import { shell } from 'electron';
+import { INodeRequestService } from 'vs/workbench/parts/maix/_library/node/nodeRequestService';
+import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 
 const distributeUrl = 'https://s3.cn-northwest-1.amazonaws.com.cn/maix-ide/';
 
@@ -64,22 +58,21 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	private arch: string;
 	private localPackage: { [packageName: string]: string } = {};
 	private readonly localConfigFile: string;
-	private runPromise: TPromise<void>;
+	private runPromise: TPromise<any>;
 	private logService: ChannelLogService;
 
 	constructor(
-		@IRequestService private requestService: IRequestService,
 		@INodePathService private nodePathService: INodePathService,
-		@IConfigurationService private configurationService: IConfigurationService,
+		@INodeRequestService private nodeRequestService: INodeRequestService,
 		@INotificationService private notificationService: INotificationService,
 		@IInstantiationService private instantiationService: IInstantiationService,
 		@IProgressService2 private progressService: IProgressService2,
 		@IStatusbarService private statusbarService: IStatusbarService,
 		@ILifecycleService private lifecycleService: ILifecycleService,
+		@IEnvironmentService private environmentService: IEnvironmentService,
 		@IPartService private partService: IPartService,
 	) {
 		this.logService = instantiationService.createInstance(ChannelLogService, 'maix-updator', 'Maix Update');
-		this.logService.setLevel(LogLevel.Trace);
 		switch (OS) {
 			case OperatingSystem.Windows:
 				this.platform = 'windows';
@@ -121,9 +114,10 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			}
 		});
 		const entry = this.statusbarService.setStatusMessage('$(sync~spin) Updating packages... please wait...');
-		this.runPromise = this._run();
-
-		this.checkMainUpdate();
+		this.runPromise = TPromise.join([
+			this._run(),
+			this.checkMainUpdate(),
+		]);
 
 		return this.runPromise.then(() => {
 			entry.dispose();
@@ -242,7 +236,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			}
 			const remoteVersion = await this.getPackage(project);
 			if (this.localPackage.hasOwnProperty(project) && remoteVersion.version === this.localPackage[project]) {
-				this.logService.info('[%s] not updated', project);
+				this.logService.info('[%s] not updated: local [%s], remote [%s]', project, remoteVersion.version, this.localPackage[project]);
 				continue;
 			}
 
@@ -254,7 +248,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			} else {
 				throw new Error('Platform package is not exists: ' + project);
 			}
-			this.logService.info('[%s] new version [%s] download from: %s', project, remoteVersion.version, downloadUrl);
+			this.logService.info('[%s] new version [%s]', project, remoteVersion.version);
 
 			needUpdate.push({
 				downloadUrl,
@@ -267,14 +261,16 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	}
 
 	protected async getPackage(packageName: string): TPromise<IPackageVersion> {
-		const req: IRequestOptions = { type: 'GET', url: resolveUrl(distributeUrl, 'projects/' + packageName + '.json') };
-		const res = await this.requestService.request(req);
-		return await asJson<IPackageVersion>(res);
+		const url = resolveUrl(distributeUrl, 'projects/' + packageName + '.json');
+		this.logService.info('get package %s info from %s', packageName, url);
+		const body = await this.nodeRequestService.getBody(url);
+		return JSON.parse(body) as IPackageVersion;
 	}
 
 	protected getPackageList(): TPromise<string[]> {
-		const req: IRequestOptions = { type: 'GET', url: resolveUrl(distributeUrl, 'projects.lst') };
-		return this.requestService.request(req).then(asText).then((content) => {
+		const url = resolveUrl(distributeUrl, 'projects.lst');
+		this.logService.info('get package list from %s', url);
+		return this.nodeRequestService.getBody(url).then((content) => {
 			return content.split(/\n/g).map(e => e.trim()).filter(e => e.length > 0);
 		});
 	}
@@ -319,31 +315,12 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			return targetFile;
 		}
 
-		const config: IHTTPConfiguration = this.configurationService.getValue<IHTTPConfiguration>();
-
-		const proxyUrl = config.http && config.http.proxy;
-		const strictSSL = config.http && config.http.proxyStrictSSL;
-		const authorization = config.http && config.http.proxyAuthorization;
-
-		const headers = {
-			'user-agent': 'maix-ide, Visual Studio Code, Chrome',
-		};
-		if (authorization) {
-			assign(headers, { 'Proxy-Authorization': authorization });
-		}
-
-		this.logService.info('proxyUrl=%s', proxyUrl);
-		this.logService.info('strictSSL=%s', strictSSL);
+		this.logService.info('downloadUrl=%s', downloadUrl);
 		this.logService.info('partFile=%s', partFile);
-		const agent = await getProxyAgent(downloadUrl, { proxyUrl, strictSSL });
-		const request = get(downloadUrl, {
-			agent,
-			strictSSL,
-			followAllRedirects: true,
-			headers,
-		});
 
-		const requestState = request_progress(request, {});
+		const response = await this.nodeRequestService.raw('GET', downloadUrl);
+
+		const requestState = request_progress(response, {});
 
 		let notifySize = false;
 		requestState.on('progress', (state: ProgressReport) => {
@@ -375,7 +352,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		}
 
 		this.logService.info('move(%s, %s)', partFile, targetFile);
-		await move(partFile, targetFile);
+		await rename(partFile, targetFile);
 		return targetFile;
 	}
 
@@ -413,11 +390,11 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			}
 			this.logService.info('Extracted complete');
 		} catch (e) {
-			this.logService.debug('decompress throw: %c%s', 'color:red', e.stack);
+			this.logService.debug('decompress throw: %s', e.stack);
 			this.logService.warn('rmdir(%s)', unzipTarget);
 			await rimraf(unzipTarget);
-			// await unlink(zipFile);
-			throw new Error('Cannot decompress file: ' + e);
+			await unlink(zipFile);
+			throw new Error('Cannot decompress file: ' + zipFile + ' \nError:' + e);
 		}
 
 		const contents = await readdir(unzipTarget);
@@ -439,9 +416,15 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	}
 
 	private async checkMainUpdate() {
+		if (!this.environmentService.isBuilt) {
+			this.logService.info('MaixIDE update disabled (dev mode).');
+			return;
+		}
 		const data = await this.getPackage('MaixIDE');
-		if (data.version !== product.commit) {
-			this.logService.warn('MaixIDE is update: local %s, remote %s', product.commit, data.version);
+		if (data.version === product.date) {
+			this.logService.info('MaixIDE is up to date: [%s].', data.version);
+		} else {
+			this.logService.warn('MaixIDE is update: local %s, remote %s', product.date, data.version);
 			const homepage = data.homepageUrl || 'https://github.com/Canaan-Creative/maix-ide/releases';
 			this.logService.info('remote url: %s', homepage);
 			this.notificationService.prompt(Severity.Info, 'MaixIDE has updated.\n', [

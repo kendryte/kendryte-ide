@@ -1,5 +1,4 @@
-import { getSDKPath, getToolchainPath } from 'vs/workbench/parts/maix/_library/node/nodePath';
-import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { ConfigurationTarget, IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { Extensions as CategoryExtensions, IConfigCategoryRegistry } from 'vs/workbench/parts/maix/_library/common/type';
 import { Extensions as ConfigurationExtensions, IConfigurationPropertySchema, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
@@ -9,34 +8,42 @@ import { LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { readdirSync } from 'vs/base/node/extfs';
 import { resolve } from 'path';
+import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
+import { CMAKE_PATH_CONFIG_ID, CMAKE_USE_SERVER_CONFIG_ID } from 'vs/workbench/parts/maix/cmake/common/config';
+import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
 
 interface SettingsOverwiter<T> {
-	(this: IEnvironmentService, old: T): T;
+	(access: ServicesAccessor, old: T): T;
 }
 
 const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
-	'cmake.generator'() {
+	[CMAKE_PATH_CONFIG_ID](access: ServicesAccessor, ) {
+		const nodePathService = access.get<INodePathService>(INodePathService);
+		return nodePathService.getPackagesPath('cmake/bin/cmake' + executableExtension);
+	},
+	[CMAKE_USE_SERVER_CONFIG_ID](access: ServicesAccessor, ) {
+		return true;
+	},
+	'cmake.generator'(access) {
 		return 'Unix Makefiles';
 	},
-	'C_Cpp.default.includePath'() {
+	'C_Cpp.default.includePath'(access: ServicesAccessor, current) {
+		const nodePathService = access.get<INodePathService>(INodePathService);
 		const ret: string[] = [];
-		const sdk = getSDKPath(this);
-		if (sdk) {
-			ret.push(sdk + '/include');
-		}
-		const toolchain = getToolchainPath(this);
-		if (toolchain) {
-			ret.push(resolve(toolchain, 'riscv64-unknown-elf/include'));
+		const sdk = nodePathService.rawSDKPath();
+		ret.push(sdk + '/include');
 
-			const libgcc = resolve(toolchain, 'lib/gcc/riscv64-unknown-elf');
-			const libgccVersion = readdirSync(libgcc)[0];
-			ret.push(resolve(libgcc, libgccVersion, 'include'));
+		const toolchain = nodePathService.rawToolchainPath();
+		ret.push(resolve(toolchain, 'riscv64-unknown-elf/include'));
 
-			const libcpp = resolve(toolchain, 'riscv64-unknown-elf/include/c++');
-			const libcppVersion = readdirSync(libcpp)[0];
-			ret.push(resolve(libcpp, libcppVersion));
-			ret.push(resolve(libcpp, libcppVersion, 'riscv64-unknown-elf'));
-		}
+		const libgcc = resolve(toolchain, 'lib/gcc/riscv64-unknown-elf');
+		const libgccVersion = readdirSync(libgcc)[0];
+		ret.push(resolve(libgcc, libgccVersion, 'include'));
+
+		const libcpp = resolve(toolchain, 'riscv64-unknown-elf/include/c++');
+		const libcppVersion = readdirSync(libcpp)[0];
+		ret.push(resolve(libcpp, libcppVersion));
+		ret.push(resolve(libcpp, libcppVersion, 'riscv64-unknown-elf'));
 		return ret;
 	},
 };
@@ -46,7 +53,7 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 	private categoryRegistry = Registry.as<IConfigCategoryRegistry>(CategoryExtensions.ConfigCategory);
 
 	constructor(
-		@IInstantiationService instantiationService: IInstantiationService,
+		@IInstantiationService private instantiationService: IInstantiationService,
 		@IEnvironmentService private environmentService: IEnvironmentService,
 		@IConfigurationService private configurationService: IConfigurationService,
 	) {
@@ -63,7 +70,7 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 		if (overwrite) {
 			const old = this.configurationService.inspect(key);
 			/// if (!old.user) {
-			const value = overwrite.call(this.environmentService, old.user || old.default);
+			const value = this.instantiationService.invokeFunction(overwrite, old.user || old.default);
 			if (typeof value !== 'undefined') {
 				this.configurationService.updateValue(key, value, ConfigurationTarget.USER);
 			}
@@ -83,7 +90,7 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 		ignore(data, '.idea', changed);
 		ignore(data, 'config/fpioa.cfg', changed);
 		if (this.environmentService.isBuilt) {
-			for (const part of ['CMakeCache.txt', 'CMakeFiles', 'cmake_install.cmake', 'CMakeLists.txt', 'compile_commands.json', 'Makefile']) {
+			for (const part of ['CMakeFiles', 'cmake_install.cmake', 'CMakeLists.txt', 'compile_commands.json', 'Makefile', 'SDK']) {
 				ignore(data, 'build/' + part, changed);
 			}
 		}
