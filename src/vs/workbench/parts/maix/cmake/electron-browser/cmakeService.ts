@@ -3,7 +3,7 @@ import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiati
 import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
-import { exists, fileExists, mkdirp, readFile, rimraf } from 'vs/base/node/pfs';
+import { exists, fileExists, mkdirp, readFile, rename, rimraf, writeFile } from 'vs/base/node/pfs';
 import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
 import { createConnection, Socket } from 'net';
 import { TPromise } from 'vs/base/common/winjs.base';
@@ -32,7 +32,6 @@ import {
 	ICMakeProtocolHello,
 	ICMakeProtocolSetGlobalSettings,
 } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/message';
-import { resolve } from 'path';
 import { CMakeCache } from 'vs/workbench/parts/maix/cmake/node/cmakeCache';
 import { isWindows } from 'vs/base/common/platform';
 import { LineData, LineProcess } from 'vs/base/node/processes';
@@ -45,6 +44,7 @@ import { MaixBuildSystemPrepare, MaixBuildSystemReload } from 'vs/workbench/part
 import { IPackagesUpdateService } from 'vs/workbench/parts/maix/_library/electron-browser/packagesUpdateService';
 import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
+import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 
 export interface IPromiseProgress<T> {
 	progress(fn: (p: T) => void): void;
@@ -66,7 +66,7 @@ export class Deferred extends TPromise<ICMakeResponse> implements IPromiseProgre
 		this.cbList = [];
 	}
 
-	resolve(response: ICMakeResponse): void {
+	resolvePath(response: ICMakeResponse): void {
 		this._resolver(response);
 	}
 
@@ -175,16 +175,18 @@ export class CMakeService implements ICMakeService {
 		this.outputChannel.clear();
 		const cmakePath = this.getCMakeToRun();
 
-		await mkdirp(resolve(this._currentFolder, '.vscode'));
+		this.log('_currentFolder=%s', this._currentFolder);
+		await mkdirp(resolvePath(this._currentFolder, '.vscode'));
 
-		let pipeFile = resolve(this._currentFolder, '.vscode/.cmserver-pipe-' + (Date.now()).toFixed(0));
+		let pipeFile = resolvePath(this._currentFolder, '.vscode/.cmserver-pipe-' + (Date.now()).toFixed(0));
+		this.log('pipeFile=%s', pipeFile);
 
 		if (process.platform === 'win32') {
 			pipeFile = '\\\\?\\pipe\\' + pipeFile;
 		}
 		this.cmakePipeFile = pipeFile;
 
-		let staticEnvFile = resolve(this._currentFolder, '.vscode/cmake-env.json');
+		let staticEnvFile = resolvePath(this._currentFolder, '.vscode/cmake-env.json');
 		let staticEnv: any = {};
 		if (await fileExists(staticEnvFile)) {
 			staticEnv = JSON.parse(await readFile(staticEnvFile, 'utf8'));
@@ -239,7 +241,7 @@ export class CMakeService implements ICMakeService {
 			});
 			pipe.on('end', () => {
 				pipe.end();
-				resolve(undefined);
+				resolvePath(undefined);
 			});
 		});
 
@@ -324,7 +326,7 @@ export class CMakeService implements ICMakeService {
 			}
 			switch (protocolData.type) {
 				case CMAKE_EVENT_TYPE.REPLY:
-					dfd.resolve(protocolData as ICMakeProtocolReply);
+					dfd.resolvePath(protocolData as ICMakeProtocolReply);
 					return;
 				case CMAKE_EVENT_TYPE.ERROR:
 					const err = protocolData as ICMakeProtocolError;
@@ -339,7 +341,7 @@ export class CMakeService implements ICMakeService {
 		switch (protocolData.type) {
 			case CMAKE_EVENT_TYPE.HELLO:
 				this.initBaseConfigWhenHello(protocolData as ICMakeProtocolHello).then(() => {
-					this.cmakeConnectionStablePromise.resolve(void 0);
+					this.cmakeConnectionStablePromise.resolvePath(void 0);
 				}, (e) => {
 					this.cmakeConnectionStablePromise.reject(e);
 				});
@@ -420,7 +422,7 @@ ${JSON.stringify(payload)}
 	}
 
 	get buildPath() {
-		return resolve(this._currentFolder, 'build');
+		return resolvePath(this._currentFolder, 'build');
 	}
 
 	private async initBaseConfigWhenHello(hello: ICMakeProtocolHello) {
@@ -430,11 +432,11 @@ ${JSON.stringify(payload)}
 			type: CMAKE_EVENT_TYPE.HANDSHAKE,
 			buildDirectory: buildFolder,
 			protocolVersion: hello.supportedProtocolVersions[0],
-			sourceDirectory: this._buildingSDK ? resolve(this._currentFolder, 'cmake') : this._currentFolder,
+			sourceDirectory: this._buildingSDK ? resolvePath(this._currentFolder, 'cmake') : this._currentFolder,
 			generator: isWindows ? 'MinGW Makefiles' : 'Unix Makefiles',
 		};
 
-		const tmpCache = await CMakeCache.fromPath(resolve(buildFolder, 'CMakeCache.txt'));
+		const tmpCache = await CMakeCache.fromPath(resolvePath(buildFolder, 'CMakeCache.txt'));
 		const srcDir = tmpCache.get('CMAKE_HOME_DIRECTORY');
 		if (srcDir) {
 			handshake.sourceDirectory = srcDir.value;
@@ -458,12 +460,12 @@ ${JSON.stringify(payload)}
 		if (!newCurrent) {
 			return false;
 		}
-		let listFile = resolve(newCurrent, 'CMakeLists.txt');
+		let listFile = resolvePath(newCurrent, 'CMakeLists.txt');
 		if (await exists(listFile)) {
 			const content = await readFile(listFile, 'utf8');
 			if (content.indexOf('BUILDING_SDK') !== -1) {
 				this._buildingSDK = true;
-				this._mainCMakeList = resolve(newCurrent, 'cmake/CMakeLists.txt');
+				this._mainCMakeList = resolvePath(newCurrent, 'cmake/CMakeLists.txt');
 			} else {
 				this._mainCMakeList = listFile;
 			}
@@ -516,6 +518,8 @@ ${JSON.stringify(payload)}
 		} as ICMakeProtocolCompute);
 
 		this.alreadyConfigured = true;
+
+		await this.notifyCppExtension();
 	}
 
 	public async build(): TPromise<void> {
@@ -694,8 +698,45 @@ ${JSON.stringify(payload)}
 		const cmake = this.nodePathService.getPackagesPath('cmake');
 		return {
 			root: cmake,
-			bins: resolve(cmake, 'bin'),
-			cmake: resolve(cmake, 'bin/cmake' + executableExtension),
+			bins: resolvePath(cmake, 'bin'),
+			cmake: resolvePath(cmake, 'bin/cmake' + executableExtension),
 		};
+	}
+
+	private async notifyCppExtension() {
+		const cppExtConfigFile = resolvePath(this._currentFolder, '.vscode/c_cpp_properties.json');
+		this.log('write config to %s', cppExtConfigFile);
+		await mkdirp(resolvePath(this._currentFolder, '.vscode'));
+
+		let content: any = {};
+		if (await exists(cppExtConfigFile)) {
+			try {
+				content = JSON.parse(await readFile(cppExtConfigFile, 'utf-8'));
+			} catch (e) {
+				this.log('failed to load exists config, will overwrite it.');
+				await rename(cppExtConfigFile, cppExtConfigFile + '.invalid.' + (Math.random() * 1000).toFixed(0));
+			}
+		}
+		if (!content.version) {
+			content.version = 4;
+		}
+		if (!content.configurations) {
+			content.configurations = [];
+		}
+		const index = content.configurations.findIndex(e => e.name === 'Default');
+		if (index !== -1) {
+			content.configurations.splice(content.configurations, 1);
+		}
+		content.configurations.unshift({
+			name: 'Default',
+			defines: [],
+			compilerPath: resolvePath(this.nodePathService.getToolchainBinPath(), 'riscv64-unknown-elf-gcc'),
+			cStandard: 'c11',
+			cppStandard: 'c++17',
+			intelliSenseMode: 'clang-x64',
+			compileCommands: '${workspaceFolder}/build/compile_commands.json',
+		});
+		this.log('write config for cpp extension.');
+		await writeFile(cppExtConfigFile, JSON.stringify(content, null, 4), { encoding: { charset: 'utf-8', addBOM: false } });
 	}
 }

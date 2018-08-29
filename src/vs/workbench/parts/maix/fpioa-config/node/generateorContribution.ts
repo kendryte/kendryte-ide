@@ -6,13 +6,13 @@ import { getChipPackaging } from 'vs/workbench/parts/maix/fpioa-config/common/pa
 import { IChipGeneratorConfig } from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
 import { HeaderGenerator, SourceGenerator } from 'vs/workbench/parts/maix/fpioa-config/node/cGenerator';
 import { IFileService } from 'vs/platform/files/common/files';
-import { resolve } from 'path';
 import URI from 'vs/base/common/uri';
 import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { SyncActionDescriptor } from 'vs/platform/actions/common/actions';
 import { CommandsRegistry } from 'vs/platform/commands/common/commands';
 import { INotificationService } from 'vs/platform/notification/common/notification';
+import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 
 // const category = localize('maix', 'Maix');
 
@@ -52,7 +52,7 @@ export class GenerateFpioaFilesAction extends Action {
 
 		for (const g of this.generators) {
 			const content = g.generate(generator, mapper);
-			await this.fileService.createFile(URI.file(resolve(configFile, '..', g.filename)), content, { overwrite: true });
+			await this.fileService.createFile(URI.file(resolvePath(configFile, '..', g.filename)), content, { overwrite: true });
 		}
 	}
 }

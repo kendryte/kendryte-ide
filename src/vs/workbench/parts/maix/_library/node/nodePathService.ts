@@ -1,10 +1,10 @@
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { resolve } from 'path';
 import product from 'vs/platform/node/product';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { isWindows } from 'vs/base/common/platform';
 import { lstatSync } from 'fs';
+import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 
 export const INodePathService = createDecorator<INodePathService>('INodePathService');
 
@@ -42,22 +42,22 @@ class NodePathService implements INodePathService {
 
 	getPackagesPath(project?: string) {
 		if (project) {
-			return resolve(this.getInstallPath(), 'packages', project);
+			return resolvePath(this.getInstallPath(), 'packages', project);
 		} else {
-			return resolve(this.getInstallPath(), 'packages');
+			return resolvePath(this.getInstallPath(), 'packages');
 		}
 	}
 
 	getInstallPath() {
 		if (this.environmentService.isBuilt) {
-			return resolve(this.environmentService.execPath, '..');
+			return resolvePath(this.environmentService.execPath, '..');
 		} else {
-			return resolve(this.environmentService.execPath, '../../..');
+			return resolvePath(this.environmentService.execPath, '../../..');
 		}
 	}
 
 	getDataPath() {
-		return resolve(this.environmentService.userHome, product.dataFolderName);
+		return resolvePath(this.environmentService.userHome, product.dataFolderName);
 	}
 
 	exeFile(filePath: string) {
@@ -66,11 +66,11 @@ class NodePathService implements INodePathService {
 
 	getToolchainBinPath() {
 		const rel = this.getToolchainPath();
-		return rel ? resolve(rel, 'bin') : '';
+		return rel ? resolvePath(rel, 'bin') : '';
 	}
 
 	rawToolchainPath() {
-		return resolve(this.getInstallPath(), 'packages/toolchain');
+		return resolvePath(this.getInstallPath(), 'packages/toolchain');
 	}
 
 	getToolchainPath() {
@@ -81,7 +81,7 @@ class NodePathService implements INodePathService {
 			return '';
 		}
 		try {
-			this.toolchainPathExists = lstatSync(resolve(path, 'bin/')).isDirectory();
+			this.toolchainPathExists = lstatSync(resolvePath(path, 'bin/')).isDirectory();
 		} catch (e) { // noop
 		}
 		if (this.toolchainPathExists) {
@@ -94,7 +94,7 @@ class NodePathService implements INodePathService {
 	}
 
 	rawSDKPath() {
-		return resolve(this.getInstallPath(), 'packages/SDK');
+		return resolvePath(this.getInstallPath(), 'packages/SDK');
 	}
 
 	getSDKPath() {
@@ -105,7 +105,7 @@ class NodePathService implements INodePathService {
 			return '';
 		}
 		try {
-			this.sdkPathExists = lstatSync(resolve(path, 'cmake/')).isDirectory();
+			this.sdkPathExists = lstatSync(resolvePath(path, 'cmake/')).isDirectory();
 		} catch (e) { // noop
 		}
 		if (this.sdkPathExists) {

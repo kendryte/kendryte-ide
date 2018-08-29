@@ -7,11 +7,11 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { readdirSync } from 'vs/base/node/extfs';
-import { resolve } from 'path';
 import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
 import { CMAKE_PATH_CONFIG_ID, CMAKE_USE_SERVER_CONFIG_ID } from 'vs/workbench/parts/maix/cmake/common/config';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
 import { ILogService } from 'vs/platform/log/common/log';
+import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 
 interface SettingsOverwiter<T> {
 	(access: ServicesAccessor, old: T): T;
@@ -35,16 +35,16 @@ const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
 		ret.push(sdk + '/include');
 
 		const toolchain = nodePathService.rawToolchainPath();
-		ret.push(resolve(toolchain, 'riscv64-unknown-elf/include'));
+		ret.push(resolvePath(toolchain, 'riscv64-unknown-elf/include'));
 
-		const libgcc = resolve(toolchain, 'lib/gcc/riscv64-unknown-elf');
+		const libgcc = resolvePath(toolchain, 'lib/gcc/riscv64-unknown-elf');
 		const libgccVersion = readdirSync(libgcc)[0];
-		ret.push(resolve(libgcc, libgccVersion, 'include'));
+		ret.push(resolvePath(libgcc, libgccVersion, 'include'));
 
-		const libcpp = resolve(toolchain, 'riscv64-unknown-elf/include/c++');
+		const libcpp = resolvePath(toolchain, 'riscv64-unknown-elf/include/c++');
 		const libcppVersion = readdirSync(libcpp)[0];
-		ret.push(resolve(libcpp, libcppVersion));
-		ret.push(resolve(libcpp, libcppVersion, 'riscv64-unknown-elf'));
+		ret.push(resolvePath(libcpp, libcppVersion));
+		ret.push(resolvePath(libcpp, libcppVersion, 'riscv64-unknown-elf'));
 		return ret;
 	},
 };

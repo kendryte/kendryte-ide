@@ -1,21 +1,21 @@
-import { resolve } from 'path';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import product from 'vs/platform/node/product';
 import { isWindows } from 'vs/base/common/platform';
 import { lstatSync } from 'fs';
+import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 
 /** @deprecated */
 export function getInstallPath(environmentService: IEnvironmentService) {
 	if (environmentService.isBuilt) {
-		return resolve(environmentService.execPath, '..');
+		return resolvePath(environmentService.execPath, '..');
 	} else {
-		return resolve(environmentService.execPath, '../../..');
+		return resolvePath(environmentService.execPath, '../../..');
 	}
 }
 
 /** @deprecated */
 export function getDataPath(environmentService: IEnvironmentService) {
-	return resolve(environmentService.userHome, product.dataFolderName);
+	return resolvePath(environmentService.userHome, product.dataFolderName);
 }
 
 /** @deprecated */
@@ -29,15 +29,15 @@ let toolchainPathCache: string;
 /** @deprecated */
 export function getToolchainBinPath(environmentService: IEnvironmentService) {
 	const rel = getToolchainPath(environmentService);
-	return rel ? resolve(rel, 'bin') : '';
+	return rel ? resolvePath(rel, 'bin') : '';
 }
 
 /** @deprecated */
 export function getToolchainPath(environmentService: IEnvironmentService) {
 	if (!toolchainPathCache) {
-		let path = resolve(getInstallPath(environmentService), 'packages/toolchain');
+		let path = resolvePath(getInstallPath(environmentService), 'packages/toolchain');
 		try {
-			if (lstatSync(resolve(path, 'bin/')).isDirectory()) {
+			if (lstatSync(resolvePath(path, 'bin/')).isDirectory()) {
 				toolchainPathCache = path;
 			}
 		} catch (e) { // noop
@@ -54,9 +54,9 @@ export function getToolchainPath(environmentService: IEnvironmentService) {
 /** @deprecated */
 export function getSDKPath(environmentService: IEnvironmentService) {
 	if (!sdkPathCache) {
-		let path = resolve(getInstallPath(environmentService), 'packages/SDK');
+		let path = resolvePath(getInstallPath(environmentService), 'packages/SDK');
 		try {
-			if (lstatSync(resolve(path, 'cmake/')).isDirectory()) {
+			if (lstatSync(resolvePath(path, 'cmake/')).isDirectory()) {
 				sdkPathCache = path;
 			}
 		} catch (e) { // noop

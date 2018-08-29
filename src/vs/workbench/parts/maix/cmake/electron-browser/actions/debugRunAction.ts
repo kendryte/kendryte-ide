@@ -14,7 +14,7 @@ import uri from 'vs/base/common/uri';
 import { IEditor } from 'vs/workbench/common/editor';
 import { getToolchainBinPath } from 'vs/workbench/parts/maix/_library/node/nodePath';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { resolve } from 'path';
+import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 
 class WorkspaceMaixLaunch implements ILaunch {
 	protected GDB: string;
@@ -25,7 +25,7 @@ class WorkspaceMaixLaunch implements ILaunch {
 		@IWorkspaceContextService protected contextService: IWorkspaceContextService,
 		@IEnvironmentService environmentService: IEnvironmentService,
 	) {
-		this.GDB = resolve(getToolchainBinPath(environmentService), 'riscv64-unknown-elf-gdb');
+		this.GDB = resolvePath(getToolchainBinPath(environmentService), 'riscv64-unknown-elf-gdb');
 	}
 
 	public get workspace(): IWorkspaceFolder {
