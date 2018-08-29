@@ -1,4 +1,5 @@
-import { SettingsRenderer, SettingsTreeElement, SettingsTreeSettingElement } from 'vs/workbench/parts/preferences/browser/settingsTree';
+import { SettingsRenderer, } from 'vs/workbench/parts/preferences/browser/settingsTree';
+import { SettingsTreeElement, SettingsTreeSettingElement } from 'vs/workbench/parts/preferences/browser/settingsTreeModels';
 import { ITree } from 'vs/base/parts/tree/browser/tree';
 import { dispose } from 'vs/base/common/lifecycle';
 import { IInstantiationService, ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
@@ -45,14 +46,14 @@ export abstract class FieldInject<T, EX extends object> {
 
 	public template(tree: ITree, templateId: string, container: HTMLElement): FieldTemplate<T, EX> | void {
 		if (templateId === this.ID) {
-			const common = this.ref['renderCommonTemplate'](tree, container, templateId.replace(/\./g, '_'));
+			const common: ISettingItemTemplate<T> = this.ref['renderCommonTemplate'](tree, container, templateId.replace(/\./g, '_')) as any;
 			return Object['assign'](common, this._template(tree, common, container));
 		}
 	}
 
 	public entry(tree: ITree, element: SettingsTreeSettingElement, templateId: string, template: FieldTemplate<T, EX>): boolean {
 		if (templateId === this.ID) {
-			this.ref['renderSettingElement'](tree, element, templateId, template);
+			this.ref['renderSettingElement'](tree, element, templateId, template as any /*ISettingIteanymTemplate*/);
 			this._entry(tree, element, template);
 			template.context = element;
 			return true;

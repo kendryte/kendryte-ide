@@ -11,6 +11,7 @@ import { resolve } from 'path';
 import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
 import { CMAKE_PATH_CONFIG_ID, CMAKE_USE_SERVER_CONFIG_ID } from 'vs/workbench/parts/maix/cmake/common/config';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
+import { ILogService } from 'vs/platform/log/common/log';
 
 interface SettingsOverwiter<T> {
 	(access: ServicesAccessor, old: T): T;
@@ -56,6 +57,7 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 		@IInstantiationService private instantiationService: IInstantiationService,
 		@IEnvironmentService private environmentService: IEnvironmentService,
 		@IConfigurationService private configurationService: IConfigurationService,
+		@ILogService private logService: ILogService,
 	) {
 		Object.keys(this.registry.getConfigurationProperties()).forEach((key: string) => this.checkCategory(key));
 		this.registry.onDidRegisterConfiguration((keys: string[]) => keys.forEach(this.checkCategory, this));
@@ -70,7 +72,12 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 		if (overwrite) {
 			const old = this.configurationService.inspect(key);
 			/// if (!old.user) {
-			const value = this.instantiationService.invokeFunction(overwrite, old.user || old.default);
+			let value: any;
+			try {
+				value = this.instantiationService.invokeFunction(overwrite, old.user || old.default);
+			} catch (e) {
+				this.logService.error(`Failed to register config key: ${key}\n${e.stack}`);
+			}
 			if (typeof value !== 'undefined') {
 				this.configurationService.updateValue(key, value, ConfigurationTarget.USER);
 			}

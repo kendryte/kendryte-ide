@@ -5,7 +5,7 @@ import { ITree } from 'vs/base/parts/tree/browser/tree';
 import { attachEditableSelectBoxStyler, EditableSelectBox } from 'vs/workbench/parts/maix/patchSettings2/browser/ui/editableSelect';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
-import { SettingsTreeSettingElement } from 'vs/workbench/parts/preferences/browser/settingsTree';
+import { SettingsTreeSettingElement } from 'vs/workbench/parts/preferences/browser/settingsTreeModels';
 
 interface Template {
 	input: EditableSelectBox;

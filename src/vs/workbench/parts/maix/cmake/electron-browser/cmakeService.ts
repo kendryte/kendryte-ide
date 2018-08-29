@@ -46,21 +46,24 @@ import { IPackagesUpdateService } from 'vs/workbench/parts/maix/_library/electro
 import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
 
-export class Deferred extends TPromise<ICMakeResponse, ICMakeProtocolProgress> {
+export interface IPromiseProgress<T> {
+	progress(fn: (p: T) => void): void;
+}
+
+export class Deferred extends TPromise<ICMakeResponse> implements IPromiseProgress<ICMakeProtocolProgress> {
 	private _resolver: (value: ICMakeResponse) => void;
 	private _rejecter: (value: Error | ICMakeProtocolError) => void;
-	private _progresser: (value: ICMakeProtocolProgress) => void;
+	private cbList: Function[];
 
 	constructor() {
-		let _resolver, _rejecter, _progresser;
-		super((resolve, reject, progress) => {
+		let _resolver, _rejecter;
+		super((resolve, reject) => {
 			_resolver = resolve;
 			_rejecter = reject;
-			_progresser = progress;
 		});
 		this._resolver = _resolver;
 		this._rejecter = _rejecter;
-		this._progresser = _progresser;
+		this.cbList = [];
 	}
 
 	resolve(response: ICMakeResponse): void {
@@ -72,10 +75,16 @@ export class Deferred extends TPromise<ICMakeResponse, ICMakeProtocolProgress> {
 	}
 
 	notify(progress: ICMakeProtocolProgress): void {
-		this._progresser(progress);
+		for (const cb of this.cbList) {
+			cb(progress);
+		}
 	}
 
-	promise(): TPromise<ICMakeResponse, ICMakeProtocolProgress> {
+	progress(cb: (e: ICMakeProtocolProgress) => void): void {
+		this.cbList.push(cb);
+	}
+
+	promise(): TPromise<ICMakeResponse> & IPromiseProgress<ICMakeProtocolProgress> {
 		return this;
 	}
 }
@@ -374,7 +383,7 @@ ${JSON.stringify(payload)}
 		return await this.cmakeRequests[payload.cookie].promise();
 	}
 
-	public async onFolderChange(force: boolean = false): TPromise<void> {
+	public async onFolderChange(force: boolean = false): TPromise<string> {
 		const resolver: IWorkspaceFolder = this.workspaceContextService.getWorkspace().folders[0];
 
 		if (!resolver) {
@@ -384,7 +393,7 @@ ${JSON.stringify(payload)}
 				await this.shutdown();
 			}
 			this.statusBarController.setEmptyState(true);
-			return;
+			return this._mainCMakeList;
 		}
 
 		const currentDir = resolveFrom(resolver, './');
@@ -398,6 +407,7 @@ ${JSON.stringify(payload)}
 			const isCMakeProject = await this.findCMakeListFile(currentDir);
 			this.statusBarController.setEmptyState(false, isCMakeProject);
 		}
+		return this._mainCMakeList;
 	}
 
 	private log(message: string, ...args: any[]) {

@@ -11,7 +11,7 @@ export interface CurrentItem extends IQuickPickItem {
 export interface ICMakeService {
 	_serviceBrand: any;
 
-	onFolderChange(force?: boolean): TPromise<void>;
+	onFolderChange(force?: boolean): TPromise<string>;
 
 	cleanupMake(): TPromise<void>;
 

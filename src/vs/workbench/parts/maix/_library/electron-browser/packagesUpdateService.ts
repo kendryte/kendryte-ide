@@ -32,6 +32,7 @@ import { INodeRequestService } from 'vs/workbench/parts/maix/_library/node/nodeR
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 
 const distributeUrl = 'https://s3.cn-northwest-1.amazonaws.com.cn/maix-ide/';
+const LAST_UPDATE_CACHE_KEY = '.last-check-update';
 
 interface IUpdateStatus {
 	project: string;
@@ -107,6 +108,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		if (this.runPromise) {
 			return this.runPromise;
 		}
+
 		this.lifecycleService.onWillShutdown((e) => {
 			if (this.runPromise) {
 				const force = confirm('Update is in progress.\nDo you want to force quit?\nUpdate will continue next time.');
@@ -114,14 +116,25 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			}
 		});
 		const entry = this.statusbarService.setStatusMessage('$(sync~spin) Updating packages... please wait...');
-		this.runPromise = TPromise.join([
-			this._run(),
-			this.checkMainUpdate(),
-		]);
+		this.runPromise = this.loadLocalVersionCache().then(() => {
+			return this.isUpdateAlreadyCheckedMomentsAgo();
+		}).then((upToDate) => {
+			if (upToDate) {
+				this.logService.info('no recheck, is too fast.');
+				return void 0;
+			}
+			this.logService.info('recheck now.');
+			return TPromise.join([
+				this._run(),
+				this.checkMainUpdate(),
+			]);
+		});
 
 		return this.runPromise.then(() => {
 			entry.dispose();
 			delete this.runPromise;
+
+			return this.writeCache(LAST_UPDATE_CACHE_KEY, (new Date).getTime().toFixed(0));
 		}, (error) => {
 			entry.dispose();
 			delete this.runPromise;
@@ -152,6 +165,12 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	}
 
 	protected async _run(): TPromise<void> {
+		try {
+			await mkdirp(this.nodePathService.getPackagesPath());
+		} catch (e) {
+			throw new Error(`Cannot create directory: ${this.nodePathService.getPackagesPath()}\nDo you have permission?`);
+		}
+
 		this.logService.info('Starting update...');
 		const needUpdate = await this._checkUpdate();
 
@@ -223,9 +242,6 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			throw new Error('Your platform is not supported. Only x86 and x64 is supported.');
 		}
 
-		if (await exists(this.localConfigFile)) {
-			this.localPackage = JSON.parse(await readFile(this.localConfigFile, 'utf8'));
-		}
 		this.logService.info('local package versions: %j', this.localPackage);
 
 		const list = await this.getPackageList();
@@ -434,6 +450,31 @@ class PackagesUpdateService implements IPackagesUpdateService {
 					run() { },
 				},
 			]);
+		}
+	}
+
+	private async isUpdateAlreadyCheckedMomentsAgo(): TPromise<boolean> {
+		if (!this.localPackage.hasOwnProperty(LAST_UPDATE_CACHE_KEY)) {
+			this.logService.info('update has never checked');
+			return false;
+		}
+		this.logService.info('last update checked: %s', this.localPackage[LAST_UPDATE_CACHE_KEY]);
+		const lastDate = new Date(parseInt(this.localPackage[LAST_UPDATE_CACHE_KEY]));
+		if (isNaN(lastDate.getTime())) {
+			this.logService.info('update time invalid');
+			return false;
+		}
+
+		const mustRecheck = lastDate;
+		mustRecheck.setHours(mustRecheck.getHours() + 1);
+		return (new Date) <= mustRecheck;
+	}
+
+	private async loadLocalVersionCache(): TPromise<void> {
+		if (await exists(this.localConfigFile)) {
+			this.localPackage = JSON.parse(await readFile(this.localConfigFile, 'utf8'));
+		} else {
+			this.localPackage = {};
 		}
 	}
 }

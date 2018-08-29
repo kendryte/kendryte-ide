@@ -10,7 +10,7 @@ import { IContextViewService } from 'vs/platform/contextview/browser/contextView
 import { IWindowsService } from 'vs/platform/windows/common/windows';
 import 'vs/css!vs/workbench/parts/maix/patchSettings2/browser/ui/fileSelect';
 import { ISettingItemTemplate } from 'vs/workbench/parts/maix/_library/common/type';
-import { SettingsTreeSettingElement } from 'vs/workbench/parts/preferences/browser/settingsTree';
+import { SettingsTreeSettingElement } from 'vs/workbench/parts/preferences/browser/settingsTreeModels';
 
 interface Template {
 	$input: InputBox;

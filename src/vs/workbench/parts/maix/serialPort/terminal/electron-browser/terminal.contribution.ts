@@ -113,8 +113,8 @@ Registry.as<PanelRegistry>(PanelExtensions.Panels).registerPanel(new PanelDescri
 	TerminalPanel,
 	TERMINAL_PANEL_ID,
 	nls.localize('serial port', 'Serial Port'),
-	'markersPanel',
-	99,
+	'serialPanel',
+	100,
 	SERIAL_MONITOR_COMMAND_ID.TOGGLE,
 ));
 

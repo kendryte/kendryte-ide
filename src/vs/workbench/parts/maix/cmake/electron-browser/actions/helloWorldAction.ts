@@ -4,10 +4,11 @@ import { localize } from 'vs/nls';
 import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD, CMAKE_CHANNEL, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
-import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
-import { resolveFrom, startsWithFileSchema } from 'vs/workbench/parts/maix/_library/node/resource';
-import { exists, mkdirp, readFile, writeFile } from 'vs/base/node/pfs';
+import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
+import { resolveFrom } from 'vs/workbench/parts/maix/_library/node/resource';
+import { copy, mkdirp } from 'vs/base/node/pfs';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
+import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
 
 export class MaixCMakeHelloWorldAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_HELLO_WORLD;
@@ -20,23 +21,38 @@ export class MaixCMakeHelloWorldAction extends Action {
 		@IOutputService protected outputService: IOutputService,
 		@IWorkspaceContextService protected workspaceContextService: IWorkspaceContextService,
 		@INotificationService protected notificationService: INotificationService,
+		@INodePathService protected nodePathService: INodePathService,
 		@IEditorService protected editorService: IEditorService,
 	) {
 		super(id, label);
 		this.outputChannel = outputService.getChannel(CMAKE_CHANNEL);
 	}
 
+	_run(): TPromise<void> {
+		const p = this.run();
+		p.then(undefined, (e) => {
+			this.outputChannel.append(`${e.stack}\n`);
+			this.outputService.showChannel(CMAKE_CHANNEL);
+		});
+		return p;
+	}
+
 	async run(): TPromise<void> {
 		this.outputChannel.clear();
-		this.outputService.showChannel(CMAKE_CHANNEL);
+
+		const mainCMakeFile = await this.cmakeService.onFolderChange(true);
+		if (mainCMakeFile) {
+			return;
+		}
 
 		const resolver = this.workspaceContextService.getWorkspace().folders[0];
 
 		await mkdirp(resolveFrom(resolver, '.vscode'));
 
-		await this.createFile(resolver, 'CMakeLists.txt');
-		await this.createFile(resolver, 'main.c');
-		await this.createFile(resolver, '.gitignore');
+		const source = this.nodePathService.getPackagesPath('hello-world-project');
+		const target = resolveFrom(resolver, '.');
+		this.outputChannel.append(`copy from: ${source} to ${target}\n`);
+		await copy(source, target);
 
 		this.editorService.openEditor({
 			resource: resolver.toResource('main.c'),
@@ -44,32 +60,7 @@ export class MaixCMakeHelloWorldAction extends Action {
 
 		await this.cmakeService.onFolderChange(true);
 
+		this.outputChannel.append(`start cmake configure\n`);
 		this.cmakeService.configure();
-	}
-
-	private async createFile(resolver: IWorkspaceFolder, fileName: string) {
-		const file = resolveFrom(resolver, fileName);
-		this.outputChannel.append(`writing to file: ${file}`);
-
-		if (await exists(file)) {
-			this.outputChannel.append(` - failed: \n\tRefuse to overwrite exists file.`);
-			throw new Error('Failed to start project: file exists');
-		}
-
-		try {
-			const baseUrl = require.toUrl('vs/workbench/parts/maix/cmake/electron-browser/helloWorld/' + fileName.replace(/^\./g, '')).replace(startsWithFileSchema, '');
-			const content = await readFile(baseUrl, 'utf8');
-
-			await writeFile(file, content, {
-				encoding: {
-					charset: 'utf8',
-					addBOM: false,
-				},
-			});
-			this.outputChannel.append(` - ok.\n`);
-		} catch (e) {
-			this.outputChannel.append(` - failed:\n\t${e.message}`);
-			throw e;
-		}
 	}
 }

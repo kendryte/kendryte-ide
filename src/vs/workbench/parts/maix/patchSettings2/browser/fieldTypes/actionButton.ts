@@ -5,7 +5,7 @@ import { Button } from 'vs/base/browser/ui/button/button';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { SettingsTreeSettingElement } from 'vs/workbench/parts/preferences/browser/settingsTree';
+import { SettingsTreeSettingElement } from 'vs/workbench/parts/preferences/browser/settingsTreeModels';
 import { ISettingItemTemplate } from 'vs/workbench/parts/maix/_library/common/type';
 
 interface Template {

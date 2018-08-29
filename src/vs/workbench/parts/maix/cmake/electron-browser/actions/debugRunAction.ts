@@ -69,7 +69,7 @@ class WorkspaceMaixLaunch implements ILaunch {
 		} as IConfig;
 	}
 
-	openConfigFile(sideBySide: boolean, type?: string): TPromise<{ editor: IEditor, created: boolean }> {
+	openConfigFile(sideBySide: boolean, preserveFocus: boolean, type?: string): TPromise<{ editor: IEditor, created: boolean }> {
 		return this.editorService.openEditor({
 			resource: this.contextService.getWorkspace().folders[0].toResource('.vscode/maix.json'),
 		}).then(editor => ({ editor, created: false }));

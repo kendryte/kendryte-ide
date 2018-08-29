@@ -1,11 +1,12 @@
 import * as st from 'vs/workbench/parts/preferences/browser/settingsTree';
+import * as stm from 'vs/workbench/parts/preferences/browser/settingsTreeModels';
 import { ITree } from 'vs/base/parts/tree/browser/tree';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { DynamicEnumInject } from 'vs/workbench/parts/maix/patchSettings2/browser/fieldTypes/dynamicEnum';
 import { ButtonInject } from 'vs/workbench/parts/maix/patchSettings2/browser/fieldTypes/actionButton';
 import { FieldInject } from 'vs/workbench/parts/maix/patchSettings2/browser/typedFieldElementBase';
-import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
+import { IContextMenuService, IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
@@ -28,8 +29,17 @@ class SettingsRendererPatch extends OriginalClass {
 		@IOpenerService openerService: IOpenerService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@ICommandService commandService: ICommandService,
+		@IContextMenuService contextMenuService: IContextMenuService,
 	) {
-		super(measureContainer, themeService, contextViewService, openerService, instantiationService, commandService);
+		super(
+			measureContainer,
+			themeService,
+			contextViewService,
+			openerService,
+			instantiationService,
+			commandService,
+			contextMenuService,
+		);
 		this.injectors = [
 			instantiationService.createInstance(DynamicEnumInject, this),
 			instantiationService.createInstance(ButtonInject, this),
@@ -38,7 +48,7 @@ class SettingsRendererPatch extends OriginalClass {
 		return new Proxy(this, {});
 	}
 
-	getTemplateId(tree: ITree, element: st.SettingsTreeElement): string {
+	getTemplateId(tree: ITree, element: stm.SettingsTreeElement): string {
 		for (const item of this.injectors) {
 			const id = item.detect(element);
 			if (id) {
@@ -58,7 +68,7 @@ class SettingsRendererPatch extends OriginalClass {
 		return super.renderTemplate(tree, templateId, parent);
 	}
 
-	renderElement(tree: ITree, element: st.SettingsTreeSettingElement, templateId: string, template: any): void {
+	renderElement(tree: ITree, element: stm.SettingsTreeSettingElement, templateId: string, template: any): void {
 		for (const item of this.injectors) {
 			const hit = item.entry(tree, element, templateId, template);
 			if (hit) {
@@ -78,7 +88,7 @@ class SettingsRendererPatch extends OriginalClass {
 		return super.disposeTemplate(tree, templateId, template);
 	}
 
-	getHeight(tree: ITree, element: st.SettingsTreeElement): number {
+	getHeight(tree: ITree, element: stm.SettingsTreeElement): number {
 		return super.getHeight(tree, element);
 	}
 }
