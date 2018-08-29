@@ -6,7 +6,6 @@
 
 import 'vs/css!./quickopen';
 import * as nls from 'vs/nls';
-import { TPromise } from 'vs/base/common/winjs.base';
 import * as platform from 'vs/base/common/platform';
 import * as types from 'vs/base/common/types';
 import * as errors from 'vs/base/common/errors';
@@ -169,7 +168,7 @@ export class QuickOpenWidget extends Disposable implements IModelProvider {
 				.on(DOM.EventType.BLUR, (e: FocusEvent) => this.loosingFocus(e), null, true);
 
 			// Progress Bar
-			this.progressBar = this._register(new ProgressBar(div.clone(), { progressBarBackground: this.styles.progressBarBackground }));
+			this.progressBar = this._register(new ProgressBar(div.getHTMLElement(), { progressBarBackground: this.styles.progressBarBackground }));
 			this.progressBar.hide();
 
 			// Input Field
@@ -236,7 +235,8 @@ export class QuickOpenWidget extends Disposable implements IModelProvider {
 			// Result count for screen readers
 			this.resultCount = div.div({
 				'class': 'quick-open-result-count',
-				'aria-live': 'polite'
+				'aria-live': 'polite',
+				'aria-atomic': 'true'
 			}).clone();
 
 			// Tree
@@ -980,11 +980,8 @@ export class QuickOpenWidget extends Disposable implements IModelProvider {
 		}
 
 		this.isLoosingFocus = true;
-		TPromise.timeout(0).then(() => {
-			if (!this.isLoosingFocus) {
-				return;
-			}
-			if (this.isDisposed) {
+		setTimeout(() => {
+			if (!this.isLoosingFocus || this.isDisposed) {
 				return;
 			}
 
@@ -992,7 +989,7 @@ export class QuickOpenWidget extends Disposable implements IModelProvider {
 			if (!veto) {
 				this.hide(HideReason.FOCUS_LOST);
 			}
-		});
+		}, 0);
 	}
 
 	dispose(): void {

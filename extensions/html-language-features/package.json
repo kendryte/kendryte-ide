@@ -112,15 +112,26 @@
             "auto",
             "force",
             "force-aligned",
-            "force-expand-multiline"
+            "force-expand-multiline",
+            "aligned-multiple"
           ],
           "enumDescriptions": [
             "%html.format.wrapAttributes.auto%",
             "%html.format.wrapAttributes.force%",
             "%html.format.wrapAttributes.forcealign%",
-            "%html.format.wrapAttributes.forcemultiline%"
+            "%html.format.wrapAttributes.forcemultiline%",
+            "%html.format.wrapAttributes.alignedmultiple%"
           ],
           "description": "%html.format.wrapAttributes.desc%"
+        },
+        "html.format.wrapAttributesIndentSize": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "scope": "resource",
+          "default": null,
+          "description": "%html.format.wrapAttributesIndentSize.desc%"
         },
         "html.suggest.angular1": {
           "type": "boolean",
@@ -174,10 +185,10 @@
   },
   "dependencies": {
     "vscode-extension-telemetry": "0.0.18",
-    "vscode-languageclient": "^4.4.0",
-    "vscode-nls": "^3.2.4"
+    "vscode-languageclient": "^5.1.0-next.9",
+    "vscode-nls": "^3.2.5"
   },
   "devDependencies": {
-    "@types/node": "7.0.43"
+    "@types/node": "^8.10.25"
   }
 }

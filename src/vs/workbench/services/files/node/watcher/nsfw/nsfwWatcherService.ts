@@ -29,7 +29,7 @@ interface IWatcherObjet {
 interface IPathWatcher {
 	ready: TPromise<IWatcherObjet>;
 	watcher?: IWatcherObjet;
-	ignored: string[];
+	ignored: glob.ParsedPattern[];
 }
 
 export class NsfwWatcherService implements IWatcherService {
@@ -54,7 +54,7 @@ export class NsfwWatcherService implements IWatcherService {
 		let readyPromiseCallback: TValueCallback<IWatcherObjet>;
 		this._pathWatchers[request.basePath] = {
 			ready: new TPromise<IWatcherObjet>(c => readyPromiseCallback = c),
-			ignored: request.ignored
+			ignored: Array.isArray(request.ignored) ? request.ignored.map(ignored => glob.parse(ignored)) : []
 		};
 
 		process.on('uncaughtException', (e: Error | string) => {
@@ -87,10 +87,14 @@ export class NsfwWatcherService implements IWatcherService {
 					absolutePath = path.join(e.directory, e.oldFile);
 					if (!this._isPathIgnored(absolutePath, this._pathWatchers[request.basePath].ignored)) {
 						undeliveredFileEvents.push({ type: FileChangeType.DELETED, path: absolutePath });
+					} else if (this._verboseLogging) {
+						console.log(' >> ignored', absolutePath);
 					}
 					absolutePath = path.join(e.directory, e.newFile);
 					if (!this._isPathIgnored(absolutePath, this._pathWatchers[request.basePath].ignored)) {
 						undeliveredFileEvents.push({ type: FileChangeType.ADDED, path: absolutePath });
+					} else if (this._verboseLogging) {
+						console.log(' >> ignored', absolutePath);
 					}
 				} else {
 					absolutePath = path.join(e.directory, e.file);
@@ -99,6 +103,8 @@ export class NsfwWatcherService implements IWatcherService {
 							type: nsfwActionToRawChangeType[e.action],
 							path: absolutePath
 						});
+					} else if (this._verboseLogging) {
+						console.log(' >> ignored', absolutePath);
 					}
 				}
 			}
@@ -165,7 +171,7 @@ export class NsfwWatcherService implements IWatcherService {
 		// Refresh ignored arrays in case they changed
 		roots.forEach(root => {
 			if (root.basePath in this._pathWatchers) {
-				this._pathWatchers[root.basePath].ignored = root.ignored;
+				this._pathWatchers[root.basePath].ignored = Array.isArray(root.ignored) ? root.ignored.map(ignored => glob.parse(ignored)) : [];
 			}
 		});
 
@@ -182,7 +188,7 @@ export class NsfwWatcherService implements IWatcherService {
 		}));
 	}
 
-	private _isPathIgnored(absolutePath: string, ignored: string[]): boolean {
-		return ignored && ignored.some(ignore => glob.match(ignore, absolutePath));
+	private _isPathIgnored(absolutePath: string, ignored: glob.ParsedPattern[]): boolean {
+		return ignored && ignored.some(i => i(absolutePath));
 	}
 }

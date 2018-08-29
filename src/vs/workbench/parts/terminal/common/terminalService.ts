@@ -117,7 +117,7 @@ export abstract class TerminalService implements ITerminalService {
 	}
 
 	public getTabLabels(): string[] {
-		return this._terminalTabs.filter(tab => tab.terminalInstances.length > 0).map((tab, index) => `${index + 1}: ${tab.title}`);
+		return this._terminalTabs.filter(tab => tab.terminalInstances.length > 0).map((tab, index) => `${index + 1}: ${tab.title ? tab.title : ''}`);
 	}
 
 	private _removeTab(tab: ITerminalTab): void {
@@ -293,11 +293,14 @@ export abstract class TerminalService implements ITerminalService {
 						setTimeout(() => {
 							const instance = this.getActiveInstance();
 							if (instance) {
-								instance.focus(true);
+								instance.focusWhenReady(true).then(() => complete(void 0));
+							} else {
+								complete(void 0);
 							}
 						}, 0);
+					} else {
+						complete(void 0);
 					}
-					complete(void 0);
 				});
 			} else {
 				if (focus) {
@@ -306,11 +309,14 @@ export abstract class TerminalService implements ITerminalService {
 					setTimeout(() => {
 						const instance = this.getActiveInstance();
 						if (instance) {
-							instance.focus(true);
+							instance.focusWhenReady(true).then(() => complete(void 0));
+						} else {
+							complete(void 0);
 						}
 					}, 0);
+				} else {
+					complete(void 0);
 				}
-				complete(void 0);
 			}
 			return undefined;
 		});

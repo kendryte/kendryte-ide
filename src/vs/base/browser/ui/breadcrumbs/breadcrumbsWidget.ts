@@ -45,10 +45,8 @@ export class SimpleBreadcrumbsItem extends BreadcrumbsItem {
 export interface IBreadcrumbsWidgetStyles {
 	breadcrumbsBackground?: Color;
 	breadcrumbsForeground?: Color;
-	breadcrumbsHoverBackground?: Color;
 	breadcrumbsHoverForeground?: Color;
 	breadcrumbsFocusForeground?: Color;
-	breadcrumbsFocusAndSelectionBackground?: Color;
 	breadcrumbsFocusAndSelectionForeground?: Color;
 }
 
@@ -92,7 +90,8 @@ export class BreadcrumbsWidget {
 			vertical: ScrollbarVisibility.Hidden,
 			horizontal: ScrollbarVisibility.Auto,
 			horizontalScrollbarSize: 3,
-			useShadows: false
+			useShadows: false,
+			scrollYToX: true
 		});
 		this._disposables.push(this._scrollable);
 		this._disposables.push(dom.addStandardDisposableListener(this._domNode, 'click', e => this._onClick(e)));
@@ -135,14 +134,8 @@ export class BreadcrumbsWidget {
 		if (style.breadcrumbsFocusForeground) {
 			content += `.monaco-breadcrumbs .monaco-breadcrumb-item.focused { color: ${style.breadcrumbsFocusForeground}}\n`;
 		}
-		if (style.breadcrumbsFocusAndSelectionBackground) {
-			content += `.monaco-breadcrumbs .monaco-breadcrumb-item.focused.selected { background-color: ${style.breadcrumbsFocusAndSelectionBackground}}\n`;
-		}
 		if (style.breadcrumbsFocusAndSelectionForeground) {
 			content += `.monaco-breadcrumbs .monaco-breadcrumb-item.focused.selected { color: ${style.breadcrumbsFocusAndSelectionForeground}}\n`;
-		}
-		if (style.breadcrumbsHoverBackground) {
-			content += `.monaco-breadcrumbs .monaco-breadcrumb-item:hover:not(.focused):not(.selected) { background-color: ${style.breadcrumbsHoverBackground}}\n`;
 		}
 		if (style.breadcrumbsHoverForeground) {
 			content += `.monaco-breadcrumbs .monaco-breadcrumb-item:hover:not(.focused):not(.selected) { color: ${style.breadcrumbsHoverForeground}}\n`;
@@ -251,11 +244,20 @@ export class BreadcrumbsWidget {
 	}
 
 	setItems(items: BreadcrumbsItem[]): void {
-		let prefix = commonPrefixLength(this._items, items, (a, b) => a.equals(b));
-		let removed = this._items.splice(prefix, this._items.length - prefix, ...items.slice(prefix));
-		this._render(prefix);
-		dispose(removed);
-		this._focus(-1, undefined);
+		let prefix: number;
+		let removed: BreadcrumbsItem[];
+		try {
+			prefix = commonPrefixLength(this._items, items, (a, b) => a.equals(b));
+			removed = this._items.splice(prefix, this._items.length - prefix, ...items.slice(prefix));
+			this._render(prefix);
+			dispose(removed);
+			this._focus(-1, undefined);
+		} catch (e) {
+			let newError = new Error(`BreadcrumbsItem#setItems: newItems: ${items.length}, prefix: ${prefix}, removed: ${removed.length}`);
+			newError.name = e.name;
+			newError.stack = e.stack;
+			throw newError;
+		}
 	}
 
 	private _render(start: number): void {
@@ -265,11 +267,11 @@ export class BreadcrumbsWidget {
 			this._renderItem(item, node);
 		}
 		// case a: more nodes -> remove them
-		for (; start < this._nodes.length; start++) {
-			this._nodes[start].remove();
-			this._freeNodes.push(this._nodes[start]);
+		while (start < this._nodes.length) {
+			const free = this._nodes.pop();
+			this._freeNodes.push(free);
+			free.remove();
 		}
-		this._nodes.length = this._items.length;
 
 		// case b: more items -> render them
 		for (; start < this._items.length; start++) {
@@ -277,7 +279,7 @@ export class BreadcrumbsWidget {
 			let node = this._freeNodes.length > 0 ? this._freeNodes.pop() : document.createElement('div');
 			this._renderItem(item, node);
 			this._domNode.appendChild(node);
-			this._nodes[start] = node;
+			this._nodes.push(node);
 		}
 		this.layout(undefined);
 	}

@@ -226,14 +226,14 @@ export class WindowsService implements IWindowsService, IURLHandler, IDisposable
 		return TPromise.as(null);
 	}
 
-	addRecentlyOpened(files: string[]): TPromise<void> {
+	addRecentlyOpened(files: URI[]): TPromise<void> {
 		this.logService.trace('windowsService#addRecentlyOpened');
 		this.historyService.addRecentlyOpened(void 0, files);
 
 		return TPromise.as(null);
 	}
 
-	removeFromRecentlyOpened(paths: (IWorkspaceIdentifier | ISingleFolderWorkspaceIdentifier | string)[]): TPromise<void> {
+	removeFromRecentlyOpened(paths: (IWorkspaceIdentifier | ISingleFolderWorkspaceIdentifier | URI | string)[]): TPromise<void> {
 		this.logService.trace('windowsService#removeFromRecentlyOpened');
 		this.historyService.removeFromRecentlyOpened(paths);
 
@@ -256,6 +256,14 @@ export class WindowsService implements IWindowsService, IURLHandler, IDisposable
 		}
 
 		return TPromise.as(this.historyService.getRecentlyOpened());
+	}
+
+	newWindowTab(): TPromise<void> {
+		this.logService.trace('windowsService#newWindowTab');
+
+		this.windowsMainService.openNewTabbedWindow(OpenContext.API);
+
+		return TPromise.as(void 0);
 	}
 
 	showPreviousWindowTab(): TPromise<void> {
@@ -413,7 +421,9 @@ export class WindowsService implements IWindowsService, IURLHandler, IDisposable
 
 	openNewWindow(): TPromise<void> {
 		this.logService.trace('windowsService#openNewWindow');
+
 		this.windowsMainService.openNewWindow(OpenContext.API);
+
 		return TPromise.as(null);
 	}
 
