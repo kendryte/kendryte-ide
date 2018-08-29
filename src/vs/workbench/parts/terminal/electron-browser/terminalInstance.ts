@@ -482,7 +482,7 @@ export class TerminalInstance implements ITerminalInstance {
 						label: nls.localize('yes', "Yes"),
 						run: () => {
 							this._configurationService.updateValue('terminal.integrated.rendererType', 'dom', ConfigurationTarget.USER).then(() => {
-								this._notificationService.info(nls.localize('terminal.rendererInAllNewTerminals', "The termnial is now using the fallback renderer."));
+								this._notificationService.info(nls.localize('terminal.rendererInAllNewTerminals', "The terminal is now using the fallback renderer."));
 							});
 						}
 					} as IPromptChoice,
@@ -597,15 +597,17 @@ export class TerminalInstance implements ITerminalInstance {
 	}
 
 	public focus(force?: boolean): void {
-		this._xtermReadyPromise.then(() => {
-			if (!this._xterm) {
-				return;
-			}
-			const text = window.getSelection().toString();
-			if (!text || force) {
-				this._xterm.focus();
-			}
-		});
+		if (!this._xterm) {
+			return;
+		}
+		const text = window.getSelection().toString();
+		if (!text || force) {
+			this._xterm.focus();
+		}
+	}
+
+	public focusWhenReady(force?: boolean): Promise<void> {
+		return this._xtermReadyPromise.then(() => this.focus(force));
 	}
 
 	public paste(): void {
@@ -713,8 +715,6 @@ export class TerminalInstance implements ITerminalInstance {
 		this._processManager = this._instantiationService.createInstance(TerminalProcessManager, this._id, this._configHelper);
 		this._processManager.onProcessReady(() => this._onProcessIdReady.fire(this));
 		this._processManager.onProcessExit(exitCode => this._onProcessExit(exitCode));
-		this._processManager.createProcess(this._shellLaunchConfig, this._cols, this._rows);
-
 		this._processManager.onProcessData(data => this._onData.fire(data));
 
 		if (this._shellLaunchConfig.name) {
@@ -734,6 +734,12 @@ export class TerminalInstance implements ITerminalInstance {
 				});
 			});
 		}
+
+		// Create the process asynchronously to allow the terminal's container
+		// to be created so dimensions are accurate
+		setTimeout(() => {
+			this._processManager.createProcess(this._shellLaunchConfig, this._cols, this._rows);
+		}, 0);
 	}
 
 	private _onProcessData(data: string): void {

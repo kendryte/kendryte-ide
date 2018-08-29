@@ -109,19 +109,15 @@ export interface IExpression extends IReplElement, IExpressionContainer {
 }
 
 export interface IRawSession {
-	readonly root: IWorkspaceFolder;
 	stackTrace(args: DebugProtocol.StackTraceArguments): TPromise<DebugProtocol.StackTraceResponse>;
 	exceptionInfo(args: DebugProtocol.ExceptionInfoArguments): TPromise<DebugProtocol.ExceptionInfoResponse>;
 	scopes(args: DebugProtocol.ScopesArguments): TPromise<DebugProtocol.ScopesResponse>;
 	variables(args: DebugProtocol.VariablesArguments): TPromise<DebugProtocol.VariablesResponse>;
 	evaluate(args: DebugProtocol.EvaluateArguments): TPromise<DebugProtocol.EvaluateResponse>;
 
-	readonly capabilities: DebugProtocol.Capabilities;
+	disconnect(restart?: boolean): TPromise<any>;
 	terminate(restart?: boolean): TPromise<DebugProtocol.TerminateResponse>;
 	custom(request: string, args: any): TPromise<DebugProtocol.Response>;
-	onDidEvent: Event<DebugProtocol.Event>;
-	onDidInitialize: Event<DebugProtocol.InitializedEvent>;
-	onDidExitAdapter: Event<{ sessionId: string }>;
 	restartFrame(args: DebugProtocol.RestartFrameArguments, threadId: number): TPromise<DebugProtocol.RestartFrameResponse>;
 
 	next(args: DebugProtocol.NextArguments): TPromise<DebugProtocol.NextResponse>;
@@ -140,22 +136,35 @@ export interface IRawSession {
 
 }
 
-export enum SessionState {
-	ATTACH,
-	LAUNCH
-}
-
-export interface ISession extends ITreeElement {
-	getName(includeRoot: boolean): string;
+export interface ISession extends ITreeElement, IDisposable {
 	readonly configuration: IConfig;
 	readonly raw: IRawSession;
-	readonly state: SessionState;
+	readonly state: State;
+	readonly root: IWorkspaceFolder;
+	readonly capabilities: DebugProtocol.Capabilities;
+
+	getName(includeRoot: boolean): string;
 	getSourceForUri(modelUri: uri): Source;
 	getThread(threadId: number): IThread;
 	getAllThreads(): ReadonlyArray<IThread>;
 	getSource(raw: DebugProtocol.Source): Source;
 	getLoadedSources(): TPromise<Source[]>;
 	completions(frameId: number, text: string, position: Position, overwriteBefore: number): TPromise<ISuggestion[]>;
+	clearThreads(removeThreads: boolean, reference?: number): void;
+
+	rawUpdate(data: IRawModelUpdate): void;
+
+	/**
+	 * Allows to register on loaded source events.
+	 */
+	onDidLoadedSource: Event<LoadedSourceEvent>;
+
+	/**
+	 * Allows to register on custom DAP events.
+	 */
+	onDidCustomEvent: Event<DebugEvent>;
+
+	onDidExitAdapter: Event<void>;
 }
 
 export interface IThread extends ITreeElement {
@@ -396,6 +405,7 @@ export interface IConfig extends IEnvConfig {
 	// internals
 	__sessionId?: string;
 	__restart?: any;
+	__autoAttach?: boolean;
 	port?: number; // TODO
 }
 
@@ -565,7 +575,7 @@ export interface ILaunch {
 	/**
 	 * Opens the launch.json file. Creates if it does not exist.
 	 */
-	openConfigFile(sideBySide: boolean, type?: string): TPromise<{ editor: IEditor, created: boolean }>;
+	openConfigFile(sideBySide: boolean, preserveFocus: boolean, type?: string): TPromise<{ editor: IEditor, created: boolean }>;
 }
 
 // Debug service interfaces
@@ -577,7 +587,6 @@ export interface DebugEvent extends DebugProtocol.Event {
 }
 
 export interface LoadedSourceEvent {
-	session: ISession;
 	reason: string;
 	source: Source;
 }
@@ -604,16 +613,6 @@ export interface IDebugService {
 	 * Allows to register on end session events.
 	 */
 	onDidEndSession: Event<ISession>;
-
-	/**
-	 * Allows to register on loaded source events.
-	 */
-	onDidLoadedSource: Event<LoadedSourceEvent>;
-
-	/**
-	 * Allows to register on custom DAP events.
-	 */
-	onDidCustomEvent: Event<DebugEvent>;
 
 	/**
 	 * Gets the current configuration manager.
@@ -671,6 +670,12 @@ export interface IDebugService {
 	removeFunctionBreakpoints(id?: string): TPromise<void>;
 
 	/**
+	 * Sends all breakpoints to the passed session.
+	 * If session is not passed, sends all breakpoints to each session.
+	 */
+	sendAllBreakpoints(session?: ISession): TPromise<any>;
+
+	/**
 	 * Adds a new expression to the repl.
 	 */
 	addReplExpression(name: string): TPromise<void>;
@@ -683,7 +688,7 @@ export interface IDebugService {
 	/**
 	 * Appends the passed string to the debug repl.
 	 */
-	logToRepl(value: string, sev?: severity): void;
+	logToRepl(value: string | IExpression, sev?: severity, source?: IReplElementSource): void;
 
 	/**
 	 * Adds a new watch expression and evaluates it against the debug adapter.
@@ -715,7 +720,7 @@ export interface IDebugService {
 	/**
 	 * Restarts a session or creates a new one if there is no active session.
 	 */
-	restartSession(session: ISession): TPromise<any>;
+	restartSession(session: ISession, restartData?: any): TPromise<any>;
 
 	/**
 	 * Stops the session. If the session does not exist then stops all sessions.
@@ -736,6 +741,11 @@ export interface IDebugService {
 	 * Gets the current view model.
 	 */
 	getViewModel(): IViewModel;
+
+	/**
+	 * Try to auto focus the top stack frame of the passed thread.
+	 */
+	tryToAutoFocusStackFrame(thread: IThread): TPromise<any>;
 }
 
 // Editor interfaces
