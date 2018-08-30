@@ -26,3 +26,6 @@ packages/
 .idea/inspectionProfiles
 run.sh
 .yarnrc.bak
+.vs/
+*.asar
+*.asar.unpacked

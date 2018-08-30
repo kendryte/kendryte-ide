@@ -5,6 +5,7 @@ import { IEnvironmentService } from 'vs/platform/environment/common/environment'
 import { isWindows } from 'vs/base/common/platform';
 import { lstatSync } from 'fs';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
+import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 
 export const INodePathService = createDecorator<INodePathService>('INodePathService');
 
@@ -28,6 +29,8 @@ export interface INodePathService {
 	rawToolchainPath(): string;
 
 	rawSDKPath(): string;
+
+	workspaceFilePath(s?: string): string;
 }
 
 class NodePathService implements INodePathService {
@@ -37,6 +40,7 @@ class NodePathService implements INodePathService {
 	private toolchainPathExists: boolean;
 
 	constructor(
+		@IWorkspaceContextService protected workspaceContextService: IWorkspaceContextService,
 		@IEnvironmentService protected environmentService: IEnvironmentService,
 	) { }
 
@@ -113,6 +117,15 @@ class NodePathService implements INodePathService {
 			return path;
 		} else {
 			console.log('%cSDK is expected to be found at %s, But not found.', 'color:red', path);
+			return '';
+		}
+	}
+
+	public workspaceFilePath(s: string = './'): string {
+		const resolver: IWorkspaceFolder = this.workspaceContextService.getWorkspace().folders[0];
+		if (resolver) {
+			return resolvePath(resolver.uri.fsPath, s);
+		} else {
 			return '';
 		}
 	}

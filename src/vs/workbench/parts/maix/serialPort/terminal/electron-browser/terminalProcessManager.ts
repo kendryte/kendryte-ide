@@ -3,6 +3,7 @@ import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { Emitter, Event } from 'vs/base/common/event';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { ISerialLaunchConfig, ITerminalProcessManager, ProcessState } from 'vs/workbench/parts/maix/serialPort/terminal/common/terminal';
+import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import SerialPort = require('serialport');
 
 export class SerialManager extends Disposable implements ITerminalProcessManager {
@@ -29,6 +30,7 @@ export class SerialManager extends Disposable implements ITerminalProcessManager
 
 	constructor(
 		@ILogService private readonly _logService: ILogService,
+		@IConfigurationService protected configurationService: IConfigurationService,
 	) {
 		super();
 		this.ptyProcessReady = new TPromise<void>(c => {
@@ -48,9 +50,11 @@ export class SerialManager extends Disposable implements ITerminalProcessManager
 		this.processState = ProcessState.LAUNCHING;
 
 		const opts = shellLaunchConfig.options;
+		// const br = this.configurationService.getValue();
 		const port = new SerialPort(shellLaunchConfig.serialDevice, {
 			...opts,
 			autoOpen: false,
+			baudRate: 115200,
 		});
 		port.on('data', (d) => {
 			this._onProcessData.fire(d.toString());

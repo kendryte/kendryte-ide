@@ -35,7 +35,7 @@ TARGET="${TARGET%/}"
 
 export TMUX_TMPDIR="$HOME"
 
-if test -z "$DBUS_SESSION_BUS_ADDRESS" ; then
+if [ -z "${FOUND_CYGWIN}" ] && test -z "$DBUS_SESSION_BUS_ADDRESS" ; then
 	## if not found, launch a new one
 	eval $(dbus-launch --sh-syntax) || true
 	if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
@@ -49,7 +49,7 @@ TMUX=/usr/bin/tmux
 
 if ! ${TMUX} has -t "=${TARGET}" ; then
 	${TMUX} -2 new-session -d -s "${TARGET}"
-	
+
 	${TMUX} set-option mouse on
 	${TMUX} setenv HOME "$HOME"
 	${TMUX} setenv PATH "$PATH"
@@ -72,9 +72,16 @@ function lnext(){
 	node "./my-scripts/build-env/ln-extension.js" "$1"
 }
 
-sushell compile 'yarn watch'
+if [ -z "${FOUND_CYGWIN}" ]; then
+	START_CODE_SCRIPT='bash ./scripts/code.sh'
+else
+	START_CODE_SCRIPT='unset PYTHON && history -c && ./scripts/code.bat'
+	CWD="cd '$(pwd)' && "
+fi
 
-sushell vscode 'bash ./scripts/code.sh'
+sushell compile "${CWD}yarn watch"
+
+sushell vscode "${CWD}${START_CODE_SCRIPT}"
 
 ${TMUX} kill-window -t 'bash' || true
 

@@ -18,12 +18,11 @@ import {
 } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/cmakeProtocol';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { format } from 'util';
-import { resolveFrom } from 'vs/workbench/parts/maix/_library/node/resource';
 import { unlinkSync } from 'fs';
 import { Emitter, Event } from 'vs/base/common/event';
 import { ICMakeProtocolError } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/error';
 import { ICMakeProtocolMessage, ICMakeProtocolProgress, ICMakeProtocolReply } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/event';
-import { ICMakeProtocolSignal } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/singal';
+import { ICMakeProtocolFileChangeSignal, ICMakeProtocolSignal } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/singal';
 import {
 	ICMakeProtocolCodeModel,
 	ICMakeProtocolCompute,
@@ -89,6 +88,29 @@ export class Deferred extends TPromise<ICMakeResponse> implements IPromiseProgre
 	}
 }
 
+const WINDOWS_PASSING_ENV = [
+	'ALLUSERSPROFILE',
+	'LOCALAPPDATA',
+	'ALL_PROXY',
+	'NODE_ENV',
+	'APPDATA',
+	'ARCH',
+	'OS',
+	'COMMONPROGRAMFILES',
+	'COMPUTERNAME',
+	'NUMBER_OF_PROCESSORS',
+	'HOME',
+	'HOSTNAME',
+	'HTTPS_PROXY',
+	'HTTP_PROXY',
+	'LANG',
+	'PATHEXT',
+	'PROCESSOR_IDENTIFIER',
+	'PWD',
+	'TERM',
+	'USER',
+];
+
 export class CMakeService implements ICMakeService {
 	_serviceBrand: any;
 	protected localEnv: any;
@@ -150,6 +172,9 @@ export class CMakeService implements ICMakeService {
 	init(access: ServicesAccessor) {
 		this.localEnv.TOOLCHAIN = this.nodePathService.getToolchainBinPath();
 		this.localEnv.SDK = this.nodePathService.getSDKPath();
+		if (isWindows) {
+			this.localEnv.CMAKE_MAKE_PROGRAM = 'mingw32-make.exe';
+		}
 
 		this.statusBarController = this.instantiationService.invokeFunction(addStatusBarCmakeButtons);
 
@@ -193,9 +218,22 @@ export class CMakeService implements ICMakeService {
 		}
 
 		const args = ['-E', 'server', '--experimental', '--pipe=' + pipeFile];
+		let env: any;
+		if (isWindows) {
+			env = {};
+			for (const key of WINDOWS_PASSING_ENV) {
+				env[key] = process.env[key];
+			}
+			env.PATH = [
+				cmakePath.bins,
+				this.nodePathService.getToolchainBinPath(),
+			].join(';');
+		} else {
+			env = process.env;
+		}
 		const options: SpawnOptions = {
 			env: {
-				...process.env,
+				...env,
 				...staticEnv,
 				...this.localEnv,
 			},
@@ -240,8 +278,7 @@ export class CMakeService implements ICMakeService {
 				reject(e);
 			});
 			pipe.on('end', () => {
-				pipe.end();
-				resolvePath(undefined);
+				resolve(undefined);
 			});
 		});
 
@@ -274,6 +311,8 @@ export class CMakeService implements ICMakeService {
 
 	private async shutdown(force: boolean = false): TPromise<boolean> {
 		if (this.cmakeProcess) {
+			this.log('shutdown CMake server...');
+
 			if (force) {
 				this.cmakeProcess.kill('SIGKILL');
 				this.shutdownClean();
@@ -357,7 +396,7 @@ export class CMakeService implements ICMakeService {
 						this.alreadyConfigured = false;
 						return;
 					case CMAKE_SIGNAL_TYPE.FILECHANGE:
-						console.log('change event: %O', protocolData);
+						console.log('change event: %s', (protocolData as ICMakeProtocolFileChangeSignal).path);
 						return;
 				}
 		}
@@ -398,7 +437,7 @@ ${JSON.stringify(payload)}
 			return this._mainCMakeList;
 		}
 
-		const currentDir = resolveFrom(resolver, './');
+		const currentDir = this.nodePathService.workspaceFilePath('./');
 		this.log('Workspace change to: %s', currentDir);
 		if (currentDir !== this._currentFolder || force) {
 			if (this._currentFolder) {
@@ -478,6 +517,7 @@ ${JSON.stringify(payload)}
 	}
 
 	public async cleanupMake(): TPromise<void> {
+		await this.shutdown();
 		this.alreadyConfigured = false;
 		this.log('Run Clean');
 		const buildFolder = this.buildPath;

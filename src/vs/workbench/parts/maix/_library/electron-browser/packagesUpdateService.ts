@@ -11,7 +11,7 @@ import { IProgressService2, IProgressStep, ProgressLocation } from 'vs/workbench
 import { IProgress } from 'vs/platform/progress/common/progress';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { createDecorator, IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
-import { extname } from 'path';
+import { extname, resolve as resolveNative } from 'path';
 import { createReadStream, createWriteStream } from 'fs';
 import * as crypto from 'crypto';
 import { IStatusbarService, StatusbarAlignment } from 'vs/platform/statusbar/common/statusbar';
@@ -251,6 +251,10 @@ class PackagesUpdateService implements IPackagesUpdateService {
 				continue;
 			}
 			const remoteVersion = await this.getPackage(project);
+			if (remoteVersion.ignorePlatform && remoteVersion.ignorePlatform.indexOf(this.platform)) {
+				this.logService.info('[%s] not updated: this platform is ignored', project);
+				continue;
+			}
 			if (this.localPackage.hasOwnProperty(project) && remoteVersion.version === this.localPackage[project]) {
 				this.logService.info('[%s] not updated: local [%s], remote [%s]', project, remoteVersion.version, this.localPackage[project]);
 				continue;
@@ -377,7 +381,12 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	}
 
 	public unZip(file: string, target: string) {
-		return extractZip(file, target, { overwrite: true }, this.logService);
+		return extractZip(file, resolveNative(target), { overwrite: true }, this.logService);
+	}
+
+	public MicrosoftInstall(msi: string, target: string) {
+		// toWinJsPromise(import('sudo-prompt')).then(
+		return TPromise.wrapError(new Error('not impl'));
 	}
 
 	public unTar(file: string, target: string): TPromise<void> {
@@ -400,6 +409,9 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			if (/\.zip$/.test(zipFile)) {
 				this.logService.info(`extract zip to: %s`, installTarget);
 				await this.unZip(zipFile, unzipTarget);
+			} else if (/\.msi$/.test(zipFile)) {
+				this.logService.info(`extract msi file to: %s`, installTarget);
+				await this.MicrosoftInstall(zipFile, unzipTarget);
 			} else {
 				this.logService.info(`extract tar to: %s`, installTarget);
 				await this.unTar(zipFile, unzipTarget);

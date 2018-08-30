@@ -86,3 +86,5 @@ export interface ISettingItemTemplate<T = any> extends IDisposableTemplate {
 	isConfiguredElement: HTMLElement;
 	otherOverridesElement: HTMLElement;
 }
+
+export const MAIX_CONFIG_KEY_DEBUG = 'debugger.target';

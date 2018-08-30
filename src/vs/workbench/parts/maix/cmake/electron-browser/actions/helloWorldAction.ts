@@ -5,7 +5,6 @@ import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD, CMAKE_CHANNEL, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
-import { resolveFrom } from 'vs/workbench/parts/maix/_library/node/resource';
 import { copy, mkdirp } from 'vs/base/node/pfs';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
@@ -45,15 +44,14 @@ export class MaixCMakeHelloWorldAction extends Action {
 			return;
 		}
 
-		const resolver = this.workspaceContextService.getWorkspace().folders[0];
-
-		await mkdirp(resolveFrom(resolver, '.vscode'));
+		await mkdirp(this.nodePathService.workspaceFilePath('.vscode'));
 
 		const source = this.nodePathService.getPackagesPath('hello-world-project');
-		const target = resolveFrom(resolver, '.');
+		const target = this.nodePathService.workspaceFilePath();
 		this.outputChannel.append(`copy from: ${source} to ${target}\n`);
 		await copy(source, target);
 
+		const resolver = this.workspaceContextService.getWorkspace().folders[0];
 		this.editorService.openEditor({
 			resource: resolver.toResource('main.c'),
 		});

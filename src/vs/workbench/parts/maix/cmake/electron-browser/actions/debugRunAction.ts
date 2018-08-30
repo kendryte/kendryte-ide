@@ -2,30 +2,36 @@ import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
 import { ACTION_ID_MAIX_CMAKE_RUN, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
-import { IOutputService } from 'vs/workbench/parts/output/common/output';
 import { MaixCMakeCleanupAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/cleanupAction';
 import { ICompound, IConfig, IDebugService, ILaunch } from 'vs/workbench/parts/debug/common/debug';
-import { IProgressService2 } from 'vs/workbench/services/progress/common/progress';
-import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import uri from 'vs/base/common/uri';
 import { IEditor } from 'vs/workbench/common/editor';
-import { getToolchainBinPath } from 'vs/workbench/parts/maix/_library/node/nodePath';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
+import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
+import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { MAIX_CONFIG_KEY_DEBUG } from 'vs/workbench/parts/maix/_library/common/type';
+import { ILogService } from 'vs/platform/log/common/log';
+import { INotificationService } from 'vs/platform/notification/common/notification';
+import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
 
 class WorkspaceMaixLaunch implements ILaunch {
 	protected GDB: string;
+	// protected PYTHON: string;
 
 	constructor(
 		protected programFile: string,
 		@IEditorService protected editorService: IEditorService,
 		@IWorkspaceContextService protected contextService: IWorkspaceContextService,
+		@INodePathService protected nodePathService: INodePathService,
 		@IEnvironmentService environmentService: IEnvironmentService,
+		@IConfigurationService protected configurationService: IConfigurationService,
 	) {
-		this.GDB = resolvePath(getToolchainBinPath(environmentService), 'riscv64-unknown-elf-gdb');
+		this.GDB = resolvePath(nodePathService.getToolchainBinPath(), 'riscv64-unknown-elf-gdb' + executableExtension);
+		// this.PYTHON = resolvePath(nodePathService.getPackagesPath('python'),'bin');
 	}
 
 	public get workspace(): IWorkspaceFolder {
@@ -53,15 +59,20 @@ class WorkspaceMaixLaunch implements ILaunch {
 	}
 
 	public getConfiguration(): IConfig {
+		const target = this.configurationService.getValue(MAIX_CONFIG_KEY_DEBUG);
 		return {
 			type: 'gdb',
 			request: 'attach',
 			name: 'debug maix project',
 			executable: this.programFile,
-			target: 'maix3:3333', // <<== TODO
+			target: target || '127.0.0.1:3333', // <<== TODO
 			remote: true,
 			cwd: '${workspaceRoot}',
 			internalConsoleOptions: 'openOnSessionStart',
+			// env: {
+			// 	PYTHONHOME: this.PYTHON,
+			// 	PYTHONPATH: resolvePath(this.PYTHON, '..'),
+			// },
 			autorun: [
 				'load',
 			],
@@ -82,12 +93,11 @@ export class MaixCMakeDebugAction extends Action {
 
 	constructor(
 		id = MaixCMakeCleanupAction.ID, label = MaixCMakeCleanupAction.LABEL,
-		@ICMakeService protected cmakeService: ICMakeService,
-		@IOutputService protected outputService: IOutputService,
-		@IDebugService protected debugService: IDebugService,
-		@IProgressService2 protected progressService: IProgressService2,
-		@IInstantiationService protected instantiationService: IInstantiationService,
-		@INotificationService protected notificationService: INotificationService,
+		@ICMakeService private cmakeService: ICMakeService,
+		@IDebugService private debugService: IDebugService,
+		@ILogService private logService: ILogService,
+		@IInstantiationService private instantiationService: IInstantiationService,
+		@INotificationService private notificationService: INotificationService,
 	) {
 		super(MaixCMakeDebugAction.ID, MaixCMakeDebugAction.LABEL);
 	}
@@ -95,7 +105,11 @@ export class MaixCMakeDebugAction extends Action {
 	async run(): TPromise<void> {
 		const file = await this.cmakeService.getOutputFile();
 		const launch = this.instantiationService.createInstance(WorkspaceMaixLaunch, file);
-		console.log(launch.getConfiguration());
-		await this.debugService.startDebugging(launch, launch.getConfiguration());
+		this.logService.info('Debug Config:', launch.getConfiguration());
+		await this.debugService.startDebugging(launch, launch.getConfiguration()).then(undefined, (e) => {
+			debugger;
+			this.notificationService.error('Failed to start debug:\n' + e.message);
+			throw e;
+		});
 	}
 }
