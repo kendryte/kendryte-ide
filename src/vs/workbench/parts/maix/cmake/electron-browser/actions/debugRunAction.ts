@@ -20,6 +20,7 @@ import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versi
 
 class WorkspaceMaixLaunch implements ILaunch {
 	protected GDB: string;
+
 	// protected PYTHON: string;
 
 	constructor(
@@ -75,6 +76,7 @@ class WorkspaceMaixLaunch implements ILaunch {
 			// },
 			autorun: [
 				'load',
+				'c',
 			],
 			gdbpath: this.GDB,
 		} as IConfig;

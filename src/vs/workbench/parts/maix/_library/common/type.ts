@@ -88,3 +88,4 @@ export interface ISettingItemTemplate<T = any> extends IDisposableTemplate {
 }
 
 export const MAIX_CONFIG_KEY_DEBUG = 'debugger.target';
+export const MAIX_CONFIG_KEY_SERIAL_BAUDRATE = 'serialport.baudrate';

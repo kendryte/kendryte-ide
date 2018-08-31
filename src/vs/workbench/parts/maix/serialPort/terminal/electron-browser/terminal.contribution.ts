@@ -70,7 +70,6 @@ import { SyncActionDescriptor } from 'vs/platform/actions/common/actions';
 import { TerminalService } from 'vs/workbench/parts/maix/serialPort/terminal/electron-browser/terminalService';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
-import { registerColors } from 'vs/workbench/parts/maix/serialPort/terminal/common/terminalColorRegistry';
 import { getQuickNavigateHandler } from 'vs/workbench/browser/parts/quickopen/quickopen';
 import { Extensions as QuickOpenExtensions, IQuickOpenRegistry, QuickOpenHandlerDescriptor } from 'vs/workbench/browser/quickopen';
 import { Extensions as ActionBarExtensions, IActionBarRegistry, Scope } from 'vs/workbench/browser/actions';
@@ -270,5 +269,3 @@ actionRegistry.registerWorkbenchAction(new SyncActionDescriptor(ToggleEscapeSequ
 
 setupTerminalCommands();
 setupTerminalMenu();
-
-registerColors();
