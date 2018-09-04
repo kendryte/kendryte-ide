@@ -1,37 +1,11 @@
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import product from 'vs/platform/node/product';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { isWindows } from 'vs/base/common/platform';
 import { lstatSync } from 'fs';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
-
-export const INodePathService = createDecorator<INodePathService>('INodePathService');
-
-export interface INodePathService {
-	_serviceBrand: any;
-
-	getInstallPath(): string;
-
-	getDataPath(): string;
-
-	exeFile(filePath: string): string;
-
-	getToolchainBinPath(): string;
-
-	getToolchainPath(): string;
-
-	getSDKPath(): string;
-
-	getPackagesPath(project?: string): string;
-
-	rawToolchainPath(): string;
-
-	rawSDKPath(): string;
-
-	workspaceFilePath(s?: string): string;
-}
+import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
 
 class NodePathService implements INodePathService {
 	_serviceBrand: any;

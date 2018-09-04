@@ -1,13 +1,12 @@
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { ConfigurationTarget, IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { Extensions as CategoryExtensions, IConfigCategoryRegistry } from 'vs/workbench/parts/maix/_library/common/type';
+import { Extensions as CategoryExtensions, IConfigCategoryRegistry, INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
 import { Extensions as ConfigurationExtensions, IConfigurationPropertySchema, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
 import { Extensions as WorkbenchExtensions, IWorkbenchContribution, IWorkbenchContributionsRegistry } from 'vs/workbench/common/contributions';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { readdirSync } from 'vs/base/node/extfs';
-import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
 import { CMAKE_PATH_CONFIG_ID, CMAKE_USE_SERVER_CONFIG_ID } from 'vs/workbench/parts/maix/cmake/common/config';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
 import { ILogService } from 'vs/platform/log/common/log';
@@ -18,11 +17,11 @@ interface SettingsOverwiter<T> {
 }
 
 const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
-	[CMAKE_PATH_CONFIG_ID](access: ServicesAccessor, ) {
+	[CMAKE_PATH_CONFIG_ID](access: ServicesAccessor,) {
 		const nodePathService = access.get<INodePathService>(INodePathService);
 		return nodePathService.getPackagesPath('cmake/bin/cmake' + executableExtension);
 	},
-	[CMAKE_USE_SERVER_CONFIG_ID](access: ServicesAccessor, ) {
+	[CMAKE_USE_SERVER_CONFIG_ID](access: ServicesAccessor,) {
 		return true;
 	},
 	'cmake.generator'(access) {
@@ -115,4 +114,4 @@ function ignore(data: any, name: string, changed: { change: boolean }) {
 }
 
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
-	.registerWorkbenchContribution(SettingCategoryContribution, LifecyclePhase.Running);
+        .registerWorkbenchContribution(SettingCategoryContribution, LifecyclePhase.Running);

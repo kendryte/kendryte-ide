@@ -38,7 +38,6 @@ export function MaixBuildSystemPrepare(access: ServicesAccessor): TPromise<void>
 	return installExtension(
 		'twxs.cmake',
 		'ms-vscode.cpptools',
-		'webfreak.debug',
 		'ms-ceintl.vscode-language-pack-zh-hans',
 	).then((changed) => {
 		if (changed.indexOf('ms-ceintl.vscode-language-pack-zh-hans') !== -1) {

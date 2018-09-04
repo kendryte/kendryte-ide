@@ -5,7 +5,7 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { parse, resolve as resolveUrl } from 'url';
 import { OperatingSystem, OS } from 'vs/base/common/platform';
 import { is64Bit } from 'vs/workbench/parts/maix/_library/node/versions';
-import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
+import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
 import { exists, mkdirp, readdir, readFile, rename, rimraf, unlink, writeFile } from 'vs/base/node/pfs';
 import { IProgressService2, IProgressStep, ProgressLocation } from 'vs/workbench/services/progress/common/progress';
 import { IProgress } from 'vs/platform/progress/common/progress';

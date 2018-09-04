@@ -16,10 +16,6 @@
 	"win32AppUserModelId": "CanaanCreative.MaixIDE",
 	"win32ShellNameShort": "M&aix IDE",
 	"darwinBundleIdentifier": "io.canaan.maix.ide",
-	"sendASmile": {
-		"reportIssueUrl": "https://github.com/Canaan-Creative/maix-ide/issues",
-		"requestFeatureUrl": "https://github.com/Canaan-Creative/maix-ide/issues"
-	},
 	"urlProtocol": "maix-ide",
 	"updateUrl": "https://s3.cn-northwest-1.amazonaws.com.cn/maix-ide/",
 	"commit": "git-0.0.1-maix",

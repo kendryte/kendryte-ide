@@ -11,17 +11,17 @@ import uri from 'vs/base/common/uri';
 import { IEditor } from 'vs/workbench/common/editor';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
-import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
+import { INodePathService, MAIX_CONFIG_KEY_DEBUG } from 'vs/workbench/parts/maix/_library/common/type';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { MAIX_CONFIG_KEY_DEBUG } from 'vs/workbench/parts/maix/_library/common/type';
 import { ILogService } from 'vs/platform/log/common/log';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
+import { getEnvironment, unsetEnvironment } from 'vs/workbench/parts/maix/_library/common/path';
 
 class WorkspaceMaixLaunch implements ILaunch {
 	protected GDB: string;
 
-	// protected PYTHON: string;
+	protected PYTHON: string;
 
 	constructor(
 		protected programFile: string,
@@ -32,7 +32,7 @@ class WorkspaceMaixLaunch implements ILaunch {
 		@IConfigurationService protected configurationService: IConfigurationService,
 	) {
 		this.GDB = resolvePath(nodePathService.getToolchainBinPath(), 'riscv64-unknown-elf-gdb' + executableExtension);
-		// this.PYTHON = resolvePath(nodePathService.getPackagesPath('python'),'bin');
+		this.PYTHON = resolvePath(nodePathService.getToolchainPath(), 'share/gdb/python');
 	}
 
 	public get workspace(): IWorkspaceFolder {
@@ -70,13 +70,15 @@ class WorkspaceMaixLaunch implements ILaunch {
 			remote: true,
 			cwd: '${workspaceRoot}',
 			internalConsoleOptions: 'openOnSessionStart',
-			// env: {
-			// 	PYTHONHOME: this.PYTHON,
-			// 	PYTHONPATH: resolvePath(this.PYTHON, '..'),
-			// },
+			env: {
+				...unsetEnvironment(),
+				...getEnvironment(this.nodePathService),
+			},
+			printCalls: true,
+			stopOnEntry: false,
+			// showDevDebugOutput: true,
 			autorun: [
-				'load',
-				'c',
+				`python for cmd in ['delete breakpoints', 'delete tracepoints', 'load', 'interrupt']: gdb.execute(cmd)`,
 			],
 			gdbpath: this.GDB,
 		} as IConfig;

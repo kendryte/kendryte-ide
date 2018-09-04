@@ -7,7 +7,7 @@ import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD, CMAKE_CHANNEL, ICMakeService } from '
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { copy, mkdirp } from 'vs/base/node/pfs';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
+import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
 
 export class MaixCMakeHelloWorldAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_HELLO_WORLD;

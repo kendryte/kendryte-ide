@@ -41,9 +41,10 @@ import { StatusBarController } from 'vs/workbench/parts/maix/cmake/common/status
 import { CMAKE_TARGET_TYPE } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/config';
 import { MaixBuildSystemPrepare, MaixBuildSystemReload } from 'vs/workbench/parts/maix/cmake/electron-browser/maixBuildSystemService';
 import { IPackagesUpdateService } from 'vs/workbench/parts/maix/_library/electron-browser/packagesUpdateService';
-import { INodePathService } from 'vs/workbench/parts/maix/_library/node/nodePathService';
+import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
+import { getEnvironment } from 'vs/workbench/parts/maix/_library/common/path';
 
 export interface IPromiseProgress<T> {
 	progress(fn: (p: T) => void): void;
@@ -87,29 +88,6 @@ export class Deferred extends TPromise<ICMakeResponse> implements IPromiseProgre
 		return this;
 	}
 }
-
-const WINDOWS_PASSING_ENV = [
-	'ALLUSERSPROFILE',
-	'LOCALAPPDATA',
-	'ALL_PROXY',
-	'NODE_ENV',
-	'APPDATA',
-	'ARCH',
-	'OS',
-	'COMMONPROGRAMFILES',
-	'COMPUTERNAME',
-	'NUMBER_OF_PROCESSORS',
-	'HOME',
-	'HOSTNAME',
-	'HTTPS_PROXY',
-	'HTTP_PROXY',
-	'LANG',
-	'PATHEXT',
-	'PROCESSOR_IDENTIFIER',
-	'PWD',
-	'TERM',
-	'USER',
-];
 
 export class CMakeService implements ICMakeService {
 	_serviceBrand: any;
@@ -218,19 +196,7 @@ export class CMakeService implements ICMakeService {
 		}
 
 		const args = ['-E', 'server', '--experimental', '--pipe=' + pipeFile];
-		let env: any;
-		if (isWindows) {
-			env = {};
-			for (const key of WINDOWS_PASSING_ENV) {
-				env[key] = process.env[key];
-			}
-			env.PATH = [
-				cmakePath.bins,
-				this.nodePathService.getToolchainBinPath(),
-			].join(';');
-		} else {
-			env = process.env;
-		}
+		const env: any = getEnvironment(this.nodePathService);
 		const options: SpawnOptions = {
 			env: {
 				...env,

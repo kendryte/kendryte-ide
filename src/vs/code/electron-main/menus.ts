@@ -6,12 +6,12 @@
 'use strict';
 
 import * as nls from 'vs/nls';
-import { isMacintosh, isLinux, isWindows, language } from 'vs/base/common/platform';
+import { isLinux, isMacintosh, isWindows, language } from 'vs/base/common/platform';
 import * as arrays from 'vs/base/common/arrays';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { app, shell, Menu, MenuItem, BrowserWindow } from 'electron';
-import { OpenContext, IRunActionInWindowRequest, IWindowsService } from 'vs/platform/windows/common/windows';
-import { IConfigurationService, IConfigurationChangeEvent } from 'vs/platform/configuration/common/configuration';
+import { app, BrowserWindow, Menu, MenuItem, shell } from 'electron';
+import { IRunActionInWindowRequest, IWindowsService, OpenContext } from 'vs/platform/windows/common/windows';
+import { IConfigurationChangeEvent, IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { AutoSaveConfiguration } from 'vs/platform/files/common/files';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUpdateService, StateType } from 'vs/platform/update/common/update';
@@ -20,11 +20,12 @@ import { RunOnceScheduler } from 'vs/base/common/async';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { mnemonicMenuLabel as baseMnemonicLabel, unmnemonicLabel } from 'vs/base/common/labels';
 import { KeybindingsResolver } from 'vs/code/electron-main/keyboard';
-import { IWindowsMainService, IWindowsCountChangedEvent } from 'vs/platform/windows/electron-main/windows';
+import { IWindowsCountChangedEvent, IWindowsMainService } from 'vs/platform/windows/electron-main/windows';
 import { IHistoryMainService } from 'vs/platform/history/common/history';
-import { IWorkspaceIdentifier, ISingleFolderWorkspaceIdentifier, isSingleFolderWorkspaceIdentifier, isWorkspaceIdentifier } from 'vs/platform/workspaces/common/workspaces';
+import { ISingleFolderWorkspaceIdentifier, isSingleFolderWorkspaceIdentifier, isWorkspaceIdentifier, IWorkspaceIdentifier } from 'vs/platform/workspaces/common/workspaces';
 import URI from 'vs/base/common/uri';
 import { ILabelService } from 'vs/platform/label/common/label';
+import { installMaixMenu } from 'vs/code/electron-main/menu.maix';
 
 interface IMenuItemClickHandler {
 	inDevTools: (contents: Electron.WebContents) => void;
@@ -61,7 +62,7 @@ export class CodeMenu {
 
 	constructor(
 		@IUpdateService private updateService: IUpdateService,
-		@IInstantiationService instantiationService: IInstantiationService,
+		@IInstantiationService private instantiationService: IInstantiationService,
 		@IConfigurationService private configurationService: IConfigurationService,
 		@IWindowsMainService private windowsMainService: IWindowsMainService,
 		@IWindowsService private windowsService: IWindowsService,
@@ -278,6 +279,8 @@ export class CodeMenu {
 		menubar.append(gotoMenuItem);
 		menubar.append(debugMenuItem);
 		menubar.append(terminalMenuItem);
+
+		this.instantiationService.invokeFunction(installMaixMenu, menubar);
 
 		if (macWindowMenuItem) {
 			menubar.append(macWindowMenuItem);

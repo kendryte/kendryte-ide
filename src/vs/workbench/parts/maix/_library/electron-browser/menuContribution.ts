@@ -1,9 +1,10 @@
-import { MenuRegistry } from 'vs/platform/actions/common/actions';
+import { MenuId, MenuRegistry } from 'vs/platform/actions/common/actions';
 import { FpioaEditorAction } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/fpioaActions';
-import { MenubarMaixMenu } from 'vs/workbench/parts/maix/_library/common/menu';
 import * as nls from 'vs/nls';
 
-MenuRegistry.appendMenuItem(MenubarMaixMenu, {
+// SYNC: vs/code/electron-main/menu.maix.ts
+
+MenuRegistry.appendMenuItem(MenuId.MenubarMaixMenu, {
 	group: '1_tools',
 	command: {
 		id: FpioaEditorAction.ID,

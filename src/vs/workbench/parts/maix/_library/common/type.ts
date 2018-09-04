@@ -1,6 +1,6 @@
 import { TPromise } from 'vs/base/common/winjs.base';
 import { IDisposable } from 'vs/base/common/lifecycle';
-import { ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
+import { createDecorator, ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 import { ISetting } from 'vs/workbench/services/preferences/common/preferences';
 
 export interface EnumProviderService {
@@ -89,3 +89,30 @@ export interface ISettingItemTemplate<T = any> extends IDisposableTemplate {
 
 export const MAIX_CONFIG_KEY_DEBUG = 'debugger.target';
 export const MAIX_CONFIG_KEY_SERIAL_BAUDRATE = 'serialport.baudrate';
+
+
+export const INodePathService = createDecorator<INodePathService>('INodePathService');
+
+export interface INodePathService {
+	_serviceBrand: any;
+
+	getInstallPath(): string;
+
+	getDataPath(): string;
+
+	exeFile(filePath: string): string;
+
+	getToolchainBinPath(): string;
+
+	getToolchainPath(): string;
+
+	getSDKPath(): string;
+
+	getPackagesPath(project?: string): string;
+
+	rawToolchainPath(): string;
+
+	rawSDKPath(): string;
+
+	workspaceFilePath(s?: string): string;
+}
