@@ -9,6 +9,8 @@ import { array_has_diff } from 'vs/workbench/parts/maix/_library/common/utils';
 import { RawContextKey } from 'vs/platform/contextkey/common/contextkey';
 import { IQuickInputService, IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
 import { ILogService } from 'vs/platform/log/common/log';
+import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { MAIX_CONFIG_KEY_SERIAL_BAUDRATE } from 'vs/workbench/parts/maix/_library/common/type';
 
 export const KEYBINDING_CONTEXT_SERIAL_TERMINAL_FOCUS = new RawContextKey<boolean>('terminalFocus', undefined);
 
@@ -20,11 +22,13 @@ class SerialPortService implements ISerialPortService {
 	private memSerialDevices: SerialPortItem[];
 
 	private cachedPromise: TPromise<void>;
+	private openedPorts = new Map<string, SerialPort>();
 
 	constructor(
 		@IInstantiationService protected instantiationService: IInstantiationService,
 		@ILifecycleService lifecycleService: ILifecycleService,
 		@IQuickInputService protected quickInputService: IQuickInputService,
+		@IConfigurationService protected configurationService: IConfigurationService,
 		@ILogService protected logService: ILogService,
 	) {
 		this.refreshDevices();
@@ -98,6 +102,40 @@ class SerialPortService implements ISerialPortService {
 
 		const picked = await this.quickInputService.pick(TPromise.as(pickMap), { canPickMany: false });
 		return picked ? picked.id : '';
+	}
+
+	public openPort(serialDevice: string, opts: Partial<SerialPort.OpenOptions> = {}, exclusive = false): TPromise<SerialPort> {
+		if (this.openedPorts.has(serialDevice)) {
+			const exists = this.openedPorts.get(serialDevice);
+			if (exclusive) {
+				exists.close();
+			} else {
+				return TPromise.as(exists);
+			}
+		}
+		const br = parseInt(this.configurationService.getValue(MAIX_CONFIG_KEY_SERIAL_BAUDRATE)) || 115200;
+		const port = new SerialPort(serialDevice, {
+			...opts,
+			autoOpen: false,
+			baudRate: br,
+		});
+		port.on('end', () => {
+			this.logService.debug('[serial port] ' + serialDevice + ' is end!');
+			port.removeAllListeners();
+		});
+		const p = new TPromise((resolve, reject) => {
+			port.open((error: Error) => {
+				if (error) {
+					this.logService.debug('[serial port] ' + serialDevice + ' failed to open');
+					reject(error);
+				} else {
+					this.logService.debug('[serial port] ' + serialDevice + ' open ok');
+					resolve(port);
+				}
+			});
+		});
+		this.openedPorts.set(serialDevice, port);
+		return p;
 	}
 }
 

@@ -3,8 +3,7 @@ import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { Emitter, Event } from 'vs/base/common/event';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { ISerialLaunchConfig, ITerminalProcessManager, ProcessState } from 'vs/workbench/parts/maix/serialPort/terminal/common/terminal';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { MAIX_CONFIG_KEY_SERIAL_BAUDRATE } from 'vs/workbench/parts/maix/_library/common/type';
+import { ISerialPortService } from 'vs/workbench/parts/maix/serialPort/common/type';
 import SerialPort = require('serialport');
 
 export class SerialManager extends Disposable implements ITerminalProcessManager {
@@ -31,7 +30,7 @@ export class SerialManager extends Disposable implements ITerminalProcessManager
 
 	constructor(
 		@ILogService private readonly _logService: ILogService,
-		@IConfigurationService protected configurationService: IConfigurationService,
+		@ISerialPortService protected serialPortService: ISerialPortService,
 	) {
 		super();
 		this.ptyProcessReady = new TPromise<void>(c => {
@@ -50,35 +49,27 @@ export class SerialManager extends Disposable implements ITerminalProcessManager
 	public createProcess(shellLaunchConfig: ISerialLaunchConfig, cols: number, rows: number) {
 		this.processState = ProcessState.LAUNCHING;
 
-		const opts = shellLaunchConfig.options;
-		const br = parseInt(this.configurationService.getValue(MAIX_CONFIG_KEY_SERIAL_BAUDRATE)) || 115200;
-		const port = new SerialPort(shellLaunchConfig.serialDevice, {
-			...opts,
-			autoOpen: false,
-			baudRate: br,
-		});
-		port.on('data', (d) => {
-			this._onProcessData.fire(d.toString());
-		});
-		port.on('end', () => {
-			console.log('[serial port] end!');
-			if (this.processState !== ProcessState.LAUNCHING) {
-				this.processState = ProcessState.KILLED_BY_PROCESS;
-			}
-			this._onProcessExit.fire(0);
-			port.removeAllListeners();
-		});
-		port.open((error: Error) => {
-			if (error) {
-				console.log('[serial port] failed to open');
-				this._onProcessData.fire('\nError: ' + error.stack);
-				this.processState = ProcessState.KILLED_DURING_LAUNCH;
-				this._onProcessExit.fire(1);
-			} else {
-				console.log('[serial port] open ok');
-				this._port = port;
-				this.initPort();
-			}
+		const portP = this.serialPortService.openPort(shellLaunchConfig.serialDevice, shellLaunchConfig.options);
+
+		portP.then((port: SerialPort) => {
+			this._port = port;
+
+			port.on('end', () => {
+				if (this.processState !== ProcessState.LAUNCHING) {
+					this.processState = ProcessState.KILLED_BY_PROCESS;
+				}
+				this._onProcessExit.fire(0);
+			});
+
+			port.on('data', (d) => {
+				this._onProcessData.fire(d.toString());
+			});
+
+			this.initPort();
+		}, (error: Error) => {
+			this._onProcessData.fire('\nError: ' + error.stack);
+			this.processState = ProcessState.KILLED_DURING_LAUNCH;
+			this._onProcessExit.fire(1);
 		});
 	}
 

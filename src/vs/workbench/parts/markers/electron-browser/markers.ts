@@ -50,7 +50,7 @@ export class MarkersWorkbenchService extends Disposable implements IMarkersWorkb
 		@IConfigurationService private configurationService: IConfigurationService,
 		@IWorkspaceContextService private workspaceContextService: IWorkspaceContextService,
 		@IActivityService private activityService: IActivityService,
-		@IInstantiationService instantiationService: IInstantiationService
+		@IInstantiationService instantiationService: IInstantiationService,
 	) {
 		super();
 		this.markersModel = this._register(instantiationService.createInstance(MarkersModel, this.readMarkers()));

@@ -13,6 +13,7 @@ import { MaixCMakeCleanupAction } from 'vs/workbench/parts/maix/cmake/electron-b
 import { MaixCMakeSelectTargetAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/selectTargetAction';
 import { MaixCMakeSelectVariantAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/selectVariantAction';
 import { MaixCMakeHelloWorldAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/helloWorldAction';
+import { MaixCMakeConfigureAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/configureAction';
 
 registerSingleton(ICMakeService, CMakeService);
 
@@ -23,7 +24,7 @@ registry.registerChannel(CMAKE_CHANNEL, 'Build/Run');
 
 // BUILD
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeBuildAction, MaixCMakeBuildAction.ID, MaixCMakeBuildAction.LABEL), 'Maix: Build project', category);
+        .registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeBuildAction, MaixCMakeBuildAction.ID, MaixCMakeBuildAction.LABEL), 'Maix: Build project', category);
 
 MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {
@@ -32,9 +33,20 @@ MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	},
 });
 
+// CONFIGURE
+Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
+        .registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeConfigureAction, MaixCMakeConfigureAction.ID, MaixCMakeDebugAction.LABEL), 'Maix: Configure', category);
+
+MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
+	command: {
+		id: MaixCMakeConfigureAction.ID,
+		title: `${category}: ${MaixCMakeConfigureAction.LABEL}`,
+	},
+});
+
 // RUN
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeDebugAction, MaixCMakeDebugAction.ID, MaixCMakeDebugAction.LABEL), 'Maix: Start Debug', category);
+        .registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeDebugAction, MaixCMakeDebugAction.ID, MaixCMakeDebugAction.LABEL), 'Maix: Start Debug', category);
 
 MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {
@@ -45,7 +57,7 @@ MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 
 // UPLOAD
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeUploadAction, MaixCMakeUploadAction.ID, MaixCMakeUploadAction.LABEL), 'Maix: Upload to chip', category);
+        .registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeUploadAction, MaixCMakeUploadAction.ID, MaixCMakeUploadAction.LABEL), 'Maix: Upload to chip', category);
 
 MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {
@@ -56,7 +68,7 @@ MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 
 // clean
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeCleanupAction, MaixCMakeCleanupAction.ID, MaixCMakeCleanupAction.LABEL), 'Maix: Cleanup project', category);
+        .registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeCleanupAction, MaixCMakeCleanupAction.ID, MaixCMakeCleanupAction.LABEL), 'Maix: Cleanup project', category);
 
 MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {
@@ -67,7 +79,7 @@ MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 
 // target select
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeSelectTargetAction, MaixCMakeSelectTargetAction.ID, MaixCMakeSelectTargetAction.LABEL), 'Maix: Select build target', category);
+        .registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeSelectTargetAction, MaixCMakeSelectTargetAction.ID, MaixCMakeSelectTargetAction.LABEL), 'Maix: Select build target', category);
 
 MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {
@@ -78,7 +90,7 @@ MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 
 // target select
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeSelectVariantAction, MaixCMakeSelectVariantAction.ID, MaixCMakeSelectVariantAction.LABEL), 'Maix: Select build variant', category);
+        .registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeSelectVariantAction, MaixCMakeSelectVariantAction.ID, MaixCMakeSelectVariantAction.LABEL), 'Maix: Select build variant', category);
 
 MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {
@@ -89,7 +101,7 @@ MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 
 // hello world project
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeHelloWorldAction, MaixCMakeHelloWorldAction.ID, MaixCMakeHelloWorldAction.LABEL), 'Maix: Create "hello world!" project', category);
+        .registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeHelloWorldAction, MaixCMakeHelloWorldAction.ID, MaixCMakeHelloWorldAction.LABEL), 'Maix: Create "hello world!" project', category);
 
 MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {

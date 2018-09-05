@@ -14,8 +14,8 @@ export default () => `
 <div class="welcomePageContainer">
 	<div class="welcomePage">
 		<div class="title">
-			<h1 class="caption">Maix IDE</h1>
-			<p class="subtitle detail">Powered by Visual Studio Code</p>
+			<h1 class="caption">Kendryte IDE</h1>
+			<!--p class="subtitle detail">Powered by Visual Studio Code</p-->
 		</div>
 		<div class="row">
 			<div class="splash">
@@ -36,7 +36,7 @@ export default () => `
 					</ul>
 					<p class="none detail">${escape(localize('welcomePage.noRecentFolders', "No recent folders"))}</p>
 				</div>
-				<div class="section help">
+				<!--div class="section help">
 					<h2 class="caption">${escape(localize('welcomePage.help', "Help"))}</h2>
 					<ul>
 						<li class="keybindingsReferenceLink"><a href="command:workbench.action.keybindingsReference">${escape(localize('welcomePage.keybindingsCheatsheet', "Printable keyboard cheatsheet"))}</a></li>
@@ -46,34 +46,17 @@ export default () => `
 						<li><a href="https://github.com/Microsoft/vscode">${escape(localize('welcomePage.gitHubRepository', "GitHub repository"))}</a></li>
 						<li><a href="http://stackoverflow.com/questions/tagged/vscode?sort=votes&pageSize=50">${escape(localize('welcomePage.stackOverflow', "Stack Overflow"))}</a></li>
 					</ul>
-				</div>
+				</div-->
 				<p class="showOnStartup"><input type="checkbox" id="showOnStartup" class="checkbox"> <label class="caption" for="showOnStartup">${escape(localize('welcomePage.showOnStartup', "Show welcome page on startup"))}</label></p>
 			</div>
 			<div class="commands">
-				<!--div class="section maix">
-					<h2 class="caption">${escape(localize('maix', "Maix"))}</h2>
-					<ul>
-						<li class="openMaixProject">
-							<button role="group" data-href="command:workbench.action.maix.open">
-								<h3 class="caption">${escape(localize('welcomePage.maixOpen.title', "Start"))}</h3>
-								<span class="detail">${escape(localize('welcomePage.maixOpen.desc', "New Maix Project"))}</span>
-							</button>
-						</li>
-						<li class="checkMaixProject">
-							<button role="group" data-href="command:workbench.action.maix.open">
-								<h3 class="caption">${escape(localize('welcomePage.maixOpen.title', "Start"))}</h3>
-								<span class="detail">${escape(localize('welcomePage.maixOpen.desc', "New Maix Project"))}</span>
-							</button>
-						</li>
-					</ul>
-				</div-->
 				<div class="section customize">
 					<h2 class="caption">${escape(localize('welcomePage.customize', "Customize"))}</h2>
 					<ul>
-						<li class="showLanguageExtensions"><button role="group" data-href="command:workbench.extensions.action.showLanguageExtensions"><h3 class="caption">${escape(localize('welcomePage.installExtensionPacks', "Tools and languages"))}</h3> <span class="detail">${escape(localize('welcomePage.installExtensionPacksDescription', "Install support for {0} and {1}"))
+						<!--li class="showLanguageExtensions"><button role="group" data-href="command:workbench.extensions.action.showLanguageExtensions"><h3 class="caption">${escape(localize('welcomePage.installExtensionPacks', "Tools and languages"))}</h3> <span class="detail">${escape(localize('welcomePage.installExtensionPacksDescription', "Install support for {0} and {1}"))
 		.replace('{0}', `<span class="extensionPackList"></span>`)
 		.replace('{1}', `<a href="command:workbench.extensions.action.showLanguageExtensions" title="${localize('welcomePage.showLanguageExtensions', "Show more language extensions")}">${escape(localize('welcomePage.moreExtensions', "more"))}</a>`)}
-						</span></button></li>
+						</span></button></li-->
 						<li class="showRecommendedKeymapExtensions"><button role="group" data-href="command:workbench.extensions.action.showRecommendedKeymapExtensions"><h3 class="caption">${escape(localize('welcomePage.installKeymapDescription', "Settings and keybindings"))}</h3> <span class="detail">${escape(localize('welcomePage.installKeymapExtension', "Install the settings and keyboard shortcuts of {0} and {1}"))
 		.replace('{0}', `<span class="keymapList"></span>`)
 		.replace('{1}', `<a href="command:workbench.extensions.action.showRecommendedKeymapExtensions" title="${localize('welcomePage.showKeymapExtensions', "Show other keymap extensions")}">${escape(localize('welcomePage.others', "others"))}</a>`)}
@@ -81,14 +64,14 @@ export default () => `
 						<li class="selectTheme"><button data-href="command:workbench.action.selectTheme"><h3 class="caption">${escape(localize('welcomePage.colorTheme', "Color theme"))}</h3> <span class="detail">${escape(localize('welcomePage.colorThemeDescription', "Make the editor and your code look the way you love"))}</span></button></li>
 					</ul>
 				</div>
-				<div class="section learn">
+				<!--div class="section learn">
 					<h2 class="caption">${escape(localize('welcomePage.learn', "Learn"))}</h2>
 					<ul>
 						<li class="showCommands"><button data-href="command:workbench.action.showCommands"><h3 class="caption">${escape(localize('welcomePage.showCommands', "Find and run all commands"))}</h3> <span class="detail">${escape(localize('welcomePage.showCommandsDescription', "Rapidly access and search commands from the Command Palette ({0})")).replace('{0}', '<span class="shortcut" data-command="workbench.action.showCommands"></span>')}</span></button></li>
 						<li class="showInterfaceOverview"><button data-href="command:workbench.action.showInterfaceOverview"><h3 class="caption">${escape(localize('welcomePage.interfaceOverview', "Interface overview"))}</h3> <span class="detail">${escape(localize('welcomePage.interfaceOverviewDescription', "Get a visual overlay highlighting the major components of the UI"))}</span></button></li>
 						<li class="showInteractivePlayground"><button data-href="command:workbench.action.showInteractivePlayground"><h3 class="caption">${escape(localize('welcomePage.interactivePlayground', "Interactive playground"))}</h3> <span class="detail">${escape(localize('welcomePage.interactivePlaygroundDescription', "Try essential editor features out in a short walkthrough"))}</span></button></li>
 					</ul>
-				</div>
+				</div-->
 			</div>
 		</div>
 	</div>

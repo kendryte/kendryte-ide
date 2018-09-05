@@ -116,7 +116,7 @@ suite('Resources', () => {
 			'myScheme://authority/path/file.js?query#fragment');
 	});
 
-	test('normalizePath', () => {
+	test('normalizePosixPath', () => {
 		if (isWindows) {
 			assert.equal(normalizePath(URI.file('c:\\foo\\.\\bar')).toString(), 'file:///c%3A/foo/bar');
 			assert.equal(normalizePath(URI.file('c:\\foo\\.')).toString(), 'file:///c%3A/foo');

@@ -45,6 +45,7 @@ import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 import { getEnvironment } from 'vs/workbench/parts/maix/_library/common/path';
+import { CMakeBuildErrorProcessor, CMakeBuildProgressProcessor, CMakeProcessList } from 'vs/workbench/parts/maix/cmake/common/outputProcessor';
 
 export interface IPromiseProgress<T> {
 	progress(fn: (p: T) => void): void;
@@ -114,6 +115,7 @@ export class CMakeService implements ICMakeService {
 	public readonly onCMakeEvent: Event<ICMakeProtocol> = this._onCMakeEvent.event;
 	private cmakeConnectionStablePromise: Deferred;
 	private statusBarController: StatusBarController;
+	private lastProcess: CMakeProcessList;
 
 	constructor(
 		@IInstantiationService protected instantiationService: IInstantiationService,
@@ -526,6 +528,9 @@ ${JSON.stringify(payload)}
 		this.alreadyConfigured = true;
 
 		await this.notifyCppExtension();
+
+		this.log('');
+		this.log('Configure complete!');
 	}
 
 	public async build(): TPromise<void> {
@@ -556,6 +561,14 @@ ${JSON.stringify(payload)}
 
 		this.log(make, ...args);
 
+		if (this.lastProcess) {
+			this.lastProcess.dispose();
+		}
+		const processors = this.lastProcess = new CMakeProcessList([
+			new CMakeBuildProgressProcessor(this.statusBarController),
+			this.instantiationService.createInstance(CMakeBuildErrorProcessor),
+		]);
+
 		const process = new LineProcess({
 			command: make,
 			isShellCommand: false,
@@ -563,9 +576,12 @@ ${JSON.stringify(payload)}
 			options: { cwd: buildPath },
 		} as Executable);
 
-		const ret = await process.start((e: LineData) => {
-			this.log(e.line);
+		const ret = await process.start(({ line }: LineData) => {
+			this.log(line);
+			processors.parseLine(line);
 		});
+
+		processors.finalize();
 
 		this.log('');
 		if (ret.error) {
@@ -573,8 +589,12 @@ ${JSON.stringify(payload)}
 			throw ret.error;
 		}
 		if (ret.cmdCode !== 0) {
+			this.statusBarController.showMessage('');
 			this.log('Build Error: %s exited with code %s.', make, ret.cmdCode);
 			throw new Error('make failed with code ' + ret.cmdCode);
+		} else {
+			processors.dispose();
+			delete this.lastProcess;
 		}
 	}
 
@@ -740,8 +760,14 @@ ${JSON.stringify(payload)}
 			cStandard: 'c11',
 			cppStandard: 'c++17',
 			intelliSenseMode: 'clang-x64',
-			compileCommands: '${workspaceFolder}/build/compile_commands.json',
+			compileCommands: '${workspaceFolder}/.vscode/compile_commands.backup.json',
 		});
+
+		const from = this.nodePathService.workspaceFilePath('build/compile_commands.json');
+		const to = this.nodePathService.workspaceFilePath('.vscode/compile_commands.backup.json');
+
+		await writeFile(to, await readFile(from));
+
 		this.log('write config for cpp extension.');
 		await writeFile(cppExtConfigFile, JSON.stringify(content, null, 4), { encoding: { charset: 'utf-8', addBOM: false } });
 	}

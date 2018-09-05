@@ -6,6 +6,7 @@ import { StatusBarItem } from 'vs/workbench/parts/maix/cmake/common/statusBarBut
 import {
 	ACTION_ID_MAIX_CMAKE_BUILD,
 	ACTION_ID_MAIX_CMAKE_CLEANUP,
+	ACTION_ID_MAIX_CMAKE_CONFIGURE,
 	ACTION_ID_MAIX_CMAKE_RUN,
 	ACTION_ID_MAIX_CMAKE_SELECT_TARGET,
 	ACTION_ID_MAIX_CMAKE_SELECT_VARIANT,
@@ -29,6 +30,7 @@ export function addStatusBarCmakeButtons(access: ServicesAccessor) {
 	const selectTip = instantiationService.createInstance(StatusBarItem, StatusbarAlignment.LEFT, 3.9);
 	selectTip.text = '$(book)';
 	selectTip.tooltip = 'CMake';
+	selectTip.command = ACTION_ID_MAIX_CMAKE_CONFIGURE;
 	entries.push(selectTip);
 
 	const selectVariantButton = instantiationService.createInstance(StatusBarItem, StatusbarAlignment.LEFT, 3.89);

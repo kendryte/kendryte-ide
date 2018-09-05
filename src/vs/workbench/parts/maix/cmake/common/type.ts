@@ -59,6 +59,7 @@ export const ACTION_ID_MAIX_CMAKE_UPLOAD = 'workbench.action.maix.upload';
 export const ACTION_ID_MAIX_CMAKE_CLEANUP = 'workbench.action.maix.cleanup';
 export const ACTION_ID_MAIX_CMAKE_SELECT_TARGET = 'workbench.action.maix.select-target';
 export const ACTION_ID_MAIX_CMAKE_SELECT_VARIANT = 'workbench.action.maix.select-variant';
+export const ACTION_ID_MAIX_CMAKE_CONFIGURE = 'workbench.action.maix.configure';
 export const ACTION_ID_MAIX_CMAKE_HELLO_WORLD = 'workbench.action.maix.hello-world';
 
 export function CMakeInternalVariants(): CurrentItem[] {

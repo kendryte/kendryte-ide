@@ -58,6 +58,7 @@ export class StatusBarController {
 		}
 		this.messageButton.command = '';
 		this.messageButton.text = message;
+		this.messageButton.show(message.length > 0);
 	}
 
 	setEmptyState(empty: false, cmakeProject: boolean);
