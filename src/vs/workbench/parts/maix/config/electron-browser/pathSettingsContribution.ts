@@ -7,7 +7,6 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { readdirSync } from 'vs/base/node/extfs';
-import { CMAKE_PATH_CONFIG_ID, CMAKE_USE_SERVER_CONFIG_ID } from 'vs/workbench/parts/maix/cmake/common/config';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
 import { ILogService } from 'vs/platform/log/common/log';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
@@ -17,17 +16,11 @@ interface SettingsOverwiter<T> {
 }
 
 const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
-	[CMAKE_PATH_CONFIG_ID](access: ServicesAccessor,) {
+	'C_Cpp.default.compilerPath'(access: ServicesAccessor) {
 		const nodePathService = access.get<INodePathService>(INodePathService);
-		return nodePathService.getPackagesPath('cmake/bin/cmake' + executableExtension);
+		return resolvePath(nodePathService.getToolchainBinPath(), 'riscv64-unknown-elf-gcc' + executableExtension);
 	},
-	[CMAKE_USE_SERVER_CONFIG_ID](access: ServicesAccessor,) {
-		return true;
-	},
-	'cmake.generator'(access) {
-		return 'Unix Makefiles';
-	},
-	'C_Cpp.default.includePath'(access: ServicesAccessor, current) {
+	'C_Cpp.default.includePath'(access: ServicesAccessor) {
 		const nodePathService = access.get<INodePathService>(INodePathService);
 		const ret: string[] = [];
 		const sdk = nodePathService.rawSDKPath();
@@ -47,6 +40,23 @@ const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
 		return ret;
 	},
 };
+
+const setIfNot = new Map<string, any>();
+setIfNot.set('workbench.list.openMode', 'doubleClick');
+setIfNot.set('editor.cursorBlinking', 'smooth');
+setIfNot.set('editor.cursorStyle', 'line-thin');
+setIfNot.set('git.ignoreMissingGitWarning', true);
+setIfNot.set('files.autoSave', 'afterDelay');
+setIfNot.set('explorer.confirmDelete', false);
+setIfNot.forEach((v, k) => {
+	configOverwrites[k] = (a, user) => user === undefined ? v : undefined;
+});
+
+const forceOverride = new Map<string, any>();
+forceOverride.set('cmake.generator', 'Unix Makefiles');
+forceOverride.forEach((v, k) => {
+	configOverwrites[k] = () => v;
+});
 
 class SettingCategoryContribution implements IWorkbenchContribution {
 	private registry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration);
@@ -73,11 +83,11 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 			/// if (!old.user) {
 			let value: any;
 			try {
-				value = this.instantiationService.invokeFunction(overwrite, old.user || old.default);
+				value = this.instantiationService.invokeFunction(overwrite, old.user, old.default);
 			} catch (e) {
 				this.logService.error(`Failed to register config key: ${key}\n${e.stack}`);
 			}
-			if (typeof value !== 'undefined') {
+			if (value !== undefined) {
 				this.configurationService.updateValue(key, value, ConfigurationTarget.USER);
 			}
 			/// }

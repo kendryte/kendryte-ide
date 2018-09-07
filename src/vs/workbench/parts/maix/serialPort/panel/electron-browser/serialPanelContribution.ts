@@ -25,7 +25,9 @@ class SerialPanelService implements ISerialPanelService {
 
 		lifecycleService.when(LifecyclePhase.Running).then(_ => instantiationService.invokeFunction(addStatusBarButtons));
 		lifecycleService.onShutdown(() => {
-			this.creationPanel.dispose();
+			if (this.creationPanel) {
+				this.creationPanel.dispose();
+			}
 		});
 	}
 

@@ -1,5 +1,6 @@
 import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
 import { isWindows } from 'vs/base/common/platform';
+import { normalize } from 'path';
 
 export const WINDOWS_PASSING_ENV = [
 	'ALLUSERSPROFILE',
@@ -19,7 +20,6 @@ export const WINDOWS_PASSING_ENV = [
 	'LANG',
 	'PATHEXT',
 	'PROCESSOR_IDENTIFIER',
-	'PWD',
 	'TERM',
 	'USER',
 ];
@@ -30,15 +30,19 @@ export function getEnvironment(nodePathService: INodePathService) {
 		nodePathService.getPackagesPath('cmake/bin'),
 		nodePathService.getToolchainBinPath(),
 	];
+
 	if (isWindows) {
 		for (const key of WINDOWS_PASSING_ENV) {
 			env[key] = process.env[key];
 		}
-		env.PATH = path.join(';');
-	} else {
-		path.push('/usr/bin'); // for `make`
 
-		env.PATH = path.join(':');
+		env.PWD = normalize(nodePathService.workspaceFilePath('build'));
+		env.PATH = path.map(normalize).join(';');
+	} else {
+		Object.assign(env, process.env);
+
+		env.PWD = nodePathService.workspaceFilePath('build');
+		env.PATH = path.join(':') + ':' + process.env.PATH;
 	}
 
 	return env;

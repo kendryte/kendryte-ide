@@ -13,7 +13,7 @@ export function used() {
 export default () => `
 <div class="welcomePageContainer">
 	<div class="welcomePage">
-		<div class="title">
+		<div class="title" style="display:block">
 			<h1 class="caption">Kendryte IDE</h1>
 			<!--p class="subtitle detail">Powered by Visual Studio Code</p-->
 		</div>

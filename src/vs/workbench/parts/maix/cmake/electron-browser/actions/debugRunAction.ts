@@ -3,7 +3,7 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
 import { ACTION_ID_MAIX_CMAKE_RUN, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
 import { MaixCMakeCleanupAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/cleanupAction';
-import { ICompound, IConfig, IDebugService, ILaunch } from 'vs/workbench/parts/debug/common/debug';
+import { ICompound, IDebugService, ILaunch } from 'vs/workbench/parts/debug/common/debug';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
@@ -17,6 +17,9 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
 import { getEnvironment, unsetEnvironment } from 'vs/workbench/parts/maix/_library/common/path';
+import { ShellExportCommand } from 'vs/workbench/parts/maix/_library/common/platformEnv';
+import { writeFile } from 'vs/base/node/pfs';
+import { isWindows } from 'vs/base/common/platform';
 
 class WorkspaceMaixLaunch implements ILaunch {
 	protected GDB: string;
@@ -30,13 +33,16 @@ class WorkspaceMaixLaunch implements ILaunch {
 		@INodePathService protected nodePathService: INodePathService,
 		@IEnvironmentService environmentService: IEnvironmentService,
 		@IConfigurationService protected configurationService: IConfigurationService,
+		@IWorkspaceContextService protected workspaceContextService: IWorkspaceContextService,
 	) {
 		this.GDB = resolvePath(nodePathService.getToolchainBinPath(), 'riscv64-unknown-elf-gdb' + executableExtension);
-		this.PYTHON = resolvePath(nodePathService.getToolchainPath(), 'share/gdb/python');
+		// this.PYTHON = resolvePath(nodePathService.getToolchainPath(), 'share/gdb/python/gdb');
+		// this.PYTHON += isWindows ? ';' : ':';
+		this.PYTHON = nodePathService.getPackagesPath('py2lib');
 	}
 
 	public get workspace(): IWorkspaceFolder {
-		return undefined;
+		return this.workspaceContextService.getWorkspace().folders[0];
 	}
 
 	public get uri(): uri {
@@ -59,7 +65,7 @@ class WorkspaceMaixLaunch implements ILaunch {
 		return ['default'];
 	}
 
-	public getConfiguration(): IConfig {
+	public getConfiguration() {
 		const target = this.configurationService.getValue(MAIX_CONFIG_KEY_DEBUG);
 		return {
 			type: 'gdb',
@@ -68,20 +74,22 @@ class WorkspaceMaixLaunch implements ILaunch {
 			executable: this.programFile,
 			target: target || '127.0.0.1:3333', // <<== TODO
 			remote: true,
-			cwd: '${workspaceRoot}',
-			internalConsoleOptions: 'openOnSessionStart',
+			cwd: '${workspaceRoot}/build',
+			internalConsoleOptions: 'openOnSessionStart' as any,
 			env: {
 				...unsetEnvironment(),
 				...getEnvironment(this.nodePathService),
+				PYTHONPATH: this.PYTHON,
+				PYTHONHOME: this.PYTHON,
 			},
 			printCalls: true,
 			stopOnEntry: false,
-			// showDevDebugOutput: true,
+			showDevDebugOutput: true,
 			autorun: [
-				// `python for cmd in ['delete breakpoints', 'delete tracepoints', 'load', 'interrupt']: gdb.execute(cmd)`,
+				`python for cmd in ['delete breakpoints', 'delete tracepoints', 'load', 'interrupt']: gdb.execute(cmd)`,
 			],
 			gdbpath: this.GDB,
-		} as IConfig;
+		};
 	}
 
 	openConfigFile(sideBySide: boolean, preserveFocus: boolean, type?: string): TPromise<{ editor: IEditor, created: boolean }> {
@@ -109,8 +117,20 @@ export class MaixCMakeDebugAction extends Action {
 	async run(): TPromise<void> {
 		const file = await this.cmakeService.getOutputFile();
 		const launch = this.instantiationService.createInstance(WorkspaceMaixLaunch, file);
-		this.logService.info('Debug Config:', launch.getConfiguration());
-		await this.debugService.startDebugging(launch, launch.getConfiguration()).then(undefined, (e) => {
+		const config = launch.getConfiguration();
+
+		this.logService.info('Debug Config:', config);
+		const buildDir = config.env.PWD || resolvePath(launch.workspace.uri.fsPath, 'build');
+		let dbg = `cd "${buildDir}"\n`;
+		for (const k of Object.keys(config.env)) {
+			if (config.env[k]) {
+				dbg += ShellExportCommand + ' ' + k + '=' + config.env[k] + '\n';
+			}
+		}
+		dbg += '"' + config.gdbpath + '" ' + `--eval "target remote ${config.target}"` + ' "' + config.executable + '"';
+		writeFile(resolvePath(launch.workspace.uri.fsPath, '.vscode', isWindows ? 'debugger.bat' : 'debugger.sh'), dbg);
+
+		await this.debugService.startDebugging(launch, config).then(undefined, (e) => {
 			debugger;
 			this.notificationService.error('Failed to start debug:\n' + e.message);
 			throw e;
