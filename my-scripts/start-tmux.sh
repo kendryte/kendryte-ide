@@ -11,11 +11,8 @@ if [ "$(id -u)" -eq 0 ]; then
 fi
 
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-
-export REAL_HOME="${HOME}"
-export HOME=$(realpath "`pwd`/../../FAKE_HOME")
-
 source fn.sh
+set_path_when_developing
 source common.sh
 cd ..
 

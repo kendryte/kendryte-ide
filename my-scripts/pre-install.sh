@@ -2,20 +2,16 @@
 
 set -e
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-
-export REAL_HOME="${HOME}"
-export HOME=$(realpath "`pwd`/../../FAKE_HOME")
-
 source fn.sh
+set_path_when_developing
 source common.sh
-
 cd ..
 
-if [ -e ".yarnrc.bak" ]; then
-	rm -f .yarnrc
-	mv .yarnrc.bak .yarnrc
-fi
+### start
+reset_asar
 
-sed -i.bak "/cache-folder/d" ".yarnrc"
-echo '' >> ".yarnrc"
-echo 'cache-folder "'${YARN_CACHE_FOLDER}'"' >> ".yarnrc"
+echo 'disturl "https://atom.io/download/electron"
+target "2.0.7"
+runtime "electron"
+cache-folder "'${YARN_CACHE_FOLDER}'"
+' > ".yarnrc"

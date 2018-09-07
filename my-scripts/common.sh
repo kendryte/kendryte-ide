@@ -5,8 +5,6 @@ if [ -z "$ARCH" ]; then
 	ARCH=x64
 fi
 
-P="$PATH"
-
 export npm_config_arch="$ARCH"
 
 if [ -z "${VSCODE_ROOT}" ]; then
@@ -25,7 +23,6 @@ fi
 
 if [ -z "${TOOLCHAIN_BIN}" ]; then
 	export TOOLCHAIN_BIN="${VSCODE_ROOT}/packages/toolchain/bin"
-	P="${TOOLCHAIN_BIN}:$P"
 fi
 
 if [ -n "${HTTP_PROXY}${http_proxy}" ]; then
@@ -41,17 +38,24 @@ if [ -z "${FOUND_CYGWIN}" ] || [ -z "${NODEJS}" ] ; then
 		export NODEJS="${RELEASE_ROOT}/nodejs/${ARCH}/node.exe"
 		export NODEJS_BIN="${RELEASE_ROOT}/nodejs/${ARCH}"
 		export YARN_CACHE_FOLDER="$(cygpath -m "${YARN_CACHE_FOLDER}")"
+		function sudo() { "$@"; }
 	else
 		SYSTEM="linux"
 		export NODEJS="${RELEASE_ROOT}/nodejs/${ARCH}/bin/node"
 		export NODEJS_BIN="${RELEASE_ROOT}/nodejs/${ARCH}/bin"
+		if ! command -v sudo &>/dev/null ; then
+			function sudo() { "$@"; }
+		fi
 	fi
-	P="${NODEJS_BIN}:$P"
 fi
 
-export PATH="$P"
+if [ -n "${ORIGINAL_PATH}" ]; then
+	export ORIGINAL_PATH="$PATH"
+fi
+export PATH="./node_modules/.bin:${TOOLCHAIN_BIN}:${NODEJS_BIN}:/bin:/usr/bin"
 
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
+echo -e "\e[1;38;5;9mSYSTEM\e[0m=\e[2m${SYSTEM}\e[0m"
 echo -e "\e[1;38;5;9mARCH\e[0m=\e[2m${ARCH}\e[0m"
 echo -e "\e[1;38;5;9mVSCODE_ROOT\e[0m=\e[2m${VSCODE_ROOT}\e[0m"
 echo -e "\e[1;38;5;9mYARN_CACHE_FOLDER\e[0m=\e[2m${YARN_CACHE_FOLDER}\e[0m"

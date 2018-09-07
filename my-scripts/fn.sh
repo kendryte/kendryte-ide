@@ -140,3 +140,40 @@ function clear_environment(){
 	unset FOUND_CYGWIN
 	unset NODEJS
 }
+
+function set_path_when_developing() {
+	local SCRIPTS_PATH="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+	if [ -n "${REAL_HOME}" ]; then
+		echo "Error: REAL_HOME is set by something."
+		exit 1
+	fi
+	export REAL_HOME="${HOME}"
+	export HOME=$(realpath "${SCRIPTS_PATH}/../../FAKE_HOME")
+	export RELATIVE_HOME_TO_SOURCE="../FAKE_HOME"
+}
+
+function native_path() {
+	if [ "${SYSTEM}" = "windows" ]; then
+		cygpath -m "$@"
+	else
+		echo "$@"
+	fi
+}
+
+function reset_asar() {
+	if [ -e "node_modules" ] ; then
+		if [ -L "node_modules" ] ; then
+			echo "unlink node_modules"
+			unlink "node_modules"
+		fi
+	fi
+
+	if [ -e "node_modules.asar.unpacked" ]; then
+		echo "remove node_modules.asar.unpacked"
+		rm -rf node_modules.asar.unpacked
+	fi
+	if [ -e "node_modules.asar" ]; then
+		echo "remove node_modules.asar"
+		rm -f node_modules.asar
+	fi
+}

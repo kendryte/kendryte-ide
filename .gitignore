@@ -29,3 +29,5 @@ run.sh
 .vs/
 *.asar
 *.asar.unpacked
+*.asarsource
+.yarnrc
