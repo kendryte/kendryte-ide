@@ -22,7 +22,7 @@ import { unlinkSync } from 'fs';
 import { Emitter, Event } from 'vs/base/common/event';
 import { ICMakeProtocolError } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/error';
 import { ICMakeProtocolMessage, ICMakeProtocolProgress, ICMakeProtocolReply } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/event';
-import { ICMakeProtocolFileChangeSignal, ICMakeProtocolSignal } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/singal';
+import { ICMakeProtocolSignal } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/singal';
 import {
 	ICMakeProtocolCodeModel,
 	ICMakeProtocolCompute,
@@ -44,7 +44,7 @@ import { IPackagesUpdateService } from 'vs/workbench/parts/maix/_library/electro
 import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
-import { getEnvironment } from 'vs/workbench/parts/maix/_library/common/path';
+import { DebugScript, getEnvironment } from 'vs/workbench/parts/maix/_library/common/path';
 import { CMakeBuildErrorProcessor, CMakeBuildProgressProcessor, CMakeProcessList } from 'vs/workbench/parts/maix/cmake/common/outputProcessor';
 
 export interface IPromiseProgress<T> {
@@ -173,6 +173,24 @@ export class CMakeService implements ICMakeService {
 		return this.cmakeConnectionStablePromise;
 	}
 
+	private async getCMakeEnv() {
+		let staticEnvFile = resolvePath(this._currentFolder, '.vscode/cmake-env.json');
+		let staticEnv: any = {};
+		if (await fileExists(staticEnvFile)) {
+			staticEnv = JSON.parse(await readFile(staticEnvFile, 'utf8'));
+		} else {
+			await writeFile(staticEnvFile, '{}');
+		}
+
+		const env: any = getEnvironment(this.nodePathService);
+
+		return {
+			...env,
+			...staticEnv,
+			...this.localEnv,
+		};
+	}
+
 	private async ensureProcess() {
 		if (this.cmakeProcess) {
 			return;
@@ -191,22 +209,15 @@ export class CMakeService implements ICMakeService {
 		}
 		this.cmakePipeFile = pipeFile;
 
-		let staticEnvFile = resolvePath(this._currentFolder, '.vscode/cmake-env.json');
-		let staticEnv: any = {};
-		if (await fileExists(staticEnvFile)) {
-			staticEnv = JSON.parse(await readFile(staticEnvFile, 'utf8'));
-		}
-
 		const args = ['-E', 'server', '--experimental', '--pipe=' + pipeFile];
-		const env: any = getEnvironment(this.nodePathService);
 		const options: SpawnOptions = {
-			env: {
-				...env,
-				...staticEnv,
-				...this.localEnv,
-			},
+			env: await this.getCMakeEnv(),
 			cwd: cmakePath.bins,
 		};
+
+		const dbg = new DebugScript(options.cwd, options.env);
+		dbg.command(cmakePath.cmake, args);
+		dbg.writeBack(this.nodePathService.workspaceFilePath(), 'cmake-server');
 
 		this.log('Start new CMake Server: %s %s\nCWD=%s', cmakePath.cmake, args.join(' '), options.cwd);
 
@@ -360,11 +371,11 @@ export class CMakeService implements ICMakeService {
 			case CMAKE_EVENT_TYPE.SIGNAL:
 				switch ((protocolData as ICMakeProtocolSignal).name) {
 					case CMAKE_SIGNAL_TYPE.DIRTY:
-						console.log('dirty event: %O', protocolData);
+						// console.log('dirty event: %O', protocolData);
 						this.alreadyConfigured = false;
 						return;
 					case CMAKE_SIGNAL_TYPE.FILECHANGE:
-						console.log('change event: %s', (protocolData as ICMakeProtocolFileChangeSignal).path);
+						// console.log('change event: %s', (protocolData as ICMakeProtocolFileChangeSignal).path);
 						return;
 				}
 		}
@@ -559,8 +570,6 @@ ${JSON.stringify(payload)}
 		}
 		args.push('--', '-j', procNumber.toFixed(0));
 
-		this.log(make, ...args);
-
 		if (this.lastProcess) {
 			this.lastProcess.dispose();
 		}
@@ -569,12 +578,20 @@ ${JSON.stringify(payload)}
 			this.instantiationService.createInstance(CMakeBuildErrorProcessor),
 		]);
 
-		const process = new LineProcess({
+		const exe: Executable = {
 			command: make,
 			isShellCommand: false,
 			args,
-			options: { cwd: buildPath },
-		} as Executable);
+			options: {
+				cwd: buildPath,
+				env: await this.getCMakeEnv(),
+			},
+		};
+		const process = new LineProcess(exe);
+
+		const dbg = new DebugScript(exe.options.cwd, exe.options.env);
+		dbg.command(exe.command, exe.args);
+		dbg.writeBack(this.nodePathService.workspaceFilePath(), 'cmake-build');
 
 		const ret = await process.start(({ line }: LineData) => {
 			this.log(line);

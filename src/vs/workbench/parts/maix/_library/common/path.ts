@@ -1,6 +1,9 @@
 import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
 import { isWindows } from 'vs/base/common/platform';
 import { normalize } from 'path';
+import { ShellExportCommand } from 'vs/workbench/parts/maix/_library/common/platformEnv';
+import { writeFile } from 'vs/base/node/pfs';
+import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 
 export const WINDOWS_PASSING_ENV = [
 	'ALLUSERSPROFILE',
@@ -19,27 +22,53 @@ export const WINDOWS_PASSING_ENV = [
 	'HTTP_PROXY',
 	'LANG',
 	'PATHEXT',
+	'PROCESSOR_ARCHITECTURE',
 	'PROCESSOR_IDENTIFIER',
+	'PROCESSOR_LEVEL',
+	'PROCESSOR_REVISION',
 	'TERM',
-	'USER',
+	'TEMP',
+	'TMP',
+	'USERNAME',
+	'PSMODULEPATH',
+	'DRIVERDATA',
+	'COMSPEC',
+	'WINDIR',
+	'SYSTEMDRIVE',
+	'SYSTEMROOT',
 ];
 
 export function getEnvironment(nodePathService: INodePathService) {
-	const env: any = {};
+	let env: any;
 	const path: string[] = [
 		nodePathService.getPackagesPath('cmake/bin'),
 		nodePathService.getToolchainBinPath(),
 	];
 
 	if (isWindows) {
-		for (const key of WINDOWS_PASSING_ENV) {
-			env[key] = process.env[key];
+		// windows: user may or may not know whats happen
+		env = unsetEnvironment();
+
+		for (const key of Object.keys(process.env)) {
+			const ukey = key.toUpperCase();
+			if (WINDOWS_PASSING_ENV.indexOf(ukey) !== -1) {
+				env[key] = process.env[key];
+			}
 		}
 
+		const dynamic = [
+			'%SystemRoot%\\system32',
+			'%SystemRoot%',
+			'%SystemRoot%\\System32\\Wbem',
+			'%SYSTEMROOT%\\System32\\WindowsPowerShell\\v1.0',
+			'%SYSTEMROOT%\\System32\\OpenSSH',
+		];
+
 		env.PWD = normalize(nodePathService.workspaceFilePath('build'));
-		env.PATH = path.map(normalize).join(';');
+		env.PATH = path.map(normalize).concat(dynamic).join(';');
 	} else {
-		Object.assign(env, process.env);
+		// linux: user know what he do, just passing all
+		env = Object.assign({}, process.env);
 
 		env.PWD = nodePathService.workspaceFilePath('build');
 		env.PATH = path.join(':') + ':' + process.env.PATH;
@@ -54,4 +83,32 @@ export function unsetEnvironment() {
 		ret[item] = '';
 	}
 	return ret;
+}
+
+/**
+ * create a script to show what happens, but not run it
+ */
+export class DebugScript {
+	private readonly prepend: string;
+	private cmd: string[] = [];
+
+	constructor(cwd: string, env: any) {
+		let dbg = `cd "${cwd}"\n`;
+		for (const k of Object.keys(env)) {
+			dbg += ShellExportCommand + ' ' + k + '=' + env[k] + '\n';
+		}
+		this.prepend = dbg;
+	}
+
+	command(name: string, args: string[]) {
+		this.cmd.push(`"${name}" ${args.join(' ')}`);
+	}
+
+	writeBack(workspace: string, file: string) {
+		return writeFile(resolvePath(workspace, '.vscode', isWindows ? file + '.bat' : file + '.sh'), this.toString());
+	}
+
+	toString() {
+		return this.prepend + this.cmd.join('\n');
+	}
 }

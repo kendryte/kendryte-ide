@@ -16,10 +16,7 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { ILogService } from 'vs/platform/log/common/log';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
-import { getEnvironment, unsetEnvironment } from 'vs/workbench/parts/maix/_library/common/path';
-import { ShellExportCommand } from 'vs/workbench/parts/maix/_library/common/platformEnv';
-import { writeFile } from 'vs/base/node/pfs';
-import { isWindows } from 'vs/base/common/platform';
+import { DebugScript, getEnvironment } from 'vs/workbench/parts/maix/_library/common/path';
 
 class WorkspaceMaixLaunch implements ILaunch {
 	protected GDB: string;
@@ -77,7 +74,6 @@ class WorkspaceMaixLaunch implements ILaunch {
 			cwd: '${workspaceRoot}/build',
 			internalConsoleOptions: 'openOnSessionStart' as any,
 			env: {
-				...unsetEnvironment(),
 				...getEnvironment(this.nodePathService),
 				PYTHONPATH: this.PYTHON,
 				PYTHONHOME: this.PYTHON,
@@ -121,14 +117,14 @@ export class MaixCMakeDebugAction extends Action {
 
 		this.logService.info('Debug Config:', config);
 		const buildDir = config.env.PWD || resolvePath(launch.workspace.uri.fsPath, 'build');
-		let dbg = `cd "${buildDir}"\n`;
-		for (const k of Object.keys(config.env)) {
-			if (config.env[k]) {
-				dbg += ShellExportCommand + ' ' + k + '=' + config.env[k] + '\n';
-			}
-		}
-		dbg += '"' + config.gdbpath + '" ' + `--eval "target remote ${config.target}"` + ' "' + config.executable + '"';
-		writeFile(resolvePath(launch.workspace.uri.fsPath, '.vscode', isWindows ? 'debugger.bat' : 'debugger.sh'), dbg);
+
+		const dbg = new DebugScript(buildDir, config.env);
+		dbg.command(config.gdbpath, [
+			'--eval',
+			`target remote ${config.target}`,
+			config.executable,
+		]);
+		dbg.writeBack(launch.workspace.uri.fsPath, 'debug');
 
 		await this.debugService.startDebugging(launch, config).then(undefined, (e) => {
 			debugger;

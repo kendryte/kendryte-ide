@@ -16,6 +16,10 @@ interface SettingsOverwiter<T> {
 }
 
 const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
+	'cmake.cmakePath'(access: ServicesAccessor) {
+		const nodePathService = access.get<INodePathService>(INodePathService);
+		return resolvePath(nodePathService.getPackagesPath('cmake/bin/cmake' + executableExtension));
+	},
 	'C_Cpp.default.compilerPath'(access: ServicesAccessor) {
 		const nodePathService = access.get<INodePathService>(INodePathService);
 		return resolvePath(nodePathService.getToolchainBinPath(), 'riscv64-unknown-elf-gcc' + executableExtension);
