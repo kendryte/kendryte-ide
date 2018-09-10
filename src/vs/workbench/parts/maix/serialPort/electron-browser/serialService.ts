@@ -119,17 +119,19 @@ class SerialPortService implements ISerialPortService {
 			autoOpen: false,
 			baudRate: br,
 		});
-		port.on('end', () => {
-			this.logService.debug('[serial port] ' + serialDevice + ' is end!');
+		port.on('close', () => {
+			this.logService.info('[serial port] ' + serialDevice + ' is end!');
 			port.removeAllListeners();
+			this.openedPorts.delete(serialDevice);
 		});
 		const p = new TPromise((resolve, reject) => {
 			port.open((error: Error) => {
 				if (error) {
-					this.logService.debug('[serial port] ' + serialDevice + ' failed to open');
+					this.logService.warn('[serial port] ' + serialDevice + ' failed to open');
 					reject(error);
+					this.openedPorts.delete(serialDevice);
 				} else {
-					this.logService.debug('[serial port] ' + serialDevice + ' open ok');
+					this.logService.info('[serial port] ' + serialDevice + ' open ok');
 					resolve(port);
 				}
 			});

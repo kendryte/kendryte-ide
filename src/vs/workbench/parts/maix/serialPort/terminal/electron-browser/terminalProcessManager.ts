@@ -54,7 +54,7 @@ export class SerialManager extends Disposable implements ITerminalProcessManager
 		portP.then((port: SerialPort) => {
 			this._port = port;
 
-			port.on('end', () => {
+			port.on('close', () => {
 				if (this.processState !== ProcessState.LAUNCHING) {
 					this.processState = ProcessState.KILLED_BY_PROCESS;
 				}

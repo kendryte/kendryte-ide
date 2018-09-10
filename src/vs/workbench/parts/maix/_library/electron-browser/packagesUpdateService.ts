@@ -31,7 +31,7 @@ import { shell } from 'electron';
 import { INodeRequestService } from 'vs/workbench/parts/maix/_library/node/nodeRequestService';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 
-const distributeUrl = 'https://s3.cn-northwest-1.amazonaws.com.cn/maix-ide/';
+const distributeUrl = 'https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/'; // MUST end with /
 const LAST_UPDATE_CACHE_KEY = '.last-check-update';
 
 interface IUpdateStatus {
@@ -222,6 +222,8 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	}
 
 	protected async _doUpdate({ project, downloadUrl, version }: IUpdateStatus, progress: IProgressFn) {
+		downloadUrl = resolveUrl(distributeUrl, downloadUrl);
+
 		this.logService.info(' ---- [%s]:', project);
 		progress(null, project);
 
