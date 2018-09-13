@@ -13,7 +13,7 @@ class CreateShortcutsAction extends Action {
 
 	constructor(
 		id = CreateShortcutsAction.ID, label = CreateShortcutsAction.LABEL,
-		@INodePathService private  nodePathService: INodePathService,
+		@INodePathService private nodePathService: INodePathService,
 	) {
 		super(id, label);
 	}
@@ -26,7 +26,7 @@ class CreateShortcutsAction extends Action {
 const category = localize('kendryte', 'Kendryte');
 
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-        .registerWorkbenchAction(new SyncActionDescriptor(CreateShortcutsAction, CreateShortcutsAction.ID, CreateShortcutsAction.LABEL), 'Kendryte: Cleanup project', category);
+	.registerWorkbenchAction(new SyncActionDescriptor(CreateShortcutsAction, CreateShortcutsAction.ID, CreateShortcutsAction.LABEL), 'Kendryte: Cleanup project', category);
 
 MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {

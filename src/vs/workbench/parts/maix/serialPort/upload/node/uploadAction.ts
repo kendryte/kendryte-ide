@@ -2,14 +2,14 @@ import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
 import { ACTION_ID_MAIX_SERIAL_UPLOAD, INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
-import { ISerialPortService } from 'vs/workbench/parts/maix/serialPort/common/type';
 import { ChipType, SerialLoader } from 'vs/workbench/parts/maix/serialPort/upload/node/flasher';
-import { ChannelLogService } from 'vs/workbench/parts/maix/_library/electron-browser/channelLog';
+import { ChannelLogService } from 'vs/workbench/parts/maix/_library/node/channelLog';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { CMAKE_CHANNEL, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
 import { exists, lstat } from 'vs/base/node/pfs';
 import { IProgressService2, ProgressLocation } from 'vs/workbench/services/progress/common/progress';
 import { SubProgress } from 'vs/workbench/parts/maix/_library/common/progress';
+import { ISerialPortService } from 'vs/workbench/parts/maix/serialPort/node/serialPortService';
 
 export class MaixSerialUploadAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_SERIAL_UPLOAD;

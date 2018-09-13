@@ -22,7 +22,7 @@ import { IWindowService } from 'vs/platform/windows/common/windows';
 import { extract as extractZip } from 'vs/base/node/zip';
 import { extract as extractTar } from 'tar-fs';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
-import { ChannelLogService } from 'vs/workbench/parts/maix/_library/electron-browser/channelLog';
+import { ChannelLogService } from 'vs/workbench/parts/maix/_library/node/channelLog';
 import { IPartService } from 'vs/workbench/services/part/common/partService';
 import { inputValidationErrorBorder } from 'vs/platform/theme/common/colorRegistry';
 import packageJson from 'vs/platform/node/package';

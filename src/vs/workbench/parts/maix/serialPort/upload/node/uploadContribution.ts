@@ -8,7 +8,7 @@ import { localize } from 'vs/nls';
 const category = localize('kendryte', 'Kendryte');
 
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-        .registerWorkbenchAction(new SyncActionDescriptor(MaixSerialUploadAction, MaixSerialUploadAction.ID, MaixSerialUploadAction.LABEL), 'Kendryte: Upload to chip', category);
+	.registerWorkbenchAction(new SyncActionDescriptor(MaixSerialUploadAction, MaixSerialUploadAction.ID, MaixSerialUploadAction.LABEL), 'Kendryte: Upload to chip', category);
 
 MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {

@@ -1,4 +1,4 @@
-import { ISerialPanelService, ISerialPortService } from 'vs/workbench/parts/maix/serialPort/common/type';
+import { ISerialPanelService } from 'vs/workbench/parts/maix/serialPort/common/type';
 import { SERIAL_PANEL_ID, SerialMonitPanel } from 'vs/workbench/parts/maix/serialPort/panel/electron-browser/panel';
 import { IPanel } from 'vs/workbench/common/panel';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
@@ -7,6 +7,7 @@ import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/
 import { IPanelService } from 'vs/workbench/services/panel/common/panelService';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { addStatusBarButtons } from 'vs/workbench/parts/maix/serialPort/electron-browser/buttons';
+import { ISerialPortService } from 'vs/workbench/parts/maix/serialPort/node/serialPortService';
 
 class SerialPanelService implements ISerialPanelService {
 	_serviceBrand: any;

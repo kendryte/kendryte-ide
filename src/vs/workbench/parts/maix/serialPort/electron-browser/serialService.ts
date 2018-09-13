@@ -4,13 +4,13 @@ import { Emitter } from 'vs/base/common/event';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
-import { ISerialPortService, SerialPortItem } from 'vs/workbench/parts/maix/serialPort/common/type';
 import { array_has_diff } from 'vs/workbench/parts/maix/_library/common/utils';
 import { RawContextKey } from 'vs/platform/contextkey/common/contextkey';
 import { IQuickInputService, IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { MAIX_CONFIG_KEY_SERIAL_BAUDRATE } from 'vs/workbench/parts/maix/_library/common/type';
+import { ISerialPortService, SerialPortItem } from 'vs/workbench/parts/maix/serialPort/node/serialPortService';
 
 export const KEYBINDING_CONTEXT_SERIAL_TERMINAL_FOCUS = new RawContextKey<boolean>('terminalFocus', undefined);
 

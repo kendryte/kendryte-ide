@@ -52,8 +52,8 @@ export abstract class CMakeProcessor implements IDisposable {
 }
 
 interface MarkerStore {
-	uri: URI,
-	markers: IMarkerData[]
+	uri: URI;
+	markers: IMarkerData[];
 }
 
 export class CMakeBuildErrorProcessor extends CMakeProcessor {

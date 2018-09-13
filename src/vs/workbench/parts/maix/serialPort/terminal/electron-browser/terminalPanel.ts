@@ -36,7 +36,7 @@ import { TERMINAL_BACKGROUND_COLOR, TERMINAL_BORDER_COLOR } from 'vs/workbench/p
 import { DataTransfers } from 'vs/base/browser/dnd';
 import { INotificationService, IPromptChoice, Severity } from 'vs/platform/notification/common/notification';
 import { TerminalConfigHelper } from 'vs/workbench/parts/maix/serialPort/terminal/electron-browser/terminalConfigHelper';
-import { ReloadSerialPortDevicesAction } from 'vs/workbench/parts/maix/serialPort/common/reloadAction';
+import { ReloadSerialPortDevicesAction } from 'vs/workbench/parts/maix/serialPort/node/reloadAction';
 
 const FIND_FOCUS_CLASS = 'find-focused';
 

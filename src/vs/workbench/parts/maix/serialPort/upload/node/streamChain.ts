@@ -48,7 +48,7 @@ export class StreamChain<IT, OT> extends Disposable implements NodeJS.WritableSt
 	public get onGarbage(): Event<GarbageData> { return this._onGarbage.event; }
 
 	private readonly _onData: Emitter<OT> = new Emitter<OT>();
-	public get onData(): Event<OT> {return this._onData.event;}
+	public get onData(): Event<OT> { return this._onData.event; }
 
 	protected readonly _lastChild: Duplex;
 

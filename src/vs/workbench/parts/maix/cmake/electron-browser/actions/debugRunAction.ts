@@ -16,7 +16,7 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { ILogService } from 'vs/platform/log/common/log';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
-import { DebugScript, getEnvironment } from 'vs/workbench/parts/maix/_library/common/path';
+import { DebugScript, getEnvironment } from 'vs/workbench/parts/maix/_library/node/nodeEnv';
 
 class WorkspaceMaixLaunch implements ILaunch {
 	protected GDB: string;

@@ -7,7 +7,7 @@ import * as nls from 'vs/nls';
 import { MenuId, MenuRegistry } from 'vs/platform/actions/common/actions';
 import { SERIAL_MONITOR_COMMAND_ID } from 'vs/workbench/parts/maix/serialPort/terminal/common/terminalCommands';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
-import { ReloadSerialPortDevicesAction } from 'vs/workbench/parts/maix/serialPort/common/reloadAction';
+import { ReloadSerialPortDevicesAction } from 'vs/workbench/parts/maix/serialPort/node/reloadAction';
 
 export function setupTerminalMenu() {
 	const MenuIdItem = new MenuId();

@@ -25,7 +25,7 @@ import { IContextViewService } from 'vs/platform/contextview/browser/contextView
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { SERIAL_MONITOR_COMMAND_ID } from 'vs/workbench/parts/maix/serialPort/terminal/common/terminalCommands';
-import { ISerialPortService } from 'vs/workbench/parts/maix/serialPort/common/type';
+import { ISerialPortService } from 'vs/workbench/parts/maix/serialPort/node/serialPortService';
 
 export const TERMINAL_PICKER_PREFIX = 'term ';
 

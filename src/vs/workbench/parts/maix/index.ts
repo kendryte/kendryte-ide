@@ -18,9 +18,9 @@ import 'vs/workbench/parts/maix/fpioa-config/node/generateorContribution';
 import 'vs/workbench/parts/maix/fpioa-config/electron-browser/fpioaContribution';
 import 'vs/workbench/parts/maix/fpioa-config/common/packagings/includeAllContribution';
 // Serial Devices
-import 'vs/workbench/parts/maix/serialPort/common/configContribution';
+import 'vs/workbench/parts/maix/serialPort/node/configContribution';
 import 'vs/workbench/parts/maix/serialPort/electron-browser/serialService';
-import 'vs/workbench/parts/maix/serialPort/common/reloadAction';
+import 'vs/workbench/parts/maix/serialPort/node/reloadAction';
 // Serial Upload
 import 'vs/workbench/parts/maix/serialPort/upload/node/uploadContribution';
 // Serial Monitor

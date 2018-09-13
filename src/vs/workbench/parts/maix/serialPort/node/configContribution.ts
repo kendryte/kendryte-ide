@@ -2,8 +2,9 @@ import { Extensions as ConfigurationExtensions, IConfigurationRegistry } from 'v
 import { localize } from 'vs/nls';
 import { dynamicEnum } from 'vs/workbench/parts/maix/_library/common/type';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { CONFIG_KEY_SRIAL_PORT, ISerialPortService } from 'vs/workbench/parts/maix/serialPort/common/type';
-import { ReloadSerialPortDevicesAction } from 'vs/workbench/parts/maix/serialPort/common/reloadAction';
+import { CONFIG_KEY_SRIAL_PORT } from 'vs/workbench/parts/maix/serialPort/common/type';
+import { ReloadSerialPortDevicesAction } from 'vs/workbench/parts/maix/serialPort/node/reloadAction';
+import { ISerialPortService } from 'vs/workbench/parts/maix/serialPort/node/serialPortService';
 
 Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).registerConfiguration({
 	id: 'serialport',

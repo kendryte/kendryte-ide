@@ -36,7 +36,7 @@ import { ipcRenderer as ipc } from 'electron';
 import { IOpenFileRequest } from 'vs/platform/windows/common/windows';
 import { TerminalInstance } from 'vs/workbench/parts/maix/serialPort/terminal/electron-browser/terminalInstance';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
-import { ISerialPortService } from 'vs/workbench/parts/maix/serialPort/common/type';
+import { ISerialPortService } from 'vs/workbench/parts/maix/serialPort/node/serialPortService';
 import { IPickOptions, IQuickInputService, IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
 
 export class TerminalService extends AbstractTerminalService implements ISerialMonitorService {

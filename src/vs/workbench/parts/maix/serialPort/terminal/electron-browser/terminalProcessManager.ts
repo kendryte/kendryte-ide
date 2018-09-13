@@ -3,7 +3,7 @@ import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { Emitter, Event } from 'vs/base/common/event';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { ISerialLaunchConfig, ITerminalProcessManager, ProcessState } from 'vs/workbench/parts/maix/serialPort/terminal/common/terminal';
-import { ISerialPortService } from 'vs/workbench/parts/maix/serialPort/common/type';
+import { ISerialPortService } from 'vs/workbench/parts/maix/serialPort/node/serialPortService';
 import SerialPort = require('serialport');
 
 export class SerialManager extends Disposable implements ITerminalProcessManager {

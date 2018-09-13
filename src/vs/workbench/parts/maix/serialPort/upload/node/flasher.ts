@@ -17,7 +17,7 @@ import { disposableStream } from 'vs/workbench/parts/maix/_library/node/disposab
 import { SubProgress } from 'vs/workbench/parts/maix/_library/common/progress';
 import { lstat } from 'vs/base/node/pfs';
 import { timeout } from 'vs/base/common/async';
-import { IConsoleLogService } from 'vs/workbench/parts/maix/_library/electron-browser/channelLog';
+import { IConsoleLogService } from 'vs/workbench/parts/maix/_library/node/channelLog';
 import { ISPFlashPacker } from 'vs/workbench/parts/maix/serialPort/upload/node/ispFlashPacker';
 import { ChunkBuffer } from 'vs/workbench/parts/maix/serialPort/upload/node/chunkBuffer';
 import { createCipheriv, createHash } from 'crypto';
@@ -145,7 +145,7 @@ export class SerialLoader extends Disposable {
 		contentBuffer.writeUInt32LE(contentBuffer.length - headerSize, 1);
 
 		createHash('sha256').update(Buffer.allocUnsafe(10)).digest()
-		                    .copy(contentBuffer, contentBuffer.length - 32);
+			.copy(contentBuffer, contentBuffer.length - 32);
 
 		const packedData = new ISPFlashPacker(baseAddress, length, async (bytesProcessed: number): TPromise<void> => {
 			const op = await this.expect(ISPOperation.ISP_FLASH_WRITE);

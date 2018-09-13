@@ -77,7 +77,7 @@ import { CommandsRegistry } from 'vs/platform/commands/common/commands';
 import { TerminalPanel } from 'vs/workbench/parts/maix/serialPort/terminal/electron-browser/terminalPanel';
 import { TerminalPickerHandler } from 'vs/workbench/parts/maix/serialPort/terminal/browser/terminalQuickOpen';
 import { SERIAL_MONITOR_COMMAND_ID, setupTerminalCommands } from 'vs/workbench/parts/maix/serialPort/terminal/common/terminalCommands';
-import { setupTerminalMenu } from 'vs/workbench/parts/maix/serialPort/terminal/common/terminalMenu';
+import { setupTerminalMenu } from 'vs/workbench/parts/maix/serialPort/terminal/node/terminalMenu';
 
 const quickOpenRegistry = (Registry.as<IQuickOpenRegistry>(QuickOpenExtensions.Quickopen));
 
