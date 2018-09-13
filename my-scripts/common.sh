@@ -34,13 +34,13 @@ if [ -z "${FOUND_CYGWIN}" ] || [ -z "${NODEJS}" ] ; then
 	export FOUND_CYGWIN=$(find /bin -name 'cygwin*.dll')
 	export YARN_CACHE_FOLDER="${HOME}/yarn-cache"
 	if [ -n "${FOUND_CYGWIN}" ]; then
-		SYSTEM="windows"
+		export SYSTEM="windows"
 		export NODEJS="${RELEASE_ROOT}/nodejs/${ARCH}/node.exe"
 		export NODEJS_BIN="${RELEASE_ROOT}/nodejs/${ARCH}"
 		export YARN_CACHE_FOLDER="$(cygpath -m "${YARN_CACHE_FOLDER}")"
 		function sudo() { "$@"; }
 	else
-		SYSTEM="linux"
+		export SYSTEM="linux"
 		export NODEJS="${RELEASE_ROOT}/nodejs/${ARCH}/bin/node"
 		export NODEJS_BIN="${RELEASE_ROOT}/nodejs/${ARCH}/bin"
 		if ! command -v sudo &>/dev/null ; then
@@ -65,7 +65,6 @@ echo -e "\e[1;38;5;9mPATH\e[0m=\e[2m${PATH}\e[0m"
 echo -e "\e[1;38;5;9mREAL_HOME\e[0m=\e[2m${REAL_HOME}\e[0m"
 echo -e "\e[1;38;5;9mHOME\e[0m=\e[2m${HOME}\e[0m"
 echo -e "\e[1;38;5;9mFOUND_CYGWIN\e[0m=\e[2m${FOUND_CYGWIN}\e[0m"
-echo -e "\e[1;38;5;9mSYSTEM\e[0m=\e[2m${SYSTEM}\e[0m"
 echo -e "\e[1;38;5;9mNODEJS\e[0m=\e[2m${NODEJS}\e[0m"
 echo -e "\e[1;38;5;9mNODEJS_BIN\e[0m=\e[2m${NODEJS_BIN}\e[0m"
 echo -e "\e[1;38;5;9mHTTP_PROXY\e[0m=\e[2m${HTTP_PROXY}\e[0m"
