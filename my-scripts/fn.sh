@@ -143,7 +143,7 @@ function clear_environment(){
 
 function set_path_when_developing() {
 	local SCRIPTS_PATH="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-	if [ -n "${REAL_HOME}" ]; then
+	if [ -n "${REAL_HOME}" ] && [ -z "${TMUX}" ] && [ -z "${BUILDING}" ] ; then
 		echo "Error: REAL_HOME is set by something."
 		exit 1
 	fi

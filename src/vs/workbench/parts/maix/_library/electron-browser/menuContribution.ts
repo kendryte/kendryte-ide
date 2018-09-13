@@ -8,7 +8,16 @@ MenuRegistry.appendMenuItem(MenuId.MenubarMaixMenu, {
 	group: '1_tools',
 	command: {
 		id: FpioaEditorAction.ID,
-		title: nls.localize({ key: 'MaixIOEditor', comment: ['&& denotes a mnemonic'] }, 'Edit Maix IO function'),
+		title: nls.localize({ key: 'KendryteIOEditor', comment: ['&& denotes a mnemonic'] }, 'Edit Kendryte IO function'),
+	},
+	order: 1,
+});
+
+MenuRegistry.appendMenuItem(MenuId.MenubarMaixMenu, {
+	group: '2_others',
+	command: {
+		id: FpioaEditorAction.ID,
+		title: nls.localize({ key: 'KendryteIOEditor', comment: ['&& denotes a mnemonic'] }, 'Edit Kendryte IO function'),
 	},
 	order: 1,
 });

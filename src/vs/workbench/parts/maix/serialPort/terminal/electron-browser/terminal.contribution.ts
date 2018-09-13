@@ -93,11 +93,11 @@ quickOpenRegistry.registerQuickOpenHandler(
 	),
 );
 
-const quickOpenNavigateNextInTerminalPickerId = 'workbench.action.maix.quickOpenNavigateNextInTerminalPicker';
+const quickOpenNavigateNextInTerminalPickerId = 'workbench.action.kendryte.quickOpenNavigateNextInTerminalPicker';
 CommandsRegistry.registerCommand(
 	{ id: quickOpenNavigateNextInTerminalPickerId, handler: getQuickNavigateHandler(quickOpenNavigateNextInTerminalPickerId, true) });
 
-const quickOpenNavigatePreviousInTerminalPickerId = 'workbench.action.maix.quickOpenNavigatePreviousInTerminalPicker';
+const quickOpenNavigatePreviousInTerminalPickerId = 'workbench.action.kendryte.quickOpenNavigatePreviousInTerminalPicker';
 CommandsRegistry.registerCommand(
 	{ id: quickOpenNavigatePreviousInTerminalPickerId, handler: getQuickNavigateHandler(quickOpenNavigatePreviousInTerminalPickerId, false) });
 

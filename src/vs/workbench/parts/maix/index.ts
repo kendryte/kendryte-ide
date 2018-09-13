@@ -28,5 +28,6 @@ import 'vs/workbench/parts/maix/serialPort/terminal/electron-browser/terminal.co
 import 'vs/workbench/parts/maix/serialPort/panel/electron-browser/serialPanelContribution';
 // menus
 import 'vs/workbench/parts/maix/_library/electron-browser/menuContribution';
+import 'vs/workbench/parts/maix/_library/node/shortcutsContribution';
 // cmake
 import 'vs/workbench/parts/maix/cmake/electron-browser/cmakeContribution';

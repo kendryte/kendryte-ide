@@ -73,7 +73,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		@IEnvironmentService private environmentService: IEnvironmentService,
 		@IPartService private partService: IPartService,
 	) {
-		this.logService = instantiationService.createInstance(ChannelLogService, 'maix-updator', 'Maix Update');
+		this.logService = instantiationService.createInstance(ChannelLogService, 'maix-updator', 'Kendryte Update');
 		switch (OS) {
 			case OperatingSystem.Windows:
 				this.platform = 'windows';
@@ -135,12 +135,10 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			delete this.runPromise;
 
 			return this.writeCache(LAST_UPDATE_CACHE_KEY, (new Date).getTime().toFixed(0));
-		}, (error) => {
+		}, (errors) => {
 			entry.dispose();
 			delete this.runPromise;
 			this.logService.info('======================================');
-			this.logService.info('Update Failed:');
-			this.logService.info(error.stack);
 			this.statusbarService.addEntry({
 				text: '$(sync~spin)$(x) Failed to download required packages, please check your internet connection... (click to retry)',
 				color: inputValidationErrorBorder,
@@ -160,7 +158,10 @@ class PackagesUpdateService implements IPackagesUpdateService {
 					run() { },
 				},
 			]);
-			throw error;
+
+			this.logService.info('Update Failed:');
+			this.logService.info(errors[0].stack);
+			throw errors[0];
 		});
 	}
 
@@ -222,9 +223,10 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	}
 
 	protected async _doUpdate({ project, downloadUrl, version }: IUpdateStatus, progress: IProgressFn) {
+		this.logService.info(' ---- [%s]:', project);
+
 		downloadUrl = resolveUrl(distributeUrl, downloadUrl);
 
-		this.logService.info(' ---- [%s]:', project);
 		progress(null, project);
 
 		const installTarget = this.nodePathService.getPackagesPath(project);
@@ -249,7 +251,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		const list = await this.getPackageList();
 		this.logService.info('remote package list: %s', list.join(' '));
 		for (const project of list) {
-			if (project.toLowerCase() === 'maixide') {
+			if (project.toLowerCase() === 'kendryteide') {
 				continue;
 			}
 			const remoteVersion = await this.getPackage(project);
@@ -447,17 +449,17 @@ class PackagesUpdateService implements IPackagesUpdateService {
 
 	private async checkMainUpdate() {
 		if (!this.environmentService.isBuilt) {
-			this.logService.info('MaixIDE update disabled (dev mode): %s', packageJson.version);
+			this.logService.info('KendryteIDE update disabled (dev mode): %s', packageJson.version);
 			return;
 		}
-		const data = await this.getPackage('MaixIDE');
+		const data = await this.getPackage('KendryteIDE');
 		if (data.version === packageJson.version) {
-			this.logService.info('MaixIDE is up to date: [%s].', data.version);
+			this.logService.info('KendryteIDE is up to date: [%s].', data.version);
 		} else {
-			this.logService.warn('MaixIDE is update: local %s, remote %s', packageJson.version, data.version);
+			this.logService.warn('KendryteIDE is update: local %s, remote %s', packageJson.version, data.version);
 			const homepage = data.homepageUrl || 'https://github.com/Canaan-Creative/maix-ide/releases';
 			this.logService.info('remote url: %s', homepage);
-			this.notificationService.prompt(Severity.Info, 'MaixIDE has updated.\n', [
+			this.notificationService.prompt(Severity.Info, 'KendryteIDE has updated.\n', [
 				new OpenDownloadAction(homepage),
 				{
 					label: 'Not now',
@@ -496,8 +498,8 @@ class PackagesUpdateService implements IPackagesUpdateService {
 registerSingleton(IPackagesUpdateService, PackagesUpdateService);
 
 class OpenDownloadAction extends Action {
-	public static readonly ID = 'workbench.action.maix.homepage';
-	public static readonly LABEL = localize('MaixIOEditor', 'Update now');
+	public static readonly ID = 'workbench.action.kendryte.homepage';
+	public static readonly LABEL = localize('KendryteIOEditor', 'Update now');
 
 	constructor(
 		private url: string,

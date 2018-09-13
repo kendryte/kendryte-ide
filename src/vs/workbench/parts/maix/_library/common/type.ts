@@ -43,7 +43,7 @@ export function dynamicEnum(service: ServiceIdentifier<EnumProviderService>, edi
 }
 
 export enum Extensions {
-	ConfigCategory = 'maix.category'
+	ConfigCategory = 'kendryte.category'
 }
 
 interface ITOCEntry {
@@ -90,7 +90,6 @@ export interface ISettingItemTemplate<T = any> extends IDisposableTemplate {
 export const MAIX_CONFIG_KEY_DEBUG = 'debugger.target';
 export const MAIX_CONFIG_KEY_SERIAL_BAUDRATE = 'serialport.baudrate';
 
-
 export const INodePathService = createDecorator<INodePathService>('INodePathService');
 
 export interface INodePathService {
@@ -115,15 +114,20 @@ export interface INodePathService {
 	rawSDKPath(): string;
 
 	workspaceFilePath(s?: string): string;
+
+	createUserLink(existsFile: string, linkFile: string): TPromise<void>;
+
+	createAppLink(): TPromise<void>;
 }
 
+export const ACTION_ID_CREATE_SHORTCUTS = 'workbench.action.kendryte.createShortcuts';
 
-export const ACTION_ID_MAIX_CMAKE_RUN = 'workbench.action.maix.run';
-export const ACTION_ID_MAIX_CMAKE_BUILD = 'workbench.action.maix.build';
-export const ACTION_ID_MAIX_CMAKE_CLEANUP = 'workbench.action.maix.cleanup';
-export const ACTION_ID_MAIX_CMAKE_SELECT_TARGET = 'workbench.action.maix.select-target';
-export const ACTION_ID_MAIX_CMAKE_SELECT_VARIANT = 'workbench.action.maix.select-variant';
-export const ACTION_ID_MAIX_CMAKE_CONFIGURE = 'workbench.action.maix.configure';
-export const ACTION_ID_MAIX_CMAKE_HELLO_WORLD = 'workbench.action.maix.hello-world';
+export const ACTION_ID_MAIX_CMAKE_RUN = 'workbench.action.kendryte.run';
+export const ACTION_ID_MAIX_CMAKE_BUILD = 'workbench.action.kendryte.build';
+export const ACTION_ID_MAIX_CMAKE_CLEANUP = 'workbench.action.kendryte.cleanup';
+export const ACTION_ID_MAIX_CMAKE_SELECT_TARGET = 'workbench.action.kendryte.select-target';
+export const ACTION_ID_MAIX_CMAKE_SELECT_VARIANT = 'workbench.action.kendryte.select-variant';
+export const ACTION_ID_MAIX_CMAKE_CONFIGURE = 'workbench.action.kendryte.configure';
+export const ACTION_ID_MAIX_CMAKE_HELLO_WORLD = 'workbench.action.kendryte.hello-world';
 
-export const ACTION_ID_MAIX_SERIAL_UPLOAD = 'workbench.action.maix.upload';
+export const ACTION_ID_MAIX_SERIAL_UPLOAD = 'workbench.action.kendryte.upload';

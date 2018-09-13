@@ -6,6 +6,9 @@ import { lstatSync } from 'fs';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
+import { createLinuxDesktopShortcut, ensureLinkEquals, pathResolve } from 'vs/workbench/parts/maix/_library/node/shortcuts';
+import { IShortcutOptions } from 'windows-shortcuts';
+import { TPromise } from 'vs/base/common/winjs.base';
 
 class NodePathService implements INodePathService {
 	_serviceBrand: any;
@@ -16,7 +19,30 @@ class NodePathService implements INodePathService {
 	constructor(
 		@IWorkspaceContextService protected workspaceContextService: IWorkspaceContextService,
 		@IEnvironmentService protected environmentService: IEnvironmentService,
-	) { }
+	) {
+		this.createUserLink(this.getInstallPath('.fast-links/_Extensions'), pathResolve('HOMEPATH', process.env.HOME, product.dataFolderName));
+		this.createUserLink(this.getInstallPath('.fast-links/_ExtensionsDevel'), pathResolve('HOMEPATH', process.env.HOME, product.dataFolderName + '-dev'));
+		this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorage'), pathResolve('AppData', process.env.HOME, '.config', product.nameLong));
+		this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorageDevel'), pathResolve('AppData', process.env.HOME, '.config/code-oss-dev'));
+	}
+
+	createAppLink(): TPromise<void> {
+		if (isWindows) {
+			return this.createUserLink(`^%WINDIR^%/Microsoft/Windows/Start Menu/Programs/${product.nameLong}.lnk`, this.environmentService.execPath, {
+				workingDir: this.getInstallPath(),
+				desc: product.nameLong,
+			});
+		} else {
+			return createLinuxDesktopShortcut(
+				this.getInstallPath(),
+				this.environmentService.execPath,
+			);
+		}
+	}
+
+	createUserLink(linkFile: string, existsFile: string, windowsOptions?: Partial<IShortcutOptions>): TPromise<void> {
+		return ensureLinkEquals(linkFile, existsFile, windowsOptions);
+	}
 
 	getPackagesPath(project?: string) {
 		if (project) {
@@ -26,11 +52,11 @@ class NodePathService implements INodePathService {
 		}
 	}
 
-	getInstallPath() {
+	getInstallPath(...path: string[]) {
 		if (this.environmentService.isBuilt) {
-			return resolvePath(this.environmentService.execPath, '..');
+			return resolvePath(this.environmentService.execPath, '..', ...path);
 		} else {
-			return resolvePath(this.environmentService.execPath, '../../..');
+			return resolvePath(this.environmentService.execPath, '../../..', ...path);
 		}
 	}
 

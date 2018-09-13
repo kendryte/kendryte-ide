@@ -1086,7 +1086,7 @@ buffer-alloc@^1.1.0:
     buffer-alloc-unsafe "^0.1.0"
     buffer-fill "^0.1.0"
 
-buffer-crc32@~0.2.3:
+buffer-crc32@^0.2.13, buffer-crc32@~0.2.3:
   version "0.2.13"
   resolved "https://registry.yarnpkg.com/buffer-crc32/-/buffer-crc32-0.2.13.tgz#0d333e3f00eac50aa1454abd30ef8c2a5d9a7242"
 
@@ -8753,6 +8753,10 @@ windows-process-tree@0.2.2:
   resolved "https://registry.yarnpkg.com/windows-process-tree/-/windows-process-tree-0.2.2.tgz#1ab2518588d6f389c10e5a6c9c0d5550989506f4"
   dependencies:
     nan "^2.6.2"
+
+windows-shortcuts@^0.1.6:
+  version "0.1.6"
+  resolved "https://registry.yarnpkg.com/windows-shortcuts/-/windows-shortcuts-0.1.6.tgz#27970c5c346ffd81821c3e12528c0babca0a5a99"
 
 winreg@^1.2.4:
   version "1.2.4"

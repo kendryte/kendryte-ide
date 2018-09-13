@@ -19,7 +19,7 @@ const graph = `
 `;
 
 const Maix1BGAPackageDefine: IChipPackagingDefinition = {
-	name: 'Maix',
+	name: 'Kendryte',
 	geometry: BGA_IO_GEOMETRY(graph),
 	generator: {
 		funcNamePrefix: 'FUNC_',

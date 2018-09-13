@@ -14,7 +14,7 @@ import { CommandsRegistry } from 'vs/platform/commands/common/commands';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 
-// const category = localize('maix', 'Maix');
+// const category = localize('kendryte', 'Kendryte');
 
 export interface IGenerator {
 	readonly filename: string;
@@ -24,7 +24,7 @@ export interface IGenerator {
 
 export class GenerateFpioaFilesAction extends Action {
 	public static readonly ID = 'maix.fpioa.generate';
-	public static readonly LABEL = localize('MaixIOGenerate', 'Generate Maix IO code');
+	public static readonly LABEL = localize('KendryteIOGenerate', 'Generate Kendryte IO code');
 
 	private generators: IGenerator[] = [];
 

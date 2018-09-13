@@ -119,7 +119,7 @@ export function MaixBuildSystemPrepare(access: ServicesAccessor): TPromise<void>
 	// 	});
 	//
 	// 	const exists = launchJson.configurations.findIndex((item) => {
-	// 		return item.hasOwnProperty('maix');
+	// 		return item.hasOwnProperty('kendryte');
 	// 	});
 	//
 	// 	// todo: insert startup config?

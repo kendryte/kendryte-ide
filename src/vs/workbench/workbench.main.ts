@@ -127,7 +127,7 @@ import 'vs/workbench/parts/performance/electron-browser/performance.contribution
 
 import 'vs/workbench/parts/cli/electron-browser/cli.contribution';
 
-// maix
+// kendryte
 import 'vs/workbench/parts/maix/index';
 
 import 'vs/workbench/api/electron-browser/extensionHost.contribution';
