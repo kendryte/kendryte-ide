@@ -28,5 +28,5 @@ fi
 LOCK="${VSCODE_ROOT}/yarn.lock"
 ############# install or check dependencies
 step "Yarn" \
-	yarn
+	yarn --cache-folder "${YARN_CACHE_FOLDER}"
 	
