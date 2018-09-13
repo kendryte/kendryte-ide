@@ -14,6 +14,7 @@ interface Array<T> {
 	 * predicate. If it is not provided, undefined is used instead.
 	 */
 	find<S extends T>(predicate: (this: void, value: T, index: number, obj: T[]) => value is S, thisArg?: any): S | undefined;
+
 	find(predicate: (value: T, index: number, obj: T[]) => boolean, thisArg?: any): T | undefined;
 
 	/**
@@ -49,7 +50,6 @@ interface Array<T> {
 	copyWithin(target: number, start: number, end?: number): this;
 }
 
-
 interface ArrayConstructor {
 	/**
 	 * Creates an array from an iterable object.
@@ -73,11 +73,11 @@ interface Map<K, V> {
 }
 
 interface ObjectConstructor {
-	assign<T, U>(target: T, source: U): T&U;
+	assign<T, U>(target: T, source: U): T & U;
 
-	assign<T, U, V>(target: T, source1: U, source2: V): T&U&V;
+	assign<T, U, V>(target: T, source1: U, source2: V): T & U & V;
 
-	assign<T, U, V, W>(target: T, source1: U, source2: V, source3: W): T&U&V&W;
+	assign<T, U, V, W>(target: T, source1: U, source2: V, source3: W): T & U & V & W;
 
 	assign(target: object, ...sources: any[]): any;
 }
@@ -97,4 +97,31 @@ interface Iterator<T> {
 interface IteratorResult<T> {
 	done: boolean;
 	value: T;
+}
+
+interface SymbolConstructor {
+	/**
+	 * A reference to the prototype.
+	 */
+	readonly prototype: Symbol;
+
+	/**
+	 * Returns a new unique Symbol value.
+	 * @param  description Description of the new Symbol object.
+	 */
+	(description?: string | number): symbol;
+
+	/**
+	 * Returns a Symbol object from the global symbol registry matching the given key if found.
+	 * Otherwise, returns a new symbol with this key.
+	 * @param key key to search for.
+	 */
+	for(key: string): symbol;
+
+	/**
+	 * Returns a key from the global symbol registry matching the given Symbol if found.
+	 * Otherwise, returns a undefined.
+	 * @param sym Symbol to find the key for.
+	 */
+	keyFor(sym: symbol): string | undefined;
 }

@@ -21,6 +21,8 @@ import 'vs/workbench/parts/maix/fpioa-config/common/packagings/includeAllContrib
 import 'vs/workbench/parts/maix/serialPort/common/configContribution';
 import 'vs/workbench/parts/maix/serialPort/electron-browser/serialService';
 import 'vs/workbench/parts/maix/serialPort/common/reloadAction';
+// Serial Upload
+import 'vs/workbench/parts/maix/serialPort/upload/node/uploadContribution';
 // Serial Monitor
 import 'vs/workbench/parts/maix/serialPort/terminal/electron-browser/terminal.contribution';
 import 'vs/workbench/parts/maix/serialPort/panel/electron-browser/serialPanelContribution';

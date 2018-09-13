@@ -221,25 +221,6 @@ export class MoveToLineEndTerminalAction extends BaseSendTextTerminalAction {
 	}
 }
 
-export class ConfigNewTerminalAction extends Action {
-
-	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.CONFIG;
-	public static readonly LABEL = nls.localize('workbench.action.maix.terminal.config', 'Config Serial Monitor');
-	public static readonly SHORT_LABEL = nls.localize('workbench.action.maix.terminal.config.short', 'Config Monitor');
-
-	constructor(
-		id: string, label: string,
-		// @ISerialMonitorService private terminalService: ISerialMonitorService,
-		// @ISerialPortService private serialPortService: ISerialPortService,
-	) {
-		super(id, label, 'terminal-action configure');
-	}
-
-	public async run(event?: any): TPromise<any> {
-		// todo
-	}
-}
-
 export class CreateNewTerminalAction extends Action {
 
 	public static readonly ID = SERIAL_MONITOR_COMMAND_ID.NEW;

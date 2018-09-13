@@ -1,7 +1,8 @@
 import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
-import { ACTION_ID_MAIX_CMAKE_RUN, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
+import { ACTION_ID_MAIX_CMAKE_RUN, INodePathService, MAIX_CONFIG_KEY_DEBUG } from 'vs/workbench/parts/maix/_library/common/type';
+import { ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
 import { MaixCMakeCleanupAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/cleanupAction';
 import { ICompound, IDebugService, ILaunch } from 'vs/workbench/parts/debug/common/debug';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -11,7 +12,6 @@ import uri from 'vs/base/common/uri';
 import { IEditor } from 'vs/workbench/common/editor';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
-import { INodePathService, MAIX_CONFIG_KEY_DEBUG } from 'vs/workbench/parts/maix/_library/common/type';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ILogService } from 'vs/platform/log/common/log';
 import { INotificationService } from 'vs/platform/notification/common/notification';
@@ -20,8 +20,6 @@ import { DebugScript, getEnvironment } from 'vs/workbench/parts/maix/_library/co
 
 class WorkspaceMaixLaunch implements ILaunch {
 	protected GDB: string;
-
-	protected PYTHON: string;
 
 	constructor(
 		protected programFile: string,
@@ -33,9 +31,6 @@ class WorkspaceMaixLaunch implements ILaunch {
 		@IWorkspaceContextService protected workspaceContextService: IWorkspaceContextService,
 	) {
 		this.GDB = resolvePath(nodePathService.getToolchainBinPath(), 'riscv64-unknown-elf-gdb' + executableExtension);
-		// this.PYTHON = resolvePath(nodePathService.getToolchainPath(), 'share/gdb/python/gdb');
-		// this.PYTHON += isWindows ? ';' : ':';
-		this.PYTHON = nodePathService.getPackagesPath('py2lib');
 	}
 
 	public get workspace(): IWorkspaceFolder {
@@ -75,12 +70,10 @@ class WorkspaceMaixLaunch implements ILaunch {
 			internalConsoleOptions: 'openOnSessionStart' as any,
 			env: {
 				...getEnvironment(this.nodePathService),
-				PYTHONPATH: this.PYTHON,
-				PYTHONHOME: this.PYTHON,
 			},
 			printCalls: true,
 			stopOnEntry: false,
-			showDevDebugOutput: true,
+			showDevDebugOutput: false,
 			autorun: [
 				`python for cmd in ['delete breakpoints', 'delete tracepoints', 'load', 'interrupt']: gdb.execute(cmd)`,
 			],

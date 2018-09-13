@@ -1,9 +1,10 @@
 import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
-import { ACTION_ID_MAIX_CMAKE_SELECT_VARIANT, CMAKE_CHANNEL, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
+import { CMAKE_CHANNEL, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
 import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
 import { IQuickInputService } from 'vs/platform/quickinput/common/quickInput';
+import { ACTION_ID_MAIX_CMAKE_SELECT_VARIANT } from 'vs/workbench/parts/maix/_library/common/type';
 
 export class MaixCMakeSelectVariantAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_SELECT_VARIANT;

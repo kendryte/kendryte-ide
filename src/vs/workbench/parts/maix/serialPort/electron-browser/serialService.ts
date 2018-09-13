@@ -23,6 +23,7 @@ class SerialPortService implements ISerialPortService {
 
 	private cachedPromise: TPromise<void>;
 	private openedPorts = new Map<string, SerialPort>();
+	private lastSelected: string;
 
 	constructor(
 		@IInstantiationService protected instantiationService: IInstantiationService,
@@ -94,50 +95,72 @@ class SerialPortService implements ISerialPortService {
 			}*/
 			return {
 				id: item.comName,
-				label: item.manufacturer || item.comName,
+				label: item.manufacturer ? `${item.comName}: ${item.manufacturer}` : item.comName,
 				description: item.serialNumber || item.productId,
 				detail: item.pnpId,
+				picked: item.comName === this.lastSelected,
 			};
 		});
 
 		const picked = await this.quickInputService.pick(TPromise.as(pickMap), { canPickMany: false });
-		return picked ? picked.id : '';
+		if (picked && picked.id) {
+			return this.lastSelected = picked.id;
+		}
+		return void 0;
 	}
 
 	public openPort(serialDevice: string, opts: Partial<SerialPort.OpenOptions> = {}, exclusive = false): TPromise<SerialPort> {
 		if (this.openedPorts.has(serialDevice)) {
 			const exists = this.openedPorts.get(serialDevice);
 			if (exclusive) {
-				exists.close();
+				return new TPromise((resolve, reject) => {
+					const wrappedCallback = (err) => {
+						console.log('close serial port for re-open (err=%s)', err);
+						return err ? reject(err) : resolve(void 0);
+					};
+					exists.close(wrappedCallback);
+				}).then(() => {
+					return this.openPort(serialDevice, opts, exclusive);
+				});
 			} else {
-				return TPromise.as(exists);
+				return new TPromise((resolve, reject) => {
+					const wrappedCallback = (err) => {
+						console.log('update serial port (err=%s)', err);
+						return err ? reject(err) : resolve(exists);
+					};
+					exists.update(opts, wrappedCallback);
+				});
 			}
 		}
 		const br = parseInt(this.configurationService.getValue(MAIX_CONFIG_KEY_SERIAL_BAUDRATE)) || 115200;
-		const port = new SerialPort(serialDevice, {
+		opts = {
+			lock: false,
 			...opts,
 			autoOpen: false,
 			baudRate: br,
-		});
+		};
+		const port = new SerialPort(serialDevice, opts);
+		console.log('open serial port with args: %o', opts);
 		port.on('close', () => {
 			this.logService.info('[serial port] ' + serialDevice + ' is end!');
 			port.removeAllListeners();
 			this.openedPorts.delete(serialDevice);
 		});
-		const p = new TPromise((resolve, reject) => {
+		this.openedPorts.set(serialDevice, port);
+		return new TPromise((resolve, reject) => {
 			port.open((error: Error) => {
 				if (error) {
+					console.log('can not open serial port (err=%s)', error);
 					this.logService.warn('[serial port] ' + serialDevice + ' failed to open');
 					reject(error);
 					this.openedPorts.delete(serialDevice);
 				} else {
+					console.log('new serial port (%s)', serialDevice, port);
 					this.logService.info('[serial port] ' + serialDevice + ' open ok');
 					resolve(port);
 				}
 			});
 		});
-		this.openedPorts.set(serialDevice, port);
-		return p;
 	}
 }
 

@@ -1,8 +1,9 @@
 import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
-import { ACTION_ID_MAIX_CMAKE_CLEANUP, CMAKE_CHANNEL, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
 import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
+import { ACTION_ID_MAIX_CMAKE_CLEANUP } from 'vs/workbench/parts/maix/_library/common/type';
+import { CMAKE_CHANNEL, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
 
 export class MaixCMakeCleanupAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_CLEANUP;

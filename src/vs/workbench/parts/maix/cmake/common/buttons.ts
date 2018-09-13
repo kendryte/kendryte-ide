@@ -10,8 +10,8 @@ import {
 	ACTION_ID_MAIX_CMAKE_RUN,
 	ACTION_ID_MAIX_CMAKE_SELECT_TARGET,
 	ACTION_ID_MAIX_CMAKE_SELECT_VARIANT,
-	ACTION_ID_MAIX_CMAKE_UPLOAD,
-} from 'vs/workbench/parts/maix/cmake/common/type';
+	ACTION_ID_MAIX_SERIAL_UPLOAD,
+} from 'vs/workbench/parts/maix/_library/common/type';
 import { StatusBarController } from 'vs/workbench/parts/maix/cmake/common/statusBarController';
 import { localize } from 'vs/nls';
 
@@ -66,7 +66,7 @@ export function addStatusBarCmakeButtons(access: ServicesAccessor) {
 	const uploadTargetButton = instantiationService.createInstance(StatusBarItem, StatusbarAlignment.LEFT, 3.5);
 	uploadTargetButton.text = '$(desktop-download)';
 	uploadTargetButton.tooltip = localize('Upload', 'Upload');
-	uploadTargetButton.command = ACTION_ID_MAIX_CMAKE_UPLOAD;
+	uploadTargetButton.command = ACTION_ID_MAIX_SERIAL_UPLOAD;
 	entries.push(uploadTargetButton);
 
 	const statusTip = instantiationService.createInstance(StatusBarItem, StatusbarAlignment.LEFT, 4);

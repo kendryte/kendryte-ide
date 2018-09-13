@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "applicationinsights": "0.18.0",
+    "buffer-crc32": "^0.2.13",
     "fast-plist": "0.1.2",
     "gc-signals": "^0.0.1",
     "getmac": "1.4.1",

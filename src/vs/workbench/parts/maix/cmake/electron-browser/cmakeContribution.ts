@@ -8,7 +8,6 @@ import { Extensions, IOutputChannelRegistry } from 'vs/workbench/parts/output/co
 import { CMakeService } from 'vs/workbench/parts/maix/cmake/electron-browser/cmakeService';
 import { MaixCMakeBuildAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/buildAction';
 import { MaixCMakeDebugAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/debugRunAction';
-import { MaixCMakeUploadAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/uploadAction';
 import { MaixCMakeCleanupAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/cleanupAction';
 import { MaixCMakeSelectTargetAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/selectTargetAction';
 import { MaixCMakeSelectVariantAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/selectVariantAction';
@@ -17,7 +16,7 @@ import { MaixCMakeConfigureAction } from 'vs/workbench/parts/maix/cmake/electron
 
 registerSingleton(ICMakeService, CMakeService);
 
-const category = localize('maix', 'Maix');
+const category = localize('kendryte', 'Kendryte');
 
 const registry = Registry.as<IOutputChannelRegistry>(Extensions.OutputChannels);
 registry.registerChannel(CMAKE_CHANNEL, 'Build/Run');
@@ -52,17 +51,6 @@ MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {
 		id: MaixCMakeDebugAction.ID,
 		title: `${category}: ${MaixCMakeDebugAction.LABEL}`,
-	},
-});
-
-// UPLOAD
-Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-        .registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeUploadAction, MaixCMakeUploadAction.ID, MaixCMakeUploadAction.LABEL), 'Maix: Upload to chip', category);
-
-MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
-	command: {
-		id: MaixCMakeUploadAction.ID,
-		title: `${category}: ${MaixCMakeUploadAction.LABEL}`,
 	},
 });
 

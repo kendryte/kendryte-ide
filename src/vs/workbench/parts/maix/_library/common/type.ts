@@ -116,3 +116,14 @@ export interface INodePathService {
 
 	workspaceFilePath(s?: string): string;
 }
+
+
+export const ACTION_ID_MAIX_CMAKE_RUN = 'workbench.action.maix.run';
+export const ACTION_ID_MAIX_CMAKE_BUILD = 'workbench.action.maix.build';
+export const ACTION_ID_MAIX_CMAKE_CLEANUP = 'workbench.action.maix.cleanup';
+export const ACTION_ID_MAIX_CMAKE_SELECT_TARGET = 'workbench.action.maix.select-target';
+export const ACTION_ID_MAIX_CMAKE_SELECT_VARIANT = 'workbench.action.maix.select-variant';
+export const ACTION_ID_MAIX_CMAKE_CONFIGURE = 'workbench.action.maix.configure';
+export const ACTION_ID_MAIX_CMAKE_HELLO_WORLD = 'workbench.action.maix.hello-world';
+
+export const ACTION_ID_MAIX_SERIAL_UPLOAD = 'workbench.action.maix.upload';

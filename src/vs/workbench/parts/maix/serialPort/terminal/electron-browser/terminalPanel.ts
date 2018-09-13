@@ -18,7 +18,6 @@ import { TerminalFindWidget } from 'vs/workbench/parts/maix/serialPort/terminal/
 import { editorForeground, editorHoverBackground, editorHoverBorder } from 'vs/platform/theme/common/colorRegistry';
 import {
 	ClearTerminalAction,
-	ConfigNewTerminalAction,
 	CopyTerminalSelectionAction,
 	CreateNewTerminalAction,
 	FocusTerminalFindWidgetAction,
@@ -37,6 +36,7 @@ import { TERMINAL_BACKGROUND_COLOR, TERMINAL_BORDER_COLOR } from 'vs/workbench/p
 import { DataTransfers } from 'vs/base/browser/dnd';
 import { INotificationService, IPromptChoice, Severity } from 'vs/platform/notification/common/notification';
 import { TerminalConfigHelper } from 'vs/workbench/parts/maix/serialPort/terminal/electron-browser/terminalConfigHelper';
+import { ReloadSerialPortDevicesAction } from 'vs/workbench/parts/maix/serialPort/common/reloadAction';
 
 const FIND_FOCUS_CLASS = 'find-focused';
 
@@ -147,7 +147,7 @@ export class TerminalPanel extends Panel {
 			this._actions = [
 				this._instantiationService.createInstance(SwitchTerminalAction, SwitchTerminalAction.ID, SwitchTerminalAction.LABEL),
 				this._instantiationService.createInstance(CreateNewTerminalAction, CreateNewTerminalAction.ID, CreateNewTerminalAction.SHORT_LABEL),
-				this._instantiationService.createInstance(ConfigNewTerminalAction, ConfigNewTerminalAction.ID, ConfigNewTerminalAction.SHORT_LABEL),
+				this._instantiationService.createInstance(ReloadSerialPortDevicesAction, ReloadSerialPortDevicesAction.ID, ReloadSerialPortDevicesAction.LABEL),
 				this._instantiationService.createInstance(FocusTerminalFindWidgetAction, FocusTerminalFindWidgetAction.ID, FocusTerminalFindWidgetAction.SHORT_LABEL),
 				this._instantiationService.createInstance(KillTerminalAction, KillTerminalAction.ID, KillTerminalAction.PANEL_LABEL),
 			];
@@ -169,6 +169,7 @@ export class TerminalPanel extends Panel {
 				this._instantiationService.createInstance(SelectAllTerminalAction, SelectAllTerminalAction.ID, SelectAllTerminalAction.LABEL),
 				new Separator(),
 				this._instantiationService.createInstance(ClearTerminalAction, ClearTerminalAction.ID, ClearTerminalAction.LABEL),
+				this._instantiationService.createInstance(ReloadSerialPortDevicesAction, ReloadSerialPortDevicesAction.ID, ReloadSerialPortDevicesAction.LABEL),
 			];
 			this._contextMenuActions.forEach(a => {
 				this._register(a);

@@ -5,7 +5,13 @@ import { Registry } from 'vs/platform/registry/common/platform';
 
 const registry = Registry.as<IOutputChannelRegistry>(Extensions.OutputChannels);
 
-export class ChannelLogService extends AbstractLogService implements ILogService {
+export interface IConsoleLogService extends ILogService {
+	log(message: string, ...args: any[]): void;
+
+	write(message: string, ...args: any[]): void;
+}
+
+export class ChannelLogService extends AbstractLogService implements IConsoleLogService {
 	_serviceBrand: any;
 
 	private channel: IOutputChannel;
@@ -32,6 +38,14 @@ export class ChannelLogService extends AbstractLogService implements ILogService
 
 	show(preserveFocus?: boolean) {
 		return this.outputService.showChannel(this.id, preserveFocus);
+	}
+
+	log(message: string, ...args: any[]): void {
+		this.channel.append(format(`${message}\n`, ...args));
+	}
+
+	write(message: string, ...args: any[]): void {
+		this.channel.append(format(message, ...args));
 	}
 
 	trace(message: string, ...args: any[]): void {

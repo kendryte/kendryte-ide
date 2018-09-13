@@ -28,6 +28,13 @@ const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
 		const nodePathService = access.get<INodePathService>(INodePathService);
 		const ret: string[] = [];
 		const sdk = nodePathService.rawSDKPath();
+
+		ret.push(sdk + '/lib/bsp/include');
+		ret.push(sdk + '/lib/drivers/include');
+		ret.push(sdk + '/lib/freertos/include');
+		ret.push(sdk + '/lib/math/include');
+		ret.push(sdk + '/lib/utils/include');
+
 		ret.push(sdk + '/include');
 
 		const toolchain = nodePathService.rawToolchainPath();

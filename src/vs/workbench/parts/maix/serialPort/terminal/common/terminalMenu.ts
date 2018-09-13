@@ -7,6 +7,7 @@ import * as nls from 'vs/nls';
 import { MenuId, MenuRegistry } from 'vs/platform/actions/common/actions';
 import { SERIAL_MONITOR_COMMAND_ID } from 'vs/workbench/parts/maix/serialPort/terminal/common/terminalCommands';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
+import { ReloadSerialPortDevicesAction } from 'vs/workbench/parts/maix/serialPort/common/reloadAction';
 
 export function setupTerminalMenu() {
 	const MenuIdItem = new MenuId();
@@ -31,6 +32,15 @@ export function setupTerminalMenu() {
 			title: nls.localize({ key: 'miNewSerialMonitor', comment: ['&& denotes a mnemonic'] }, '&&New Serial Monitor'),
 		},
 		order: 1,
+	});
+
+	MenuRegistry.appendMenuItem(MenuIdItem, {
+		group: manageGroup,
+		command: {
+			id: ReloadSerialPortDevicesAction.ID,
+			title: ReloadSerialPortDevicesAction.LABEL,
+		},
+		order: 2,
 	});
 
 	MenuRegistry.appendMenuItem(MenuIdItem, {

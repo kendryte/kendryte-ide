@@ -10,7 +10,7 @@ import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
 import { FpioaEditor } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/editor/fpioaEditor';
 
 // Contribute Global Actions
-const category = localize('maix', 'Maix');
+const category = localize('kendryte', 'Kendryte');
 
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
 	.registerWorkbenchAction(new SyncActionDescriptor(FpioaEditorAction, FpioaEditorAction.ID, FpioaEditorAction.LABEL), 'Maix: fpioa Editor', category);

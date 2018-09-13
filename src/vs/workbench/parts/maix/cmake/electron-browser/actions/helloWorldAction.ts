@@ -3,11 +3,11 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
 import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD, CMAKE_CHANNEL, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
+import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD, INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
+import { CMAKE_CHANNEL, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { copy, mkdirp } from 'vs/base/node/pfs';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
 
 export class MaixCMakeHelloWorldAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_HELLO_WORLD;

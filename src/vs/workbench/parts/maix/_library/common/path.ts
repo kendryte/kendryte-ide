@@ -1,7 +1,7 @@
 import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
 import { isWindows } from 'vs/base/common/platform';
 import { normalize } from 'path';
-import { ShellExportCommand } from 'vs/workbench/parts/maix/_library/common/platformEnv';
+import { PathListSep, ShellExportCommand } from 'vs/workbench/parts/maix/_library/common/platformEnv';
 import { writeFile } from 'vs/base/node/pfs';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 
@@ -65,14 +65,23 @@ export function getEnvironment(nodePathService: INodePathService) {
 		];
 
 		env.PWD = normalize(nodePathService.workspaceFilePath('build'));
-		env.PATH = path.map(normalize).concat(dynamic).join(';');
+		env.PATH = path.map(normalize).concat(dynamic).join(PathListSep);
 	} else {
 		// linux: user know what he do, just passing all
 		env = Object.assign({}, process.env);
 
 		env.PWD = nodePathService.workspaceFilePath('build');
-		env.PATH = path.join(':') + ':' + process.env.PATH;
+		env.PATH = path.join(PathListSep) + PathListSep + process.env.PATH;
 	}
+
+	env.PYTHONHOME = nodePathService.getPackagesPath('python2library');
+
+	env.PYTHONPATH = [
+		env.PYTHONHOME,
+		resolvePath(nodePathService.getToolchainPath(), 'share/gdb/python/gdb'),
+	].join(PathListSep);
+
+	env.PYTHONDONTWRITEBYTECODE = 'yes';
 
 	return env;
 }
@@ -101,6 +110,12 @@ export class DebugScript {
 	}
 
 	command(name: string, args: string[]) {
+		args = args.map((item) => {
+			if (/\s/.test(item)) {
+				return JSON.stringify(item);
+			}
+			return item;
+		});
 		this.cmd.push(`"${name}" ${args.join(' ')}`);
 	}
 

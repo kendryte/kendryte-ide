@@ -1,5 +1,5 @@
 import { StatusBarItem } from 'vs/workbench/parts/maix/cmake/common/statusBarButton';
-import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD } from 'vs/workbench/parts/maix/cmake/common/type';
+import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD } from 'vs/workbench/parts/maix/_library/common/type';
 
 enum State {
 	Lock,

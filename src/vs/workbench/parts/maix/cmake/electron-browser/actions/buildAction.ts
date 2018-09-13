@@ -1,7 +1,8 @@
 import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
-import { ACTION_ID_MAIX_CMAKE_BUILD, CMAKE_CHANNEL, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
+import { ACTION_ID_MAIX_CMAKE_BUILD } from 'vs/workbench/parts/maix/_library/common/type';
+import { CMAKE_CHANNEL, ICMakeService } from 'vs/workbench/parts/maix/cmake/common/type';
 import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 

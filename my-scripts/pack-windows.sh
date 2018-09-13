@@ -44,11 +44,11 @@ if ! command -v "lnk" &>/dev/null ; then
 fi
 
 DevModules="$(yarn_location_of devDependencies)/node_modules"
-#yarn_install devDependencies
+yarn_install devDependencies
 lnk $(native_path "${DevModules}") ./
 
 ModulesRoot="$(yarn_location_of dependencies)"
-#yarn_install dependencies
+yarn_install dependencies
 
 export ARG_CODE_ROOT="$(native_path "$VSCODE_ROOT")"
 export ARG_MODULES="$(native_path "$ModulesRoot")"

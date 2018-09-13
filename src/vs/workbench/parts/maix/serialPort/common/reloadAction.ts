@@ -19,30 +19,31 @@ export class ReloadSerialPortDevicesAction extends Action {
 		@ISerialPortService private serialPortService: ISerialPortService,
 		@INotificationService private notificationService: INotificationService,
 	) {
-		super(id, label);
+		super(id, label, 'terminal-action octicon octicon-repo-sync');
 	}
 
 	public async run(event?: any): TPromise<string[]> {
 		await this.serialPortService.refreshDevices();
+		const devices = await this.serialPortService.getValues();
 		this.notificationService.notify({
 			severity: BaseSeverity.Info,
-			message: 'Serial device rescan complete.',
+			message: `Serial device rescan complete. (${devices.length} devices)`,
 		});
-		return this.serialPortService.getValues();
+		return devices;
 	}
 }
 
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(
-		new SyncActionDescriptor(
-			ReloadSerialPortDevicesAction,
-			ReloadSerialPortDevicesAction.ID,
-			ReloadSerialPortDevicesAction.LABEL,
-			{ primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.US_COMMA },
-		),
-		'Serial: Reload device lists',
-		SerialPortActionCategory,
-);
+        .registerWorkbenchAction(
+	        new SyncActionDescriptor(
+		        ReloadSerialPortDevicesAction,
+		        ReloadSerialPortDevicesAction.ID,
+		        ReloadSerialPortDevicesAction.LABEL,
+		        { primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.US_COMMA },
+	        ),
+	        'Serial: Reload device lists',
+	        SerialPortActionCategory,
+        );
 
 MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {
