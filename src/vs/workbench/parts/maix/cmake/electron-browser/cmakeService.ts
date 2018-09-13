@@ -153,7 +153,7 @@ export class CMakeService implements ICMakeService {
 		this.localEnv.TOOLCHAIN = this.nodePathService.getToolchainBinPath();
 		this.localEnv.SDK = this.nodePathService.getSDKPath();
 		if (isWindows) {
-			this.localEnv.CMAKE_MAKE_PROGRAM = 'mingw32-make.exe';
+			this.localEnv.CMAKE_MAKE_PROGRAM = resolvePath(this.localEnv.TOOLCHAIN, 'mingw32-make.exe');
 		}
 
 		this.statusBarController = this.instantiationService.invokeFunction(addStatusBarCmakeButtons);

@@ -6,6 +6,7 @@ import { Action } from 'vs/base/common/actions';
 import { localize } from 'vs/nls';
 import { ACTION_ID_CREATE_SHORTCUTS, INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
 import { TPromise } from 'vs/base/common/winjs.base';
+import { INotificationService } from 'vs/platform/notification/common/notification';
 
 class CreateShortcutsAction extends Action {
 	public static readonly ID = ACTION_ID_CREATE_SHORTCUTS;
@@ -14,19 +15,22 @@ class CreateShortcutsAction extends Action {
 	constructor(
 		id = CreateShortcutsAction.ID, label = CreateShortcutsAction.LABEL,
 		@INodePathService private nodePathService: INodePathService,
+		@INotificationService private notificationService: INotificationService,
 	) {
 		super(id, label);
 	}
 
-	run(): TPromise<void> {
-		return this.nodePathService.createAppLink();
+	async run(): TPromise<void> {
+		console.log('create app link');
+		await this.nodePathService.createAppLink();
+		this.notificationService.info('Icons is placed in Start Menu');
 	}
 }
 
 const category = localize('kendryte', 'Kendryte');
 
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(CreateShortcutsAction, CreateShortcutsAction.ID, CreateShortcutsAction.LABEL), 'Kendryte: Cleanup project', category);
+        .registerWorkbenchAction(new SyncActionDescriptor(CreateShortcutsAction, CreateShortcutsAction.ID, CreateShortcutsAction.LABEL), 'Kendryte: Create shortcuts', category);
 
 MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {

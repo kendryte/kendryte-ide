@@ -44,7 +44,7 @@ export function installMaixMenu(access: ServicesAccessor, menubar: Menu) {
 	maixMenu.append(__separator__());
 
 	maixMenu.append(new MenuItem({
-		label: nls.localize({ key: 'KendryteCreateShortcuts', comment: ['&& denotes a mnemonic'] }, 'Create Kendryte IDE shortcuts'),
+		label: nls.localize({ key: 'KendryteCreateShortcuts', comment: ['&& denotes a mnemonic'] }, 'Create shortcuts'),
 		click: (menuItem, win, event) => {
 			runInMain('workbench.action.kendryte.createShortcuts');
 		},

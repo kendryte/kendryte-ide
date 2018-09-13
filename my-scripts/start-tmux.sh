@@ -17,7 +17,8 @@ source common.sh
 cd ..
 
 if [ -n "${FOUND_CYGWIN}" ] ; then
-	echo "running on windows." >&2
+	echo "running on windows. please use start-watch-windows.sh." >&2
+	exit 1
 elif [ -z "${DISPLAY}" ]; then
 	echo "no DISPLAY environment variable." >&2
 	exit 1

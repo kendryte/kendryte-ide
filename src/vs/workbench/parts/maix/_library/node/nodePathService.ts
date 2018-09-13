@@ -6,7 +6,7 @@ import { lstatSync } from 'fs';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
-import { createLinuxDesktopShortcut, ensureLinkEquals, pathResolve } from 'vs/workbench/parts/maix/_library/node/shortcuts';
+import { createLinuxDesktopShortcut, ensureLinkEquals, pathResolveNow } from 'vs/workbench/parts/maix/_library/node/shortcuts';
 import { IShortcutOptions } from 'windows-shortcuts';
 import { TPromise } from 'vs/base/common/winjs.base';
 
@@ -20,16 +20,15 @@ class NodePathService implements INodePathService {
 		@IWorkspaceContextService protected workspaceContextService: IWorkspaceContextService,
 		@IEnvironmentService protected environmentService: IEnvironmentService,
 	) {
-		this.createUserLink(this.getInstallPath('.fast-links/_Extensions'), pathResolve('HOMEPATH', process.env.HOME, product.dataFolderName));
-		this.createUserLink(this.getInstallPath('.fast-links/_ExtensionsDevel'), pathResolve('HOMEPATH', process.env.HOME, product.dataFolderName + '-dev'));
-		this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorage'), pathResolve('AppData', process.env.HOME, '.config', product.nameLong));
-		this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorageDevel'), pathResolve('AppData', process.env.HOME, '.config/code-oss-dev'));
+		this.createUserLink(this.getInstallPath('.fast-links/_Extensions'), pathResolveNow('HOMEPATH', process.env.HOME, product.dataFolderName));
+		this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorage'), pathResolveNow('AppData', process.env.HOME, '.config', product.nameLong));
+		this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorageDevel'), pathResolveNow('AppData', process.env.HOME, '.config/code-oss-dev'));
 	}
 
 	createAppLink(): TPromise<void> {
 		if (isWindows) {
 			return this.createUserLink(
-				`^%WINDIR^%/Microsoft/Windows/Start Menu/Programs/${product.nameLong}.lnk`,
+				`%APPDATA%/Microsoft/Windows/Start Menu/Programs/${product.nameLong}.lnk`,
 				this.getInstallPath('bin/code.cmd'),
 				{
 					workingDir: this.getInstallPath(),
@@ -46,6 +45,7 @@ class NodePathService implements INodePathService {
 	}
 
 	createUserLink(linkFile: string, existsFile: string, windowsOptions?: Partial<IShortcutOptions>): TPromise<void> {
+		console.log('create user link: %s -> %s', linkFile, existsFile);
 		return ensureLinkEquals(linkFile, existsFile, windowsOptions);
 	}
 

@@ -5,7 +5,7 @@ import { nfcall } from 'vs/base/common/async';
 import { TPromise } from 'vs/base/common/winjs.base';
 import * as fs from 'fs';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
-import { dirname } from 'path';
+import { dirname, posix } from 'path';
 import product from 'vs/platform/node/product';
 
 export async function createUserLink(linkFile: string, existsFile: string, windowsOptions?: Partial<IShortcutOptions>) {
@@ -88,13 +88,19 @@ export enum LinkTarget {
 }
 
 export function pathResolve(windows, linux, ...paths: string[]) {
-	return isWindows ? `^%${windows}^%${resolvePath('/', ...paths)}` : resolvePath(linux, ...paths);
+	return isWindows ? `^%${windows}^%${posix.resolve('/', ...paths)}` : resolvePath(linux, ...paths);
 }
 
-const _lnk = isWindows ? '.lnk' : '';
+export function pathResolveNow(windows, linux, ...paths: string[]) {
+	return isWindows ? `%${windows}%${posix.resolve('/', ...paths)}` : resolvePath(linux, ...paths);
+}
 
 function lnk(f) {
-	return `${f}${_lnk}`;
+	if (isWindows && !/\.lnk$/i.test(f)) {
+		return `${f}.lnk`;
+	} else {
+		return f;
+	}
 }
 
 export async function ensureLinkEquals(linkFile: string, existsFile: string, windowsOptions?: Partial<IShortcutOptions>): TPromise<any> {
