@@ -157,7 +157,7 @@ export class SerialLoader extends Disposable {
 		contentBuffer.writeUInt32LE(dataSize, 1);
 
 		createHash('sha256').update(contentBuffer.slice(0, dataEndAt)).digest()
-		                    .copy(contentBuffer, contentBuffer.length - shaSize);
+			.copy(contentBuffer, contentBuffer.length - shaSize);
 
 		// appendFileSync('X:/test-js.txt', '==sha256=' + createHash('sha256').update(Buffer.allocUnsafe(10)).digest().toString('hex') + '\n\n');
 		// appendFileSync('X:/test-js.txt', '==' + contentBuffer.length + '\n\n');

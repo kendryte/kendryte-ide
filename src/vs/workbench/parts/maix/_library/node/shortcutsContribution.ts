@@ -30,7 +30,7 @@ class CreateShortcutsAction extends Action {
 const category = localize('kendryte', 'Kendryte');
 
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-        .registerWorkbenchAction(new SyncActionDescriptor(CreateShortcutsAction, CreateShortcutsAction.ID, CreateShortcutsAction.LABEL), 'Kendryte: Create shortcuts', category);
+	.registerWorkbenchAction(new SyncActionDescriptor(CreateShortcutsAction, CreateShortcutsAction.ID, CreateShortcutsAction.LABEL), 'Kendryte: Create shortcuts', category);
 
 MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {
