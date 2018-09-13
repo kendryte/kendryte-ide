@@ -127,25 +127,41 @@ export class SerialLoader extends Disposable {
 	}
 
 	protected async writeFlashChunks(content: ReadStream, baseAddress: number, length: number, report?: SubProgress) {
+		const shaSize = 32;
+		const headerIsEncryptSize = 1;
+		const headerDataLenSize = 4;
+
+		const AES_MAX_LARGER_SIZE = 16;
+
 		let contentBuffer: Buffer;
-		const headerSize = 5; // isEncrypt(1bit) + appLen(4bit) + appCode
+		const headerSize = headerIsEncryptSize + headerDataLenSize; // isEncrypt(1bit) + appLen(4bit) + appCode
 		if (this.encryptionKey) {
 			const aesType = `aes-${this.encryptionKey.length}-cbc`;
 			const encrypt = createCipheriv(aesType, this.encryptionKey, Buffer.allocUnsafe(16));
-			contentBuffer = await drainStream(content.pipe(encrypt), length + 16, headerSize, 32);
+			contentBuffer = await drainStream(content.pipe(encrypt), length + AES_MAX_LARGER_SIZE, headerSize, shaSize);
 		} else {
-			contentBuffer = await drainStream(content, length, headerSize, 32);
+			contentBuffer = await drainStream(content, length, headerSize, shaSize);
 		}
+
+		// dataStartAt = headerSize
+		const dataEndAt = contentBuffer.length - shaSize;
+		const dataSize = contentBuffer.length - shaSize - headerSize;
+
+		// appendFileSync('X:/test-js.txt', '==' + length + '\n\n');
 
 		if (this.encryptionKey) {
 			contentBuffer.writeUInt8(1, 0);
 		} else {
 			contentBuffer.writeUInt8(0, 0);
 		}
-		contentBuffer.writeUInt32LE(contentBuffer.length - headerSize, 1);
+		contentBuffer.writeUInt32LE(dataSize, 1);
 
-		createHash('sha256').update(Buffer.allocUnsafe(10)).digest()
-			.copy(contentBuffer, contentBuffer.length - 32);
+		createHash('sha256').update(contentBuffer.slice(0, dataEndAt)).digest()
+		                    .copy(contentBuffer, contentBuffer.length - shaSize);
+
+		// appendFileSync('X:/test-js.txt', '==sha256=' + createHash('sha256').update(Buffer.allocUnsafe(10)).digest().toString('hex') + '\n\n');
+		// appendFileSync('X:/test-js.txt', '==' + contentBuffer.length + '\n\n');
+		// writeFileSync('X:/js-buffer.txt', contentBuffer);
 
 		const packedData = new ISPFlashPacker(baseAddress, length, async (bytesProcessed: number): TPromise<void> => {
 			const op = await this.expect(ISPOperation.ISP_FLASH_WRITE);
@@ -215,7 +231,6 @@ export class SerialLoader extends Disposable {
 		this.logService.info('Downloading program to flash');
 		await this.writeFlashChunks(this.applicationStream, 0, this.applicationStreamSize, report);
 		this.logService.info(' - Complete.');
-		debugger;
 	}
 
 	async flashGreeting() {

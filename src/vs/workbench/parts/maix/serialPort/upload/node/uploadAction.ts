@@ -10,6 +10,7 @@ import { exists, lstat } from 'vs/base/node/pfs';
 import { IProgressService2, ProgressLocation } from 'vs/workbench/services/progress/common/progress';
 import { SubProgress } from 'vs/workbench/parts/maix/_library/common/progress';
 import { ISerialPortService } from 'vs/workbench/parts/maix/serialPort/node/serialPortService';
+import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 
 export class MaixSerialUploadAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_SERIAL_UPLOAD;
@@ -31,6 +32,7 @@ export class MaixSerialUploadAction extends Action {
 	}
 
 	async run(): TPromise<void> {
+		await this.serialPortService.refreshDevices();
 		const sel = await this.serialPortService.quickOpenDevice();
 		if (!sel) {
 			return;
@@ -41,7 +43,7 @@ export class MaixSerialUploadAction extends Action {
 		await this.cMakeService.ensureConfiguration();
 
 		this.logService.info('Program:');
-		const app = await this.cMakeService.getOutputFile();
+		const app = resolvePath(await this.cMakeService.getOutputFile()) + '.bin';
 		this.logService.info(`\t${app}`);
 
 		if (!await exists(app)) {
@@ -57,7 +59,7 @@ export class MaixSerialUploadAction extends Action {
 			dataBits: 8,
 			parity: 'none',
 			stopBits: 1,
-		});
+		}, true);
 		this.logService.info('\t - OK.');
 
 		const bootLoader = this.nodePathService.getPackagesPath('isp/bootloader.bin'); // todo
