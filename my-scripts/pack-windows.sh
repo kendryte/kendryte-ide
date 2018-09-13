@@ -30,7 +30,7 @@ cache-folder "'${YARN_CACHE_FOLDER}'"
 	cp -f "yarn.lock" "${TARGET}"
 
 	pushd "${TARGET}" &>/dev/null
-	PATH="$ORIGINAL_PATH" yarn install -y --use-yarnrc .yarnrc --prefer-offline --cache-folder '${YARN_CACHE_FOLDER}'
+	PATH="$ORIGINAL_PATH" yarn install -y --use-yarnrc .yarnrc --prefer-offline --cache-folder "${YARN_CACHE_FOLDER}"
 	popd &>/dev/null
 }
 

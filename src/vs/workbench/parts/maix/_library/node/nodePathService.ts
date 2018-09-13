@@ -28,14 +28,19 @@ class NodePathService implements INodePathService {
 
 	createAppLink(): TPromise<void> {
 		if (isWindows) {
-			return this.createUserLink(`^%WINDIR^%/Microsoft/Windows/Start Menu/Programs/${product.nameLong}.lnk`, this.environmentService.execPath, {
-				workingDir: this.getInstallPath(),
-				desc: product.nameLong,
-			});
+			return this.createUserLink(
+				`^%WINDIR^%/Microsoft/Windows/Start Menu/Programs/${product.nameLong}.lnk`,
+				this.getInstallPath('bin/code.cmd'),
+				{
+					workingDir: this.getInstallPath(),
+					desc: product.nameLong,
+					icon: this.environmentService.execPath,
+				},
+			);
 		} else {
 			return createLinuxDesktopShortcut(
 				this.getInstallPath(),
-				this.environmentService.execPath,
+				this.getInstallPath('bin/code'),
 			);
 		}
 	}

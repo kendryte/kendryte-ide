@@ -135,4 +135,8 @@ Icon=${installPath}/icon.png
 	const desktop = process.env.XDG_DESKTOP_DIR || resolvePath(process.env.HOME, 'Desktop');
 	await mkdirp(desktop);
 	await writeFile(`${desktop}/${product.applicationName}.desktop`, content);
+
+	fs.chmod(appPath, '0777', (e) => {
+		console.warn('create shortcut, chmod to 777: ', e.message);
+	});
 }
