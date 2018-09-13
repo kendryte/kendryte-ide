@@ -132,7 +132,7 @@ export class CMakeService implements ICMakeService {
 			return e.veto(this.shutdown(true));
 		});
 		this.localEnv = {};
-		this.localEnv.MAIX_IDE = 'yes';
+		this.localEnv.KENDRYTE_IDE = 'yes';
 
 		this.localDefine = [];
 		this.localDefine.push(`-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE`);

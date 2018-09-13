@@ -1,4 +1,4 @@
-# Maix IDE
+# Kendryte IDE
 
 Based on a wonderful editor: [VS Code](https://code.visualstudio.com) 
 
@@ -43,7 +43,7 @@ bash ./my-scripts/prepare-development.sh
 1. you must have a "workspace" like this:
 ```
 📁New Folder *<-- the "workspace"*    
-   📁 maix-ide *<-- this project*    
+   📁 kendryte-ide *<-- this project*    
    📁 HOME *<-- this will auto create during run*    
 ```
 1. you need an user:
@@ -67,14 +67,14 @@ Compressed release file will in .release folder.
 ## maix SDK & toolchain
 sdk and toolchain must found inside a folder `packages/`:
 * when developing: inside source root, next to `package.json`.
-* when released: inside application root, next to `Maix IDE.exe`
+* when released: inside application root, next to `Kendryte IDE.exe`
 
 On linux, [maix-toolchain](https://github.com/Canaan-Creative/maix-toolchain) can be build with:
 ```bash
-cd maix-toolchain
+cd kendryte-toolchain
 ./configure --prefix=`pwd`/dist
 make -j$(nproc)
-\cp -r dist/. /path/to/maix-ide/packages/toolchain
+\cp -r dist/. /path/to/kendryte-ide/packages/toolchain
 ```
 
 [maix-sdk](https://github.com/Canaan-Creative/maix-sdk) can be build with:

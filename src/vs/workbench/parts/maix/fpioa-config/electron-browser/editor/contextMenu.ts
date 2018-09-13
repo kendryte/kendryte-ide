@@ -11,7 +11,7 @@ import { ContextMenuData, ID_NO_FUNCTION, PinFuncSetEventEmitter } from 'vs/work
 
 class SetPinFunctionAction extends Action implements ICommandAction {
 	public static readonly ID = 'fpioaEditor.action.setPinFunc';
-	public static readonly LABEL = localize('MaixIOEditorSetPinFunc', 'assign function to selected io pin');
+	public static readonly LABEL = localize('KendryteIOEditorSetPinFunc', 'assign function to selected io pin');
 
 	constructor(protected readonly pinFunc: IFuncPin | null) {
 		super(SetPinFunctionAction.ID, pinFunc ? pinFunc.description : MENU_TITLE_UNSET_FUNC);
@@ -32,8 +32,8 @@ class SetPinFunctionAction extends Action implements ICommandAction {
 	}
 }
 
-const MENU_TITLE_SET_FUNC = localize('MaixIOEditorSetPinFuncShort', 'Assign Function');
-const MENU_TITLE_UNSET_FUNC = localize('MaixIOEditorUnsetPinFunc', 'No Function');
+const MENU_TITLE_SET_FUNC = localize('KendryteIOEditorSetPinFuncShort', 'Assign Function');
+const MENU_TITLE_UNSET_FUNC = localize('KendryteIOEditorUnsetPinFunc', 'No Function');
 
 export class ContextSubMenuSelector extends ContextSubMenu {
 	private actionList: Map<string, SetPinFunctionAction>;

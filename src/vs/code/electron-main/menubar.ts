@@ -272,10 +272,10 @@ export class Menubar {
 
 		// Tasks
 		const maixMenu = new Menu();
-		const maixMenuItem = new MenuItem({ label: this.mnemonicLabel(nls.localize({ key: 'mMaix', comment: ['&& denotes a mnemonic'] }, "&&Maix")), submenu: maixMenu });
+		const maixMenuItem = new MenuItem({ label: this.mnemonicLabel(nls.localize({ key: 'mMaix', comment: ['&& denotes a mnemonic'] }, "&&Kendryte")), submenu: maixMenu });
 
-		if (this.shouldDrawMenu('Maix')) {
-			this.setMenuById(maixMenu, 'Maix');
+		if (this.shouldDrawMenu('Kendryte')) {
+			this.setMenuById(maixMenu, 'Kendryte');
 			menubar.append(maixMenuItem);
 		}
 

@@ -35,11 +35,24 @@ export function installMaixMenu(access: ServicesAccessor, menubar: Menu) {
 	});
 
 	maixMenu.append(new MenuItem({
-		label: nls.localize({ key: 'MaixIOEditor', comment: ['&& denotes a mnemonic'] }, 'Edit Maix IO function'),
+		label: nls.localize({ key: 'KendryteIOEditor', comment: ['&& denotes a mnemonic'] }, 'Edit Kendryte IO function'),
 		click: (menuItem, win, event) => {
-			runInMain('workbench.action.maix.openIOConfig');
+			runInMain('workbench.action.kendryte.openIOConfig');
+		},
+	}));
+
+	maixMenu.append(__separator__());
+
+	maixMenu.append(new MenuItem({
+		label: nls.localize({ key: 'KendryteCreateShortcuts', comment: ['&& denotes a mnemonic'] }, 'Create Kendryte IDE shortcuts'),
+		click: (menuItem, win, event) => {
+			runInMain('workbench.action.kendryte.createShortcuts');
 		},
 	}));
 
 	menubar.append(maixMenuItem);
+}
+
+function __separator__(): Electron.MenuItem {
+	return new MenuItem({ type: 'separator' });
 }

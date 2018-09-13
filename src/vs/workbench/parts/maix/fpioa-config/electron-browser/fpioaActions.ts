@@ -8,8 +8,8 @@ import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/
 import { INotificationService } from 'vs/platform/notification/common/notification';
 
 export class FpioaEditorAction extends Action {
-	public static readonly ID = 'workbench.action.maix.openIOConfig';
-	public static readonly LABEL = localize('MaixIOEditor', 'Edit Maix IO function');
+	public static readonly ID = 'workbench.action.kendryte.openIOConfig';
+	public static readonly LABEL = localize('KendryteIOEditor', 'Edit Kendryte IO function');
 
 	constructor(
 		id: string,

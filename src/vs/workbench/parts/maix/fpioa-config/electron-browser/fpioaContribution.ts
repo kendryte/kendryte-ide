@@ -13,7 +13,7 @@ import { FpioaEditor } from 'vs/workbench/parts/maix/fpioa-config/electron-brows
 const category = localize('kendryte', 'Kendryte');
 
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(FpioaEditorAction, FpioaEditorAction.ID, FpioaEditorAction.LABEL), 'Maix: fpioa Editor', category);
+	.registerWorkbenchAction(new SyncActionDescriptor(FpioaEditorAction, FpioaEditorAction.ID, FpioaEditorAction.LABEL), 'Kendryte: fpioa Editor', category);
 
 MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {

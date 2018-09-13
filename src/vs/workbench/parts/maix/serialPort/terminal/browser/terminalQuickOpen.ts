@@ -64,7 +64,7 @@ export class CreateTerminal extends QuickOpenEntry {
 
 	public run(mode: Mode, context: IEntryRunContext): boolean {
 		if (mode === Mode.OPEN) {
-			setTimeout(() => this.commandService.executeCommand('workbench.action.maix.terminal.new'), 0);
+			setTimeout(() => this.commandService.executeCommand('workbench.action.kendryte.terminal.new'), 0);
 			return true;
 		}
 
@@ -88,7 +88,7 @@ export class TerminalPickerHandler extends QuickOpenHandler {
 		const normalizedSearchValueLowercase = stripWildcards(searchValue).toLowerCase();
 
 		const terminalEntries: QuickOpenEntry[] = this.getTerminals();
-		terminalEntries.push(new CreateTerminal(nls.localize("workbench.action.maix.terminal.newplus", "$(plus) Create New Integrated Terminal"), this.commandService));
+		terminalEntries.push(new CreateTerminal(nls.localize("workbench.action.kendryte.terminal.newplus", "$(plus) Create New Integrated Terminal"), this.commandService));
 
 		const entries = terminalEntries.filter(e => {
 			if (!searchValue) {

@@ -76,7 +76,7 @@ else
 	CWD="cd '$(pwd)' && "
 fi
 
-sushell compile "${CWD}yarn watch"
+sushell compile "${CWD}yarn watch --cache-folder '${YARN_CACHE_FOLDER}'"
 
 sushell vscode "${CWD}${START_CODE_SCRIPT}"
 

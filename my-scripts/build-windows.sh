@@ -37,7 +37,7 @@ step "Get Electron" \
 ############# install production deps
 if [ ! -e build/tfs/common/installDistro.js ] || hash_deps_check_changed "build" "build/package.json"; then
 	step "Build 'The Build' folder" \
-		bash -c "cd build ; yarn"
+		bash -c "cd build ; BUILDING=TRUE yarn --cache-folder '${YARN_CACHE_FOLDER}'"
 	hash_deps_save "build" "build/package.json"
 fi
 step "Install distro dependencies" \
@@ -68,7 +68,6 @@ mkdir -p "${RESULT}/packages/"
 step "Copy Staff (Windows)" \
 	bash -c "
 	cp -r ./my-scripts/staff/packages_skel/. '${RESULT}/packages/'
-	cp -r ./my-scripts/staff/_windows/* '${RESULT}/'
 "
 
 step "Create archive file" \
