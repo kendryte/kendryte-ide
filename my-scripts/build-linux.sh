@@ -71,10 +71,11 @@ step "Run unit tests" \
 	./scripts/test.sh --build --reporter dot
 
 ############# create tar.gz
-TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.tar.gz"
+TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.tar.xz"
 TARBALL_PATH="${RELEASE_ROOT}/${TARBALL_FILENAME}"
 
 RESULT="${RELEASE_ROOT}/VSCode-linux-${ARCH}"
+WANT_RESULT="${RELEASE_ROOT}/KendryteIDE"
 
 mkdir -p "${RESULT}/packages/"
 step "Copy Staff (Linux)" \
@@ -83,7 +84,10 @@ step "Copy Staff (Linux)" \
 	cp ./resources/linux/code.png '${RESULT}/icon.png'
 "
 
-step "Create ${RESULT} archive to ${TARBALL_PATH}" \
-	tar -czf "${TARBALL_PATH}" "${RESULT}"
+step "Move ${RESULT} to ${WANT_RESULT}" \
+	bash -c "rm -rf ${WANT_RESULT} ; mv ${RESULT} ${WANT_RESULT}"
+
+step "Create ${WANT_RESULT} archive to ${TARBALL_PATH}" \
+	tar -cJf "${TARBALL_PATH}" "${RESULT}"
 
 echo "Build success, the result file is ${TARBALL_PATH}"

@@ -62,13 +62,12 @@ step "copy inno updater" \
 	npm run gulp -- "vscode-win32-$ARCH-copy-inno-updater"
 
 ############# create zip
-TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.7z"
-TARBALL_PATH="${RELEASE_ROOT}/${TARBALL_FILENAME}"
 
 step "Create archive folder" \
 	npm run gulp -- "vscode-win32-${ARCH}-archive"
 
 RESULT="${RELEASE_ROOT}/VSCode-win32-${ARCH}"
+WANT_RESULT="${RELEASE_ROOT}/KendryteIDE"
 
 mkdir -p "${RESULT}/packages/"
 step "Copy Staff (Windows)" \
@@ -76,7 +75,10 @@ step "Copy Staff (Windows)" \
 	cp -r ./my-scripts/staff/packages_skel/. '${RESULT}/packages/'
 "
 
-step "Create archive file" \
-	7za a -y "${TARBALL_PATH}" "${RESULT}"
+step "Move ${RESULT} to ${WANT_RESULT}" \
+	bash -c "rm -rf ${WANT_RESULT} ; mv ${RESULT} ${WANT_RESULT}"
 
-echo "Build success, the result file is ${TARBALL_PATH}"
+
+# TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.7z"
+# TARBALL_PATH="${RELEASE_ROOT}/${TARBALL_FILENAME}"
+# echo "Build success, the result file is ${TARBALL_PATH}"
