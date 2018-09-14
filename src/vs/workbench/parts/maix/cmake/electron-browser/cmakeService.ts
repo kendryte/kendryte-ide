@@ -587,6 +587,7 @@ ${JSON.stringify(payload)}
 				env: await this.getCMakeEnv(),
 			},
 		};
+		console.log('spawn process %O', exe);
 		const process = new LineProcess(exe);
 
 		const dbg = new DebugScript(exe.options.cwd, exe.options.env);

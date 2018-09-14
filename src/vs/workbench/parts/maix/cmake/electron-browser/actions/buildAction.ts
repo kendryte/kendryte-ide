@@ -27,6 +27,9 @@ export class MaixCMakeBuildAction extends Action {
 		this.outputChannel.append('Starting build...');
 
 		await this.cmakeService.configure();
+
+		this.notificationService.info('===================');
+
 		await this.cmakeService.build();
 
 		this.notificationService.info('Build complete.');
