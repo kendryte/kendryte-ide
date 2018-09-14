@@ -46,6 +46,7 @@ import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versi
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 import { DebugScript, getEnvironment } from 'vs/workbench/parts/maix/_library/node/nodeEnv';
 import { CMakeBuildErrorProcessor, CMakeBuildProgressProcessor, CMakeProcessList } from 'vs/workbench/parts/maix/cmake/node/outputProcessor';
+import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 
 export interface IPromiseProgress<T> {
 	progress(fn: (p: T) => void): void;
@@ -125,6 +126,7 @@ export class CMakeService implements ICMakeService {
 		@IOutputService protected outputService: IOutputService,
 		@IPackagesUpdateService packagesUpdateService: IPackagesUpdateService,
 		@INodePathService private nodePathService: INodePathService,
+		@IConfigurationService private configurationService: IConfigurationService,
 	) {
 		this.outputChannel = outputService.getChannel(CMAKE_CHANNEL);
 		// this.installExtension('twxs.cmake');
@@ -771,14 +773,18 @@ ${JSON.stringify(payload)}
 		if (index !== -1) {
 			content.configurations.splice(content.configurations, 1);
 		}
+
+		const configPaths = this.configurationService.getValue<string[]>('C_Cpp.default.includePath');
+
 		content.configurations.unshift({
 			name: 'Default',
 			defines: [],
-			compilerPath: resolvePath(this.nodePathService.getToolchainBinPath(), 'riscv64-unknown-elf-gcc'),
+			compilerPath: resolvePath(this.nodePathService.getToolchainBinPath(), 'riscv64-unknown-elf-g++'),
 			cStandard: 'c11',
 			cppStandard: 'c++17',
-			intelliSenseMode: 'clang-x64',
+			intelliSenseMode: 'gcc-x64',
 			compileCommands: '${workspaceFolder}/.vscode/compile_commands.backup.json',
+			includePath: [...configPaths],
 		});
 
 		const from = this.nodePathService.workspaceFilePath('build/compile_commands.json');

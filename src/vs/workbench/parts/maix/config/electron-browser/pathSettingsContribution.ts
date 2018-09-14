@@ -10,6 +10,7 @@ import { readdirSync } from 'vs/base/node/extfs';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
 import { ILogService } from 'vs/platform/log/common/log';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
+import { existsSync, readFileSync } from 'fs';
 
 interface SettingsOverwiter<T> {
 	(access: ServicesAccessor, old: T): T;
@@ -29,11 +30,20 @@ const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
 		const ret: string[] = [];
 		const sdk = nodePathService.rawSDKPath();
 
-		ret.push(sdk + '/lib/bsp/include');
-		ret.push(sdk + '/lib/drivers/include');
-		ret.push(sdk + '/lib/freertos/include');
-		ret.push(sdk + '/lib/math/include');
-		ret.push(sdk + '/lib/utils/include');
+		if (existsSync(resolvePath(sdk, '.IDE_INCLUDE'))) {
+			const lines = readFileSync(resolvePath(sdk, '.IDE_INCLUDE'), 'utf8')
+				.trim()
+				.split(/\n/g)
+				.map(e => e.trim())
+				.filter(e => !!e)
+				.map(e => resolvePath(sdk, e));
+			ret.push(...lines);
+		}
+		ret.push(resolvePath(sdk, 'lib/bsp/include'));
+		ret.push(resolvePath(sdk, 'lib/drivers/include'));
+		ret.push(resolvePath(sdk, 'lib/freertos/include'));
+		ret.push(resolvePath(sdk, 'lib/math/include'));
+		ret.push(resolvePath(sdk, 'lib/utils/include'));
 
 		ret.push(sdk + '/include');
 
@@ -43,12 +53,16 @@ const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
 		const libgcc = resolvePath(toolchain, 'lib/gcc/riscv64-unknown-elf');
 		const libgccVersion = readdirSync(libgcc)[0];
 		ret.push(resolvePath(libgcc, libgccVersion, 'include'));
+		ret.push(resolvePath(libgcc, libgccVersion, 'include-fixed'));
 
 		const libcpp = resolvePath(toolchain, 'riscv64-unknown-elf/include/c++');
 		const libcppVersion = readdirSync(libcpp)[0];
 		ret.push(resolvePath(libcpp, libcppVersion));
 		ret.push(resolvePath(libcpp, libcppVersion, 'riscv64-unknown-elf'));
-		return ret;
+
+		return ret.filter((item, index) => {
+			return ret.lastIndexOf(item) === index;
+		});
 	},
 };
 
