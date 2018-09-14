@@ -28,7 +28,7 @@ export class MaixCMakeBuildAction extends Action {
 
 		await this.cmakeService.configure();
 
-		this.notificationService.info('===================');
+		this.outputChannel.append('\n===================\n\n');
 
 		await this.cmakeService.build();
 

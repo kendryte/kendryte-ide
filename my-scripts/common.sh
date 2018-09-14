@@ -53,6 +53,7 @@ if [ -n "${ORIGINAL_PATH}" ]; then
 	export ORIGINAL_PATH="$PATH"
 fi
 export PATH="./node_modules/.bin:${TOOLCHAIN_BIN}:${NODEJS_BIN}:/bin:/usr/bin:/usr/sbin"
+export PATH="./node_modules/.bin:${TOOLCHAIN_BIN}:${NODEJS_BIN}:/bin:/usr/bin:/usr/sbin"
 if [ "$SYSTEM" = "windows" ]; then
 	PATH="$PATH:$(cygpath -W):$(cygpath -S):$(cygpath -S)/Wbem:$(cygpath -S)/WindowsPowerShell/v1.0/"
 fi
