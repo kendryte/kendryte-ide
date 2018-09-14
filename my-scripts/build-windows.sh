@@ -17,6 +17,8 @@ if [ ! -e "${NODEJS}" ]; then
 		die "没有运行prepare-release.sh，请按照文档执行。
 		https://doc.b-bug.org/pages/viewpage.action?pageId=4228204"
 	fi
+else
+	bash ./prepare-release.sh
 fi
 
 cd ..

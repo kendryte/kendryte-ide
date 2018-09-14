@@ -26,10 +26,11 @@ function prepare_arch() {
 		echo "install yarn to $YARN..."
 		"$(nodeBinPath npm)" -g install yarn
 	fi
-	
+
 	if [ "$SYSTEM" = "windows" ]; then
-		if ! npm list -g windows-build-tools &>/dev/null ; then
-			npm install -g windows-build-tools
+		if ! cat $(cygpath -u "$(yarn global dir)/package.json") | grep -q windows-build-tools ; then
+			echo -e "===========================\n\n\tPlease Wait for install windows-build-tools\n\n==========================="
+			cygstart --wait --action=runas ./node.exe $(cygpath -m "${VSCODE_ROOT}/my-scripts/windows-install.js")
 		fi
 	fi
 }
