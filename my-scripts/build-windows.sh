@@ -26,6 +26,8 @@ source ./scripts/env.sh
 
 source ./my-scripts/build-env/build-common-source.sh
 
+export HOME="$(cygpath -m "$HOME")"
+
 ############# define const to create filenames
 pushd "${VSCODE_ROOT}" &>/dev/null
 BUILD_VERSION=$(node -p "require(\"./package.json\").version")
