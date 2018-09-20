@@ -2,7 +2,7 @@
 
 function die() {
 	echo -en "\n\e[38;5;9m" >&2
-	echo -n  "$1" >&2
+	echo -n  "$@" >&2
 	echo -e "\e[0m\n" >&2
 	exit 1
 }
@@ -24,9 +24,13 @@ trap step_end EXIT INT TERM
 SN=0
 SN_LIST=()
 STAT_SHOW=
+STAT_PID=
 function step(){
 	if [ "$1" == "-s" ]; then
 		cd "${VSCODE_ROOT}"
+		shift
+	elif [ "$1" == "-r" ]; then
+		cd "${RELEASE_ROOT}"
 		shift
 	else
 		cd "${ARCH_RELEASE_ROOT}"
@@ -42,7 +46,7 @@ function step(){
 	echo " -- $*"
 
 	"$@" &
-	local STAT_PID=$!
+	STAT_PID=$!
 
 	bash -c "dd=''
 while true; do
@@ -57,7 +61,7 @@ done" &
 	wait ${STAT_PID}
 	local RET=$?
 
-	kill -2 "${STAT_SHOW}" &>/dev/null
+	kill "${STAT_SHOW}" "${STAT_PID}" &>/dev/null || true
 
 	if [ ${RET} -eq 0 ] ; then
 		echo -e "\e[38;5;10mStep ${SN}: $title Susccess.\e[0m"
@@ -75,8 +79,8 @@ function step_end() {
 	if [ ${SN} -eq 0 ]; then
 		return
 	fi
-	echo "Stopping Running task..."
-	kill -2 "${STAT_SHOW}" &>/dev/null
+	echo "Stopping Running task: ${STAT_SHOW} ${STAT_PID} ..."
+	kill "${STAT_SHOW}" "${STAT_PID}" || true
 	sleep 1
 	echo "=========================="
 	for I in "${SN_LIST[@]}" ; do
@@ -86,10 +90,11 @@ function step_end() {
 }
 
 function hash_files_check_changed() { # change return 0 ( test success )
-	local HASH="${RELEASE_ROOT}/head_hash.md5"
+	local VERSION="$1"
+	local HASH="${RELEASE_ROOT}/current_hash.md5"
 	if [ -e "${HASH}" ]; then
 		pushd "${VSCODE_ROOT}" &>/dev/null
-		if git archive HEAD | md5sum --status -c "${HASH}" ; then
+		if git archive "${VERSION}" | md5sum --status -c "${HASH}" ; then
 			RET=1
 			echo "source code not changed: $(< "${HASH}")"
 		else
@@ -98,16 +103,17 @@ function hash_files_check_changed() { # change return 0 ( test success )
 		fi
 		popd &>/dev/null
 	else
-		echo "source code not exists."
+		echo "source code not hashed ever."
 		RET=0
 	fi
 	return ${RET}
 }
 
 function hash_files_save() {
-	local HASH="${RELEASE_ROOT}/head_hash.md5"
+	local VERSION="$1"
+	local HASH="${RELEASE_ROOT}/current_hash.md5"
 	pushd "${VSCODE_ROOT}" &>/dev/null
-	git archive head | md5sum > "${HASH}"
+	git archive "${VERSION}" | md5sum > "${HASH}"
 	popd &>/dev/null
 }
 
@@ -133,6 +139,9 @@ function hash_deps_save() {
 }
 
 function clear_environment(){
+	if [ -n "$REAL_HOME" ]; then
+		export HOME="$REAL_HOME"
+	fi
 	unset VSCODE_ROOT
 	unset RELEASE_ROOT
 	unset REAL_HOME
@@ -147,6 +156,7 @@ function set_path_when_developing() {
 		echo "Error: REAL_HOME is set by something."
 		exit 1
 	fi
+	clear_environment
 	export REAL_HOME="${HOME}"
 	export HOME=$(realpath "${SCRIPTS_PATH}/../../FAKE_HOME")
 	export RELATIVE_HOME_TO_SOURCE="../FAKE_HOME"
@@ -175,5 +185,32 @@ function reset_asar() {
 	if [ -e "node_modules.asar" ]; then
 		echo "remove node_modules.asar"
 		rm -f node_modules.asar
+	fi
+}
+
+function detect_install_nodejs() {
+	pushd "${VSCODE_ROOT}"
+
+	if [ -e "${NODEJS}" ]; then
+		bash "./my-scripts/prepare-release.sh" || die "不能安装node和其他依赖，查看上方日志"
+	else
+		bash "./my-scripts/prepare-release.sh" || die "不能安装node和其他依赖，查看上方日志"
+		cd my-scripts
+		source common.sh
+	fi
+
+	echo -n "detect nodejs: ${NODEJS} -> "
+	node -v || die -e "node安装完成，但似乎无法运行\nPATH=\n$(echo $PATH | sed 's/:/\n/g')"
+
+	popd &>/dev/null
+}
+
+function ensure_node_modules_in_current_dir() {
+	if ! [ -e node_modules ]; then
+		if [ "$SYSTEM" = "windows" ]; then
+			die "Emmmm, run 'my-script/pack-windows.sh' first?"
+		else
+			die "Emmmm, run yarn install first?"
+		fi
 	fi
 }

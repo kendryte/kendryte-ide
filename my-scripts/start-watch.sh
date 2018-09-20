@@ -8,11 +8,9 @@ set_path_when_developing
 source common.sh
 cd ..
 
-echo -n $(command -v node)" -> "$(node -v)
+detect_install_nodejs
 
-if ! [ -e node_modules ]; then
-	die "Emmmm, yarn install ?"
-fi
+ensure_node_modules_in_current_dir
 
 node build/lib/electron.js || ./node_modules/.bin/gulp electron
 

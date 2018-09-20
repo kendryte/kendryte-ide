@@ -30,3 +30,7 @@ run.sh
 *.asar.unpacked
 *.asarsource
 .fast-links
+node_modules
+packages
+.idea/deployment.xml
+.idea/typescript-compiler.xml

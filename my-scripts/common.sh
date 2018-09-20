@@ -6,6 +6,7 @@ if [ -z "$ARCH" ]; then
 fi
 
 export npm_config_arch="$ARCH"
+export PRODUCT_NAME="KendryteIDE"
 
 if [ -z "${VSCODE_ROOT}" ]; then
 	export VSCODE_ROOT="$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")"
@@ -13,7 +14,7 @@ fi
 
 if [ -z "${RELEASE_ROOT}" ]; then
 	export RELEASE_ROOT="${VSCODE_ROOT}/.release"
-	export ARCH_RELEASE_ROOT="${VSCODE_ROOT}/.release/maix-ide-release-${ARCH}"
+	export ARCH_RELEASE_ROOT="${VSCODE_ROOT}/.release/kendryte-ide-release-${ARCH}"
 fi
 
 if [ -z "${REAL_HOME}" ]; then
@@ -32,33 +33,37 @@ fi
 
 if [ -z "${FOUND_CYGWIN}" ] || [ -z "${NODEJS}" ] ; then
 	export FOUND_CYGWIN=$(find /bin -name 'cygwin*.dll')
-	export YARN_CACHE_FOLDER="${HOME}/yarn-cache"
+	export NODEJS_INSTALL="${HOME}/nodejs/${ARCH}"
 	if [ -n "${FOUND_CYGWIN}" ]; then
 		export SYSTEM="windows"
-		export NODEJS="${RELEASE_ROOT}/nodejs/${ARCH}/node.exe"
-		export NODEJS_BIN="${RELEASE_ROOT}/nodejs/${ARCH}"
-		export YARN_CACHE_FOLDER="$(cygpath -m "${YARN_CACHE_FOLDER}")"
+		export NODEJS="${NODEJS_INSTALL}/node.exe"
+		export NODEJS_BIN="${NODEJS_INSTALL}"
 		function sudo() { "$@"; }
 	else
 		export SYSTEM="linux"
-		export NODEJS="${RELEASE_ROOT}/nodejs/${ARCH}/bin/node"
-		export NODEJS_BIN="${RELEASE_ROOT}/nodejs/${ARCH}/bin"
+		export NODEJS="${NODEJS_INSTALL}/bin/node"
+		export NODEJS_BIN="${NODEJS_INSTALL}/bin"
 		if ! command -v sudo &>/dev/null ; then
 			function sudo() { "$@"; }
 		fi
 	fi
 fi
 
+export YARN_CACHE_FOLDER="${RELEASE_ROOT}/yarn-cache"
+if [ "$SYSTEM" = "windows" ]; then
+		export YARN_CACHE_FOLDER="$(cygpath -m "${YARN_CACHE_FOLDER}")"
+fi
+
 if [ -n "${ORIGINAL_PATH}" ]; then
 	export ORIGINAL_PATH="$PATH"
 fi
-export PATH="./node_modules/.bin:${TOOLCHAIN_BIN}:${NODEJS_BIN}:/bin:/usr/bin:/usr/sbin"
 export PATH="./node_modules/.bin:${TOOLCHAIN_BIN}:${NODEJS_BIN}:/bin:/usr/bin:/usr/sbin"
 if [ "$SYSTEM" = "windows" ]; then
 	PATH="$PATH:$(cygpath -W):$(cygpath -S):$(cygpath -S)/Wbem:$(cygpath -S)/WindowsPowerShell/v1.0/"
 fi
 
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
+echo -e "\e[1;38;5;9m\$BASH_SOURCE\e[0m=\e[2m${BASH_SOURCE[@]}\e[0m"
 echo -e "\e[1;38;5;9mSYSTEM\e[0m=\e[2m${SYSTEM}\e[0m"
 echo -e "\e[1;38;5;9mARCH\e[0m=\e[2m${ARCH}\e[0m"
 echo -e "\e[1;38;5;9mVSCODE_ROOT\e[0m=\e[2m${VSCODE_ROOT}\e[0m"

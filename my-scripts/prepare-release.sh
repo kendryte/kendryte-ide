@@ -13,12 +13,14 @@ function prepare_arch() {
 
 	mkdir -p "${ARCH_RELEASE_ROOT}"
 	mkdir -p "${HOME}"
+	unlink "${HOME}/.gitconfig" || true
+	ln -s "${REAL_HOME}/.gitconfig" "${HOME}/.gitconfig"
 
 	### install nodejs
 	if [ ! -e "${NODEJS}" ]; then
-		"install_node_${SYSTEM}" "${ARCH}" "${RELEASE_ROOT}/nodejs/${ARCH}"
+		"install_node_${SYSTEM}" "${ARCH}" "${NODEJS_INSTALL}"
+		echo "Node.js version: $("${NODEJS}" -v)"
 	fi
-	echo "Node.js version: $("${NODEJS}" -v)"
 
 	### install yarn (local install)
 	local YARN=$(nodeBinPath yarn)
@@ -51,7 +53,6 @@ function install_node_windows() {
 	local ARCH="$1"
 	local INSTALL_NODE="$2"
 
-	echo "${INSTALL_NODE}/node.exe"
 	if [ -e "${INSTALL_NODE}/node.exe" ]; then
 		return
 	fi

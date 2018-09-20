@@ -9,20 +9,10 @@ source common.sh "$@"
 
 export BUILDING=TRUE
 
-echo 8000000 > /proc/sys/fs/file-max
-ulimit -n 1000000
+echo 8000000 | sudo tee /proc/sys/fs/file-max >/dev/null
+sudo ulimit -n 1000000
 
-if [ ! -e "${NODEJS}" ]; then
-	bash ./prepare-release.sh
-
-	source common.sh "$@"
-	if [ ! -e "${NODEJS}" ]; then
-		die "没有运行prepare-release.sh，请按照文档执行。
-		https://doc.b-bug.org/pages/viewpage.action?pageId=4228204"
-	fi
-else
-	bash ./prepare-release.sh
-fi
+detect_install_nodejs
 
 cd ..
 source ./scripts/env.sh
@@ -40,7 +30,7 @@ BUILD_COMMIT=$(node -p "require(\"${VSCODE_ROOT}/product.json\").commit")
 if ! echo "$*" | grep -q -- '--no-check' ; then
 	step "Hygiene" \
 		npm run gulp -- hygiene
-	
+
 	step "Monaco Editor Check" \
 		./node_modules/.bin/tsc -p ./src/tsconfig.monaco.json --noEmit
 fi
@@ -85,7 +75,7 @@ step "Copy Staff (Linux)" \
 "
 
 step "Move ${RESULT} to ${WANT_RESULT}" \
-	bash -c "rm -rf ${WANT_RESULT} ; mv ${RESULT} ${WANT_RESULT}"
+	bash -c "rm -rf '${WANT_RESULT}' ; mv '${RESULT}' '${WANT_RESULT}'"
 
 step "Create ${WANT_RESULT} archive to ${TARBALL_PATH}" \
 	tar -cJf "${TARBALL_PATH}" "${RESULT}"

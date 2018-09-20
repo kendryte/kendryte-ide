@@ -70,17 +70,8 @@ function lnext(){
 	node "./my-scripts/build-env/ln-extension.js" "$1"
 }
 
-if [ -z "${FOUND_CYGWIN}" ]; then
-	START_CODE_SCRIPT='bash ./scripts/code.sh'
-else
-	START_CODE_SCRIPT='unset PYTHON && history -c && ./scripts/code.bat'
-	CWD="cd '$(pwd)' && "
-fi
+sushell compile "bash my-scripts/start-watch.sh"
 
-sushell compile "${CWD}yarn watch --cache-folder '${YARN_CACHE_FOLDER}'"
-
-sushell vscode "${CWD}${START_CODE_SCRIPT}"
-
-${TMUX} kill-window -t 'bash' || true
+sushell vscode "bash my-scripts/start-code.sh"
 
 ${TMUX} attach -E -t "=${TARGET}"

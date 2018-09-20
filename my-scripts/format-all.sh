@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+set -e
+
+cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+source fn.sh
+set_path_when_developing
+source common.sh
+cd ..
+
 echo "waiting for 'yarn gulp hygiene'" >&2
 OUT="$(yarn --cache-folder "${YARN_CACHE_FOLDER}" gulp hygiene 2>&1)"
 echo "$OUT" >&2
