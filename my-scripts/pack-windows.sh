@@ -7,6 +7,8 @@ set_path_when_developing
 source common.sh
 cd ..
 
+detect_install_nodejs
+
 ### start
 reset_asar
 
@@ -30,7 +32,7 @@ cache-folder "'${YARN_CACHE_FOLDER}'"
 	cp -f "yarn.lock" "${TARGET}"
 
 	pushd "${TARGET}" &>/dev/null
-	PATH="$ORIGINAL_PATH" yarn install -y --use-yarnrc .yarnrc --prefer-offline --cache-folder "${YARN_CACHE_FOLDER}"
+	yarn install -y --use-yarnrc .yarnrc --prefer-offline --cache-folder "${YARN_CACHE_FOLDER}"
 	popd &>/dev/null
 }
 

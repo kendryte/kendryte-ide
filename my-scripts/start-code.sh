@@ -8,8 +8,7 @@ set_path_when_developing
 source common.sh
 cd ..
 
-echo -n "detect nodejs: "
-echo $(command -v node)" -> "$(node -v)
+detect_install_nodejs
 
 ensure_node_modules_in_current_dir
 
