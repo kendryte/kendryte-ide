@@ -154,6 +154,7 @@ export class CMakeService implements ICMakeService {
 	init(access: ServicesAccessor) {
 		this.localEnv.TOOLCHAIN = this.nodePathService.getToolchainBinPath();
 		this.localEnv.SDK = this.nodePathService.getSDKPath();
+		this.localEnv.SDK_ROOT = this.localEnv.SDK;
 		if (isWindows) {
 			this.localEnv.CMAKE_MAKE_PROGRAM = 'mingw32-make.exe';
 		}
@@ -543,7 +544,7 @@ ${JSON.stringify(payload)}
 		await this.notifyCppExtension();
 
 		this.log('');
-		this.log('Configure complete!');
+		this.log('~ Configure complete! ~');
 	}
 
 	public async build(): TPromise<void> {
@@ -553,6 +554,8 @@ ${JSON.stringify(payload)}
 		}
 
 		await this.ensureConfiguration();
+
+		this.log('Run cmake build:');
 
 		let make: string = this.getCMakeToRun().cmake;
 

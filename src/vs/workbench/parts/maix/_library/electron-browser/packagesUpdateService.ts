@@ -6,7 +6,7 @@ import { parse, resolve as resolveUrl } from 'url';
 import { OperatingSystem, OS } from 'vs/base/common/platform';
 import { is64Bit } from 'vs/workbench/parts/maix/_library/node/versions';
 import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
-import { copy, exists, mkdirp, readdir, readFile, rename, rimraf, unlink, writeFile } from 'vs/base/node/pfs';
+import { copy, exists, lstat, mkdirp, readdir, readFile, rename, rimraf, unlink, writeFile } from 'vs/base/node/pfs';
 import { IProgressService2, IProgressStep, ProgressLocation } from 'vs/workbench/services/progress/common/progress';
 import { IProgress } from 'vs/platform/progress/common/progress';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
@@ -39,6 +39,7 @@ import { IEnvironmentService } from 'vs/platform/environment/common/environment'
 
 const distributeUrl = 'https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/'; // MUST end with /
 const LAST_UPDATE_CACHE_KEY = '.last-check-update';
+const patchVersionKey = 'hot-patch-version';
 
 const UPDATE_KEY_MAIN = 'KendryteIDE';
 const UPDATE_KEY_PATCH = 'KendryteIDEPatch';
@@ -63,6 +64,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	protected readonly localConfigFile: string;
 	protected runPromise: TPromise<any>;
 	protected logger: IChannelLogger;
+	private running: TPromise<void>;
 
 	constructor(
 		@INodePathService protected nodePathService: INodePathService,
@@ -114,7 +116,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			return this.runPromise;
 		}
 
-		this.lifecycleService.onWillShutdown((e) => {
+		const disShutdown = this.lifecycleService.onWillShutdown((e) => {
 			if (this.runPromise) {
 				const force = confirm('Update is in progress.\nDo you want to force quit?\nUpdate will continue next time.');
 				e.veto(!force);
@@ -125,25 +127,34 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			return this.isUpdateAlreadyCheckedMomentsAgo();
 		}).then((upToDate) => {
 			if (upToDate) {
+				this.setState(State.Idle(UpdateType.Archive));
 				this.logger.info('no recheck, is too fast.');
 				return void 0;
 			}
 			this.logger.info('recheck now.');
 			const windowId = this.windowService.getCurrentWindowId();
+			this.running = this._run();
 			return TPromise.join([
-				this._run(),
-				this.checkForUpdates({ windowId }),
+				this.running,
+				this.checkForUpdates({ windowId, noResetCache: true }),
 			]);
 		});
 
 		return this.runPromise.then(() => {
+			disShutdown.dispose();
 			entry.dispose();
 			delete this.runPromise;
 
+			this.cache = {};
+
 			return this.writeCache(LAST_UPDATE_CACHE_KEY, (new Date).getTime().toFixed(0));
 		}, (errors: Error[]) => {
+			disShutdown.dispose();
 			entry.dispose();
 			delete this.runPromise;
+
+			this.cache = {};
+
 			this.logger.info('======================================');
 			this.statusbarService.addEntry({
 				text: '$(sync~spin)$(x) Failed to download required packages, please check your internet connection... (click to retry)',
@@ -257,7 +268,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		const list = await this.getPackageList();
 		this.logger.info('remote package list: %s', list.join(' '));
 		for (const project of list) {
-			const remoteVersion = await this.getPackage(project);
+			const remoteVersion = await this.checkUpdateInfo(project);
 			if (remoteVersion.ignorePlatform && remoteVersion.ignorePlatform.indexOf(this.platform)) {
 				this.logger.info('[%s] not updated: this platform is ignored', project);
 				continue;
@@ -458,8 +469,11 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		let copyFrom = unzipTarget;
 		this.logger.info('extracted folder content: [%s]', contents.join(', '));
 		if (contents.length === 1) {
-			this.logger.debug('use only sub folder as root');
-			copyFrom += `/${contents[0]}`;
+			const stat = await lstat(resolvePath(unzipTarget, contents[0]));
+			if (stat.isDirectory()) {
+				this.logger.debug('use only sub folder as root');
+				copyFrom += `/${contents[0]}`;
+			} // else nothing
 		} else if (contents.length === 0) {
 			throw new Error('Invalid package: empty file');
 		}
@@ -501,17 +515,14 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		}
 	}
 
-	protected applyIDEPatch(patchZip: string): TPromise<void> {
-		const installTarget = resolvePath(this.nodePathService.getInstallPath(), 'resources/app');
-		this.logger.log('applyIDEPatch: ', patchZip, installTarget);
-		return this.extract(patchZip, installTarget, true);
-	}
-
 	/* * class of WrappedUpdateService */
 	protected readonly _onStateChange: Emitter<State> = new Emitter<State>();
 	public readonly onStateChange: Event<State> = this._onStateChange.event;
 	public _state: State = State.Uninitialized;
-	protected readonly patchVersion: string = 'wow-such-doge';
+
+	get patchVersion() {
+		return this.localPackage[patchVersionKey] || '';
+	}
 
 	protected downloaded: string;
 
@@ -535,14 +546,15 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			productVersion: patch.version,
 		}));
 
-		await this.applyIDEPatch(this.downloaded);
+		const patchZip = this.downloaded;
+		const installTarget = resolvePath(this.nodePathService.getInstallPath(), 'resources/app');
+		this.logger.info('applyIDEPatch: ', patchZip, installTarget);
+		await this.extract(patchZip, installTarget, true);
 
 		this.setState(State.Ready({
 			version: patch.version,
 			productVersion: patch.version,
 		}));
-
-		await this.windowsService.relaunch({});
 	}
 
 	protected async notifyUpdate() {
@@ -566,6 +578,10 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			return;
 		}
 
+		if (context && !context.noResetCache) {
+			this.cache = {};
+		}
+
 		this.setState(State.CheckingForUpdates({}));
 
 		const main = await this.checkUpdateInfo(UPDATE_KEY_MAIN);
@@ -581,6 +597,8 @@ class PackagesUpdateService implements IPackagesUpdateService {
 				this.logger.warn('KendryteIDE is update: local %s, remote %s', this.patchVersion, patch.version);
 				await this.downloadUpdate();
 				await this.applyUpdate();
+				await this.writeCache(patchVersionKey, patch.version);
+				await this.quitAndInstall();
 			}
 		} else {
 			await this.notifyUpdate();
@@ -596,7 +614,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			throw new Error('update is in progress...');
 		}
 
-		const patch = await this.getPackage(UPDATE_KEY_PATCH);
+		const patch = await this.checkUpdateInfo(UPDATE_KEY_PATCH);
 		const downloadUrl = this.getPlatformDownloadUrl(patch);
 
 		const info = {
@@ -648,7 +666,8 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	}
 
 	public async quitAndInstall(): TPromise<void> {
-		debugger;
+		await this.running;
+		await this.windowsService.relaunch({});
 		return undefined;
 	}
 
@@ -658,7 +677,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		if (this.cache[type]) {
 			return this.cache[type];
 		}
-		this.cache[type] = await this.getPackage(UPDATE_KEY_MAIN);
+		this.cache[type] = await this.getPackage(type);
 		return this.cache[type];
 	}
 }

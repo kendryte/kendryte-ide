@@ -68,8 +68,8 @@ step "Copy Staff (Windows)" \
 step -r "Move ${RESULT} to ${WANT_RESULT}" \
 	bash -c "rm -rf '${WANT_RESULT}' ; mv '${RESULT}' '${WANT_RESULT}'"
 
-TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.7z"
+TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.zip"
 step -r "Create archive file" \
-	7za a -y "${TARBALL_FILENAME}" "${PRODUCT_NAME}"
+	7za a -y -snl -mmt=on -mm=lzma -mx=7 "${TARBALL_FILENAME}" "${PRODUCT_NAME}"
 
 echo "Build success, the result file is ${RELEASE_ROOT}/${TARBALL_FILENAME}"

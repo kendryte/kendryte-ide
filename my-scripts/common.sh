@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 
-export ARCH="$1"
-if [ -z "$ARCH" ]; then
-	ARCH=x64
-fi
+export ARCH="x64"
 
 export npm_config_arch="$ARCH"
 export PRODUCT_NAME="KendryteIDE"

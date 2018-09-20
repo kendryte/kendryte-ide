@@ -47,11 +47,11 @@ class ChannelLogger extends AbstractLogService implements IChannelLogger, IDispo
 	}
 
 	public println(level: string, _colorTheme: string, message: string, ...args: any[]) {
-		this.channel.append(format(`[${level}] ${message}\n`, ...args));
+		this.channel.append(format(`[${level}] ${message}`, ...args) + '\n');
 	}
 
 	log(message: string, ...args: any[]): void {
-		this.channel.append(format(`${message}\n`, ...args));
+		this.channel.append(format(message, ...args) + '\n');
 	}
 
 	write(message: string, ...args: any[]): void {

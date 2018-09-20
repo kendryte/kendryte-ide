@@ -151,6 +151,7 @@ export abstract class AbstractProcess<TProgressData> {
 			return TPromise.wrapError(new Error(nls.localize('TaskRunner.UNC', 'Can\'t execute a shell command on a UNC drive.')));
 		}
 		return this.useExec().then((useExec) => {
+			console.warn('useExec: ', useExec);
 			let cc: TValueCallback<SuccessData>;
 			let ee: ErrorCallback;
 			let result = new TPromise<any>((c, e) => {
@@ -221,9 +222,11 @@ export abstract class AbstractProcess<TProgressData> {
 					} else {
 						args.push(commandLine.join(' '));
 					}
+					console.log('SPAWN-A', getWindowsShell(), args, options);
 					childProcess = cp.spawn(getWindowsShell(), args, options);
 				} else {
 					if (this.cmd) {
+						console.log('SPAWN-B', this.cmd, this.args, this.options);
 						childProcess = cp.spawn(this.cmd, this.args, this.options);
 					}
 				}
