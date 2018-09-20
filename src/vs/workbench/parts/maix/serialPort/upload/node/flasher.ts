@@ -17,11 +17,11 @@ import { disposableStream } from 'vs/workbench/parts/maix/_library/node/disposab
 import { SubProgress } from 'vs/workbench/parts/maix/_library/common/progress';
 import { lstat } from 'vs/base/node/pfs';
 import { timeout } from 'vs/base/common/async';
-import { IConsoleLogService } from 'vs/workbench/parts/maix/_library/node/channelLog';
 import { ISPFlashPacker } from 'vs/workbench/parts/maix/serialPort/upload/node/ispFlashPacker';
 import { ChunkBuffer } from 'vs/workbench/parts/maix/serialPort/upload/node/chunkBuffer';
 import { createCipheriv, createHash } from 'crypto';
 import { drainStream } from 'vs/workbench/parts/maix/_library/common/drainStream';
+import { IChannelLogger } from 'vs/workbench/parts/maix/_library/node/channelLogService';
 
 export enum ChipType {
 	OnBoard = 0,
@@ -55,7 +55,7 @@ export class SerialLoader extends Disposable {
 		bootLoader: string,
 		protected readonly encryptionKey: Buffer,
 		protected readonly type: ChipType,
-		protected readonly logService: IConsoleLogService,
+		protected readonly logger: IChannelLogger,
 	) {
 		super();
 
@@ -112,7 +112,7 @@ export class SerialLoader extends Disposable {
 		const packedData = new ISPMemoryPacker(baseAddress, length, async (bytesProcessed: number): TPromise<void> => {
 			const op = await this.expect(ISPOperation.ISP_MEMORY_WRITE);
 			if (op.op === ISPOperation.ISP_DEBUG_INFO) {
-				this.logService.info(op.text);
+				this.logger.info(op.text);
 			} else if (op.op === ISPOperation.ISP_MEMORY_WRITE && op.err === ISPError.ISP_RET_OK) {
 				if (report) {
 					report.progress(bytesProcessed);
@@ -185,12 +185,12 @@ export class SerialLoader extends Disposable {
 	}
 
 	async flashBoot(address = 0x80000000) {
-		this.logService.info('Boot from memory: 0x%s.', address.toString(16));
+		this.logger.info('Boot from memory: 0x%s.', address.toString(16));
 		const buff = Buffer.allocUnsafe(8);
 		buff.writeUInt32LE(address, 0);
 		buff.writeUInt32LE(0, 4);
 		this.send(ISPOperation.ISP_MEMORY_BOOT, buff);
-		this.logService.info('  boot command sent');
+		this.logger.info('  boot command sent');
 
 		const p = this.expect(ISPOperation.ISP_NOP).then(() => {
 			received = true;
@@ -208,7 +208,7 @@ export class SerialLoader extends Disposable {
 	}
 
 	async flashInitFlash() {
-		this.logService.info('Select flash: %s', ChipType[this.type]);
+		this.logger.info('Select flash: %s', ChipType[this.type]);
 
 		const buff = Buffer.allocUnsafe(8);
 		buff.writeUInt32LE(this.type, 0);
@@ -217,38 +217,38 @@ export class SerialLoader extends Disposable {
 		this.send(ISPOperation.ISP_FLASH_SELECT, buff);
 
 		await this.expect(ISPOperation.ISP_FLASH_SELECT);
-		this.logService.info(' - Complete.');
+		this.logger.info(' - Complete.');
 	}
 
 	async flashBootLoader(report: SubProgress) {
 		const blAddress = 0x80000000;
-		this.logService.info('Writing boot loader to memory (at 0x%s)', blAddress.toString(16));
+		this.logger.info('Writing boot loader to memory (at 0x%s)', blAddress.toString(16));
 		await this.writeMemoryChunks(this.bootLoaderStream, blAddress, this.bootLoaderStreamSize, report);
-		this.logService.info(' - Complete.');
+		this.logger.info(' - Complete.');
 	}
 
 	async flashMain(report: SubProgress) {
-		this.logService.info('Downloading program to flash');
+		this.logger.info('Downloading program to flash');
 		await this.writeFlashChunks(this.applicationStream, 0, this.applicationStreamSize, report);
-		this.logService.info(' - Complete.');
+		this.logger.info(' - Complete.');
 	}
 
 	async flashGreeting() {
-		this.logService.info('Greeting');
+		this.logger.info('Greeting');
 		this.send(ISPOperation.ISP_NOP, Buffer.alloc(3));
 		await this.expect(ISPOperation.ISP_NOP);
-		this.logService.info(' - Hello.');
+		this.logger.info(' - Hello.');
 	}
 
 	protected logGarbage({ content, source }: GarbageData) {
 		console.warn('[%s] Unexpected data: %O', source, content);
 		if (typeof content === 'object' && !Buffer.isBuffer(content)) {
-			this.logService.error('[%s] Unexpected data: %j', source, content);
+			this.logger.error('[%s] Unexpected data: %j', source, content);
 		} else {
 			if (source === UnQuotedBuffer['name']) {
-				this.logService.write('%s', content);
+				this.logger.write('%s', content);
 			} else {
-				this.logService.error('[%s] Unexpected data: %s', source, (content as any).toString('hex'));
+				this.logger.error('[%s] Unexpected data: %s', source, (content as any).toString('hex'));
 			}
 		}
 	}
@@ -275,7 +275,7 @@ export class SerialLoader extends Disposable {
 	protected handleData(data: ISPResponse) {
 		console.log('[OUTPUT] op: %s, err: %s | %s', ISPOperation[data.op], ISPError[data.err], data.text);
 		if (data.op === ISPOperation.ISP_DEBUG_INFO) {
-			this.logService.log(data.text);
+			this.logger.log(data.text);
 			return;
 		}
 		const deferred = this.deferred;
@@ -298,7 +298,7 @@ export class SerialLoader extends Disposable {
 			}
 		} else {
 			console.warn('not expect any data: %O', data);
-			this.logService.warn('%j', data);
+			this.logger.warn('%j', data);
 		}
 	}
 
@@ -321,7 +321,7 @@ export class SerialLoader extends Disposable {
 		if (this.aborted) {
 			return;
 		}
-		this.logService.info('abort operation with %s', error.message);
+		this.logger.info('abort operation with %s', error.message);
 		this.aborted = error || new Error('Unknown Error');
 		this.cancel.cancel();
 	}
@@ -334,7 +334,7 @@ export class SerialLoader extends Disposable {
 		const p = this._run(report);
 		p.then(undefined, (err) => {
 			console.warn(err.stack);
-			this.logService.error(err.stack);
+			this.logger.error(err.stack);
 		});
 		return p;
 	}
@@ -369,6 +369,6 @@ export class SerialLoader extends Disposable {
 		report.message('flashing program...');
 		await Promise.race<any>([this.abortedPromise, this.flashMain(report)]);
 
-		this.logService.info('finished.');
+		this.logger.info('finished.');
 	}
 }

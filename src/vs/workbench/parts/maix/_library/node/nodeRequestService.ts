@@ -65,8 +65,8 @@ class NodeRequestService implements INodeRequestService {
 		const proxyUrl = config.http && config.http.proxy;
 		const strictSSL = config.http && config.http.proxyStrictSSL;
 		const authorization = config.http && config.http.proxyAuthorization;
-		// this.logService.info('proxyUrl=%s', proxyUrl);
-		// this.logService.info('strictSSL=%s', strictSSL);
+		// this.logger.info('proxyUrl=%s', proxyUrl);
+		// this.logger.info('strictSSL=%s', strictSSL);
 
 		if (authorization) {
 			assign(headers, { 'Proxy-Authorization': authorization });

@@ -40,13 +40,13 @@ import { addStatusBarCmakeButtons } from 'vs/workbench/parts/maix/cmake/common/b
 import { StatusBarController } from 'vs/workbench/parts/maix/cmake/common/statusBarController';
 import { CMAKE_TARGET_TYPE } from 'vs/workbench/parts/maix/cmake/common/cmakeProtocol/config';
 import { MaixBuildSystemPrepare, MaixBuildSystemReload } from 'vs/workbench/parts/maix/cmake/electron-browser/maixBuildSystemService';
-import { IPackagesUpdateService } from 'vs/workbench/parts/maix/_library/electron-browser/packagesUpdateService';
 import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 import { DebugScript, getEnvironment } from 'vs/workbench/parts/maix/_library/node/nodeEnv';
 import { CMakeBuildErrorProcessor, CMakeBuildProgressProcessor, CMakeProcessList } from 'vs/workbench/parts/maix/cmake/node/outputProcessor';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { IPackagesUpdateService } from 'vs/workbench/parts/maix/_library/electron-browser/packagesUpdateService';
 
 export interface IPromiseProgress<T> {
 	progress(fn: (p: T) => void): void;

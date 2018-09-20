@@ -9,6 +9,8 @@ import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
 import { createLinuxDesktopShortcut, ensureLinkEquals, pathResolveNow } from 'vs/workbench/parts/maix/_library/node/shortcuts';
 import { IShortcutOptions } from 'windows-shortcuts';
 import { TPromise } from 'vs/base/common/winjs.base';
+import { tmpdir } from 'os';
+import { mkdirp } from 'vs/base/node/pfs';
 
 class NodePathService implements INodePathService {
 	_serviceBrand: any;
@@ -42,6 +44,20 @@ class NodePathService implements INodePathService {
 				this.getInstallPath('bin/code'),
 			);
 		}
+	}
+
+	tempDir(name?: string) {
+		if (name) {
+			return resolvePath(tmpdir(), product.dataFolderName, name);
+		} else {
+			return resolvePath(tmpdir(), product.dataFolderName);
+		}
+	}
+
+	async ensureTempDir(name?: string): TPromise<string> {
+		const tmp = this.tempDir(name);
+		await mkdirp(tmp);
+		return tmp;
 	}
 
 	createUserLink(linkFile: string, existsFile: string, windowsOptions?: Partial<IShortcutOptions>): TPromise<void> {

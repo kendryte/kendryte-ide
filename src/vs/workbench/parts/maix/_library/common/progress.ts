@@ -149,3 +149,28 @@ export class SubProgress {
 		}
 	}
 }
+
+export interface IProgressFn {
+	(current: number | null, message?: string): void;
+}
+
+export function simpleProgressTranslate(reporter: IProgress<IProgressStep>): IProgressFn {
+	let lastInfinite = false;
+	let last = 0;
+
+	return (current: number, m?: string) => {
+		if (current === null) {
+			lastInfinite = true;
+			last = 0;
+			reporter.report({ increment: -1, message: m });
+		} else {
+			if (lastInfinite) {
+				lastInfinite = false;
+			}
+
+			const delta = current - last;
+			reporter.report({ increment: delta, message: m });
+			last = current;
+		}
+	};
+}

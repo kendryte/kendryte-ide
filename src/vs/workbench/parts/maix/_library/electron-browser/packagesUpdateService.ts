@@ -6,11 +6,11 @@ import { parse, resolve as resolveUrl } from 'url';
 import { OperatingSystem, OS } from 'vs/base/common/platform';
 import { is64Bit } from 'vs/workbench/parts/maix/_library/node/versions';
 import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
-import { exists, mkdirp, readdir, readFile, rename, rimraf, unlink, writeFile } from 'vs/base/node/pfs';
+import { copy, exists, mkdirp, readdir, readFile, rename, rimraf, unlink, writeFile } from 'vs/base/node/pfs';
 import { IProgressService2, IProgressStep, ProgressLocation } from 'vs/workbench/services/progress/common/progress';
 import { IProgress } from 'vs/platform/progress/common/progress';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { createDecorator, IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
+import { IInstantiationService, ServiceIdentifier, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { extname, resolve as resolveNative } from 'path';
 import { createReadStream, createWriteStream } from 'fs';
 import * as crypto from 'crypto';
@@ -18,21 +18,32 @@ import { IStatusbarService, StatusbarAlignment } from 'vs/platform/statusbar/com
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import Severity from 'vs/base/common/severity';
 import { localize } from 'vs/nls';
-import { IWindowService } from 'vs/platform/windows/common/windows';
+import { IWindowService, IWindowsService } from 'vs/platform/windows/common/windows';
 import { extract as extractZip } from 'vs/base/node/zip';
 import { extract as extractTar } from 'tar-fs';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
-import { ChannelLogService } from 'vs/workbench/parts/maix/_library/node/channelLog';
 import { IPartService } from 'vs/workbench/services/part/common/partService';
 import { inputValidationErrorBorder } from 'vs/platform/theme/common/colorRegistry';
 import packageJson from 'vs/platform/node/package';
 import { Action } from 'vs/base/common/actions';
 import { shell } from 'electron';
 import { INodeRequestService } from 'vs/workbench/parts/maix/_library/node/nodeRequestService';
+import { dumpDate } from 'vs/workbench/parts/maix/_library/common/dumpDate';
+import { IUpdateService, State, StateType, UpdateType } from 'vs/platform/update/common/update';
+import { Emitter, Event } from 'vs/base/common/event';
+import { IProgressFn, simpleProgressTranslate } from 'vs/workbench/parts/maix/_library/common/progress';
+import { IChannelLogger, IChannelLogService } from 'vs/workbench/parts/maix/_library/node/channelLogService';
+import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
+import { basename } from 'vs/base/common/paths';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 
 const distributeUrl = 'https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/'; // MUST end with /
 const LAST_UPDATE_CACHE_KEY = '.last-check-update';
+
+const UPDATE_KEY_MAIN = 'KendryteIDE';
+const UPDATE_KEY_PATCH = 'KendryteIDEPatch';
+
+const UPDATER_LOG = 'maix-update-output-channel';
 
 interface IUpdateStatus {
 	project: string;
@@ -40,40 +51,34 @@ interface IUpdateStatus {
 	downloadUrl: string;
 }
 
-export interface IPackagesUpdateService {
-	_serviceBrand: any;
-
+export interface IPackagesUpdateService extends IUpdateService {
 	run(): TPromise<void>;
 }
 
-export const IPackagesUpdateService = createDecorator<IPackagesUpdateService>('IPackagesUpdateService');
-
-interface IProgressFn {
-	(current: number | null, message?: string): void;
-}
-
 class PackagesUpdateService implements IPackagesUpdateService {
-	_serviceBrand: any;
-
-	private platform: string;
-	private arch: string;
-	private localPackage: { [packageName: string]: string } = {};
-	private readonly localConfigFile: string;
-	private runPromise: TPromise<any>;
-	private logService: ChannelLogService;
+	public _serviceBrand: any;
+	protected platform: string;
+	protected arch: string;
+	protected localPackage: { [packageName: string]: string } = {};
+	protected readonly localConfigFile: string;
+	protected runPromise: TPromise<any>;
+	protected logger: IChannelLogger;
 
 	constructor(
-		@INodePathService private nodePathService: INodePathService,
-		@INodeRequestService private nodeRequestService: INodeRequestService,
-		@INotificationService private notificationService: INotificationService,
-		@IInstantiationService private instantiationService: IInstantiationService,
-		@IProgressService2 private progressService: IProgressService2,
-		@IStatusbarService private statusbarService: IStatusbarService,
-		@ILifecycleService private lifecycleService: ILifecycleService,
-		@IEnvironmentService private environmentService: IEnvironmentService,
-		@IPartService private partService: IPartService,
+		@INodePathService protected nodePathService: INodePathService,
+		@INodeRequestService protected nodeRequestService: INodeRequestService,
+		@INotificationService protected notificationService: INotificationService,
+		@IInstantiationService protected instantiationService: IInstantiationService,
+		@IProgressService2 protected progressService: IProgressService2,
+		@IStatusbarService protected statusbarService: IStatusbarService,
+		@ILifecycleService protected lifecycleService: ILifecycleService,
+		@IPartService protected partService: IPartService,
+		@IChannelLogService channelLogService: IChannelLogService,
+		@IWindowService protected windowService: IWindowService,
+		@IWindowsService protected windowsService: IWindowsService,
+		@IEnvironmentService protected environmentService: IEnvironmentService,
 	) {
-		this.logService = instantiationService.createInstance(ChannelLogService, 'maix-updator', 'Kendryte Update');
+		this.logger = channelLogService.createChannel(UPDATER_LOG, 'Kendryte Update');
 		switch (OS) {
 			case OperatingSystem.Windows:
 				this.platform = 'windows';
@@ -87,14 +92,14 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			default:
 				return;
 		}
-		this.logService.info('your platform is %s', this.platform);
+		this.logger.info('your platform is %s', this.platform);
 
 		if (is64Bit) {
 			this.arch = '64';
 		} else {
 			this.arch = '32';
 		}
-		this.logService.info('your architecture is %s', this.arch);
+		this.logger.info('your architecture is %s', this.arch);
 
 		this.localConfigFile = this.nodePathService.getPackagesPath('versions.json');
 	}
@@ -120,13 +125,14 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			return this.isUpdateAlreadyCheckedMomentsAgo();
 		}).then((upToDate) => {
 			if (upToDate) {
-				this.logService.info('no recheck, is too fast.');
+				this.logger.info('no recheck, is too fast.');
 				return void 0;
 			}
-			this.logService.info('recheck now.');
+			this.logger.info('recheck now.');
+			const windowId = this.windowService.getCurrentWindowId();
 			return TPromise.join([
 				this._run(),
-				this.checkMainUpdate(),
+				this.checkForUpdates({ windowId }),
 			]);
 		});
 
@@ -135,10 +141,10 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			delete this.runPromise;
 
 			return this.writeCache(LAST_UPDATE_CACHE_KEY, (new Date).getTime().toFixed(0));
-		}, (errors) => {
+		}, (errors: Error[]) => {
 			entry.dispose();
 			delete this.runPromise;
-			this.logService.info('======================================');
+			this.logger.info('======================================');
 			this.statusbarService.addEntry({
 				text: '$(sync~spin)$(x) Failed to download required packages, please check your internet connection... (click to retry)',
 				color: inputValidationErrorBorder,
@@ -159,9 +165,11 @@ class PackagesUpdateService implements IPackagesUpdateService {
 				},
 			]);
 
-			this.logService.info('Update Failed:');
-			this.logService.info(errors[0].stack);
-			throw errors[0];
+			const err = errors.find(v => !!v) || new Error('Unknown Error');
+
+			this.logger.info('Update Failed:');
+			this.logger.info(err.stack);
+			throw err;
 		});
 	}
 
@@ -172,13 +180,13 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			throw new Error(`Cannot create directory: ${this.nodePathService.getPackagesPath()}\nDo you have permission?`);
 		}
 
-		this.logService.info('Starting update...');
-		const needUpdate = await this._checkUpdate();
+		this.logger.info('Starting update...');
+		const needUpdate = await this.checkUpdate();
 
 		if (!needUpdate.length) {
 			return;
 		}
-		await this.logService.show();
+		await this.logger.show();
 		if (!this.partService.isPanelMaximized()) {
 			this.partService.toggleMaximizedPanel();
 		}
@@ -223,21 +231,19 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	}
 
 	protected async _doUpdate({ project, downloadUrl, version }: IUpdateStatus, progress: IProgressFn) {
-		this.logService.info(' ---- [%s]:', project);
-
-		downloadUrl = resolveUrl(distributeUrl, downloadUrl);
+		this.logger.info(' ---- [%s]:', project);
 
 		progress(null, project);
 
 		const installTarget = this.nodePathService.getPackagesPath(project);
-		this.logService.info('installTarget=%s', installTarget);
+		this.logger.info('installTarget=%s', installTarget);
 
 		await this.downloadAndExtract(project, version, downloadUrl, installTarget, progress);
 
 		await this.writeCache(project, version);
 	}
 
-	protected async _checkUpdate(): TPromise<IUpdateStatus[]> {
+	protected async checkUpdate(): TPromise<IUpdateStatus[]> {
 		const needUpdate: IUpdateStatus[] = [];
 		if (!this.platform) {
 			throw new Error('Your platform is not supported. Only Windows and Linux is supported.');
@@ -246,33 +252,26 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			throw new Error('Your platform is not supported. Only x86 and x64 is supported.');
 		}
 
-		this.logService.info('local package versions: %j', this.localPackage);
+		this.logger.info('local package versions: %j', this.localPackage);
 
 		const list = await this.getPackageList();
-		this.logService.info('remote package list: %s', list.join(' '));
+		this.logger.info('remote package list: %s', list.join(' '));
 		for (const project of list) {
-			if (project.toLowerCase() === 'kendryteide') {
-				continue;
-			}
 			const remoteVersion = await this.getPackage(project);
 			if (remoteVersion.ignorePlatform && remoteVersion.ignorePlatform.indexOf(this.platform)) {
-				this.logService.info('[%s] not updated: this platform is ignored', project);
+				this.logger.info('[%s] not updated: this platform is ignored', project);
 				continue;
 			}
 			if (this.localPackage.hasOwnProperty(project) && remoteVersion.version === this.localPackage[project]) {
-				this.logService.info('[%s] not updated: local [%s], remote [%s]', project, remoteVersion.version, this.localPackage[project]);
+				this.logger.info('[%s] not updated: local [%s], remote [%s]', project, remoteVersion.version, this.localPackage[project]);
 				continue;
 			}
 
-			let downloadUrl: string;
-			if (remoteVersion['source']) {
-				downloadUrl = remoteVersion['source'];
-			} else if (remoteVersion[this.platform]) {
-				downloadUrl = remoteVersion[this.platform][this.arch] || remoteVersion[this.platform]['generic'];
-			} else {
+			const downloadUrl: string = this.getPlatformDownloadUrl(remoteVersion);
+			if (!downloadUrl) {
 				throw new Error('Platform package is not exists: ' + project);
 			}
-			this.logService.info('[%s] new version [%s]', project, remoteVersion.version);
+			this.logger.info('[%s] new version [%s]', project, remoteVersion.version);
 
 			needUpdate.push({
 				downloadUrl,
@@ -280,27 +279,47 @@ class PackagesUpdateService implements IPackagesUpdateService {
 				version: remoteVersion.version,
 			});
 		}
-		this.logService.info('%d package need update', needUpdate.length);
+		this.logger.info('%d package need update', needUpdate.length);
 		return needUpdate;
+	}
+
+	protected getPlatformDownloadUrl(version: IPackageVersion) {
+		let downloadUrl: string;
+		if (version['source']) {
+			downloadUrl = version['source'];
+		} else if (version[this.platform]) {
+			downloadUrl = version[this.platform][this.arch] || version[this.platform]['generic'];
+		} else {
+			return undefined;
+		}
+		if (!downloadUrl) {
+			return undefined;
+		}
+		return resolveUrl(distributeUrl, downloadUrl);
 	}
 
 	protected async getPackage(packageName: string): TPromise<IPackageVersion> {
 		const url = resolveUrl(distributeUrl, 'projects/' + packageName + '.json');
-		this.logService.info('get package %s info from %s', packageName, url);
+		this.logger.info('get package %s info from %s', packageName, url);
 		const body = await this.nodeRequestService.getBody(url);
-		return JSON.parse(body) as IPackageVersion;
+		try {
+			return JSON.parse(body) as IPackageVersion;
+		} catch (e) {
+			e.message = e.stack = `Cannot get package ${packageName} info from ${url}:\n  ${e.message}\n  Server response: ${body}`;
+			throw e;
+		}
 	}
 
 	protected getPackageList(): TPromise<string[]> {
 		const url = resolveUrl(distributeUrl, 'projects.lst');
-		this.logService.info('get package list from %s', url);
+		this.logger.info('get package list from %s', url);
 		return this.nodeRequestService.getBody(url).then((content) => {
 			return content.split(/\n/g).map(e => e.trim()).filter(e => e.length > 0);
 		});
 	}
 
 	protected async downloadAndExtract(project: string, remoteVersion: string, downloadUrl: string, installTarget: string, progress: IProgressFn) {
-		const zipFile = await this.download(project, remoteVersion, downloadUrl, installTarget, progress);
+		const zipFile = await this.download(project, remoteVersion, downloadUrl, progress);
 		progress(null, 'extracting files...');
 		await this.extract(zipFile, installTarget);
 	}
@@ -310,38 +329,42 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		if (hash && alreadyExists) {
 			const downloadedHash = (await this.hashFile(file)).toLowerCase();
 			if (downloadedHash !== hash.toLowerCase()) {
-				this.logService.error('hash invalid!\nexpect: %s\ngot   : %s', hash.toLowerCase(), downloadedHash);
+				this.logger.error('hash invalid!\nexpect: %s\ngot   : %s', hash.toLowerCase(), downloadedHash);
 				unlink(file);
 				return false;
 			}
-			this.logService.info('hash check pass.');
+			this.logger.info('hash check pass.');
 			return true;
 		} else {
 			if (alreadyExists) {
-				this.logService.info('hash is not set, skip check.');
+				this.logger.info('hash is not set, skip check.');
 			}
 			return alreadyExists;
 		}
 	}
 
-	protected async download(project: string, version: string, downloadUrl: string, installTarget: string, progress: IProgressFn) {
+	protected async download(project: string, version: string, downloadUrl: string, progress: IProgressFn) {
 		const u = parse(downloadUrl);
 		let ext = extname(u.pathname).toLowerCase() || '.invalid';
 		if (/\.tar\.[a-z0-9]+$/i.test(u.pathname)) {
 			ext = '.tar' + ext;
 		}
 		const hash = (u.hash || '').replace(/^#/, '');
-		const targetFile = installTarget + '-' + version + ext;
+
+		const downloadTemp = await this.nodePathService.ensureTempDir('packages-update');
+
+		const targetFile = resolvePath(downloadTemp, project + '-' + version + ext);
 		const partFile = targetFile + '.partial';
 
 		if (await this.checkHashIfKnown(hash, targetFile)) {
-			this.logService.info('file exists, skip.');
+			this.logger.info('file exists, skip.');
 			return targetFile;
 		}
 
-		this.logService.info('downloadUrl=%s', downloadUrl);
-		this.logService.info('partFile=%s', partFile);
+		this.logger.info('downloadUrl=%s', downloadUrl);
+		this.logger.info('partFile=%s', partFile);
 
+		// TODO: continue download
 		const response = await this.nodeRequestService.raw('GET', downloadUrl);
 
 		const requestState = request_progress(response, {});
@@ -350,7 +373,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		requestState.on('progress', (state: ProgressReport) => {
 			if (!notifySize) {
 				notifySize = true;
-				this.logService.info('got header: size=%s', state.size.total);
+				this.logger.info('got header: size=%s', state.size.total);
 			}
 
 			const progPercent = (state.percent * 100).toFixed(0) + '%';
@@ -365,7 +388,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 				reject(new Error(`Error when downloading ${downloadUrl}. ${e}`));
 			});
 			requestState.on('end', () => {
-				this.logService.info('download see EOF');
+				this.logger.info('download see EOF');
 				resolve();
 			});
 			requestState.pipe(createWriteStream(partFile));
@@ -375,25 +398,25 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			throw new Error(`Cannot install ${project}: hash mismatch.`);
 		}
 
-		this.logService.info('move(%s, %s)', partFile, targetFile);
+		this.logger.info('move(%s, %s)', partFile, targetFile);
 		await rename(partFile, targetFile);
 		return targetFile;
 	}
 
-	private async hashFile(file: string) {
+	protected async hashFile(file: string) {
 		return crypto.createHash('md5').update(await readFile(file)).digest('hex');
 	}
 
-	public unZip(file: string, target: string) {
-		return extractZip(file, resolveNative(target), { overwrite: true }, this.logService);
+	protected unZip(file: string, target: string) {
+		return extractZip(file, resolveNative(target), { overwrite: true }, this.logger);
 	}
 
-	public MicrosoftInstall(msi: string, target: string) {
+	protected MicrosoftInstall(msi: string, target: string) {
 		// toWinJsPromise(import('sudo-prompt')).then(
 		return TPromise.wrapError(new Error('not impl'));
 	}
 
-	public unTar(file: string, target: string): TPromise<void> {
+	protected unTar(file: string, target: string): TPromise<void> {
 		return new TPromise((resolve, reject) => {
 			const stream = createReadStream(file)
 				.pipe(gunzip())
@@ -404,105 +427,248 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		});
 	}
 
-	private async extract(zipFile: string, installTarget: string) {
-		let unzipTarget = installTarget + '.unzip';
-		this.logService.warn('rmdir(%s)', unzipTarget);
+	protected async extract(zipFile: string, installTarget: string, update: boolean = false): TPromise<void> {
+		let unzipTarget = await this.nodePathService.ensureTempDir('packages-extract');
+		unzipTarget = resolvePath(unzipTarget, basename(installTarget));
+
+		this.logger.warn('rmdir(%s)', unzipTarget);
 		await rimraf(unzipTarget);
 		await mkdirp(unzipTarget);
 		try {
 			if (/\.zip$/.test(zipFile)) {
-				this.logService.info(`extract zip to: %s`, installTarget);
+				this.logger.info(`extract zip to: %s`, installTarget);
 				await this.unZip(zipFile, unzipTarget);
 			} else if (/\.msi$/.test(zipFile)) {
-				this.logService.info(`extract msi file to: %s`, installTarget);
+				this.logger.info(`extract msi file to: %s`, installTarget);
 				await this.MicrosoftInstall(zipFile, unzipTarget);
 			} else {
-				this.logService.info(`extract tar to: %s`, installTarget);
+				this.logger.info(`extract tar to: %s`, installTarget);
 				await this.unTar(zipFile, unzipTarget);
 			}
-			this.logService.info('Extracted complete');
+			this.logger.info('Extracted complete');
 		} catch (e) {
-			this.logService.debug('decompress throw: %s', e.stack);
-			this.logService.warn('rmdir(%s)', unzipTarget);
+			this.logger.debug('decompress throw: %s', e.stack);
+			this.logger.warn('rmdir(%s)', unzipTarget);
 			await rimraf(unzipTarget);
 			await unlink(zipFile);
 			throw new Error('Cannot decompress file: ' + zipFile + ' \nError:' + e);
 		}
 
 		const contents = await readdir(unzipTarget);
-		this.logService.info('extracted folder content: [%s]', contents.join(', '));
+		let copyFrom = unzipTarget;
+		this.logger.info('extracted folder content: [%s]', contents.join(', '));
 		if (contents.length === 1) {
-			this.logService.debug('use only sub folder as root');
-			unzipTarget += `/${contents[0]}`;
+			this.logger.debug('use only sub folder as root');
+			copyFrom += `/${contents[0]}`;
 		} else if (contents.length === 0) {
 			throw new Error('Invalid package: empty file');
 		}
 
-		this.logService.info('rimraf(installTarget)');
-		await rimraf(installTarget);
+		if (!update) {
+			this.logger.info('rimraf(%s)', installTarget);
+			await rimraf(installTarget);
+		}
 
-		this.logService.warn('rename(%s, %s)', unzipTarget, installTarget);
-		await rename(unzipTarget, installTarget);
+		this.logger.warn('copy(%s, %s)', unzipTarget, installTarget);
+		await copy(copyFrom, installTarget);
 
-		rimraf(installTarget + '.unzip'); // remove empty folder when single sub folder mode.
+		rimraf(unzipTarget); // remove empty folder when single sub folder mode.
 	}
 
-	private async checkMainUpdate() {
-		if (!this.environmentService.isBuilt) {
-			this.logService.info('KendryteIDE update disabled (dev mode): %s', packageJson.version);
-			return;
-		}
-		const data = await this.getPackage('KendryteIDE');
-		if (data.version === packageJson.version) {
-			this.logService.info('KendryteIDE is up to date: [%s].', data.version);
-		} else {
-			this.logService.warn('KendryteIDE is update: local %s, remote %s', packageJson.version, data.version);
-			const homepage = data.homepageUrl || 'https://github.com/Canaan-Creative/maix-ide/releases';
-			this.logService.info('remote url: %s', homepage);
-			this.notificationService.prompt(Severity.Info, 'KendryteIDE has updated.\n', [
-				new OpenDownloadAction(homepage),
-				{
-					label: 'Not now',
-					run() { },
-				},
-			]);
-		}
-	}
-
-	private async isUpdateAlreadyCheckedMomentsAgo(): TPromise<boolean> {
+	protected async isUpdateAlreadyCheckedMomentsAgo(): TPromise<boolean> {
 		if (!this.localPackage.hasOwnProperty(LAST_UPDATE_CACHE_KEY)) {
-			this.logService.info('update has never checked');
+			this.logger.info('update has never checked');
 			return false;
 		}
-		this.logService.info('last update checked: %s', this.localPackage[LAST_UPDATE_CACHE_KEY]);
+		this.logger.info('last update checked: %s', dumpDate.time(this.localPackage[LAST_UPDATE_CACHE_KEY]));
 		const lastDate = new Date(parseInt(this.localPackage[LAST_UPDATE_CACHE_KEY]));
 		if (isNaN(lastDate.getTime())) {
-			this.logService.info('update time invalid');
+			this.logger.info('update time invalid');
 			return false;
 		}
 
 		const mustRecheck = lastDate;
-		mustRecheck.setHours(mustRecheck.getHours() + 1);
+		mustRecheck.setHours(mustRecheck.getMinutes() + 30);
+		this.logger.info('next update check: %s', dumpDate.time(mustRecheck));
 		return (new Date) <= mustRecheck;
 	}
 
-	private async loadLocalVersionCache(): TPromise<void> {
+	protected async loadLocalVersionCache(): TPromise<void> {
 		if (await exists(this.localConfigFile)) {
 			this.localPackage = JSON.parse(await readFile(this.localConfigFile, 'utf8'));
 		} else {
 			this.localPackage = {};
 		}
 	}
-}
 
-registerSingleton(IPackagesUpdateService, PackagesUpdateService);
+	protected applyIDEPatch(patchZip: string): TPromise<void> {
+		const installTarget = resolvePath(this.nodePathService.getInstallPath(), 'resources/app');
+		this.logger.log('applyIDEPatch: ', patchZip, installTarget);
+		return this.extract(patchZip, installTarget, true);
+	}
+
+	/* * class of WrappedUpdateService */
+	protected readonly _onStateChange: Emitter<State> = new Emitter<State>();
+	public readonly onStateChange: Event<State> = this._onStateChange.event;
+	public _state: State = State.Uninitialized;
+	protected readonly patchVersion: string = 'wow-such-doge';
+
+	protected downloaded: string;
+
+	public get state() {
+		return this._state;
+	}
+
+	protected setState(state: State): void {
+		this.logger.info('update#setState(%s)', state.type);
+		this._state = state;
+		this._onStateChange.fire(state);
+	}
+
+	public async applyUpdate(): TPromise<void> {
+		if (!this.downloaded) {
+			await this.downloadUpdate();
+		}
+		const patch = await this.checkUpdateInfo(UPDATE_KEY_PATCH);
+		this.setState(State.Updating({
+			version: patch.version,
+			productVersion: patch.version,
+		}));
+
+		await this.applyIDEPatch(this.downloaded);
+
+		this.setState(State.Ready({
+			version: patch.version,
+			productVersion: patch.version,
+		}));
+
+		await this.windowsService.relaunch({});
+	}
+
+	protected async notifyUpdate() {
+		const main = await this.checkUpdateInfo(UPDATE_KEY_MAIN);
+		this.logger.warn('Base environment is update: local %s, remote %s', packageJson.version, main.version);
+		const homepage = main.homepageUrl || 'https://github.com/kendryte/kendryte-ide';
+		this.logger.info('remote url: %s', homepage);
+		this.notificationService.prompt(Severity.Info, 'KendryteIDE has updated.\n', [
+			new OpenDownloadAction(homepage),
+			{
+				label: 'Not now',
+				run() { },
+			},
+		]);
+	}
+
+	public async checkForUpdates(context: any): TPromise<void> {
+		this.setState(State.Uninitialized);
+		if (!this.environmentService.isBuilt) {
+			this.logger.info('KendryteIDE update disabled (dev mode): %s', packageJson.version);
+			return;
+		}
+
+		this.setState(State.CheckingForUpdates({}));
+
+		const main = await this.checkUpdateInfo(UPDATE_KEY_MAIN);
+		if (main.version === packageJson.version) {
+			this.logger.info('Base environment is up to date: [%s].', main.version);
+
+			const patch = await this.checkUpdateInfo(UPDATE_KEY_PATCH);
+			if (patch.version === this.patchVersion) {
+				this.logger.info('KendryteIDE is up to date: [%s].', patch.version);
+				this.setState(State.Idle(UpdateType.Archive));
+				return;
+			} else {
+				this.logger.warn('KendryteIDE is update: local %s, remote %s', this.patchVersion, patch.version);
+				await this.downloadUpdate();
+				await this.applyUpdate();
+			}
+		} else {
+			await this.notifyUpdate();
+			this.setState(State.AvailableForDownload({
+				version: main.version,
+				productVersion: main.version,
+			}));
+		}
+	}
+
+	public async downloadUpdate(): TPromise<void> {
+		if (this._state.type === StateType.Downloading) {
+			throw new Error('update is in progress...');
+		}
+
+		const patch = await this.getPackage(UPDATE_KEY_PATCH);
+		const downloadUrl = this.getPlatformDownloadUrl(patch);
+
+		const info = {
+			version: patch.version,
+			productVersion: patch.version,
+		};
+
+		this.setState(State.Downloading(info));
+
+		await this.progressService.withProgress({
+			location: ProgressLocation.Notification,
+			title: 'updating patch...',
+			cancellable: false,
+		}, async (report) => {
+			const transFn = simpleProgressTranslate(report);
+
+			this.downloaded = await this.download(UPDATE_KEY_PATCH, patch.version, downloadUrl, transFn);
+		});
+		this.setState(State.Downloaded(info));
+	}
+
+	public async isLatestVersion(): TPromise<boolean | undefined> {
+		if (!this.environmentService.isBuilt) {
+			this.logger.info('KendryteIDE update disabled (dev mode): %s', packageJson.version);
+			return true;
+		}
+		const main = await this.checkUpdateInfo(UPDATE_KEY_MAIN);
+		if (main.version !== packageJson.version) {
+			this.setState(State.AvailableForDownload({
+				version: main.version,
+				productVersion: main.version,
+			}));
+			await this.notifyUpdate();
+			return false;
+		}
+		const patch = await this.checkUpdateInfo(UPDATE_KEY_PATCH);
+		if (patch.version !== this.patchVersion) {
+			this.setState(State.AvailableForDownload({
+				version: main.version,
+				productVersion: patch.version,
+			}));
+			return false;
+		}
+
+		this.setState(State.Idle(UpdateType.Archive));
+
+		// todo: notify
+		return false;
+	}
+
+	public async quitAndInstall(): TPromise<void> {
+		debugger;
+		return undefined;
+	}
+
+	protected cache: { [id: string]: IPackageVersion } = {};
+
+	protected async checkUpdateInfo(type: string): TPromise<IPackageVersion> {
+		if (this.cache[type]) {
+			return this.cache[type];
+		}
+		this.cache[type] = await this.getPackage(UPDATE_KEY_MAIN);
+		return this.cache[type];
+	}
+}
 
 class OpenDownloadAction extends Action {
 	public static readonly ID = 'workbench.action.kendryte.homepage';
 	public static readonly LABEL = localize('KendryteIOEditor', 'Update now');
 
 	constructor(
-		private url: string,
+		protected url: string,
 	) {
 		super(OpenDownloadAction.ID, OpenDownloadAction.LABEL);
 	}
@@ -516,3 +682,8 @@ class OpenDownloadAction extends Action {
 	public dispose(): void {
 	}
 }
+
+/** @deprecated use IUpdateService */
+export const IPackagesUpdateService = IUpdateService as any as ServiceIdentifier<IPackagesUpdateService>;
+
+registerSingleton(IUpdateService, PackagesUpdateService);

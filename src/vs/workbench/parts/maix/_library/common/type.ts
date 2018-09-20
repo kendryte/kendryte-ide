@@ -117,6 +117,10 @@ export interface INodePathService {
 
 	createUserLink(existsFile: string, linkFile: string): TPromise<void>;
 
+	ensureTempDir(name?: string): TPromise<string>;
+
+	tempDir(name?: string): string;
+
 	createAppLink(): TPromise<void>;
 }
 
