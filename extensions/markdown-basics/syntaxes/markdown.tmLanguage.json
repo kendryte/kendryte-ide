@@ -4,7 +4,7 @@
 		"If you want to provide a fix or improvement, please create a pull request against the original repository.",
 		"Once accepted there, we are happy to receive an update request."
 	],
-	"version": "https://github.com/microsoft/vscode-markdown-tm-grammar/commit/5f5b3d7eaced763432867f8eb6d3d768f6cd2acc",
+	"version": "https://github.com/microsoft/vscode-markdown-tm-grammar/commit/83a1940ab00b770392c3ae71b92e80cca2960613",
 	"name": "Markdown",
 	"scopeName": "text.html.markdown",
 	"patterns": [
@@ -2377,7 +2377,7 @@
 							"name": "punctuation.definition.metadata.markdown"
 						}
 					},
-					"match": "(?x)\n  (\\[)((?<square>[^\\[\\]\\\\]|\\\\.|\\[\\g<square>*+\\])*+)(\\])\n                # Match the link text.\n  (\\()            # Opening paren for url\n    (<?)((?<url>[^\\s()]+|\\(\\g<url>*\\))*)(>?)      # The url\n    [ \\t]*          # Optional whitespace\n    (?:\n        ((\\().+?(\\)))    # Match title in parens…\n      | ((\").+?(\"))    # or in quotes.\n    )?            # Title is optional\n    \\s*            # Optional whitespace\n  (\\))\n",
+					"match": "(?x)\n  (\\[)((?<square>[^\\[\\]\\\\]|\\\\.|\\[\\g<square>*+\\])*+)(\\])\n                # Match the link text.\n  (\\()            # Opening paren for url\n    (<?)((?<url>(?>[^\\s()]+)|\\(\\g<url>*\\))*)(>?)      # The url\n    [ \\t]*          # Optional whitespace\n    (?:\n        ((\\().+?(\\)))    # Match title in parens…\n      | ((\").+?(\"))    # or in quotes.\n    )?            # Title is optional\n    \\s*            # Optional whitespace\n  (\\))\n",
 					"name": "meta.link.inline.markdown"
 				},
 				"link-ref": {

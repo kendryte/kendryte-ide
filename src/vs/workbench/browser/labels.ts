@@ -5,7 +5,7 @@
 
 'use strict';
 
-import uri from 'vs/base/common/uri';
+import { URI as uri } from 'vs/base/common/uri';
 import * as resources from 'vs/base/common/resources';
 import { IconLabel, IIconLabelValueOptions, IIconLabelCreationOptions } from 'vs/base/browser/ui/iconLabel/iconLabel';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
@@ -137,6 +137,10 @@ export class ResourceLabel extends IconLabel {
 
 		if (newFileKind !== oldFileKind) {
 			return true; // same resource but different kind (file, folder)
+		}
+
+		if (newResource && this.computedPathLabel !== this.labelService.getUriLabel(newResource)) {
+			return true;
 		}
 
 		if (newResource && oldResource) {
@@ -298,7 +302,7 @@ export class FileLabel extends ResourceLabel {
 		let description: string;
 		const hidePath = (options && options.hidePath) || (resource.scheme === Schemas.untitled && !this.untitledEditorService.hasAssociatedFilePath(resource));
 		if (!hidePath) {
-			description = this.labelService.getUriLabel(resources.dirname(resource), true);
+			description = this.labelService.getUriLabel(resources.dirname(resource), { relative: true });
 		}
 
 		this.setLabel({ resource, name, description }, options);

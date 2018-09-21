@@ -21,6 +21,7 @@ import { asJson } from 'vs/base/node/request';
 import { Emitter, Event } from 'vs/base/common/event';
 import { ITextFileService, StateChange } from 'vs/workbench/services/textfile/common/textfiles';
 import { WorkspaceStats } from 'vs/workbench/parts/stats/node/workspaceStats';
+import { CancellationToken } from 'vs/base/common/cancellation';
 
 interface IExperimentStorageState {
 	enabled: boolean;
@@ -29,7 +30,7 @@ interface IExperimentStorageState {
 	lastEditedDate?: string;
 }
 
-export enum ExperimentState {
+export const enum ExperimentState {
 	Evaluating,
 	NoRun,
 	Run,
@@ -69,7 +70,8 @@ interface IExperimentAction {
 export enum ExperimentActionType {
 	Custom = 'Custom',
 	Prompt = 'Prompt',
-	AddToRecommendations = 'AddToRecommendations'
+	AddToRecommendations = 'AddToRecommendations',
+	ExtensionSearchResults = 'ExtensionSearchResults'
 }
 
 export interface IExperimentActionPromptProperties {
@@ -168,7 +170,7 @@ export class ExperimentService extends Disposable implements IExperimentService 
 		if (!product.experimentsUrl || this.configurationService.getValue('workbench.enableExperiments') === false) {
 			return TPromise.as([]);
 		}
-		return this.requestService.request({ type: 'GET', url: product.experimentsUrl }).then(context => {
+		return this.requestService.request({ type: 'GET', url: product.experimentsUrl }, CancellationToken.None).then(context => {
 			if (context.res.statusCode !== 200) {
 				return TPromise.as(null);
 			}
@@ -229,6 +231,9 @@ export class ExperimentService extends Disposable implements IExperimentService 
 								this._curatedMapping[experiment.id] = x;
 							}
 						});
+					}
+					if (!processedExperiment.action.properties) {
+						processedExperiment.action.properties = {};
 					}
 				}
 				this._experiments.push(processedExperiment);

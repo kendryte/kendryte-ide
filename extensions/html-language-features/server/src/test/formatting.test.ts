@@ -59,7 +59,7 @@ suite('HTML Embedded Formatting', () => {
 	});
 
 	test('HTML & Scripts', function (): any {
-		assertFormat('<html><head><script></script></head></html>', '<html>\n\n<head>\n  <script>\n  </script>\n</head>\n\n</html>');
+		assertFormat('<html><head><script></script></head></html>', '<html>\n\n<head>\n  <script></script>\n</head>\n\n</html>');
 		assertFormat('<html><head><script>var x=1;</script></head></html>', '<html>\n\n<head>\n  <script>var x = 1;</script>\n</head>\n\n</html>');
 		assertFormat('<html><head><script>\nvar x=2;\n</script></head></html>', '<html>\n\n<head>\n  <script>\n    var x = 2;\n  </script>\n</head>\n\n</html>');
 		assertFormat('<html><head>\n  <script>\nvar x=3;\n</script></head></html>', '<html>\n\n<head>\n  <script>\n    var x = 3;\n  </script>\n</head>\n\n</html>');
@@ -109,7 +109,7 @@ suite('HTML Embedded Formatting', () => {
 	});
 
 	test('bug 36574', function (): any {
-		assertFormat('<script src="/js/main.js"> </script>', '<script src="/js/main.js">\n</script>');
+		assertFormat('<script src="/js/main.js"> </script>', '<script src="/js/main.js"> </script>');
 	});
 
 	test('bug 48049', function (): any {
@@ -161,4 +161,52 @@ suite('HTML Embedded Formatting', () => {
 			].join('\n')
 		);
 	});
-});
+	test('#58435', () => {
+		let options = {
+			html: {
+				format: {
+					contentUnformatted: 'textarea'
+				}
+			}
+		};
+
+		var content = [
+			'<html>',
+			'',
+			'<body>',
+			'  <textarea name= "" id ="" cols="30" rows="10">',
+			'  </textarea>',
+			'</body>',
+			'',
+			'</html>',
+		].join('\n');
+
+		var expected = [
+			'<html>',
+			'',
+			'<body>',
+			'  <textarea name="" id="" cols="30" rows="10">',
+			'  </textarea>',
+			'</body>',
+			'',
+			'</html>',
+		].join('\n');
+
+		assertFormat(content, expected, options);
+	});
+
+}); /*
+content_unformatted: Array(4)["pre", "code", "textarea", …]
+end_with_newline: false
+eol: "\n"
+extra_liners: Array(3)["head", "body", "/html"]
+indent_char: "\t"
+indent_handlebars: false
+indent_inner_html: false
+indent_size: 1
+max_preserve_newlines: 32786
+preserve_newlines: true
+unformatted: Array(1)["wbr"]
+wrap_attributes: "auto"
+wrap_attributes_indent_size: undefined
+wrap_line_length: 120*/
