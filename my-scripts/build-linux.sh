@@ -75,7 +75,7 @@ step "Copy Staff (Linux)" \
 "
 
 step "Move ${RESULT} to ${WANT_RESULT}" \
-	bash -c "rm -rf '${WANT_RESULT}' ; mv '${RESULT}' '${WANT_RESULT}'"
+	bash -c "rm -rf '${WANT_RESULT}' && mv '${RESULT}' '${WANT_RESULT}'"
 
 step "Create ${WANT_RESULT} archive to ${TARBALL_PATH}" \
 	tar -cJf "${TARBALL_PATH}" "${RESULT}"

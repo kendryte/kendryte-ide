@@ -66,7 +66,7 @@ step "Copy Staff (Windows)" \
 "
 
 step -r "Move ${RESULT} to ${WANT_RESULT}" \
-	bash -c "rm -rf '${WANT_RESULT}' ; mv '${RESULT}' '${WANT_RESULT}'"
+	bash -c "rm -rf '${WANT_RESULT}' && mv '${RESULT}' '${WANT_RESULT}'"
 
 TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.zip"
 step -r "Create archive file" \
