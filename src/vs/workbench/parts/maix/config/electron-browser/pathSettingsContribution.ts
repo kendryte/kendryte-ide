@@ -5,7 +5,6 @@ import { Extensions as ConfigurationExtensions, IConfigurationPropertySchema, IC
 import { Extensions as WorkbenchExtensions, IWorkbenchContribution, IWorkbenchContributionsRegistry } from 'vs/workbench/common/contributions';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { readdirSync } from 'vs/base/node/extfs';
 import { executableExtension } from 'vs/workbench/parts/maix/_library/node/versions';
 import { ILogService } from 'vs/platform/log/common/log';
@@ -89,7 +88,6 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 
 	constructor(
 		@IInstantiationService private instantiationService: IInstantiationService,
-		@IEnvironmentService private environmentService: IEnvironmentService,
 		@IConfigurationService private configurationService: IConfigurationService,
 		@ILogService private logService: ILogService,
 	) {
@@ -128,13 +126,7 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 		let data = inspect.user ? { ...inspect.user } : { ...inspect.default };
 		let changed = { change: false };
 
-		ignore(data, '.idea', changed);
 		ignore(data, 'config/fpioa.cfg', changed);
-		if (this.environmentService.isBuilt) {
-			for (const part of ['CMakeFiles', 'cmake_install.cmake', 'CMakeLists.txt', 'compile_commands.json', 'Makefile', 'SDK']) {
-				ignore(data, 'build/' + part, changed);
-			}
-		}
 		if (changed.change) {
 			this.configurationService.updateValue('files.exclude', data, ConfigurationTarget.USER);
 		}
@@ -149,4 +141,4 @@ function ignore(data: any, name: string, changed: { change: boolean }) {
 }
 
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
-	.registerWorkbenchContribution(SettingCategoryContribution, LifecyclePhase.Running);
+        .registerWorkbenchContribution(SettingCategoryContribution, LifecyclePhase.Running);

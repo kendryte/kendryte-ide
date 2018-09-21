@@ -198,7 +198,6 @@ export class CMakeService implements ICMakeService {
 		if (this.cmakeProcess) {
 			return;
 		}
-		this.outputChannel.clear();
 		const cmakePath = this.getCMakeToRun();
 
 		this.log('_currentFolder=%s', this._currentFolder);
@@ -338,7 +337,7 @@ export class CMakeService implements ICMakeService {
 	private handleProtocolInput(msg: string) {
 		const protocolData: ICMakeProtocol & ICMakeProtocolAny = JSON.parse(msg);
 		this._onCMakeEvent.fire(protocolData);
-		// console.log('cmake <<< %O', protocolData);
+		console.log('cmake <<< %O', protocolData);
 
 		if (protocolData.cookie) {
 			const dfd = this.cmakeRequests[protocolData.cookie];
@@ -396,7 +395,7 @@ export class CMakeService implements ICMakeService {
 
 		this.cmakeRequests[payload.cookie] = new Deferred();
 
-		// console.log('cmake >>> %O', payload);
+		console.log('cmake >>> %O', payload);
 		this.cmakePipe.write(`
 [== "CMake Server" ==[
 ${JSON.stringify(payload)}
