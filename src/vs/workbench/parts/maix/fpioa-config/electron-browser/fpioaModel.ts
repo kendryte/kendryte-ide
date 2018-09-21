@@ -1,4 +1,4 @@
-import URI from 'vs/base/common/uri';
+import { URI } from 'vs/base/common/uri';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { FileOperationResult, IContent, IFileService, IFileStat } from 'vs/platform/files/common/files';
 import { getChipPackaging } from 'vs/workbench/parts/maix/fpioa-config/common/packagingRegistry';

@@ -191,7 +191,7 @@ function fromMarketplace(extensionName, version) {
         }
     };
     return remote('/extensionquery', options)
-        .pipe(flatmap(function (stream, f) {
+        .pipe(flatmap(function (_, f) {
         var rawResult = f.contents.toString('utf8');
         var result = JSON.parse(rawResult);
         var extension = result.results[0].extensions[0];

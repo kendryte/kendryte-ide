@@ -19,7 +19,11 @@ registerSingleton(ICMakeService, CMakeService);
 const category = localize('kendryte', 'Kendryte');
 
 const registry = Registry.as<IOutputChannelRegistry>(Extensions.OutputChannels);
-registry.registerChannel(CMAKE_CHANNEL, 'Build/Run');
+registry.registerChannel({
+	id: CMAKE_CHANNEL,
+	label: 'Build/Run',
+	log: false,
+});
 
 // BUILD
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)

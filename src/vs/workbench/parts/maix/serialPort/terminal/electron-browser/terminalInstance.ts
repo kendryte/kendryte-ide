@@ -581,11 +581,11 @@ export class TerminalInstance implements ISerialPortInstance {
 	}
 
 	public findNext(term: string): boolean {
-		return this._xterm.findNext(term);
+		return this._xterm.findNext(term, {});
 	}
 
 	public findPrevious(term: string): boolean {
-		return this._xterm.findPrevious(term);
+		return this._xterm.findPrevious(term, {});
 	}
 
 	public notifyFindWidgetFocusChanged(isFocused: boolean): void {

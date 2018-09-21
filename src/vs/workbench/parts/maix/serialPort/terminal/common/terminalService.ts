@@ -356,7 +356,7 @@ export abstract class TerminalService implements ISerialMonitorService {
 	public hidePanel(): void {
 		const panel = this._panelService.getActivePanel();
 		if (panel && panel.getId() === TERMINAL_PANEL_ID) {
-			this._partService.setPanelHidden(true).done(undefined, errors.onUnexpectedError);
+			this._partService.setPanelHidden(true).then(undefined, errors.onUnexpectedError);
 		}
 	}
 

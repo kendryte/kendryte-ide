@@ -1,5 +1,5 @@
 import { AbstractLogService, ILogService, LogLevel } from 'vs/platform/log/common/log';
-import { Extensions, IOutputChannel, IOutputChannelRegistry, IOutputService } from 'vs/workbench/parts/output/common/output';
+import { Extensions, IOutputChannel, IOutputChannelDescriptor, IOutputChannelRegistry, IOutputService } from 'vs/workbench/parts/output/common/output';
 import { format } from 'util';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
@@ -21,7 +21,7 @@ export interface IChannelLogger extends ILogService {
 export interface IChannelLogService {
 	_serviceBrand: any;
 
-	createChannel(id: string, title: string): IChannelLogger;
+	createChannel(channel: IOutputChannelDescriptor): IChannelLogger;
 
 	show(channel: IChannelLogger, preserveFocus?: boolean);
 }
@@ -107,9 +107,9 @@ class ChannelLogService extends Disposable implements IChannelLogService {
 		super();
 	}
 
-	public createChannel(id: string, title: string): IChannelLogger {
-		registry.registerChannel(id, title);
-		const newItem = new ChannelLogger(this.outputService.getChannel(id), this.outputService);
+	public createChannel(channel: IOutputChannelDescriptor): IChannelLogger {
+		registry.registerChannel(channel);
+		const newItem = new ChannelLogger(this.outputService.getChannel(channel.id), this.outputService);
 		this._register(newItem);
 		return newItem;
 	}

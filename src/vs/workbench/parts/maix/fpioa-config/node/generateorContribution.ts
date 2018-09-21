@@ -6,7 +6,7 @@ import { getChipPackaging } from 'vs/workbench/parts/maix/fpioa-config/common/pa
 import { IChipGeneratorConfig } from 'vs/workbench/parts/maix/fpioa-config/common/packagingTypes';
 import { HeaderGenerator, SourceGenerator } from 'vs/workbench/parts/maix/fpioa-config/node/cGenerator';
 import { IFileService } from 'vs/platform/files/common/files';
-import URI from 'vs/base/common/uri';
+import { URI } from 'vs/base/common/uri';
 import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { SyncActionDescriptor } from 'vs/platform/actions/common/actions';

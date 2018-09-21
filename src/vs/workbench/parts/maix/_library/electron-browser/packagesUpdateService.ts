@@ -19,7 +19,7 @@ import { INotificationService } from 'vs/platform/notification/common/notificati
 import Severity from 'vs/base/common/severity';
 import { localize } from 'vs/nls';
 import { IWindowService, IWindowsService } from 'vs/platform/windows/common/windows';
-import { extract as extractZip } from 'vs/base/node/zip';
+import { extract as extractZip } from 'vs/platform/node/zip';
 import { extract as extractTar } from 'tar-fs';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { IPartService } from 'vs/workbench/services/part/common/partService';
@@ -36,6 +36,7 @@ import { IChannelLogger, IChannelLogService } from 'vs/workbench/parts/maix/_lib
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
 import { basename } from 'vs/base/common/paths';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
+import { CancellationToken } from 'vs/base/common/cancellation';
 
 const distributeUrl = 'https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/'; // MUST end with /
 const LAST_UPDATE_CACHE_KEY = '.last-check-update';
@@ -80,7 +81,9 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		@IWindowsService protected windowsService: IWindowsService,
 		@IEnvironmentService protected environmentService: IEnvironmentService,
 	) {
-		this.logger = channelLogService.createChannel(UPDATER_LOG, 'Kendryte Update');
+		this.logger = channelLogService.createChannel({
+			id: UPDATER_LOG, label: 'Kendryte Update', log: true,
+		});
 		switch (OS) {
 			case OperatingSystem.Windows:
 				this.platform = 'windows';
@@ -419,7 +422,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	}
 
 	protected unZip(file: string, target: string) {
-		return extractZip(file, resolveNative(target), { overwrite: true }, this.logger);
+		return extractZip(file, resolveNative(target), { overwrite: true }, this.logger, CancellationToken.None);
 	}
 
 	protected MicrosoftInstall(msi: string, target: string) {

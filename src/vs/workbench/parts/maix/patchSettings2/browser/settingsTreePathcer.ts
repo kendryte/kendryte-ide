@@ -11,8 +11,8 @@ import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { FileInject } from 'vs/workbench/parts/maix/patchSettings2/browser/fieldTypes/fileSelect';
+import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 
-declare const Proxy: any;
 const OriginalClass = st.SettingsRenderer;
 
 interface IDisposableTemplate {
@@ -23,29 +23,30 @@ class SettingsRendererPatch extends OriginalClass {
 	protected injectors: FieldInject<any, any>[];
 
 	constructor(
-		measureContainer: HTMLElement,
+		_measureParent: HTMLElement,
 		@IThemeService themeService: IThemeService,
 		@IContextViewService contextViewService: IContextViewService,
 		@IOpenerService openerService: IOpenerService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@ICommandService commandService: ICommandService,
 		@IContextMenuService contextMenuService: IContextMenuService,
+		@IKeybindingService keybindingService: IKeybindingService,
 	) {
 		super(
-			measureContainer,
+			_measureParent,
 			themeService,
 			contextViewService,
 			openerService,
 			instantiationService,
 			commandService,
 			contextMenuService,
+			keybindingService,
 		);
 		this.injectors = [
 			instantiationService.createInstance(DynamicEnumInject, this),
 			instantiationService.createInstance(ButtonInject, this),
 			instantiationService.createInstance(FileInject, this),
 		];
-		return new Proxy(this, {});
 	}
 
 	getTemplateId(tree: ITree, element: stm.SettingsTreeElement): string {
