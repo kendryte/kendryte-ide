@@ -44,7 +44,7 @@ Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
 		),
 		'Serial: Reload device lists',
 		SerialPortActionCategory,
-);
+	);
 
 MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 	command: {

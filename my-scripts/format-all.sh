@@ -35,4 +35,9 @@ css-beautify --end-with-newline --indent-with-tabs -r -f F
 git add F
 '
 
-echo "All supported file reformatted ! But you need to run 'gulp hygiene' again now."
+echo -e "
+
+=====================
+\e[38;5;10mAll supported file reformatted ! But you need to run 'gulp hygiene' again now.\e[0m
+
+"
