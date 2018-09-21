@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
 
-yum install bash tmux wget curl tar xz findutils git \
-	wqy-zenhei-fonts wqy-unibit-fonts wqy-bitmap-fonts \
-	make gcc-c++ libstdc++ gtk2 libXtst libXScrnSaver GConf2 alsa-lib \
-	libsecret-devel libX11-devel libxkbfile-devel \
-	nodejs-8.* python2
 npm -g install yarn
+
+set -e
+
+cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+source fn.sh
+set_path_when_developing
+source common.sh
+cd ..
+
+if [ "$SYSTEM" = "windows" ]; then
+	exec bash my-script/pack-windows.sh
+else
+	bash my-script/prepare-release.sh
+	yarn install --prefer-offline --cache-folder "${YARN_CACHE_FOLDER}"
+fi

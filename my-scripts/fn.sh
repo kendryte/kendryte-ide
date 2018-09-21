@@ -80,7 +80,7 @@ function step_end() {
 		return
 	fi
 	echo "Stopping Running task: ${STAT_SHOW} ${STAT_PID} ..."
-	kill "${STAT_SHOW}" "${STAT_PID}" || true
+	kill "${STAT_SHOW}" "${STAT_PID}" &>/dev/null || true
 	sleep 1
 	echo "=========================="
 	for I in "${SN_LIST[@]}" ; do

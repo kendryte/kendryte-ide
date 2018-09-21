@@ -3,15 +3,19 @@
 Based on a wonderful editor: [VS Code](https://code.visualstudio.com)
 
 ## Install
-#### On RHEL(fedora/centos):
-```bash
-bash ./my-scripts/prepare-development.sh
+#### On Linux
+install with your package manager: (`-dev` insteadof `-devel` on Ubuntu)
+```text
+bash tmux wget curl tar xz findutils git
+make gcc-c++ libstdc++ gtk2 libXtst libXScrnSaver GConf2 alsa-lib
+libsecret-devel libX11-devel libxkbfile-devel
+wqy-zenhei-fonts wqy-unibit-fonts wqy-bitmap-fonts # locale font
 ```
-#### On Debian(Ubuntu):
-	// TODO
+
+*If you use any desktop environment, you probably already installed all of them*
+
 #### On Windows:
-***Do not install nodejs on your system (make sure no node.exe in PATH)***
-* [Cygwin64](https://cygwin.com/install.html), with package: **(Do Not Install Python And Nodejs From Cygwin)**
+* [Cygwin64](https://cygwin.com/install.html), with package:
  `coreutils`
  `git`
  `unzip`
@@ -23,40 +27,31 @@ bash ./my-scripts/prepare-development.sh
  `tar`
  `xz`
 
-## Run From Source (Windows)
-(from cygwin window)
-1. install dependencies
-	```bash
-	bash ./my-scripts/pack-windows.sh
-	```
-1. watch src change and compile:
-	```bash
-	bash ./my-scripts/start-watch-windows.sh
-	```
-1. double click `scripts/code.bat` in file explorer
+*In theory, any bash env with these packages is ok, but not tested*
 
-*No `yarn add`, modify `package.json` by hand, and run `bash ./my-scripts/pack-windows.sh`*
+## Run From Source
+1. Open a terminal. (cygwin terminal on windows)
+1. get source and chdir into: `git clone git@github.com:kendryte/kendryte-ide.git && cd kendryte-ide`
+1. install dependencies: `bash ./my-scripts/prepare-development.sh`
+1. watch src change and compile: `bash ./my-scripts/start-watch.sh`
+1. after watch print success, open another cygwin window.
+1. start main app: `bash ./my-scripts/start-code.sh`
 
-## Run From Source (Linux & Mac)
-1. install dependencies
-	```bash
-	yarn
-	```
-1. run:
-	```bash
-	bash ./my-scripts/start-tmux.sh
-	```
+#### Warning On Windows:
+DO NOT use `yarn add`s.
+modify `package.json` by hand, and run `bash ./my-scripts/pack-windows.sh` again.
 
-#### Run From Source Note:
+#### Warning On Linux:
+`start-code.sh` must run without root. If you are using root, run `sudo -u NormalUser bash ./my-scripts/start-code.sh` instead.
+
+#### Note On Both platform:
 1. you must have a "workspace" like this:
 ```
-📁New Folder *<-- the "workspace"*
+📁 New Folder *<-- the "workspace"*
    📁 kendryte-ide *<-- this project*
    📁 HOME *<-- this will auto create during run*
 ```
-1. you need an user:
-	* non-root (linux)
-	* have write permission to the "workspace"
+1. you need an user with write permission to the "workspace" and all sub directories
 
 
 ## Make Release

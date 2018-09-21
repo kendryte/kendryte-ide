@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-sudo -u GongT bash my-scripts/start-tmux.sh
+mkdir -p packages
+chown GongT:GongT packages
+sudo -u GongT bash my-scripts/start-code.sh
