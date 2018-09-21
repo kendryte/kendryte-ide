@@ -9,10 +9,11 @@ import * as glob from 'vs/base/common/glob';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import * as objects from 'vs/base/common/objects';
 import * as paths from 'vs/base/common/paths';
-import uri, { UriComponents } from 'vs/base/common/uri';
+import { URI as uri, UriComponents } from 'vs/base/common/uri';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { IFilesConfiguration } from 'vs/platform/files/common/files';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
+import { CancellationToken } from 'vs/base/common/cancellation';
 
 export const VIEW_ID = 'workbench.view.search';
 
@@ -24,7 +25,7 @@ export const ISearchService = createDecorator<ISearchService>('searchService');
  */
 export interface ISearchService {
 	_serviceBrand: any;
-	search(query: ISearchQuery, onProgress?: (result: ISearchProgressItem) => void): TPromise<ISearchComplete>;
+	search(query: ISearchQuery, token?: CancellationToken, onProgress?: (result: ISearchProgressItem) => void): TPromise<ISearchComplete>;
 	extendQuery(query: ISearchQuery): void;
 	clearCache(cacheKey: string): TPromise<void>;
 	registerSearchResultProvider(scheme: string, type: SearchProviderType, provider: ISearchResultProvider): IDisposable;
@@ -48,14 +49,14 @@ export interface ISearchHistoryService {
 /**
  * TODO@roblou - split text from file search entirely, or share code in a more natural way.
  */
-export enum SearchProviderType {
+export const enum SearchProviderType {
 	file,
 	fileIndex,
 	text
 }
 
 export interface ISearchResultProvider {
-	search(query: ISearchQuery, onProgress?: (p: ISearchProgressItem) => void): TPromise<ISearchComplete>;
+	search(query: ISearchQuery, onProgress?: (p: ISearchProgressItem) => void, token?: CancellationToken): TPromise<ISearchComplete>;
 	clearCache(cacheKey: string): TPromise<void>;
 }
 
@@ -106,7 +107,7 @@ export interface ISearchQueryProps<U extends UriComponents> extends ICommonQuery
 export type ISearchQuery = ISearchQueryProps<uri>;
 export type IRawSearchQuery = ISearchQueryProps<UriComponents>;
 
-export enum QueryType {
+export const enum QueryType {
 	File = 1,
 	Text = 2
 }
@@ -238,11 +239,12 @@ export class TextSearchResult implements ITextSearchResult {
 		this.range = range;
 		if (previewOptions) {
 			const previewStart = Math.max(range.startColumn - previewOptions.leadingChars, 0);
-			const previewEnd = Math.max(previewOptions.totalChars + previewStart, range.endColumn);
+			const previewEnd = previewOptions.totalChars + previewStart;
+			const endOfMatchRangeInPreview = Math.min(previewEnd, range.endColumn - previewStart);
 
 			this.preview = {
 				text: fullLine.substring(previewStart, previewEnd),
-				match: new OneLineRange(0, range.startColumn - previewStart, range.endColumn - previewStart)
+				match: new OneLineRange(0, range.startColumn - previewStart, endOfMatchRangeInPreview)
 			};
 		} else {
 			this.preview = {

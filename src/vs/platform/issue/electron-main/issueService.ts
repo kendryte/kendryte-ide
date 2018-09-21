@@ -11,11 +11,12 @@ import * as objects from 'vs/base/common/objects';
 import { parseArgs } from 'vs/platform/environment/node/argv';
 import { IIssueService, IssueReporterData, IssueReporterFeatures, ProcessExplorerData } from 'vs/platform/issue/common/issue';
 import { BrowserWindow, ipcMain, screen, Event } from 'electron';
-import { ILaunchService } from 'vs/code/electron-main/launch';
-import { getPerformanceInfo, PerformanceInfo, getSystemInfo, SystemInfo } from 'vs/code/electron-main/diagnostics';
+import { ILaunchService } from 'vs/platform/launch/electron-main/launchService';
+import { PerformanceInfo, SystemInfo, IDiagnosticsService } from 'vs/platform/diagnostics/electron-main/diagnosticsService';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { isMacintosh, IProcessEnvironment } from 'vs/base/common/platform';
 import { ILogService } from 'vs/platform/log/common/log';
+import { IWindowsService } from 'vs/platform/windows/common/windows';
 
 const DEFAULT_BACKGROUND_COLOR = '#1E1E1E';
 
@@ -31,6 +32,8 @@ export class IssueService implements IIssueService {
 		@IEnvironmentService private environmentService: IEnvironmentService,
 		@ILaunchService private launchService: ILaunchService,
 		@ILogService private logService: ILogService,
+		@IDiagnosticsService private diagnosticsService: IDiagnosticsService,
+		@IWindowsService private windowsService: IWindowsService
 	) { }
 
 	openReporter(data: IssueReporterData): TPromise<void> {
@@ -50,6 +53,10 @@ export class IssueService implements IIssueService {
 			this._issueParentWindow.webContents.send('vscode:runAction', { id: arg, from: 'issueReporter' });
 		});
 
+		ipcMain.on('vscode:openExternal', (_, arg) => {
+			this.windowsService.openExternal(arg);
+		});
+
 		ipcMain.on('vscode:closeIssueReporter', (event: Event) => {
 			if (this._issueWindow) {
 				this._issueWindow.close();
@@ -67,10 +74,7 @@ export class IssueService implements IIssueService {
 				x: position.x,
 				y: position.y,
 				title: localize('issueReporter', "Issue Reporter"),
-				backgroundColor: data.styles.backgroundColor || DEFAULT_BACKGROUND_COLOR,
-				webPreferences: {
-					disableBlinkFeatures: 'Auxclick'
-				}
+				backgroundColor: data.styles.backgroundColor || DEFAULT_BACKGROUND_COLOR
 			});
 
 			this._issueWindow.setMenuBarVisibility(false); // workaround for now, until a menu is implemented
@@ -117,10 +121,7 @@ export class IssueService implements IIssueService {
 				x: position.x,
 				y: position.y,
 				backgroundColor: data.styles.backgroundColor,
-				title: localize('processExplorer', "Process Explorer"),
-				webPreferences: {
-					disableBlinkFeatures: 'Auxclick'
-				}
+				title: localize('processExplorer', "Process Explorer")
 			});
 
 			this._processExplorerWindow.setMenuBarVisibility(false);
@@ -233,7 +234,7 @@ export class IssueService implements IIssueService {
 	private getSystemInformation(): TPromise<SystemInfo> {
 		return new Promise((resolve, reject) => {
 			this.launchService.getMainProcessInfo().then(info => {
-				resolve(getSystemInfo(info));
+				resolve(this.diagnosticsService.getSystemInfo(info));
 			});
 		});
 	}
@@ -241,7 +242,7 @@ export class IssueService implements IIssueService {
 	private getPerformanceInfo(): TPromise<PerformanceInfo> {
 		return new Promise((resolve, reject) => {
 			this.launchService.getMainProcessInfo().then(info => {
-				getPerformanceInfo(info)
+				this.diagnosticsService.getPerformanceInfo(info)
 					.then(diagnosticInfo => {
 						resolve(diagnosticInfo);
 					})

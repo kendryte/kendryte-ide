@@ -13,7 +13,7 @@ import { EditorContextKeys } from 'vs/editor/common/editorContextKeys';
 import { TextDiffEditor } from 'vs/workbench/browser/parts/editor/textDiffEditor';
 import { KeyMod, KeyCode, KeyChord } from 'vs/base/common/keyCodes';
 import { TPromise } from 'vs/base/common/winjs.base';
-import URI from 'vs/base/common/uri';
+import { URI } from 'vs/base/common/uri';
 import { IQuickOpenService } from 'vs/platform/quickOpen/common/quickOpen';
 import { IDiffEditorOptions } from 'vs/editor/common/config/editorOptions';
 import { IListService } from 'vs/platform/list/browser/listService';
@@ -270,7 +270,11 @@ function registerDiffEditorCommands(): void {
 	MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 		command: {
 			id: TOGGLE_DIFF_INLINE_MODE,
-			title: nls.localize('toggleInlineView', "Compare: Toggle Inline View")
+			title: {
+				value: nls.localize('toggleInlineView', "Toggle Inline View"),
+				original: 'Compare: Toggle Inline View'
+			},
+			category: nls.localize('compare', "Compare")
 		},
 		when: ContextKeyExpr.has('textCompareEditorActive')
 	});

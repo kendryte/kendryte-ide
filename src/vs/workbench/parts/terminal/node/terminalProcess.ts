@@ -51,7 +51,14 @@ export class TerminalProcess implements ITerminalChildProcess, IDisposable {
 			rows
 		};
 
-		this._ptyProcess = pty.spawn(shellLaunchConfig.executable, shellLaunchConfig.args, options);
+		try {
+			this._ptyProcess = pty.spawn(shellLaunchConfig.executable, shellLaunchConfig.args, options);
+		} catch (error) {
+			// The only time this is expected to happen is when the file specified to launch with does not exist.
+			this._exitCode = 2;
+			this._queueProcessExit();
+			return;
+		}
 		this._ptyProcess.on('data', (data) => {
 			this._onProcessData.fire(data);
 			if (this._closeTimeout) {
@@ -97,17 +104,19 @@ export class TerminalProcess implements ITerminalChildProcess, IDisposable {
 		if (this._closeTimeout) {
 			clearTimeout(this._closeTimeout);
 		}
-		this._closeTimeout = setTimeout(() => {
-			// Attempt to kill the pty, it may have already been killed at this
-			// point but we want to make sure
-			try {
-				this._ptyProcess.kill();
-			} catch (ex) {
-				// Swallow, the pty has already been killed
-			}
-			this._onProcessExit.fire(this._exitCode);
-			this.dispose();
-		}, 250);
+		this._closeTimeout = setTimeout(() => this._kill(), 250);
+	}
+
+	private _kill(): void {
+		// Attempt to kill the pty, it may have already been killed at this
+		// point but we want to make sure
+		try {
+			this._ptyProcess.kill();
+		} catch (ex) {
+			// Swallow, the pty has already been killed
+		}
+		this._onProcessExit.fire(this._exitCode);
+		this.dispose();
 	}
 
 	private _sendProcessId() {
@@ -119,8 +128,12 @@ export class TerminalProcess implements ITerminalChildProcess, IDisposable {
 		this._onProcessTitleChanged.fire(this._currentTitle);
 	}
 
-	public shutdown(): void {
-		this._queueProcessExit();
+	public shutdown(immediate: boolean): void {
+		if (immediate) {
+			this._kill();
+		} else {
+			this._queueProcessExit();
+		}
 	}
 
 	public input(data: string): void {

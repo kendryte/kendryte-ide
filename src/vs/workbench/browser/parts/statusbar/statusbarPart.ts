@@ -15,10 +15,10 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { Part } from 'vs/workbench/browser/part';
-import { StatusbarAlignment, IStatusbarRegistry, Extensions, IStatusbarItem } from 'vs/workbench/browser/parts/statusbar/statusbar';
+import { IStatusbarRegistry, Extensions, IStatusbarItem } from 'vs/workbench/browser/parts/statusbar/statusbar';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { IStatusbarService, IStatusbarEntry } from 'vs/platform/statusbar/common/statusbar';
+import { StatusbarAlignment, IStatusbarService, IStatusbarEntry } from 'vs/platform/statusbar/common/statusbar';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { Action } from 'vs/base/common/actions';
 import { IThemeService, registerThemingParticipant, ITheme, ICssStyleCollector } from 'vs/platform/theme/common/themeService';
@@ -27,7 +27,7 @@ import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/
 import { contrastBorder } from 'vs/platform/theme/common/colorRegistry';
 import { isThemeColor } from 'vs/editor/common/editorCommon';
 import { Color } from 'vs/base/common/color';
-import { addClass, EventHelper, createStyleSheet, addDisposableListener, removeNode } from 'vs/base/browser/dom';
+import { addClass, EventHelper, createStyleSheet, addDisposableListener } from 'vs/base/browser/dom';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 
 export class StatusbarPart extends Part implements IStatusbarService {
@@ -86,7 +86,7 @@ export class StatusbarPart extends Part implements IStatusbarService {
 		}
 
 		return toDisposable(() => {
-			removeNode(el);
+			el.remove();
 
 			if (toDispose) {
 				toDispose.dispose();
@@ -306,7 +306,7 @@ class StatusBarEntryItem implements IStatusbarItem {
 			}
 		*/
 		this.telemetryService.publicLog('workbenchActionExecuted', { id, from: 'status bar' });
-		this.commandService.executeCommand(id, ...args).done(undefined, err => this.notificationService.error(toErrorMessage(err)));
+		this.commandService.executeCommand(id, ...args).then(undefined, err => this.notificationService.error(toErrorMessage(err)));
 	}
 }
 
