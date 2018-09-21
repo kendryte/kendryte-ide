@@ -15,7 +15,7 @@ export function getEnvKey(upperKey: string) {
 }
 export function hideEnv(env: any, watchKey: string) {
 	const k = getEnvKey(watchKey);
-	if(process.env.hasOwnProperty(k)){
+	if (process.env.hasOwnProperty(k)) {
 		env[k] = '';
 	}
 }
