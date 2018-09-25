@@ -15,7 +15,7 @@ import { LanguageConfigurationRegistry } from 'vs/editor/common/modes/languageCo
 import { onUnexpectedError } from 'vs/base/common/errors';
 import { LanguageIdentifier } from 'vs/editor/common/modes';
 import { IAutoClosingPair } from 'vs/editor/common/modes/languageConfiguration';
-import { IConfigurationChangedEvent, EditorAutoClosingStrategy, EditorAutoWrappingStrategy } from 'vs/editor/common/config/editorOptions';
+import { IConfigurationChangedEvent, EditorAutoClosingStrategy, EditorAutoSurroundStrategy } from 'vs/editor/common/config/editorOptions';
 import { IViewModel } from 'vs/editor/common/viewModel/viewModel';
 import { CursorChangeReason } from 'vs/editor/common/controller/cursorEvents';
 import { VerticalRevealType } from 'vs/editor/common/view/viewEvents';
@@ -82,10 +82,11 @@ export class CursorConfiguration {
 	public readonly useTabStops: boolean;
 	public readonly wordSeparators: string;
 	public readonly emptySelectionClipboard: boolean;
+	public readonly copyWithSyntaxHighlighting: boolean;
 	public readonly multiCursorMergeOverlapping: boolean;
 	public readonly autoClosingBrackets: EditorAutoClosingStrategy;
 	public readonly autoClosingQuotes: EditorAutoClosingStrategy;
-	public readonly autoWrapping: EditorAutoWrappingStrategy;
+	public readonly autoSurround: EditorAutoSurroundStrategy;
 	public readonly autoIndent: boolean;
 	public readonly autoClosingPairsOpen: CharacterMap;
 	public readonly autoClosingPairsClose: CharacterMap;
@@ -103,7 +104,7 @@ export class CursorConfiguration {
 			|| e.multiCursorMergeOverlapping
 			|| e.autoClosingBrackets
 			|| e.autoClosingQuotes
-			|| e.autoWrapping
+			|| e.autoSurround
 			|| e.useTabStops
 			|| e.lineHeight
 			|| e.readOnly
@@ -129,10 +130,11 @@ export class CursorConfiguration {
 		this.useTabStops = c.useTabStops;
 		this.wordSeparators = c.wordSeparators;
 		this.emptySelectionClipboard = c.emptySelectionClipboard;
+		this.copyWithSyntaxHighlighting = c.copyWithSyntaxHighlighting;
 		this.multiCursorMergeOverlapping = c.multiCursorMergeOverlapping;
 		this.autoClosingBrackets = c.autoClosingBrackets;
 		this.autoClosingQuotes = c.autoClosingQuotes;
-		this.autoWrapping = c.autoWrapping;
+		this.autoSurround = c.autoSurround;
 		this.autoIndent = c.autoIndent;
 
 		this.autoClosingPairsOpen = {};

@@ -29,7 +29,9 @@ export class MaixSerialUploadAction extends Action {
 		@IChannelLogService channelLogService: IChannelLogService,
 	) {
 		super(id, label);
-		this.logger = channelLogService.createChannel(CMAKE_CHANNEL, 'Build/Run');
+		this.logger = channelLogService.createChannel({
+			id: CMAKE_CHANNEL, label: 'Build/Run', log: false,
+		});
 	}
 
 	async run(): TPromise<void> {

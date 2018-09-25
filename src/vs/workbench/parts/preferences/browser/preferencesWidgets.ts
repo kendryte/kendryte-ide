@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { localize } from 'vs/nls';
-import URI from 'vs/base/common/uri';
+import { URI } from 'vs/base/common/uri';
 import * as DOM from 'vs/base/browser/dom';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { Disposable, IDisposable, dispose } from 'vs/base/common/lifecycle';
@@ -355,11 +355,11 @@ export class FolderSettingsActionItem extends BaseActionItem {
 		}
 	}
 
-	protected _updateEnabled(): void {
+	protected updateEnabled(): void {
 		this.update();
 	}
 
-	protected _updateChecked(): void {
+	protected updateChecked(): void {
 		this.update();
 	}
 
@@ -570,7 +570,7 @@ export class SearchWidget extends Widget {
 
 	private countElement: HTMLElement;
 	private searchContainer: HTMLElement;
-	private inputBox: InputBox;
+	inputBox: InputBox;
 	private controlsDiv: HTMLElement;
 
 	private readonly _onDidChange: Emitter<string> = this._register(new Emitter<string>());

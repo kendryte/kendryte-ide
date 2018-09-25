@@ -1,6 +1,6 @@
 import { Severity } from 'vs/platform/notification/common/notification';
 import { IMarkerData, IMarkerService, MarkerSeverity } from 'vs/platform/markers/common/markers';
-import URI from 'vs/base/common/uri';
+import { URI } from 'vs/base/common/uri';
 import { TextProgressBar } from 'vs/workbench/parts/maix/_library/common/textProgressBar';
 import { StatusBarController } from 'vs/workbench/parts/maix/cmake/common/statusBarController';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';

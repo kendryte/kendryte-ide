@@ -38,11 +38,14 @@ import { ICommandAndKeybindingRule, KeybindingWeight } from 'vs/platform/keybind
 import { inQuickOpenContext } from 'vs/workbench/browser/parts/quickopen/quickopen';
 import { ActionBar, ActionItem } from 'vs/base/browser/ui/actionbar/actionbar';
 import { Action } from 'vs/base/common/actions';
-import URI from 'vs/base/common/uri';
+import { URI } from 'vs/base/common/uri';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { equals } from 'vs/base/common/arrays';
 import { TimeoutTimer } from 'vs/base/common/async';
 import { getIconClass } from 'vs/workbench/browser/parts/quickinput/quickInputUtils';
+import { AccessibilitySupport } from 'vs/base/common/platform';
+import * as browser from 'vs/base/browser/browser';
+import { IEditorOptions } from 'vs/editor/common/config/editorOptions';
 
 const $ = dom.$;
 
@@ -73,6 +76,7 @@ interface QuickInputUI {
 	onDidTriggerButton: Event<IQuickInputButton>;
 	ignoreFocusOut: boolean;
 	keyMods: Writeable<IKeyMods>;
+	isScreenReaderOptimized(): boolean;
 	show(controller: QuickInput): void;
 	setVisibilities(visibilities: Visibilities): void;
 	setComboboxAccessibility(enabled: boolean): void;
@@ -428,7 +432,7 @@ class QuickPick<T extends IQuickPickItem> extends QuickInput implements IQuickPi
 					}
 					this._value = value;
 					this.ui.list.filter(this.ui.inputBox.value);
-					if (!this.canSelectMany) {
+					if (!this.ui.isScreenReaderOptimized() && !this.canSelectMany) {
 						this.ui.list.focus('First');
 					}
 					this.onDidChangeValueEmitter.fire(value);
@@ -584,14 +588,14 @@ class QuickPick<T extends IQuickPickItem> extends QuickInput implements IQuickPi
 			this.ui.checkAll.checked = this.ui.list.getAllVisibleChecked();
 			this.ui.visibleCount.setCount(this.ui.list.getVisibleCount());
 			this.ui.count.setCount(this.ui.list.getCheckedCount());
-			if (!this.canSelectMany) {
+			if (!this.ui.isScreenReaderOptimized() && !this.canSelectMany) {
 				this.ui.list.focus('First');
 			}
 		}
 		if (this.ui.container.classList.contains('show-checkboxes') !== this.canSelectMany) {
 			if (this.canSelectMany) {
 				this.ui.list.clearFocus();
-			} else {
+			} else if (!this.ui.isScreenReaderOptimized()) {
 				this.ui.list.focus('First');
 			}
 		}
@@ -715,6 +719,7 @@ class InputBox extends QuickInput implements IInputBox {
 				}),
 				this.ui.onDidAccept(() => this.onDidAcceptEmitter.fire()),
 			);
+			this.valueSelectionUpdated = true;
 		}
 		super.show();
 	}
@@ -844,7 +849,7 @@ export class QuickInputService extends Component implements IQuickInputService {
 			return;
 		}
 
-		const workbench = document.getElementById(this.partService.getWorkbenchElementId());
+		const workbench = this.partService.getWorkbenchElement();
 		const container = dom.append(workbench, $('.quick-input-widget.show-file-icons'));
 		container.tabIndex = -1;
 		container.style.display = 'none';
@@ -1010,6 +1015,7 @@ export class QuickInputService extends Component implements IQuickInputService {
 			onDidTriggerButton: this.onDidTriggerButtonEmitter.event,
 			ignoreFocusOut: false,
 			keyMods: { ctrlCmd: false, alt: false },
+			isScreenReaderOptimized: () => this.isScreenReaderOptimized(),
 			show: controller => this.show(controller),
 			hide: () => this.hide(),
 			setVisibilities: visibilities => this.setVisibilities(visibilities),
@@ -1256,6 +1262,12 @@ export class QuickInputService extends Component implements IQuickInputService {
 		}
 	}
 
+	private isScreenReaderOptimized() {
+		const detected = browser.getAccessibilitySupport() === AccessibilitySupport.Enabled;
+		const config = this.configurationService.getValue<IEditorOptions>('editor').accessibilitySupport;
+		return config === 'on' || (config === 'auto' && detected);
+	}
+
 	private setEnabled(enabled: boolean) {
 		if (enabled !== this.enabled) {
 			this.enabled = enabled;
@@ -1347,16 +1359,16 @@ export class QuickInputService extends Component implements IQuickInputService {
 		if (this.ui) {
 			// TODO
 			const titleColor = { dark: 'rgba(255, 255, 255, 0.105)', light: 'rgba(0,0,0,.06)', hc: 'black' }[theme.type];
-			this.titleBar.style.backgroundColor = titleColor ? titleColor.toString() : undefined;
+			this.titleBar.style.backgroundColor = titleColor ? titleColor.toString() : null;
 			this.ui.inputBox.style(theme);
 			const sideBarBackground = theme.getColor(SIDE_BAR_BACKGROUND);
-			this.ui.container.style.backgroundColor = sideBarBackground ? sideBarBackground.toString() : undefined;
+			this.ui.container.style.backgroundColor = sideBarBackground ? sideBarBackground.toString() : null;
 			const sideBarForeground = theme.getColor(SIDE_BAR_FOREGROUND);
-			this.ui.container.style.color = sideBarForeground ? sideBarForeground.toString() : undefined;
+			this.ui.container.style.color = sideBarForeground ? sideBarForeground.toString() : null;
 			const contrastBorderColor = theme.getColor(contrastBorder);
-			this.ui.container.style.border = contrastBorderColor ? `1px solid ${contrastBorderColor}` : undefined;
+			this.ui.container.style.border = contrastBorderColor ? `1px solid ${contrastBorderColor}` : null;
 			const widgetShadowColor = theme.getColor(widgetShadow);
-			this.ui.container.style.boxShadow = widgetShadowColor ? `0 5px 8px ${widgetShadowColor}` : undefined;
+			this.ui.container.style.boxShadow = widgetShadowColor ? `0 5px 8px ${widgetShadowColor}` : null;
 		}
 	}
 

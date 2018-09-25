@@ -6,7 +6,7 @@
 
 import * as assert from 'assert';
 import { dirname, basename, distinctParents, joinPath, isEqual, isEqualOrParent, hasToIgnoreCase, normalizePath, isAbsolutePath, isMalformedFileUri } from 'vs/base/common/resources';
-import URI from 'vs/base/common/uri';
+import { URI, setUriThrowOnMissingScheme } from 'vs/base/common/uri';
 import { isWindows } from 'vs/base/common/platform';
 
 suite('Resources', () => {
@@ -116,7 +116,7 @@ suite('Resources', () => {
 			'myScheme://authority/path/file.js?query#fragment');
 	});
 
-	test('normalizePosixPath', () => {
+	test('normalizePath', () => {
 		if (isWindows) {
 			assert.equal(normalizePath(URI.file('c:\\foo\\.\\bar')).toString(), 'file:///c%3A/foo/bar');
 			assert.equal(normalizePath(URI.file('c:\\foo\\.')).toString(), 'file:///c%3A/foo');
@@ -208,8 +208,10 @@ suite('Resources', () => {
 	});
 
 	function assertMalformedFileUri(path: string, expected: string) {
+		const old = setUriThrowOnMissingScheme(false);
 		const newURI = isMalformedFileUri(URI.parse(path));
 		assert.equal(newURI && newURI.toString(), expected);
+		setUriThrowOnMissingScheme(old);
 	}
 
 	test('isMalformedFileUri', () => {

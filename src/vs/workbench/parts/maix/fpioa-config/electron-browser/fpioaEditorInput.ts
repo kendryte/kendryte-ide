@@ -4,7 +4,7 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { ConfirmResult, EditorInput, IEditorInputFactory, IRevertOptions } from 'vs/workbench/common/editor';
 import { FpioaModel } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/fpioaModel';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
-import URI from 'vs/base/common/uri';
+import { URI } from 'vs/base/common/uri';
 import { dispose } from 'vs/base/common/lifecycle';
 import { getChipPackaging } from 'vs/workbench/parts/maix/fpioa-config/common/packagingRegistry';
 import { ICommandService } from 'vs/platform/commands/common/commands';

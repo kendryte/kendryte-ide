@@ -7,7 +7,7 @@ import * as nls from 'vs/nls';
 import * as path from 'path';
 import * as platform from 'vs/base/common/platform';
 import * as pfs from 'vs/base/node/pfs';
-import Uri from 'vs/base/common/uri';
+import { URI } from 'vs/base/common/uri';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { TerminalWidgetManager } from 'vs/workbench/parts/maix/serialPort/terminal/browser/terminalWidgetManager';
@@ -153,7 +153,7 @@ export class TerminalLinkHandler {
 
 			const normalizedPath = path.normalize(path.resolve(resolvedLink));
 			const normalizedUrl = this.extractLinkUrl(normalizedPath);
-			const resource = Uri.file(normalizedUrl);
+			const resource = URI.file(normalizedUrl);
 			const lineColumnInfo: LineColumnInfo = this.extractLineColumnInfo(link);
 			const selection: ITextEditorSelection = {
 				startLineNumber: lineColumnInfo.lineNumber,
@@ -173,7 +173,7 @@ export class TerminalLinkHandler {
 	}
 
 	private _handleHypertextLink(url: string): void {
-		const uri = Uri.parse(url);
+		const uri = URI.parse(url);
 		this._openerService.open(uri);
 	}
 

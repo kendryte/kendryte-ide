@@ -8,7 +8,7 @@ import { ICompound, IDebugService, ILaunch } from 'vs/workbench/parts/debug/comm
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import uri from 'vs/base/common/uri';
+import { URI } from 'vs/base/common/uri';
 import { IEditor } from 'vs/workbench/common/editor';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { resolvePath } from 'vs/workbench/parts/maix/_library/node/resolvePath';
@@ -37,7 +37,7 @@ class WorkspaceMaixLaunch implements ILaunch {
 		return this.workspaceContextService.getWorkspace().folders[0];
 	}
 
-	public get uri(): uri {
+	public get uri(): URI {
 		return this.contextService.getWorkspace().configuration;
 	}
 

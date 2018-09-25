@@ -57,8 +57,9 @@ step "Build minified" \
 	npm run gulp -- "vscode-linux-$ARCH-min"
 
 ############# run unit test
-step "Run unit tests" \
-	./scripts/test.sh --build --reporter dot
+#step "Run unit tests" \
+#	./scripts/test.sh --build --reporter dot
+# not test...
 
 ############# create tar.gz
 TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.tar.xz"

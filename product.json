@@ -20,6 +20,7 @@
 	"updateUrl": "https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/",
 	"commit": "1.2.3",
 	"quality": "beta",
+	"reportIssueUrl": "https://github.com/kendryte/kendryte-ide/issues/new",
 	"extensionsGallery": {
 		"serviceUrl": "https://marketplace.visualstudio.com/_apis/public/gallery",
 		"cacheUrl": "https://vscode.blob.core.windows.net/gallery/index",
