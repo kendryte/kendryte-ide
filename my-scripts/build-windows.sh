@@ -51,14 +51,10 @@ step "Build minified" \
 step "copy inno updater" \
 	npm run gulp -- "vscode-win32-$ARCH-copy-inno-updater"
 
-############# create zip
-
-step "Create archive folder" \
-	npm run gulp -- "vscode-win32-${ARCH}-archive"
-
 RESULT="${RELEASE_ROOT}/VSCode-win32-${ARCH}"
 WANT_RESULT="${RELEASE_ROOT}/${PRODUCT_NAME}"
 
+############# copy skel
 mkdir -p "${RESULT}/packages/"
 step "Copy Staff (Windows)" \
 	bash -c "
@@ -68,8 +64,8 @@ step "Copy Staff (Windows)" \
 step -r "Move ${RESULT} to ${WANT_RESULT}" \
 	bash -c "rm -rf '${WANT_RESULT}' && mv '${RESULT}' '${WANT_RESULT}'"
 
-TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.zip"
-step -r "Create archive file" \
-	7za a -y -snl -mmt=on -mm=lzma -mx=7 "${TARBALL_FILENAME}" "${PRODUCT_NAME}"
+TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.zip"
+step -r "Create ${WANT_RESULT} archive to ${TARBALL_FILENAME}" \
+	yarn run 7z a -tzip -y -r "${TARBALL_FILENAME}" "${PRODUCT_NAME}"
 
 echo "Build success, the result file is ${RELEASE_ROOT}/${TARBALL_FILENAME}"
