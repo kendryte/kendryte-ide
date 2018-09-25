@@ -69,7 +69,7 @@ export function installMaixMenu(access: ServicesAccessor, menubar: Menu) {
 	maixMenu.append(new MenuItem({
 		label: nls.localize({ key: 'Upload', comment: ['&& denotes a mnemonic'] }, 'SPI Upload'),
 		click: (menuItem, win, event) => {
-			runInMain('workbench.action.kencode-oss-dev-builddryte.upload');
+			runInMain('workbench.action.kendryte.upload');
 		},
 	}));
 
@@ -79,6 +79,12 @@ export function installMaixMenu(access: ServicesAccessor, menubar: Menu) {
 		label: nls.localize({ key: 'KendryteCreateShortcuts', comment: ['&& denotes a mnemonic'] }, 'Create shortcuts'),
 		click: (menuItem, win, event) => {
 			runInMain('workbench.action.kendryte.createShortcuts');
+		},
+	}));
+	maixMenu.append(new MenuItem({
+		label: nls.localize({ key: 'PackagesUpdate', comment: ['&& denotes a mnemonic'] }, 'Packages Update'),
+		click: (menuItem, win, event) => {
+			runInMain('workbench.action.kendryte.packageUpgrade');
 		},
 	}));
 

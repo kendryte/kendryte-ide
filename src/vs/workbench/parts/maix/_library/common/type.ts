@@ -2,6 +2,7 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import { createDecorator, ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 import { ISetting } from 'vs/workbench/services/preferences/common/preferences';
+import { IUpdateService } from 'vs/platform/update/common/update';
 
 export interface EnumProviderService {
 	// get enum selection list
@@ -123,6 +124,16 @@ export interface INodePathService {
 
 	createAppLink(): TPromise<void>;
 }
+
+export interface IPackagesUpdateService extends IUpdateService {
+	run(force?: boolean): TPromise<void>;
+}
+
+export const PACKAGE_UPDATER_LOG_CHANNEL = 'maix-update-output-channel';
+
+export const IPackagesUpdateService = IUpdateService as any as ServiceIdentifier<IPackagesUpdateService>;
+
+export const ACTION_ID_UPGRADE_PACKAGES = 'workbench.action.kendryte.packageUpgrade';
 
 export const ACTION_ID_CREATE_SHORTCUTS = 'workbench.action.kendryte.createShortcuts';
 

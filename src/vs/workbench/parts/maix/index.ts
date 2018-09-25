@@ -31,3 +31,5 @@ import 'vs/workbench/parts/maix/_library/electron-browser/menuContribution';
 import 'vs/workbench/parts/maix/_library/node/shortcutsContribution';
 // cmake
 import 'vs/workbench/parts/maix/cmake/electron-browser/cmakeContribution';
+// PM
+import 'vs/workbench/parts/maix/packageManager/node/actionsContribution';

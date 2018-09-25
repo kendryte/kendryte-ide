@@ -5,12 +5,12 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { parse, resolve as resolveUrl } from 'url';
 import { OperatingSystem, OS } from 'vs/base/common/platform';
 import { is64Bit } from 'vs/workbench/parts/maix/_library/node/versions';
-import { INodePathService } from 'vs/workbench/parts/maix/_library/common/type';
+import { INodePathService, IPackagesUpdateService, PACKAGE_UPDATER_LOG_CHANNEL } from 'vs/workbench/parts/maix/_library/common/type';
 import { copy, exists, lstat, mkdirp, readdir, readFile, rename, rimraf, unlink, writeFile } from 'vs/base/node/pfs';
 import { IProgressService2, IProgressStep, ProgressLocation } from 'vs/workbench/services/progress/common/progress';
 import { IProgress } from 'vs/platform/progress/common/progress';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { IInstantiationService, ServiceIdentifier, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
+import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { extname, resolve as resolveNative } from 'path';
 import { createReadStream, createWriteStream } from 'fs';
 import * as crypto from 'crypto';
@@ -45,16 +45,10 @@ const patchVersionKey = 'hot-patch-version';
 const UPDATE_KEY_MAIN = 'KendryteIDE';
 const UPDATE_KEY_PATCH = 'KendryteIDEPatch';
 
-const UPDATER_LOG = 'maix-update-output-channel';
-
 interface IUpdateStatus {
 	project: string;
 	version: string;
 	downloadUrl: string;
-}
-
-export interface IPackagesUpdateService extends IUpdateService {
-	run(): TPromise<void>;
 }
 
 class PackagesUpdateService implements IPackagesUpdateService {
@@ -82,7 +76,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		@IEnvironmentService protected environmentService: IEnvironmentService,
 	) {
 		this.logger = channelLogService.createChannel({
-			id: UPDATER_LOG, label: 'Kendryte Update', log: true,
+			id: PACKAGE_UPDATER_LOG_CHANNEL, label: 'Kendryte Update', log: true,
 		});
 		switch (OS) {
 			case OperatingSystem.Windows:
@@ -114,7 +108,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		await writeFile(this.localConfigFile, JSON.stringify(this.localPackage, null, 4));
 	}
 
-	run(): TPromise<void> {
+	run(force = false): TPromise<void> {
 		if (this.runPromise) {
 			return this.runPromise;
 		}
@@ -127,7 +121,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		});
 		const entry = this.statusbarService.setStatusMessage('$(sync~spin) Updating packages... please wait...');
 		this.runPromise = this.loadLocalVersionCache().then(() => {
-			return this.isUpdateAlreadyCheckedMomentsAgo();
+			return !force && this.isUpdateAlreadyCheckedMomentsAgo();
 		}).then((upToDate) => {
 			if (upToDate) {
 				this.setState(State.Idle(UpdateType.Archive));
@@ -706,6 +700,4 @@ class OpenDownloadAction extends Action {
 }
 
 /** @deprecated use IUpdateService */
-export const IPackagesUpdateService = IUpdateService as any as ServiceIdentifier<IPackagesUpdateService>;
-
 registerSingleton(IUpdateService, PackagesUpdateService);
