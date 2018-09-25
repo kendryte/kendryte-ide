@@ -209,7 +209,7 @@ function detect_install_nodejs() {
 function ensure_node_modules_in_current_dir() {
 	if ! [ -e node_modules ]; then
 		if [ "$SYSTEM" = "windows" ]; then
-			die "Emmmm, run 'my-script/pack-windows.sh' first?"
+			die "Emmmm, run 'my-scripts/pack-windows.sh' first?"
 		else
 			die "Emmmm, run yarn install first?"
 		fi

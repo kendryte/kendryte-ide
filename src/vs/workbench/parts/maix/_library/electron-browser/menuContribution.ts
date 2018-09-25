@@ -1,24 +1,50 @@
 import { MenuId, MenuRegistry } from 'vs/platform/actions/common/actions';
 import { FpioaEditorAction } from 'vs/workbench/parts/maix/fpioa-config/electron-browser/fpioaActions';
-import * as nls from 'vs/nls';
-import { ACTION_ID_CREATE_SHORTCUTS } from 'vs/workbench/parts/maix/_library/common/type';
+import { MaixCMakeCleanupAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/cleanupAction';
+import { MaixCMakeConfigureAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/configureAction';
+import { MaixCMakeBuildAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/buildAction';
+import { MaixCMakeDebugAction } from 'vs/workbench/parts/maix/cmake/electron-browser/actions/debugRunAction';
+import { CreateShortcutsAction } from 'vs/workbench/parts/maix/_library/node/shortcutsContribution';
+import { MaixSerialUploadAction } from 'vs/workbench/parts/maix/serialPort/upload/node/uploadAction';
 
 // SYNC: vs/code/electron-main/menu.maix.ts
 
-MenuRegistry.appendMenuItem(MenuId.MenubarMaixMenu, {
-	group: '1_tools',
-	command: {
-		id: FpioaEditorAction.ID,
-		title: nls.localize({ key: 'KendryteIOEditor', comment: ['&& denotes a mnemonic'] }, 'Edit Kendryte IO function'),
-	},
-	order: 1,
-});
+cls('tools');
+register(FpioaEditorAction);
 
-MenuRegistry.appendMenuItem(MenuId.MenubarMaixMenu, {
-	group: '2_others',
-	command: {
-		id: ACTION_ID_CREATE_SHORTCUTS,
-		title: nls.localize({ key: 'KendryteCreateShortcuts', comment: ['&& denotes a mnemonic'] }, 'Create shortcuts'),
-	},
-	order: 1,
-});
+cls('2_cpp');
+register(MaixCMakeCleanupAction);
+register(MaixCMakeConfigureAction);
+register(MaixCMakeBuildAction);
+register(MaixCMakeDebugAction);
+register(MaixSerialUploadAction);
+
+cls('others');
+register(CreateShortcutsAction);
+
+interface ActionStatic {
+	readonly ID: string;
+	readonly LABEL: string;
+}
+
+let order = 0;
+let clsName = '';
+let clsOrder = 0;
+
+function register(s: ActionStatic) {
+	order++;
+	MenuRegistry.appendMenuItem(MenuId.MenubarMaixMenu, {
+		group: clsName,
+		command: {
+			id: s.ID,
+			title: s.LABEL,
+		},
+		order,
+	});
+}
+
+function cls(cls: string) {
+	clsOrder++;
+	order = 0;
+	clsName = `${clsOrder}_${cls}`;
+}

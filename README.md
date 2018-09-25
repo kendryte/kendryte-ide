@@ -15,11 +15,10 @@ wqy-zenhei-fonts wqy-unibit-fonts wqy-bitmap-fonts # locale font
 *If you use any desktop environment, you probably already installed all of them*
 
 #### On Windows:
+* git for windows (must install in PATH).
 * [Cygwin64](https://cygwin.com/install.html), with package:
  `coreutils`
- `git`
  `unzip`
- `p7zip`
  `grep`
  `sed`
  `wget`
@@ -66,6 +65,13 @@ bash ./my-scripts/build-linux.sh
 
 Compressed release file will in .release folder.
 `.rpm`/`.deb`/`.msi` files will not generate.
+
+## Follow upstream (https://github.com/Microsoft/vscode) update:
+```bash
+bash ./my-scripts/follow-upstream.sh
+```
+Then use IDE merge "microsoft" branch into "development".
+Check override of edits in vscode source after merge.
 
 ## License
 

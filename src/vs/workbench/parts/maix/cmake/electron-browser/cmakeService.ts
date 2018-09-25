@@ -152,7 +152,7 @@ export class CMakeService implements ICMakeService {
 	}
 
 	init(access: ServicesAccessor) {
-		this.localEnv.TOOLCHAIN = this.nodePathService.getToolchainBinPath();
+		this.localEnv.TOOLCHAIN = this.nodePathService.getToolchainBinPath() + '/';
 		this.localEnv.SDK = this.nodePathService.getSDKPath();
 		this.localEnv.SDK_ROOT = this.localEnv.SDK;
 		if (isWindows) {

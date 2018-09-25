@@ -42,6 +42,38 @@ export function installMaixMenu(access: ServicesAccessor, menubar: Menu) {
 	}));
 
 	maixMenu.append(__separator__());
+	maixMenu.append(new MenuItem({
+		label: nls.localize({ key: 'Cleanup', comment: ['&& denotes a mnemonic'] }, 'Make Cleanup'),
+		click: (menuItem, win, event) => {
+			runInMain('workbench.action.kendryte.cleanup');
+		},
+	}));
+	maixMenu.append(new MenuItem({
+		label: nls.localize({ key: 'Configure', comment: ['&& denotes a mnemonic'] }, 'Make Configure'),
+		click: (menuItem, win, event) => {
+			runInMain('workbench.action.kendryte.configure');
+		},
+	}));
+	maixMenu.append(new MenuItem({
+		label: nls.localize({ key: 'Build', comment: ['&& denotes a mnemonic'] }, 'Make Build'),
+		click: (menuItem, win, event) => {
+			runInMain('workbench.action.kendryte.build');
+		},
+	}));
+	maixMenu.append(new MenuItem({
+		label: nls.localize({ key: 'Debug', comment: ['&& denotes a mnemonic'] }, 'Start Debug'),
+		click: (menuItem, win, event) => {
+			runInMain('workbench.action.kendryte.run');
+		},
+	}));
+	maixMenu.append(new MenuItem({
+		label: nls.localize({ key: 'Upload', comment: ['&& denotes a mnemonic'] }, 'SPI Upload'),
+		click: (menuItem, win, event) => {
+			runInMain('workbench.action.kencode-oss-dev-builddryte.upload');
+		},
+	}));
+
+	maixMenu.append(__separator__());
 
 	maixMenu.append(new MenuItem({
 		label: nls.localize({ key: 'KendryteCreateShortcuts', comment: ['&& denotes a mnemonic'] }, 'Create shortcuts'),

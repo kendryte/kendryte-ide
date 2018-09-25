@@ -8,7 +8,7 @@ import { ACTION_ID_CREATE_SHORTCUTS, INodePathService } from 'vs/workbench/parts
 import { TPromise } from 'vs/base/common/winjs.base';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 
-class CreateShortcutsAction extends Action {
+export class CreateShortcutsAction extends Action {
 	public static readonly ID = ACTION_ID_CREATE_SHORTCUTS;
 	public static readonly LABEL = localize('CreateShortcuts', 'Create Shortcuts');
 

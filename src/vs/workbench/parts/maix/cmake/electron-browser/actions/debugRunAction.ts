@@ -75,7 +75,7 @@ class WorkspaceMaixLaunch implements ILaunch {
 			stopOnEntry: false,
 			showDevDebugOutput: false,
 			autorun: [
-				`python for cmd in ['delete breakpoints', 'delete tracepoints', 'load', 'interrupt']: gdb.execute(cmd)`,
+				`python for cmd in ['delete breakpoints', 'delete tracepoints', 'load']: gdb.execute(cmd)`,
 			],
 			gdbpath: this.GDB,
 		};
