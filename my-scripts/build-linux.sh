@@ -62,7 +62,7 @@ step "Build minified" \
 # not test...
 
 ############# create tar.gz
-TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.${ARCH}.tar.xz"
+TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.tar.xz"
 TARBALL_PATH="${RELEASE_ROOT}/${TARBALL_FILENAME}"
 
 RESULT="${RELEASE_ROOT}/VSCode-linux-${ARCH}"

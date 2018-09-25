@@ -14,7 +14,9 @@ function prepare_arch() {
 	mkdir -p "${ARCH_RELEASE_ROOT}"
 	mkdir -p "${HOME}"
 	unlink "${HOME}/.gitconfig" || true
-	ln -s "${REAL_HOME}/.gitconfig" "${HOME}/.gitconfig"
+#	ln -s "${REAL_HOME}/.gitconfig" "${HOME}/.gitconfig"
+	git config --global user.email "you@example.com"
+	git config --global user.name "Your Name"
 
 	### install nodejs
 	if [ ! -e "${NODEJS}" ]; then

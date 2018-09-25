@@ -215,3 +215,12 @@ function ensure_node_modules_in_current_dir() {
 		fi
 	fi
 }
+function path_foreach() {
+	local IFS=":"
+	local P="$1"
+	shift
+
+	for i in ${P} ; do
+		"$@" "$i"
+	done
+}

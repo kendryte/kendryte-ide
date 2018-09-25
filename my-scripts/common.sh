@@ -56,7 +56,16 @@ if [ -n "${ORIGINAL_PATH}" ]; then
 fi
 export PATH="./node_modules/.bin:${TOOLCHAIN_BIN}:${NODEJS_BIN}:/bin:/usr/bin:/usr/sbin"
 if [ "$SYSTEM" = "windows" ]; then
-	PATH="$PATH:$(cygpath -W):$(cygpath -S):$(cygpath -S)/Wbem:$(cygpath -S)/WindowsPowerShell/v1.0/"
+	WinPath=''
+	function pushP(){
+		if echo "$1" | grep -qE '^/cygdrive/' ; then
+			WinPath+="$1:"
+		fi
+	}
+	path_foreach "${ORIGINAL_PATH}" pushP
+
+	GIT="$(PATH="$WinPath" command -v git)" || die "git not installed"
+	PATH="$(dirname "$GIT"):$PATH:$(cygpath -W):$(cygpath -S):$(cygpath -S)/Wbem:$(cygpath -S)/WindowsPowerShell/v1.0/"
 fi
 
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =

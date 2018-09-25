@@ -65,7 +65,7 @@ step -r "Move ${RESULT} to ${WANT_RESULT}" \
 	bash -c "rm -rf '${WANT_RESULT}' && mv '${RESULT}' '${WANT_RESULT}'"
 
 TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.zip"
-step -r "Create ${WANT_RESULT} archive to ${TARBALL_FILENAME}" \
-	yarn run 7z a -tzip -y -r "${TARBALL_FILENAME}" "${PRODUCT_NAME}"
+step "Create ${WANT_RESULT} archive to ${TARBALL_FILENAME}" \
+	yarn run 7z a -tzip -y -r "../${TARBALL_FILENAME}" "../${PRODUCT_NAME}" 2>&1 | iconv -t utf8
 
 echo "Build success, the result file is ${RELEASE_ROOT}/${TARBALL_FILENAME}"
