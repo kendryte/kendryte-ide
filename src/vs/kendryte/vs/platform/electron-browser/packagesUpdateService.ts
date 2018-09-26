@@ -37,6 +37,7 @@ import { resolvePath } from 'vs/kendryte/vs/platform/node/resolvePath';
 import { basename } from 'vs/base/common/paths';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { CancellationToken } from 'vs/base/common/cancellation';
+import { IDisposable } from 'vs/base/common/lifecycle';
 
 const distributeUrl = 'https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/'; // MUST end with /
 const LAST_UPDATE_CACHE_KEY = '.last-check-update';
@@ -60,6 +61,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	protected runPromise: TPromise<any>;
 	protected logger: IChannelLogger;
 	private running: TPromise<void>;
+	private disShutdown: IDisposable;
 
 	constructor(
 		@INodePathService protected nodePathService: INodePathService,
@@ -113,7 +115,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 			return this.runPromise;
 		}
 
-		const disShutdown = this.lifecycleService.onWillShutdown((e) => {
+		this.disShutdown = this.lifecycleService.onWillShutdown((e) => {
 			if (this.runPromise) {
 				const force = confirm('Update is in progress.\nDo you want to force quit?\nUpdate will continue next time.');
 				e.veto(!force);
@@ -138,7 +140,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		});
 
 		return this.runPromise.then(() => {
-			disShutdown.dispose();
+			this.disShutdown.dispose();
 			entry.dispose();
 			delete this.runPromise;
 
@@ -146,7 +148,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 
 			return this.writeCache(LAST_UPDATE_CACHE_KEY, (new Date).getTime().toFixed(0));
 		}, (errors: Error[]) => {
-			disShutdown.dispose();
+			this.disShutdown.dispose();
 			entry.dispose();
 			delete this.runPromise;
 
@@ -663,7 +665,12 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	}
 
 	public async quitAndInstall(): TPromise<void> {
-		await this.running;
+		await this.running; // if run(), this is promise, otherwise, is null
+		delete this.runPromise; // if run(), runPromise = this.running + Promise(current function self), so this will never resolve or reject.
+		// if (check update) runPromise = null
+
+		this.disShutdown.dispose(); // prevent alert "do you really want to quit??"
+
 		await this.windowsService.relaunch({});
 		return undefined;
 	}
