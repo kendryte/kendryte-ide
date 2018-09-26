@@ -18,7 +18,7 @@
 	"darwinBundleIdentifier": "io.canaan.kendryte.ide",
 	"urlProtocol": "kendryte",
 	"updateUrl": "https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/",
-	"commit": "1.2.3",
+	"commit": "0.1.0",
 	"quality": "beta",
 	"reportIssueUrl": "https://github.com/kendryte/kendryte-ide/issues/new",
 	"extensionsGallery": {
