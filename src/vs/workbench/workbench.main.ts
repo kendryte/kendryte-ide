@@ -128,7 +128,7 @@ import 'vs/workbench/parts/performance/electron-browser/performance.contribution
 import 'vs/workbench/parts/cli/electron-browser/cli.contribution';
 
 // kendryte
-import 'kendryte/kendryte.workbench.main';
+import 'vs/kendryte/kendryte.workbench.main';
 
 import 'vs/workbench/api/electron-browser/extensionHost.contribution';
 

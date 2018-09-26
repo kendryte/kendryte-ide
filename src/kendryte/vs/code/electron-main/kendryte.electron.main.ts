@@ -1,1 +1,0 @@
-import 'kendryte/vs/code/electron-main/aboutMenuDialog';
