@@ -36,6 +36,7 @@ export function MaixBuildSystemPrepare(access: ServicesAccessor): TPromise<void>
 	const environmentService: IEnvironmentService = access.get(IEnvironmentService);
 
 	return installExtension(
+		'webfreak.debug',
 		'twxs.cmake',
 		'ms-vscode.cpptools',
 		'ms-ceintl.vscode-language-pack-zh-hans',

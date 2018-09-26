@@ -91,7 +91,8 @@ export interface ISettingItemTemplate<T = any> extends IDisposableTemplate {
 export const MAIX_CONFIG_KEY_DEBUG = 'debugger.target';
 export const MAIX_CONFIG_KEY_SERIAL_BAUDRATE = 'serialport.baudrate';
 
-export const INodePathService = createDecorator<INodePathService>('INodePathService');
+export const INodePathService = createDecorator<INodePathService>('nodePathService');
+export const INodeFileSystemService = createDecorator<INodeFileSystemService>('nodeFileSystemService');
 
 export interface INodePathService {
 	_serviceBrand: any;
@@ -123,6 +124,14 @@ export interface INodePathService {
 	tempDir(name?: string): string;
 
 	createAppLink(): TPromise<void>;
+}
+
+export interface INodeFileSystemService {
+	readFileIfExists(file: string): TPromise<string>;
+
+	readFileIfExists(file: string, raw: true): TPromise<Buffer>;
+
+	writeFileIfChanged(file: string, data: string | Buffer): TPromise<boolean>;
 }
 
 export interface IPackagesUpdateService extends IUpdateService {
