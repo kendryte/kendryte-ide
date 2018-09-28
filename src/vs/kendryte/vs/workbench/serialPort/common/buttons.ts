@@ -1,8 +1,8 @@
-import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
+import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { IStatusbarService, StatusbarAlignment } from 'vs/platform/statusbar/common/statusbar';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
-import { SERIAL_MONITOR_COMMAND_ID } from 'vs/kendryte/vs/workbench/serialPort/terminal/common/terminalCommands';
+import { SERIAL_MONITOR_ACTION_TOGGLE } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 
 export function addStatusBarButtons(access: ServicesAccessor) {
 	const statusbarService: IStatusbarService = access.get(IStatusbarService);
@@ -14,9 +14,12 @@ export function addStatusBarButtons(access: ServicesAccessor) {
 		dispose(entries);
 	});
 
-	const entry2 = statusbarService.addEntry({
-		text: '$(plug) $(terminal)',
-		command: SERIAL_MONITOR_COMMAND_ID.TOGGLE,
-	}, StatusbarAlignment.RIGHT, 100);
-	entries.push(entry2);
+	lifecycleService.when(LifecyclePhase.Running).then(() => {
+		const entry2 = statusbarService.addEntry({
+			text: '$(plug) $(terminal)',
+			command: SERIAL_MONITOR_ACTION_TOGGLE,
+		}, StatusbarAlignment.RIGHT, 100);
+
+		entries.push(entry2);
+	});
 }

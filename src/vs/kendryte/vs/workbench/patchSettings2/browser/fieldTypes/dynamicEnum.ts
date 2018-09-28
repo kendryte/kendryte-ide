@@ -45,9 +45,9 @@ export class DynamicEnumInject extends FieldInject<string, Template> {
 		}
 		const IDecorator = enumDef.service;
 
-		const service: EnumProviderService = this.instantiationService.invokeFunction((accessor: ServicesAccessor) => {
+		const service: EnumProviderService<string> = this.instantiationService.invokeFunction((accessor: ServicesAccessor) => {
 			return accessor.get(IDecorator);
-		}) as EnumProviderService;
+		}) as EnumProviderService<string>;
 
 		template.input.value = element.value;
 		template.input.registerEnum(service.getValues());

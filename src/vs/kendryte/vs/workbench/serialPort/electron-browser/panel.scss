@@ -1,0 +1,59 @@
+.monaco-workbench .panel.serial-monitor-panel {
+	display: flex;
+	flex-direction: row;
+	box-sizing: border-box;
+	padding: 4px;
+	
+	> .left-panel {
+		margin-right: 4px;
+		display: flex;
+		flex-direction: column;
+		> .devices-list-container {
+			overflow: hidden;
+			.monaco-list-row {
+				line-height: 24px;
+				vertical-align: middle;
+			}
+		}
+	}
+	> .right-panel {
+		display: flex;
+		flex-direction: column;
+		flex-grow: 1;
+		> .tool-button-bar {
+			display: flex;
+			flex-direction: row;
+			margin-bottom: 2px;
+			> .monaco-button {
+				margin-right: 4px;
+				width: 32px;
+			}
+			> .spacer {
+				flex-grow: 1;
+			}
+		}
+		> .repl {
+			display: flex;
+			flex-direction: column;
+			flex-grow: 1;
+			> .terminal-wrapper {
+				flex-grow: 1;
+			}
+			> .repl-input-wrapper {
+				position: relative;
+				> .repl-placeholder {
+					position: absolute;
+					z-index: 0;
+				}
+				> .monaco-editor {
+					position: relative;
+					z-index: 1;
+				}
+				> .monaco-editor,
+				.monaco-editor-background {
+					background: transparent !important;
+				}
+			}
+		}
+	}
+}

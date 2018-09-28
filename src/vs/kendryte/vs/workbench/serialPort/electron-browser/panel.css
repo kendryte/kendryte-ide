@@ -1,0 +1,46 @@
+.monaco-workbench .panel.serial-monitor-panel {
+  display: flex;
+  flex-direction: row;
+  box-sizing: border-box;
+  padding: 4px; }
+  .monaco-workbench .panel.serial-monitor-panel > .left-panel {
+    margin-right: 4px;
+    display: flex;
+    flex-direction: column; }
+    .monaco-workbench .panel.serial-monitor-panel > .left-panel > .devices-list-container {
+      overflow: hidden; }
+      .monaco-workbench .panel.serial-monitor-panel > .left-panel > .devices-list-container .monaco-list-row {
+        line-height: 24px;
+        vertical-align: middle; }
+  .monaco-workbench .panel.serial-monitor-panel > .right-panel {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1; }
+    .monaco-workbench .panel.serial-monitor-panel > .right-panel > .tool-button-bar {
+      display: flex;
+      flex-direction: row;
+      margin-bottom: 2px; }
+      .monaco-workbench .panel.serial-monitor-panel > .right-panel > .tool-button-bar > .monaco-button {
+        margin-right: 4px;
+        width: 32px; }
+      .monaco-workbench .panel.serial-monitor-panel > .right-panel > .tool-button-bar > .spacer {
+        flex-grow: 1; }
+    .monaco-workbench .panel.serial-monitor-panel > .right-panel > .repl {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1; }
+      .monaco-workbench .panel.serial-monitor-panel > .right-panel > .repl > .terminal-wrapper {
+        flex-grow: 1; }
+      .monaco-workbench .panel.serial-monitor-panel > .right-panel > .repl > .repl-input-wrapper {
+        position: relative; }
+        .monaco-workbench .panel.serial-monitor-panel > .right-panel > .repl > .repl-input-wrapper > .repl-placeholder {
+          position: absolute;
+          z-index: 0; }
+        .monaco-workbench .panel.serial-monitor-panel > .right-panel > .repl > .repl-input-wrapper > .monaco-editor {
+          position: relative;
+          z-index: 1; }
+        .monaco-workbench .panel.serial-monitor-panel > .right-panel > .repl > .repl-input-wrapper > .monaco-editor,
+        .monaco-workbench .panel.serial-monitor-panel > .right-panel > .repl > .repl-input-wrapper .monaco-editor-background {
+          background: transparent !important; }
+
+/*# sourceMappingURL=panel.css.map */

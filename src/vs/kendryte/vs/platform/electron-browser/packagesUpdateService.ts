@@ -38,6 +38,7 @@ import { basename } from 'vs/base/common/paths';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IDisposable } from 'vs/base/common/lifecycle';
+import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 
 const distributeUrl = 'https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/'; // MUST end with /
 const LAST_UPDATE_CACHE_KEY = '.last-check-update';
@@ -76,6 +77,7 @@ class PackagesUpdateService implements IPackagesUpdateService {
 		@IWindowService protected windowService: IWindowService,
 		@IWindowsService protected windowsService: IWindowsService,
 		@IEnvironmentService protected environmentService: IEnvironmentService,
+		@IStorageService private storageService: IStorageService,
 	) {
 		this.logger = channelLogService.createChannel({
 			id: PACKAGE_UPDATER_LOG_CHANNEL, label: 'Kendryte Update', log: true,
@@ -665,6 +667,8 @@ class PackagesUpdateService implements IPackagesUpdateService {
 	}
 
 	public async quitAndInstall(): TPromise<void> {
+		this.storageService.store('workbench.panel.pinnedPanels', '[]', StorageScope.GLOBAL);
+
 		await this.running; // if run(), this is promise, otherwise, is null
 		delete this.runPromise; // if run(), runPromise = this.running + Promise(current function self), so this will never resolve or reject.
 		// if (check update) runPromise = null

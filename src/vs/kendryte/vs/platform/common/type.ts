@@ -3,18 +3,19 @@ import { IDisposable } from 'vs/base/common/lifecycle';
 import { createDecorator, ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 import { ISetting } from 'vs/workbench/services/preferences/common/preferences';
 import { IUpdateService } from 'vs/platform/update/common/update';
+import { Event } from 'vs/base/common/event';
 
-export interface EnumProviderService {
+export interface EnumProviderService<T> {
 	// get enum selection list
-	getValues(): TPromise<string[]> | string[];
+	getValues(): TPromise<T[]> | T[];
 
-	onChange(cb: (list: string[]) => void): IDisposable;
+	onChange: Event<T[]>;
 }
 
-export interface EnumProviderConfig {
+export interface EnumProviderConfig<T> {
 	__dyn_enum: boolean;
 
-	service: ServiceIdentifier<EnumProviderService> | string;
+	service: ServiceIdentifier<EnumProviderService<T>> | string;
 	editable: boolean;
 
 	toString(): string;
@@ -24,15 +25,15 @@ export function isDynamicEnum(setting: ISetting): boolean {
 	return setting && setting.enumDescriptions && '__dyn_enum' in setting.enumDescriptions;
 }
 
-export function getDynamicEnum(setting: ISetting): EnumProviderConfig {
+export function getDynamicEnum<T>(setting: ISetting): EnumProviderConfig<T> {
 	if (isDynamicEnum(setting)) {
-		return setting.enumDescriptions as any as EnumProviderConfig;
+		return setting.enumDescriptions as any as EnumProviderConfig<T>;
 	} else {
 		return null;
 	}
 }
 
-export function dynamicEnum(service: ServiceIdentifier<EnumProviderService>, editable: boolean): EnumProviderConfig {
+export function dynamicEnum<T>(service: ServiceIdentifier<EnumProviderService<T>>, editable: boolean): EnumProviderConfig<T> {
 	return Object['assign']([], {
 		__dyn_enum: true,
 		service,

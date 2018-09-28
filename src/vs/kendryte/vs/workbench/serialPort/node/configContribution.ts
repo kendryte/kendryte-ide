@@ -2,8 +2,7 @@ import { Extensions as ConfigurationExtensions, IConfigurationRegistry } from 'v
 import { localize } from 'vs/nls';
 import { dynamicEnum } from 'vs/kendryte/vs/platform/common/type';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { CONFIG_KEY_SRIAL_PORT } from 'vs/kendryte/vs/workbench/serialPort/common/type';
-import { ReloadSerialPortDevicesAction } from 'vs/kendryte/vs/workbench/serialPort/node/reloadAction';
+import { CONFIG_KEY_SRIAL_PORT, SERIAL_MONITOR_ACTION_REFRESH_DEVICE } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
 
 Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).registerConfiguration({
@@ -22,7 +21,7 @@ Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).regis
 			type: 'button',
 			description: localize('serialport.reloadDevice.desc', 'Reload device list'),
 			overridable: false,
-			default: ReloadSerialPortDevicesAction.ID,
+			default: SERIAL_MONITOR_ACTION_REFRESH_DEVICE,
 		},
 	},
 });

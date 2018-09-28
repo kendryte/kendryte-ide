@@ -1,6 +1,6 @@
 //// included by "vs/workbench/workbench.main.ts"
 
-// misc
+// Misc Services
 import 'vs/kendryte/vs/platform/node/nodePathService';
 import 'vs/kendryte/vs/platform/node/nodeRequestService';
 import 'vs/kendryte/vs/platform/electron-browser/packagesUpdateService';
@@ -19,17 +19,18 @@ import 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaContribution'
 import 'vs/kendryte/vs/workbench/fpioaConfig/common/packagings/includeAllContribution';
 // Serial Devices
 import 'vs/kendryte/vs/workbench/serialPort/node/configContribution';
-import 'vs/kendryte/vs/workbench/serialPort/electron-browser/serialService';
+import 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
 import 'vs/kendryte/vs/workbench/serialPort/node/reloadAction';
 // Serial Upload
 import 'vs/kendryte/vs/workbench/serialPort/upload/node/uploadContribution';
 // Serial Monitor
-import 'vs/kendryte/vs/workbench/serialPort/terminal/electron-browser/terminal.contribution';
-import 'vs/kendryte/vs/workbench/serialPort/panel/electron-browser/serialPanelContribution';
-// menus
+import 'vs/kendryte/vs/workbench/serialPort/electron-browser/serialMonitorPanel';
+import 'vs/kendryte/vs/workbench/serialPort/common/serialMonitorActions';
+import 'vs/kendryte/vs/workbench/serialPort/browser/actions';
+// app top menus
 import 'vs/kendryte/vs/platform/electron-browser/menuContribution';
 import 'vs/kendryte/vs/platform/node/shortcutsContribution';
 // cmake
 import 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeContribution';
-// PM
+// Package Manager
 import 'vs/kendryte/vs/workbench/packageManager/node/actionsContribution';

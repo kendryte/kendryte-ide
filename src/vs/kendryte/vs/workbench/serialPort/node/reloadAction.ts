@@ -2,16 +2,13 @@ import { INotificationService } from 'vs/platform/notification/common/notificati
 import { TPromise } from 'vs/base/common/winjs.base';
 import { Action } from 'vs/base/common/actions';
 import { localize } from 'vs/nls';
-import { SerialPortActionCategory } from 'vs/kendryte/vs/workbench/serialPort/common/type';
+import { SERIAL_MONITOR_ACTION_REFRESH_DEVICE, SerialPortActionCategory } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import BaseSeverity from 'vs/base/common/severity';
-import { MenuId, MenuRegistry, SyncActionDescriptor } from 'vs/platform/actions/common/actions';
-import { Extensions as ActionExtensions, IWorkbenchActionRegistry } from 'vs/workbench/common/actions';
-import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
-import { Registry } from 'vs/platform/registry/common/platform';
 import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
+import { registerExternalAction } from 'vs/kendryte/vs/platform/common/registerAction';
 
-export class ReloadSerialPortDevicesAction extends Action {
-	public static readonly ID = 'ReloadSerialPortDevicesAction';
+class ReloadSerialPortDevicesAction extends Action {
+	public static readonly ID = SERIAL_MONITOR_ACTION_REFRESH_DEVICE;
 	public static readonly LABEL = localize('serialport.reloadDevice.title', 'Reload device list');
 
 	constructor(
@@ -30,25 +27,8 @@ export class ReloadSerialPortDevicesAction extends Action {
 			severity: BaseSeverity.Info,
 			message: `Serial device rescan complete. (${devices.length} devices)`,
 		});
-		return devices;
+		return devices.map(entry => entry.comName);
 	}
 }
 
-Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(
-		new SyncActionDescriptor(
-			ReloadSerialPortDevicesAction,
-			ReloadSerialPortDevicesAction.ID,
-			ReloadSerialPortDevicesAction.LABEL,
-			{ primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.US_COMMA },
-		),
-		'Serial: Reload device lists',
-		SerialPortActionCategory,
-	);
-
-MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
-	command: {
-		id: ReloadSerialPortDevicesAction.ID,
-		title: `${SerialPortActionCategory}: ${ReloadSerialPortDevicesAction.LABEL}`,
-	},
-});
+registerExternalAction(SerialPortActionCategory, ReloadSerialPortDevicesAction);
