@@ -13,13 +13,7 @@ import { SerialPortBaseBinding } from 'vs/kendryte/vs/workbench/serialPort/node/
 import { ninvoke } from 'vs/base/common/async';
 
 function testSame(a: SerialPortItem, b: SerialPortItem) {
-	return a.comName === b.comName &&
-	       a.locationId === b.locationId &&
-	       a.manufacturer === b.manufacturer &&
-	       a.pnpId === b.pnpId &&
-	       a.productId === b.productId &&
-	       a.serialNumber === b.serialNumber &&
-	       a.vendorId === b.vendorId;
+	return a.comName === b.comName && a.locationId === b.locationId && a.manufacturer === b.manufacturer && a.pnpId === b.pnpId && a.productId === b.productId && a.serialNumber === b.serialNumber && a.vendorId === b.vendorId;
 }
 
 class SerialPortService implements ISerialPortService {
