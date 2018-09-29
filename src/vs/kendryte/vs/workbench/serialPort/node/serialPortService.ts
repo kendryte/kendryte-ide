@@ -1,4 +1,4 @@
-import { EnumProviderService, MAIX_CONFIG_KEY_SERIAL_BAUDRATE } from 'vs/kendryte/vs/platform/common/type';
+import { EnumProviderService } from 'vs/kendryte/vs/platform/common/type';
 import { createDecorator, IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { TPromise } from 'vs/base/common/winjs.base';
 import * as SerialPort from 'serialport';
@@ -6,10 +6,11 @@ import { Emitter, Event } from 'vs/base/common/event';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { ILogService } from 'vs/platform/log/common/log';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { addStatusBarButtons } from 'vs/kendryte/vs/workbench/serialPort/common/buttons';
 import { SerialPortItem } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { array_has_diff_cb } from 'vs/kendryte/vs/platform/common/utils';
+import { SerialPortBaseBinding } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
+import { ninvoke } from 'vs/base/common/async';
 
 function testSame(a: SerialPortItem, b: SerialPortItem) {
 	return a.comName === b.comName &&
@@ -28,18 +29,25 @@ class SerialPortService implements ISerialPortService {
 	private memSerialDevices: SerialPortItem[];
 
 	private cachedPromise: TPromise<void>;
-	private openedPorts = new Map<string, SerialPort>();
+	private openedPorts = new Map<string, SerialPort & SerialPortBaseBinding>();
 
 	public readonly onChange: Event<SerialPortItem[]> = this.devicesListChange.event;
 
 	constructor(
-		@IInstantiationService protected instantiationService: IInstantiationService,
+		@IInstantiationService instantiationService: IInstantiationService,
 		@ILifecycleService lifecycleService: ILifecycleService,
-		@IConfigurationService protected configurationService: IConfigurationService,
-		@ILogService protected logService: ILogService,
+		@ILogService private logService: ILogService,
 	) {
 		instantiationService.invokeFunction(addStatusBarButtons);
 		this.refreshDevices();
+		lifecycleService.onWillShutdown(async () => {
+			for (const port of Array.from<SerialPort>(this.openedPorts.values())) {
+				await ninvoke(port, port.close).then(undefined, (e: Error) => {
+					this.logService.error(e);
+				});
+			}
+			return true;
+		});
 	}
 
 	public refreshDevices() {
@@ -72,7 +80,18 @@ class SerialPortService implements ISerialPortService {
 		}
 	}
 
-	public openPort(serialDevice: string, opts: Partial<SerialPort.OpenOptions> = {}, exclusive = false): TPromise<SerialPort> {
+	public closePort(serialDevice: string | SerialPortBaseBinding): TPromise<void> {
+		if (typeof serialDevice === 'string') {
+			if (!this.openedPorts.has(serialDevice)) {
+				return TPromise.as(void 0);
+			}
+			serialDevice = this.openedPorts.get(serialDevice);
+		}
+
+		return ninvoke(serialDevice, (serialDevice as any as SerialPort).close);
+	}
+
+	public openPort(serialDevice: string, opts: Partial<SerialPort.OpenOptions> = {}, exclusive = false): TPromise<SerialPort & SerialPortBaseBinding> {
 		if (this.openedPorts.has(serialDevice)) {
 			const exists = this.openedPorts.get(serialDevice);
 			if (exclusive) {
@@ -95,15 +114,13 @@ class SerialPortService implements ISerialPortService {
 				});
 			}
 		}
-		const br = parseInt(this.configurationService.getValue(MAIX_CONFIG_KEY_SERIAL_BAUDRATE)) || 115200;
 		opts = {
 			lock: false,
 			...opts,
 			autoOpen: false,
-			baudRate: br,
 		};
-		const port = new SerialPort(serialDevice, opts);
-		console.log('open serial port with args: %o', opts);
+		console.log('open serial port %s with %o (exclusive=%s)', serialDevice, opts, exclusive);
+		const port: SerialPort & SerialPortBaseBinding = new SerialPort(serialDevice, opts) as any;
 		port.on('close', () => {
 			this.logService.info('[serial port] ' + serialDevice + ' is end!');
 			port.removeAllListeners();
@@ -132,7 +149,9 @@ export interface ISerialPortService extends EnumProviderService<SerialPortItem> 
 
 	refreshDevices(): void;
 
-	openPort(serialDevice: string, opts?: Partial<SerialPort.OpenOptions>, exclusive?: boolean): TPromise<SerialPort>;
+	openPort(serialDevice: string, opts?: Partial<SerialPort.OpenOptions>, exclusive?: boolean): TPromise<SerialPortBaseBinding>;
+
+	closePort(serialDevice: string | SerialPortBaseBinding): TPromise<void>;
 }
 
 export const ISerialPortService = createDecorator<ISerialPortService>('serialPortService');

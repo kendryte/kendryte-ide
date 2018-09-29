@@ -39,6 +39,18 @@ function prepare_arch() {
 	fi
 }
 
+function install_node_mac() {
+	echo "install nodejs on MacOS $1 to $2"
+	local ARCH="$1"
+	local INSTALL_NODE="$2"
+	mkdir -p "${INSTALL_NODE}"
+	if [ ! -e "${INSTALL_NODE}.tar.xz" ]; then
+		wget -c -O "${INSTALL_NODE}.tar.xz.downloading" "https://nodejs.org/dist/v8.11.2/node-v8.11.2-darwin-${ARCH}.tar.xz"
+		mv "${INSTALL_NODE}.tar.xz.downloading" "${INSTALL_NODE}.tar.xz"
+	fi
+
+	tar xf "${INSTALL_NODE}.tar.xz" --strip-components=1 -C "${INSTALL_NODE}"
+}
 function install_node_linux() {
 	echo "install nodejs on linux $1 to $2"
 	local ARCH="$1"
@@ -69,11 +81,6 @@ function install_node_windows() {
 	cp -ru "${INSTALL_NODE}/../node-v8.11.2-win-x64/." "${INSTALL_NODE}"
 }
 
-FOUND_CYGWIN=$(find /bin -name 'cygwin*.dll')
-if [ -n "${FOUND_CYGWIN}" ]; then
-	SYSTEM="windows"
-else
-	SYSTEM="linux"
-fi
+detect_system
 
 prepare_arch "$SYSTEM" x64

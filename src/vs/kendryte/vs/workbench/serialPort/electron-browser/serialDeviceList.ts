@@ -5,17 +5,23 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { localize } from 'vs/nls';
 import { IRenderer, IVirtualDelegate } from 'vs/base/browser/ui/list/list';
-import { ISerialPortStatus, SerialPortItem } from 'vs/kendryte/vs/workbench/serialPort/common/type';
+import { SerialPortItem } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import 'vs/css!vs/kendryte/vs/workbench/serialPort/electron-browser/panel';
 import { OcticonLabel } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 import { addDisposableListener } from 'vs/base/browser/dom';
+import { ISerialPortStatus } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
+
+interface IStatusWithSelect extends ISerialPortStatus {
+	selected?: boolean;
+}
 
 export class SerialDeviceList extends Disposable {
-	private readonly _onClick = new Emitter<ISerialPortStatus>();
-	readonly onClick: Event<ISerialPortStatus> = this._onClick.event;
+	private readonly _onClick = new Emitter<IStatusWithSelect>();
+	readonly onClick: Event<IStatusWithSelect> = this._onClick.event;
 
-	protected readonly list: WorkbenchList<ISerialPortStatus>;
-	private dataList: ISerialPortStatus[];
+	protected readonly list: WorkbenchList<IStatusWithSelect>;
+	private dataList: IStatusWithSelect[];
+	private currentSelect: IStatusWithSelect;
 
 	constructor(
 		container: HTMLElement,
@@ -36,45 +42,82 @@ export class SerialDeviceList extends Disposable {
 				keyboardSupport: false,
 				mouseSupport: false,
 			},
-		) as WorkbenchList<ISerialPortStatus>;
+		) as WorkbenchList<IStatusWithSelect>;
 		this._register(this.list);
+
+		this._register(this.onClick((item) => {
+			if (this.currentSelect) {
+				let last = this.currentSelect;
+				delete this.currentSelect;
+				last.selected = false;
+				this.refreshItem(last);
+			}
+			item.selected = true;
+			this.refreshItem(item);
+			this.currentSelect = item;
+		}));
 	}
 
 	layout(height: number) {
 		this.list.layout(height);
 	}
 
-	protected createDelegate(): IVirtualDelegate<ISerialPortStatus> {
+	protected createDelegate(): IVirtualDelegate<IStatusWithSelect> {
 		return {
-			getHeight(element: ISerialPortStatus): number {
+			getHeight(element: IStatusWithSelect): number {
 				return 24;
 			},
-			getTemplateId(element: ISerialPortStatus): string {
+			getTemplateId(element: IStatusWithSelect): string {
 				return 'serialPortTemplate';
 			},
 		};
 	}
 
 	updateList(list: SerialPortItem[]) {
-		if (!this.dataList) {
+		if (this.dataList) {
+			const map: { [dev: string]: boolean } = {};
+			for (const item of this.dataList) {
+				map[item.portItem.comName] = item.hasOpen;
+			}
+			this.dataList = list.map((entry) => {
+				return {
+					portItem: entry,
+					hasOpen: map[entry.comName] || false,
+				};
+			});
+
+			console.log('update-list');
+			this.list.splice(0, this.list.length, this.dataList);
+		} else {
 			this.dataList = list.map((entry) => {
 				return { portItem: entry, hasOpen: false };
 			});
 			this.list.splice(0, 0, this.dataList);
+		}
+
+		this.recheckCurrent();
+	}
+
+	refreshItem(item: IStatusWithSelect) {
+		const index = this.dataList.indexOf(item);
+		if (index === -1) {
+			debugger;
+		}
+		this.list.splice(index, 1, [item]);
+
+		this.recheckCurrent();
+	}
+
+	private recheckCurrent() {
+		if (!this.currentSelect) {
 			return;
 		}
-		const map: { [dev: string]: boolean } = {};
-		for (const item of this.dataList) {
-			map[item.portItem.comName] = item.hasOpen;
-		}
-		this.dataList = list.map((entry) => {
-			return {
-				portItem: entry,
-				hasOpen: map[entry.comName] || false,
-			};
-		});
 
-		this.list.splice(0, this.list.length, this.dataList);
+		const index = this.dataList.indexOf(this.currentSelect);
+		if (index === -1) {
+			delete this.currentSelect;
+			return;
+		}
 	}
 }
 
@@ -82,12 +125,12 @@ interface ISerialPortItemTemplate {
 	dis: IDisposable;
 	parent: HTMLElement;
 	icon: OcticonLabel;
-	current: ISerialPortStatus;
+	current: IStatusWithSelect;
 }
 
-class SerialPortItemRenderer implements IRenderer<ISerialPortStatus, ISerialPortItemTemplate> {
+class SerialPortItemRenderer implements IRenderer<IStatusWithSelect, ISerialPortItemTemplate> {
 	constructor(
-		private readonly onClick: Emitter<ISerialPortStatus>,
+		private readonly onClick: Emitter<IStatusWithSelect>,
 	) {
 	}
 
@@ -112,18 +155,30 @@ class SerialPortItemRenderer implements IRenderer<ISerialPortStatus, ISerialPort
 		return ret;
 	}
 
-	renderElement(entry: ISerialPortStatus, index: number, templateData: ISerialPortItemTemplate): void {
+	renderElement(entry: IStatusWithSelect, index: number, templateData: ISerialPortItemTemplate): void {
 		const port = entry.portItem;
 
 		templateData.current = entry;
 
-		const ico = entry.hasOpen ? 'plug' : 'primitive-square';
+		let ico;
 		if (entry.hasOpen) {
+			if (entry.openMode === 'raw') {
+				ico = '$(plug)$(file-binary)　';
+			} else {
+				ico = '$(plug)$(terminal)　';
+			}
 			templateData.parent.classList.add('open');
 			templateData.parent.classList.remove('close');
 		} else {
+			ico = '$(primitive-square)　';
 			templateData.parent.classList.remove('open');
 			templateData.parent.classList.add('close');
+		}
+
+		if (entry.selected) {
+			templateData.parent.classList.add('selected');
+		} else {
+			templateData.parent.classList.remove('selected');
 		}
 
 		let title = port.comName;
@@ -134,7 +189,7 @@ class SerialPortItemRenderer implements IRenderer<ISerialPortStatus, ISerialPort
 			}
 		}
 
-		templateData.icon.text = `$(${ico}) ${title}`;
+		templateData.icon.text = `${ico}${title}`;
 		templateData.parent.title = `${title}
 location=${port.locationId || ''}
 pnp=${port.pnpId || ''}
@@ -142,7 +197,7 @@ vendor=${port.vendorId || ''}
 product=${port.productId || ''}`;
 	}
 
-	public disposeElement(element: ISerialPortStatus, index: number, templateData: ISerialPortItemTemplate): void {
+	public disposeElement(element: IStatusWithSelect, index: number, templateData: ISerialPortItemTemplate): void {
 		templateData.parent.title = '';
 		templateData.icon.text = '';
 	}

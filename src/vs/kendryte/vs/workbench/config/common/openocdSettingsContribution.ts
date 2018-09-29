@@ -2,6 +2,7 @@ import { Extensions as ConfigurationExtensions, IConfigurationRegistry } from 'v
 import { Registry } from 'vs/platform/registry/common/platform';
 import { localize } from 'vs/nls';
 import { MAIX_CONFIG_KEY_DEBUG, MAIX_CONFIG_KEY_SERIAL_BAUDRATE } from 'vs/kendryte/vs/platform/common/type';
+import { standardBaudRate } from 'vs/kendryte/vs/workbench/config/common/baudrate';
 
 Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).registerConfiguration({
 	id: 'debugger',
@@ -15,7 +16,7 @@ Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).regis
 		[MAIX_CONFIG_KEY_SERIAL_BAUDRATE]: {
 			title: localize('baudrate', 'Baudrate'),
 			type: 'string',
-			enum: [110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200, 128000, 256000].map(e => e.toString()),
+			enum: standardBaudRate.map(e => e.toString()),
 			default: '115200',
 			description: localize('flash.device.id.desc', 'OpenOCD host or IP address.(No effect when target is localhost)'),
 		},

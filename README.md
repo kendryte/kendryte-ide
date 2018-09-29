@@ -28,6 +28,12 @@ wqy-zenhei-fonts wqy-unibit-fonts wqy-bitmap-fonts # locale font
 
 *In theory, any bash env with these packages is ok, but not tested*
 
+#### On MacOS:
+```bash
+brew install coreutils findutils gnu-tar gnu-sed gawk gnutls gnu-indent gnu-getopt
+```
+
+
 ## Run From Source
 1. Open a terminal. (cygwin terminal on windows)
 1. get source and chdir into: `git clone git@github.com:kendryte/kendryte-ide.git && cd kendryte-ide`

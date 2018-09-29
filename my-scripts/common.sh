@@ -28,16 +28,17 @@ if [ -n "${HTTP_PROXY}${http_proxy}" ]; then
 	export HTTPS_PROXY="${HTTP_PROXY}" http_proxy="${HTTP_PROXY}" https_proxy="${HTTP_PROXY}"
 fi
 
+export SYSTEM=
+export FOUND_CYGWIN=
+detect_system
 if [ -z "${FOUND_CYGWIN}" ] || [ -z "${NODEJS}" ] ; then
 	export FOUND_CYGWIN=$(find /bin -name 'cygwin*.dll')
 	export NODEJS_INSTALL="${HOME}/nodejs/${ARCH}"
-	if [ -n "${FOUND_CYGWIN}" ]; then
-		export SYSTEM="windows"
+	if [ "${SYSTEM}" = "windows" ]; then
 		export NODEJS="${NODEJS_INSTALL}/node.exe"
 		export NODEJS_BIN="${NODEJS_INSTALL}"
 		function sudo() { "$@"; }
 	else
-		export SYSTEM="linux"
 		export NODEJS="${NODEJS_INSTALL}/bin/node"
 		export NODEJS_BIN="${NODEJS_INSTALL}/bin"
 		if ! command -v sudo &>/dev/null ; then
@@ -54,7 +55,12 @@ fi
 if [ -n "${ORIGINAL_PATH}" ]; then
 	export ORIGINAL_PATH="$PATH"
 fi
-export PATH="./node_modules/.bin:${TOOLCHAIN_BIN}:${NODEJS_BIN}:/bin:/usr/bin:/usr/sbin"
+
+if [ "$SYSTEM" = "mac" ]; then
+	MAC_LOCAL='/usr/local/bin:' # brew default
+fi
+
+export PATH="./node_modules/.bin:${TOOLCHAIN_BIN}:${NODEJS_BIN}:${MAC_LOCAL}/bin:/usr/bin:/usr/sbin"
 if [ "$SYSTEM" = "windows" ]; then
 	WinPath=''
 	function pushP(){

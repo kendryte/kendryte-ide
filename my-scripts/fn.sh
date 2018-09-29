@@ -224,3 +224,17 @@ function path_foreach() {
 		"$@" "$i"
 	done
 }
+
+function detect_system() {
+	unameOut="$(uname -s)"
+	case "${unameOut}" in
+	    Linux*)     export SYSTEM='linux';;
+	    Darwin*)    export SYSTEM='mac';;
+	    CYGWIN*)    export SYSTEM='windows';;
+	    *)
+	        die "not supported platform: ${unameOut}"
+	esac
+	if [ "${SYSTEM}" = "windows" ]; then
+		export FOUND_CYGWIN=$(find /bin -name 'cygpath.exe')
+	fi
+}

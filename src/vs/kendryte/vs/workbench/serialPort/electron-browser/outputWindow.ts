@@ -10,6 +10,8 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import * as nls from 'vs/nls';
 import { $, append, Dimension } from 'vs/base/browser/dom';
 import { Emitter, Event } from 'vs/base/common/event';
+import { ILocalOptions, SerialPortBaseBinding, serialPortEOL } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
+import { Writable } from 'stream';
 
 let Terminal: typeof XTermTerminal;
 
@@ -24,7 +26,14 @@ export class OutputXTerminal implements IDisposable {
 	protected _isVisible = true;
 	protected _wrapperElement: HTMLElement;
 
+	protected scrollbackList = new Map<SerialPortBaseBinding, ScrollbackBuffer>();
+
 	private readonly _onDimensionsChanged: Emitter<void> = new Emitter<void>();
+	private last: ScrollbackBuffer;
+	private inputReading: IDisposable;
+	private encoding: ILocalOptions['charset'];
+	private ending: string;
+
 	public get onDimensionsChanged(): Event<void> { return this._onDimensionsChanged.event; }
 
 	constructor(
@@ -117,5 +126,101 @@ export class OutputXTerminal implements IDisposable {
 	dispose() {
 		dispose(this._disposables);
 		this._xterm.dispose();
+	}
+
+	handleSerialIncoming(instance: SerialPortBaseBinding) {
+		if (this.last) {
+			this.last.deletePipe();
+		}
+
+		if (!instance) {
+			return;
+		}
+
+		if (!this.scrollbackList.has(instance)) {
+			const scrollbackBuffer = new ScrollbackBuffer(this.encoding);
+			this.scrollbackList.set(instance, scrollbackBuffer);
+			instance.pipe(scrollbackBuffer);
+		}
+
+		const buff = this.scrollbackList.get(instance);
+		buff.pipeTo(this._xterm);
+		this.last = buff;
+	}
+
+	destroyScrollback(instance: SerialPortBaseBinding) {
+		if (!this.scrollbackList.has(instance)) {
+			return;
+		}
+
+		const buff = this.scrollbackList.get(instance);
+		buff.destroy();
+		this.scrollbackList.delete(instance);
+
+		if (buff === this.last) {
+			this.last.destroy();
+			delete this.last;
+		}
+	}
+
+	handleUserType(instance: Writable, echo: boolean) {
+		if (instance) {
+			this.inputReading = this._xterm.addDisposableListener('data', (buff: string) => {
+				const r = Buffer.from(buff.replace(/\r/g, this.ending || '\n'), this.encoding);
+				console.log('xterm input', r);
+				instance.write(r);
+				if (echo) {
+					this._xterm.write(buff.replace(/\r/g, '\n\r'));
+				}
+			});
+		} else if (this.inputReading) {
+			this.inputReading.dispose();
+		}
+	}
+
+	setOptions(options: ILocalOptions = {} as any) {
+		this.encoding = options.charset || 'binary';
+		this.ending = serialPortEOL.get(options.lineEnding) || '';
+	}
+
+	write(s: string) {
+		this._xterm.write(s);
+	}
+}
+
+const Escape = Buffer.from([0x1B, 0x63]); // \ec
+
+class ScrollbackBuffer extends Writable {
+	private scrollback: string;
+	private target: XTermTerminal;
+
+	constructor(private encoding: ILocalOptions['charset']) {
+		super();
+	}
+
+	pipeTo(_xterm: XTermTerminal) {
+		_xterm.clear();
+		_xterm.write(this.scrollback);
+		this.target = _xterm;
+	}
+
+	_write(data: Buffer) {
+		if (data.indexOf(Escape) !== -1) {
+			this.scrollback = '';
+		}
+		const str = data.toString(this.encoding);
+		this.scrollback += str;
+		if (this.target) {
+			this.target.write(str);
+		}
+	}
+
+	destroy() {
+		super.destroy();
+		delete this.target;
+	}
+
+	deletePipe() {
+		delete this.target;
 	}
 }

@@ -5,8 +5,9 @@ import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegis
 import { EditorContextKeys } from 'vs/editor/common/editorContextKeys';
 import * as nls from 'vs/nls';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
-import { CONTEXT_IN_SERIAL_PORT_REPL, ISerialPrivateReplService, SERIAL_MONITOR_ACTION_REPL_ENTER } from 'vs/kendryte/vs/workbench/serialPort/common/type';
+import { CONTEXT_IN_SERIAL_PORT_REPL, SERIAL_MONITOR_ACTION_REPL_ENTER } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { MenuId, MenuRegistry } from 'vs/platform/actions/common/actions';
+import { ISerialPrivateReplService } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/serialPrivateReplService';
 
 class AcceptReplInputAction extends EditorAction {
 	static readonly ID = SERIAL_MONITOR_ACTION_REPL_ENTER;
@@ -30,7 +31,6 @@ class AcceptReplInputAction extends EditorAction {
 	}
 
 	public run(accessor: ServicesAccessor, editor: ICodeEditor): void | TPromise<void> {
-		console.log('ACCEPT');
 		accessor.get<ISerialPrivateReplService>(ISerialPrivateReplService).acceptReplInput();
 	}
 }

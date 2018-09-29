@@ -42,9 +42,14 @@ export class SerialReplInput extends Disposable {
 
 		this._register(addStandardDisposableListener(this.replInputContainer, EventType.FOCUS, () => addClass(this.replInputContainer, 'synthetic-focus')));
 		this._register(addStandardDisposableListener(this.replInputContainer, EventType.BLUR, () => removeClass(this.replInputContainer, 'synthetic-focus')));
+
+		this.replInputContainer.style.display = 'none';
 	}
 
 	layout(dimension: Dimension) {
+		if (!this.replInput.getModel()) {
+			return 0;
+		}
 		this.dimension = dimension;
 
 		this.replInputContainer.style.height = `${this.replInputHeight}px`;
@@ -61,7 +66,18 @@ export class SerialReplInput extends Disposable {
 		this.replInput.setPosition(param);
 	}
 
-	setModel(model: ITextModel) {
+	setModel(model: ITextModel = null) {
+		if (this.replInput.getModel() === model) {
+			return false;
+		}
 		this.replInput.setModel(model);
+
+		this.replInputContainer.style.display = model ? 'block' : 'none';
+
+		return true;
+	}
+
+	getValue() {
+		return this.replInput.getValue();
 	}
 }

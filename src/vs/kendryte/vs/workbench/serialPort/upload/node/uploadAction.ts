@@ -138,12 +138,12 @@ export class MaixSerialUploadAction extends Action {
 			this.logger.info('==================================');
 			this.logger.info('Program successfully flashed to the board.');
 			loader.dispose();
-			port.close();
 		}, (e) => {
 			this.logger.error('==================================');
 			this.logger.error('Flash failed with error: ' + e.message);
 			loader.dispose();
-			port.close();
 		});
+
+		await this.serialPortService.closePort(port);
 	}
 }

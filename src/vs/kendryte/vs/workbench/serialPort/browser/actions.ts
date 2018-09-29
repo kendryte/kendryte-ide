@@ -1,1 +1,1 @@
-import './acceptSerialInput';
+import '../electron-browser/acceptSerialInput';

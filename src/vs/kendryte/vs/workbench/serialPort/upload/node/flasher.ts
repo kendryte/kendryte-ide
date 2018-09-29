@@ -1,4 +1,3 @@
-import SerialPort = require('serialport');
 import { QuotingBuffer, UnQuotedBuffer } from 'vs/kendryte/vs/workbench/serialPort/upload/node/quotedBuffer';
 import { EscapeBuffer, UnEscapeBuffer } from 'vs/kendryte/vs/workbench/serialPort/upload/node/escapeBuffer';
 import { ISPParseBuffer, ISPSerializeBuffer } from 'vs/kendryte/vs/workbench/serialPort/upload/node/ispBuffer';
@@ -22,6 +21,7 @@ import { ChunkBuffer } from 'vs/kendryte/vs/workbench/serialPort/upload/node/chu
 import { createCipheriv, createHash } from 'crypto';
 import { drainStream } from 'vs/kendryte/vs/platform/common/drainStream';
 import { IChannelLogger } from 'vs/kendryte/vs/platform/node/channelLogService';
+import { SerialPortBaseBinding } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
 
 export enum ChipType {
 	OnBoard = 0,
@@ -50,7 +50,7 @@ export class SerialLoader extends Disposable {
 	private deferredReturn: ISPError;
 
 	constructor(
-		device: SerialPort,
+		device: SerialPortBaseBinding,
 		application: string,
 		bootLoader: string,
 		protected readonly encryptionKey: Buffer,
