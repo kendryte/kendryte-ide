@@ -170,7 +170,7 @@ export class OutputXTerminal extends Disposable {
 		this.dimension = dimension;
 
 		const terminalWidth = TerminalInstance.prototype['_evaluateColsAndRows'].call(this, dimension.width, dimension.height);
-		console.log('layout terminalWidth=', terminalWidth);
+		// console.log('layout terminalWidth=', terminalWidth);
 		if (!terminalWidth) {
 			return;
 		}
@@ -265,6 +265,8 @@ export class OutputXTerminal extends Disposable {
 				getActions: () => TPromise.as(this._getContextMenuActions()),
 				getActionsContext: () => this._wrapperElement,
 			});
+		} else {
+			// console.log('cancel context');
 		}
 		this._cancelContextMenu = false;
 	}
@@ -338,20 +340,20 @@ export class OutputXTerminal extends Disposable {
 	private registerFocusEvents() {
 		// copy from terminalInstance
 		this._register(addDisposableListener(this._xterm.textarea, 'focus', (event: KeyboardEvent) => {
-			console.log('%s -> %s', '_hasFocusContext', true);
+			// console.log('%s -> %s', '_hasFocusContext', true);
 			this._hasFocusContext.set(true);
 		}));
 		this._register(addDisposableListener(this._xterm.textarea, 'blur', (event: KeyboardEvent) => {
-			console.log('%s -> %s', '_hasFocusContext', 'reset');
+			// console.log('%s -> %s', '_hasFocusContext', 'reset');
 			this._hasFocusContext.reset();
 			this._refreshSelectionContextKey();
 		}));
 		this._register(addDisposableListener(this._xterm.element, 'focus', (event: KeyboardEvent) => {
-			console.log('%s -> %s', '_hasFocusContext', 'true');
+			// console.log('%s -> %s', '_hasFocusContext', 'true');
 			this._hasFocusContext.set(true);
 		}));
 		this._register(addDisposableListener(this._xterm.element, 'blur', (event: KeyboardEvent) => {
-			console.log('%s -> %s', '_hasFocusContext', 'reset');
+			// console.log('%s -> %s', '_hasFocusContext', 'reset');
 			this._hasFocusContext.reset();
 			this._refreshSelectionContextKey();
 		}));
@@ -370,7 +372,7 @@ export class OutputXTerminal extends Disposable {
 	}
 
 	private _refreshSelectionContextKey() {
-		console.log('%s -> %s', '_hasSelectContext', this._xterm.hasSelection());
+		// console.log('%s -> %s', '_hasSelectContext', this._xterm.hasSelection());
 		this._hasSelectContext.set(this._xterm.hasSelection());
 	}
 

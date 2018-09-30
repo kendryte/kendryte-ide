@@ -61,10 +61,14 @@
 		}
 		
 		> .repl {
-			position: relative;
 			display: flex;
 			flex-direction: column;
 			flex-grow: 1;
+			
+			textarea.xterm-helper-textarea {
+				position: absolute !important;
+				opacity: 0 !important;
+			}
 			
 			> .integrated-terminal {
 				> .terminal-outer-container > .terminal-wrapper {

@@ -86,7 +86,7 @@ export class SerialDeviceList extends Disposable {
 				};
 			});
 
-			console.log('update-list');
+			// console.log('update-list');
 			this.list.splice(0, this.list.length, this.dataList);
 		} else {
 			this.dataList = list.map((entry) => {

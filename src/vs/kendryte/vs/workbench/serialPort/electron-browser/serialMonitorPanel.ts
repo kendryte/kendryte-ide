@@ -407,7 +407,7 @@ class SerialMonitorPanel extends Panel {
 
 	private _store(name: string, opt: SerialLocalStorageSavedData) {
 		const optStr = JSON.stringify(opt);
-		console.log('%s -> %s', name, optStr);
+		// console.log('%s -> %s', name, optStr);
 		this.storageService.store('serialport-options::' + name, optStr, StorageScope.WORKSPACE);
 		this.storageService.store('serialport-options::' + name, optStr, StorageScope.GLOBAL);
 	}

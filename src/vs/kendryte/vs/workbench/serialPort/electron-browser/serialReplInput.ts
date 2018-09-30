@@ -33,7 +33,7 @@ export class SerialReplInput extends Disposable {
 				return;
 			}
 			this.replInputHeight = Math.max(19, Math.min(170, e.scrollHeight, this.dimension.height));
-			console.log('this.replInputHeight =', 170, e.scrollHeight, this.dimension.height);
+			// console.log('this.replInputHeight =', 170, e.scrollHeight, this.dimension.height);
 			this._onHeightChange.fire(this.replInputHeight);
 		}));
 		this._register(this.replInput.onDidChangeModelContent(() => {

@@ -97,7 +97,7 @@ class SerialPortService implements ISerialPortService {
 			if (exclusive) {
 				return new TPromise((resolve, reject) => {
 					const wrappedCallback = (err) => {
-						console.log('close serial port for re-open (err=%s)', err);
+						this.logService.info('close serial port for re-open (err=%s)', err);
 						return err ? reject(err) : resolve(void 0);
 					};
 					exists.close(wrappedCallback);
@@ -107,7 +107,7 @@ class SerialPortService implements ISerialPortService {
 			} else {
 				return new TPromise((resolve, reject) => {
 					const wrappedCallback = (err) => {
-						console.log('update serial port (err=%s)', err);
+						this.logService.info('update serial port (err=%s)', err);
 						return err ? reject(err) : resolve(exists);
 					};
 					exists.update(opts, wrappedCallback);
@@ -119,7 +119,7 @@ class SerialPortService implements ISerialPortService {
 			...opts,
 			autoOpen: false,
 		};
-		console.log('open serial port %s with %o (exclusive=%s)', serialDevice, opts, exclusive);
+		this.logService.info('open serial port %s with %o (exclusive=%s)', serialDevice, opts, exclusive);
 		const port: SerialPort & SerialPortBaseBinding = new SerialPort(serialDevice, opts) as any;
 		port.on('close', () => {
 			this.logService.info('[serial port] ' + serialDevice + ' is end!');
@@ -130,12 +130,12 @@ class SerialPortService implements ISerialPortService {
 		return new TPromise((resolve, reject) => {
 			port.open((error: Error) => {
 				if (error) {
-					console.log('can not open serial port (err=%s)', error);
+					this.logService.info('can not open serial port (err=%s)', error);
 					this.logService.warn('[serial port] ' + serialDevice + ' failed to open');
 					reject(error);
 					this.openedPorts.delete(serialDevice);
 				} else {
-					console.log('new serial port (%s)', serialDevice, port);
+					this.logService.info('new serial port (%s)', serialDevice, port);
 					this.logService.info('[serial port] ' + serialDevice + ' open ok');
 					resolve(port);
 				}
