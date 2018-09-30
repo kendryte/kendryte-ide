@@ -13,8 +13,9 @@ import { Transform } from 'stream';
 import { ILocalOptions, SerialPortBaseBinding, serialPortEOL } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
 import { OutputXTerminal } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/outputWindow';
 import { ISerialMonitorControlService } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/outputWindowControlService';
+import { ILogService } from 'vs/platform/log/common/log';
 
-export class SerialScope extends Disposable implements ISerialPrivateReplService, ISerialMonitorControlService {
+export class SerialScope extends Disposable implements ISerialPrivateReplService {
 	_serviceBrand: any;
 
 	public readonly enablement: IContextKey<boolean>; // historyNavigationEnablement
@@ -23,13 +24,14 @@ export class SerialScope extends Disposable implements ISerialPrivateReplService
 
 	public readonly model: ITextModel;
 	public readonly lineInputStream = new LineBuffer;
-	private xterm: OutputXTerminal;
 
 	constructor(
 		replInputDom: HTMLElement,
 		@IInstantiationService private readonly __instantiationService: IInstantiationService,
 		@IContextKeyService private contextKeyService: IContextKeyService,
 		@IModelService modelService: IModelService,
+		@ISerialMonitorControlService private readonly serialMonitorControlService: ISerialMonitorControlService,
+		@ILogService protected readonly logService: ILogService,
 	) {
 		super();
 
@@ -52,11 +54,13 @@ export class SerialScope extends Disposable implements ISerialPrivateReplService
 		this.instantiationService = __instantiationService.createChild(new ServiceCollection(
 			[IContextKeyService, scopedContextKeyService],
 			[ISerialPrivateReplService, this],
-			[ISerialMonitorControlService, this],
 		));
+
+		this.logService.info('created child instantiation service');
 	}
 
 	public acceptReplInput(): void {
+		this.logService.info('acceptReplInput');
 		// console.log('accept input!');
 		this.history.add(this.model.getValue());
 		this.lineInputStream.write(this.model.getValue());
@@ -69,23 +73,8 @@ export class SerialScope extends Disposable implements ISerialPrivateReplService
 	}
 
 	setOutput(xterm: OutputXTerminal) {
-		this.xterm = xterm;
-	}
-
-	copySelection() {
-		this.xterm.copySelection();
-	}
-
-	paste() {
-		this.xterm.paste();
-	}
-
-	clearScreen(): void {
-		this.xterm.clearScreen();
-	}
-
-	focusFindWidget() {
-		this.xterm.focusFindWidget();
+		this.logService.info('setOutput()');
+		this.serialMonitorControlService.setSingleton(xterm);
 	}
 }
 

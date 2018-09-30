@@ -236,7 +236,7 @@ class SerialMonitorPanel extends Panel {
 		}));
 
 		// xterm
-		this.xterm = this._register(context.instantiationService.createInstance(OutputXTerminal));
+		this.xterm = this._register(this.instantiationService.createInstance(OutputXTerminal));
 		context.setOutput(this.xterm);
 		await this.xterm.attachToElement(xtermContainer);
 	}

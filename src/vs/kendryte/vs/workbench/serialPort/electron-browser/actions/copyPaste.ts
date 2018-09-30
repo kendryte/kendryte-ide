@@ -26,6 +26,7 @@ export class SerialPortCopyAction extends Action {
 	}
 
 	public run(event?: any): TPromise<void> {
+		// console.log('SerialPortCopyAction');
 		this.serialMonitorControlService.copySelection();
 		return TPromise.as(void 0);
 	}
@@ -49,12 +50,13 @@ export class SerialPortPasteAction extends Action {
 	}
 
 	public run(event?: any): TPromise<void> {
+		// console.log('SerialPortPasteAction');
 		this.serialMonitorControlService.paste();
 		return TPromise.as(void 0);
 	}
 }
 
-registerActionWithKey(SerialPortActionCategory, SerialPortCopyAction, {
+registerActionWithKey(SerialPortActionCategory, SerialPortPasteAction, {
 	primary: KeyMod.CtrlCmd | KeyCode.KEY_V,
 	linux: { primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KEY_V },
 }, CONTEXT_IN_SERIAL_PORT_OUTPUT);
