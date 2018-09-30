@@ -13,10 +13,12 @@ detect_install_nodejs
 ensure_node_modules_in_current_dir
 
 set +e
+echo "running reformat on ALL source files, this will use about 1min. please wait." >&2
 echo "waiting for 'yarn gulp hygiene'" >&2
 OUT="$(yarn --cache-folder "${YARN_CACHE_FOLDER}" gulp hygiene 2>&1)"
 RET=$?
 echo "$OUT" >&2
+set -e
 
 if [ ${RET} -ne 0 ]; then
 	echo -e "\e[38;5;9mgulp hygiene return ${RET}.\e[0m" >&2
