@@ -82,7 +82,13 @@ class SerialPortService implements ISerialPortService {
 			serialDevice = this.openedPorts.get(serialDevice);
 		}
 
-		return ninvoke(serialDevice, (serialDevice as any as SerialPort).close);
+		return ninvoke(serialDevice, (serialDevice as any as SerialPort).close).then(undefined, (e) => {
+			if (/Port is not open/.test(e.message)) {
+				return void 0;
+			} else {
+				throw e;
+			}
+		});
 	}
 
 	public openPort(serialDevice: string, opts: Partial<SerialPort.OpenOptions> = {}, exclusive = false): TPromise<SerialPort & SerialPortBaseBinding> {

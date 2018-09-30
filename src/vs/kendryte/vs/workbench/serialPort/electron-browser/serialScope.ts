@@ -10,9 +10,8 @@ import { URI as uri } from 'vs/base/common/uri';
 import { IModelService } from 'vs/editor/common/services/modelService';
 import { ISerialPrivateReplService } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/serialPrivateReplService';
 import { Transform } from 'stream';
-import { ILocalOptions, serialPortEOL } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
+import { ILocalOptions, SerialPortBaseBinding, serialPortEOL } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
 import { OutputXTerminal } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/outputWindow';
-import WritableStream = NodeJS.WritableStream;
 
 export class SerialScope extends Disposable implements ISerialPrivateReplService {
 	_serviceBrand: any;
@@ -89,6 +88,7 @@ class LineBuffer extends Transform {
 	private escape: boolean;
 	private term: OutputXTerminal;
 	private echo: boolean;
+	private instance: SerialPortBaseBinding;
 
 	constructor() {
 		super({ objectMode: true });
@@ -112,17 +112,18 @@ class LineBuffer extends Transform {
 					return escapeMap[code];
 				});
 			} catch (e) {
-				this.term.write('\x1B[38;5;9m' + e.message + '\x1B[0m');
+				this.term.writeUser(this.instance, '\x1B[38;5;9m' + e.message + '\x1B[0m\r');
 				return callback();
 			}
 		}
 
-		console.log('transform: %s %s (%s)', data, Buffer.from(this.ending).toString('hex'), this.encoding);
-		const s = data + this.ending;
-		this.push(Buffer.from(s, this.encoding));
 		if (this.echo) {
-			this.term.write(s);
+			this.term.writeUser(this.instance, data + '\r');
 		}
+
+		// console.log('transform: %s %s (%s)', data, Buffer.from(this.ending).toString('hex'), this.encoding);
+		this.push(Buffer.from(data + this.ending, this.encoding));
+
 		callback();
 	}
 
@@ -134,9 +135,10 @@ class LineBuffer extends Transform {
 		this.term = terminal;
 	}
 
-	doPipe(instance: WritableStream, localOptions: ILocalOptions = {} as any, terminal: OutputXTerminal) {
+	doPipe(instance: SerialPortBaseBinding, localOptions: ILocalOptions = {} as any, terminal: OutputXTerminal) {
 		this.unpipe();
 		this.setOptions(localOptions, terminal);
+		this.instance = instance;
 		this.pipe(instance);
 	}
 }

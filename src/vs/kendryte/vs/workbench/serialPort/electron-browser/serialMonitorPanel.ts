@@ -437,6 +437,10 @@ class SerialMonitorPanel extends Panel {
 
 			this._update(item);
 
+			port.once('close', () => {
+				this._doSerialClose(item);
+			});
+
 			handle.close();
 		}).then(undefined, (e: Error) => {
 			handle.updateSeverity(Severity.Error);

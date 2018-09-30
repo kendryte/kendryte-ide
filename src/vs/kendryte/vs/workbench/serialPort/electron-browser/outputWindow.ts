@@ -163,15 +163,15 @@ export class OutputXTerminal implements IDisposable {
 		}
 	}
 
-	handleUserType(instance: Writable, echo: boolean) {
+	handleUserType(instance: SerialPortBaseBinding, echo: boolean) {
 		if (instance) {
 			this.inputReading = this._xterm.addDisposableListener('data', (buff: string) => {
 				const r = Buffer.from(buff.replace(/\r/g, this.ending || '\n'), this.encoding);
-				console.log('xterm input', r);
-				instance.write(r);
+				// console.log('xterm input', r);
 				if (echo) {
-					this._xterm.write(buff.replace(/\r/g, '\n\r'));
+					this.writeUser(instance, buff);
 				}
+				instance.write(r);
 			});
 		} else if (this.inputReading) {
 			this.inputReading.dispose();
@@ -183,15 +183,22 @@ export class OutputXTerminal implements IDisposable {
 		this.ending = serialPortEOL.get(options.lineEnding) || '';
 	}
 
-	write(s: string) {
-		this._xterm.write(s);
+	writeUser(instance: SerialPortBaseBinding, message: string) {
+		// the EOL in `message` Must use LF. this is what `xterm.js` default output when press enter.
+		// \r will not reset cursor column, must follow \n
+		const scrollback = this.scrollbackList.get(instance);
+		if (scrollback) {
+			scrollback.write(message.replace(/\r/g, '\r\n'));
+		} else {
+			console.error('no instance', instance);
+		}
 	}
 }
 
 const Escape = Buffer.from([0x1B, 0x63]); // \ec
 
 class ScrollbackBuffer extends Writable {
-	private scrollback: string;
+	private scrollback: string = '';
 	private target: XTermTerminal;
 
 	constructor(private encoding: ILocalOptions['charset']) {
@@ -204,7 +211,7 @@ class ScrollbackBuffer extends Writable {
 		this.target = _xterm;
 	}
 
-	_write(data: Buffer) {
+	_write(data: Buffer, encoding: string, callback: Function) {
 		if (data.indexOf(Escape) !== -1) {
 			this.scrollback = '';
 		}
@@ -213,6 +220,7 @@ class ScrollbackBuffer extends Writable {
 		if (this.target) {
 			this.target.write(str);
 		}
+		callback();
 	}
 
 	destroy() {

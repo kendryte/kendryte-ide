@@ -6,7 +6,7 @@ import { CodeEditorWidget } from 'vs/editor/browser/widget/codeEditorWidget';
 import { getSimpleCodeEditorWidgetOptions } from 'vs/workbench/parts/codeEditor/electron-browser/simpleEditorOptions';
 import { Emitter, Event } from 'vs/base/common/event';
 import { IPosition } from 'vs/editor/common/core/position';
-import { ITextModel } from 'vs/editor/common/model';
+import { EndOfLinePreference, ITextModel } from 'vs/editor/common/model';
 
 export class SerialReplInput extends Disposable {
 	private readonly replInput: CodeEditorWidget;
@@ -37,7 +37,7 @@ export class SerialReplInput extends Disposable {
 			this._onHeightChange.fire(this.replInputHeight);
 		}));
 		this._register(this.replInput.onDidChangeModelContent(() => {
-			this._onValueChange.fire(this.replInput.getModel().getValue());
+			this._onValueChange.fire(this.replInput.getModel().getValue(EndOfLinePreference.LF, false));
 		}));
 
 		this._register(addStandardDisposableListener(this.replInputContainer, EventType.FOCUS, () => addClass(this.replInputContainer, 'synthetic-focus')));
@@ -78,6 +78,6 @@ export class SerialReplInput extends Disposable {
 	}
 
 	getValue() {
-		return this.replInput.getValue();
+		return this.replInput.getValue({ preserveBOM: false, lineEnding: '\n' });
 	}
 }
