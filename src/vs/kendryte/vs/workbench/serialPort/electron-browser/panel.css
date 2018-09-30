@@ -71,12 +71,13 @@
 }
 
 .monaco-workbench .panel.serial-monitor-panel > .right-panel > .repl {
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	flex-grow: 1;
 }
 
-.monaco-workbench .panel.serial-monitor-panel > .right-panel > .repl > .terminal-wrapper {
+.monaco-workbench .panel.serial-monitor-panel > .right-panel > .repl > .integrated-terminal > .terminal-outer-container > .terminal-wrapper {
 	flex-grow: 1;
 }
 

@@ -12,8 +12,9 @@ import { ISerialPrivateReplService } from 'vs/kendryte/vs/workbench/serialPort/e
 import { Transform } from 'stream';
 import { ILocalOptions, SerialPortBaseBinding, serialPortEOL } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
 import { OutputXTerminal } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/outputWindow';
+import { ISerialMonitorControlService } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/outputWindowControlService';
 
-export class SerialScope extends Disposable implements ISerialPrivateReplService {
+export class SerialScope extends Disposable implements ISerialPrivateReplService, ISerialMonitorControlService {
 	_serviceBrand: any;
 
 	public readonly enablement: IContextKey<boolean>; // historyNavigationEnablement
@@ -22,6 +23,7 @@ export class SerialScope extends Disposable implements ISerialPrivateReplService
 
 	public readonly model: ITextModel;
 	public readonly lineInputStream = new LineBuffer;
+	private xterm: OutputXTerminal;
 
 	constructor(
 		replInputDom: HTMLElement,
@@ -50,6 +52,7 @@ export class SerialScope extends Disposable implements ISerialPrivateReplService
 		this.instantiationService = __instantiationService.createChild(new ServiceCollection(
 			[IContextKeyService, scopedContextKeyService],
 			[ISerialPrivateReplService, this],
+			[ISerialMonitorControlService, this],
 		));
 	}
 
@@ -63,6 +66,26 @@ export class SerialScope extends Disposable implements ISerialPrivateReplService
 	public getVisibleContent(): string {
 		console.log('getVisibleContent???');
 		return '';
+	}
+
+	setOutput(xterm: OutputXTerminal) {
+		this.xterm = xterm;
+	}
+
+	copySelection() {
+		this.xterm.copySelection();
+	}
+
+	paste() {
+		this.xterm.paste();
+	}
+
+	clearScreen(): void {
+		this.xterm.clearScreen();
+	}
+
+	focusFindWidget() {
+		this.xterm.focusFindWidget();
 	}
 }
 

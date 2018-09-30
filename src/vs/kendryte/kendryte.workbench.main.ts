@@ -26,7 +26,7 @@ import 'vs/kendryte/vs/workbench/serialPort/upload/node/uploadContribution';
 // Serial Monitor
 import 'vs/kendryte/vs/workbench/serialPort/electron-browser/serialMonitorPanel';
 import 'vs/kendryte/vs/workbench/serialPort/common/serialMonitorActions';
-import 'vs/kendryte/vs/workbench/serialPort/electron-browser/actions';
+import 'vs/kendryte/vs/workbench/serialPort/electron-browser/actions/register';
 // app top menus
 import 'vs/kendryte/vs/platform/electron-browser/menuContribution';
 import 'vs/kendryte/vs/platform/node/shortcutsContribution';

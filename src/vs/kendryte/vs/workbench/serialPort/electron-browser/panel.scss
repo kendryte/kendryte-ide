@@ -59,12 +59,17 @@
 				}
 			}
 		}
+		
 		> .repl {
+			position: relative;
 			display: flex;
 			flex-direction: column;
 			flex-grow: 1;
-			> .terminal-wrapper {
-				flex-grow: 1;
+			
+			> .integrated-terminal {
+				> .terminal-outer-container > .terminal-wrapper {
+					flex-grow: 1;
+				}
 			}
 			> .repl-input-wrapper {
 				position: relative;

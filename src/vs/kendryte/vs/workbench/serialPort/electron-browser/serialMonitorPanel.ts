@@ -237,6 +237,7 @@ class SerialMonitorPanel extends Panel {
 
 		// xterm
 		this.xterm = this._register(context.instantiationService.createInstance(OutputXTerminal));
+		context.setOutput(this.xterm);
 		await this.xterm.attachToElement(xtermContainer);
 	}
 
@@ -357,6 +358,9 @@ class SerialMonitorPanel extends Panel {
 		} else {
 			this.context.lineInputStream.unpipe();
 			this.xterm.handleUserType(item.instance, item.localOptions.echo);
+		}
+		if (!item.instance) {
+			this.xterm.clearScreen();
 		}
 	}
 
