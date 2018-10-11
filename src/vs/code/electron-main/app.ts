@@ -69,6 +69,7 @@ import { RunOnceScheduler } from 'vs/base/common/async';
 import { registerContextMenuListener } from 'vs/base/parts/contextmenu/electron-main/contextmenu';
 import { THEME_STORAGE_KEY, THEME_BG_STORAGE_KEY } from 'vs/code/electron-main/theme';
 import { nativeSep } from 'vs/base/common/paths';
+import { _kendrite_main_hookInstantiationService } from 'vs/kendryte/vs/code/electron-main/createServices';
 
 export class CodeApplication {
 
@@ -445,6 +446,8 @@ export class CodeApplication {
 		} else {
 			services.set(ITelemetryService, NullTelemetryService);
 		}
+
+		_kendrite_main_hookInstantiationService(services, this.electronIpcServer, this.instantiationService.createChild(services));
 
 		return this.instantiationService.createChild(services);
 	}

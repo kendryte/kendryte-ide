@@ -5,7 +5,7 @@
 	"dataFolderName": ".kendryte",
 	"win32MutexName": "kendryte_ide",
 	"licenseName": "MIT",
-	"licenseUrl": "https://github.com/Microsoft/vscode/blob/master/LICENSE.txt",
+	"licenseUrl": "",
 	"win32DirName": "CanaanCreative Kendryte IDE",
 	"win32NameVersion": "CanaanCreative Kendryte IDE",
 	"win32RegValueName": "Kendryte",

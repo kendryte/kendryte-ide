@@ -6,9 +6,9 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { IRunActionInWindowRequest } from 'vs/platform/windows/common/windows';
 import { IWindowsMainService } from 'vs/platform/windows/electron-main/windows';
 
-// SYNC: kendryte/vs/platform/electron-browser/menuContribution.ts
+// SYNC: vs/kendryte/vs/platform/electron-browser/menuContribution.ts
 
-export function installMaixMenu(access: ServicesAccessor, menubar: Menu) {
+export function installKendryteMenu(access: ServicesAccessor, menubar: Menu) {
 	const configurationService = access.get<IConfigurationService>(IConfigurationService);
 	const windowsMainService = access.get<IWindowsMainService>(IWindowsMainService);
 

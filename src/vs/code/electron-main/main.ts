@@ -51,7 +51,7 @@ import { setUnexpectedErrorHandler } from 'vs/base/common/errors';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { CommandLineDialogService } from 'vs/platform/dialogs/node/dialogService';
 import { ILabelService, LabelService } from 'vs/platform/label/common/label';
-import 'vs/kendryte/vs/code/electron-main/kendryte.electron.main';
+import 'vs/kendryte/vs/code/code.main';
 
 function createServices(args: ParsedArgs, bufferLogService: BufferLogService): IInstantiationService {
 	const services = new ServiceCollection();

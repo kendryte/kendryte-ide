@@ -1,6 +1,12 @@
 import { IProgress } from 'vs/platform/progress/common/progress';
 import { IProgressStep } from 'vs/workbench/services/progress/common/progress';
 
+export interface INatureProgressStatus {
+	message: string;
+	total: number;
+	current: number;
+}
+
 export interface IProgressStatus {
 	message: string;
 	percent: number;

@@ -1,0 +1,29 @@
+
+.monaco-workbench .simple-nav-bar {
+	height: 36px;
+	font-weight: bold;
+	font-size: 14px;
+	line-height: 36px;
+	padding-left: 20px;
+	border-bottom: 1px solid rgba(136, 136, 136, 0.45);
+	box-sizing: border-box;
+}
+
+.monaco-workbench .simple-nav-bar > .monaco-action-bar > .actions-container {
+	justify-content: initial;
+}
+
+.monaco-workbench .simple-nav-bar > .monaco-action-bar > .actions-container > .action-item > .action-label {
+	margin-right: 16px;
+	font-size: inherit;
+	opacity: 0.7;
+}
+
+.monaco-workbench .simple-nav-bar .visualstudio-icon:before {
+	margin-right: 0.4em;
+}
+
+.monaco-workbench .simple-nav-bar > .monaco-action-bar > .actions-container > .action-item.disabled > .action-label {
+	opacity: 1;
+	text-decoration: underline;
+}

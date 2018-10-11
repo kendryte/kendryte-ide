@@ -7,7 +7,7 @@ import { MaixCMakeDebugAction } from 'vs/kendryte/vs/workbench/cmake/electron-br
 import { CreateShortcutsAction } from 'vs/kendryte/vs/platform/node/shortcutsContribution';
 import { MaixSerialUploadAction } from 'vs/kendryte/vs/workbench/serialPort/upload/node/uploadAction';
 
-// SYNC: vs/code/electron-main/menu.maix.ts
+// SYNC: vs/kendryte/vs/code/patches/electron-main/kendryteMenu.ts
 
 cls('tools');
 register(FpioaEditorAction);

@@ -8,7 +8,6 @@ import { Event } from 'vs/base/common/event';
 export interface EnumProviderService<T> {
 	// get enum selection list
 	getValues(): TPromise<T[]> | T[];
-
 	onChange: Event<T[]>;
 }
 
@@ -58,11 +57,8 @@ interface ITOCEntry {
 
 export interface IConfigCategoryRegistry {
 	registerCategory(category: ICategoryConfig): this;
-
 	addSetting(categoryId: string, ...settingIds: string[]): this;
-
 	addSettings(categoryId: string, settingIds: string[]): this;
-
 	getRoot(): ITOCEntry;
 }
 
@@ -99,39 +95,26 @@ export interface INodePathService {
 	_serviceBrand: any;
 
 	getInstallPath(): string;
-
 	getDataPath(): string;
-
 	exeFile(filePath: string): string;
-
 	getToolchainBinPath(): string;
-
 	getToolchainPath(): string;
-
 	getSDKPath(): string;
-
 	getPackagesPath(project?: string): string;
-
 	rawToolchainPath(): string;
-
 	rawSDKPath(): string;
-
 	workspaceFilePath(s?: string): string;
-
 	createUserLink(existsFile: string, linkFile: string): TPromise<void>;
-
 	ensureTempDir(name?: string): TPromise<string>;
-
 	tempDir(name?: string): string;
-
 	createAppLink(): TPromise<void>;
 }
 
 export interface INodeFileSystemService {
+	_serviceBrand: any;
+
 	readFileIfExists(file: string): TPromise<string>;
-
 	readFileIfExists(file: string, raw: true): TPromise<Buffer>;
-
 	writeFileIfChanged(file: string, data: string | Buffer): TPromise<boolean>;
 }
 

@@ -1,8 +1,13 @@
 //// included by "vs/workbench/workbench.main.ts"
 
+// ipc channel (client)
+import 'vs/kendryte/vs/services/ipc/electron-browser/ipcChannelWorkbench';
 // Misc Services
-import 'vs/kendryte/vs/platform/node/nodePathService';
-import 'vs/kendryte/vs/platform/node/nodeRequestService';
+import 'vs/kendryte/vs/services/github/node/githubServiceContribution';
+import 'vs/kendryte/vs/services/path/electron-browser/contribution';
+import 'vs/kendryte/vs/platform/node/nodeRequestService'; // network request
+import 'vs/kendryte/vs/services/download/electron-browser/nodeDownloadService'; // download
+import 'vs/kendryte/vs/services/download/electron-browser/downloadWithProgressService'; // download
 import 'vs/kendryte/vs/platform/electron-browser/packagesUpdateService';
 // Settings sections
 import 'vs/kendryte/vs/workbench/config/browser/categoryContribution';
@@ -34,3 +39,4 @@ import 'vs/kendryte/vs/platform/node/shortcutsContribution';
 import 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeContribution';
 // Package Manager
 import 'vs/kendryte/vs/workbench/packageManager/node/actionsContribution';
+import 'vs/kendryte/vs/workbench/packageManager/browser/mainPanelContribution';

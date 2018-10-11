@@ -99,6 +99,7 @@ import { DownloadServiceChannel } from 'vs/platform/download/node/downloadIpc';
 import { DefaultURITransformer } from 'vs/base/common/uriIpc';
 import { ExtensionGalleryService } from 'vs/platform/extensionManagement/node/extensionGalleryService';
 import { ILabelService } from 'vs/platform/label/common/label';
+import { _kendrite_workbench_hookInstantiationService } from 'vs/kendryte/vs/code/electron-browser/createChannels';
 
 /**
  * Services that we require for the Shell
@@ -162,6 +163,8 @@ export class WorkbenchShell extends Disposable {
 
 		// Instantiation service with services
 		const [instantiationService, serviceCollection] = this.initServiceCollection(this.container);
+
+		_kendrite_workbench_hookInstantiationService(serviceCollection, this.mainProcessClient, instantiationService);
 
 		// Workbench
 		this.workbench = this.createWorkbench(instantiationService, serviceCollection, this.container);

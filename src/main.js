@@ -6,6 +6,8 @@
 //@ts-check
 'use strict';
 
+require('source-map-support/register');
+
 const perf = require('./vs/base/common/performance');
 perf.mark('main:started');
 

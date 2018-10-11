@@ -1,4 +1,3 @@
-import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import product from 'vs/platform/node/product';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { isWindows } from 'vs/base/common/platform';
@@ -11,20 +10,28 @@ import { IShortcutOptions } from 'windows-shortcuts';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { tmpdir } from 'os';
 import { mkdirp } from 'vs/base/node/pfs';
+import { optional } from 'vs/platform/instantiation/common/instantiation';
 
-class NodePathService implements INodePathService {
+export class NodePathService implements INodePathService {
 	_serviceBrand: any;
 
 	private sdkPathExists: boolean;
 	private toolchainPathExists: boolean;
 
 	constructor(
-		@IWorkspaceContextService protected workspaceContextService: IWorkspaceContextService,
+		@optional(IWorkspaceContextService) protected workspaceContextService: IWorkspaceContextService,
 		@IEnvironmentService protected environmentService: IEnvironmentService,
 	) {
-		this.createUserLink(this.getInstallPath('.fast-links/_Extensions'), pathResolveNow('HOMEPATH', process.env.HOME, product.dataFolderName));
-		this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorage'), pathResolveNow('AppData', process.env.HOME, '.config', product.nameLong));
-		this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorageDevel'), pathResolveNow('AppData', process.env.HOME, '.config/code-oss-dev'));
+		if (!workspaceContextService) {
+			this.createUserLink(this.getInstallPath('.fast-links/_Extensions'), pathResolveNow('HOMEPATH', process.env.HOME, product.dataFolderName));
+			this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorage'), pathResolveNow('AppData', process.env.HOME, '.config', product.nameLong));
+			this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorageDevel'), pathResolveNow('AppData', process.env.HOME, '.config/code-oss-dev'));
+
+			this.workspaceFilePath = () => {
+				throw new Error('cannot use NodePathService::workspaceFilePath in main process.');
+			};
+		}
+
 	}
 
 	createAppLink(): TPromise<void> {
@@ -61,7 +68,7 @@ class NodePathService implements INodePathService {
 	}
 
 	createUserLink(linkFile: string, existsFile: string, windowsOptions?: Partial<IShortcutOptions>): TPromise<void> {
-		console.log('create user link: %s -> %s', linkFile, existsFile);
+		console.log('create user link if not: %s -> %s', linkFile, existsFile);
 		return ensureLinkEquals(linkFile, existsFile, windowsOptions);
 	}
 
@@ -152,4 +159,3 @@ class NodePathService implements INodePathService {
 	}
 }
 
-registerSingleton(INodePathService, NodePathService);

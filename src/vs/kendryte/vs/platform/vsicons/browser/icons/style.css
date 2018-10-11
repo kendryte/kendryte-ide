@@ -1,0 +1,22 @@
+.monaco-workbench .visualstudio-icon:before {
+	content: ' ';
+	display: inline-block;
+	height: 1em;
+	width: 1em;
+}
+
+.monaco-workbench .visualstudio-icon.library:before {
+	background-image: url('library.svg');
+}
+
+.vs-dark > .monaco-workbench .visualstudio-icon.library:before {
+	background-image: url('library-dark.svg');
+}
+
+.monaco-workbench .visualstudio-icon.example:before {
+	background-image: url('example.svg');
+}
+
+.vs-dark > .monaco-workbench .visualstudio-icon.example:before {
+	background-image: url('example-dark.svg');
+}

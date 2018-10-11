@@ -39,8 +39,8 @@ import { IEnvironmentService } from 'vs/platform/environment/common/environment'
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
+import { distributeUrl } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
 
-const distributeUrl = 'https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/'; // MUST end with /
 const LAST_UPDATE_CACHE_KEY = '.last-check-update';
 const patchVersionKey = 'hot-patch-version'; // must same with electron main
 

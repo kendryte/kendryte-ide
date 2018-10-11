@@ -1,0 +1,8 @@
+.monaco-workbench .simple-tabs-container {
+	display: flex;
+	flex-direction: row;
+}
+
+.monaco-workbench .simple-tabs-container > .tab > .icon {
+	margin-right: 0.2em;
+}
