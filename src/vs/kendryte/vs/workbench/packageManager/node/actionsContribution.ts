@@ -1,1 +1,1 @@
-import './openPackageUpgradeAction';
+import '../../../services/update/electron-browser/openPackageUpgradeAction';

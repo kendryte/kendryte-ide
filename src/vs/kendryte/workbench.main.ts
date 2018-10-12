@@ -8,7 +8,7 @@ import 'vs/kendryte/vs/services/path/electron-browser/contribution';
 import 'vs/kendryte/vs/platform/node/nodeRequestService'; // network request
 import 'vs/kendryte/vs/services/download/electron-browser/nodeDownloadService'; // download
 import 'vs/kendryte/vs/services/download/electron-browser/downloadWithProgressService'; // download
-import 'vs/kendryte/vs/platform/electron-browser/packagesUpdateService';
+import 'vs/kendryte/vs/services/update/electron-main/ideBuildingBlocksService';
 // Settings sections
 import 'vs/kendryte/vs/workbench/config/browser/categoryContribution';
 import 'vs/kendryte/vs/workbench/config/electron-browser/pathSettingsContribution';

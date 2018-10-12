@@ -5,6 +5,9 @@ import { Event } from 'vs/base/common/event';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { ILogService } from 'vs/platform/log/common/log';
+import { URI } from 'vs/base/common/uri';
+import { ChannelLogger } from 'vs/kendryte/vs/services/channelLogger/electron-browser/logger';
+import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 
 const symbolMethod = Symbol('ipc-method-mark');
 const symbolEvent = Symbol('ipc-event-mark');
@@ -73,12 +76,36 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 
 	private _callService(id: string, method: string, args: any[]): TPromise<any> {
 		this.logService.info(`callService(${id}, ${method},`, args, ');');
-		return this.runnerChannel.call(`${id}:${method}`, args);
+
+		return this.runnerChannel.call(`${id}:${method}`, this.serializeArg(args));
 	}
 
 	private _listenService(id: string, method: string, args: any[]): Event<any> {
 		this.logService.info(`listenService(${id}, ${method},`, args, ');');
-		return this.runnerChannel.listen(`${id}:${method}`, args);
+
+		return this.runnerChannel.listen(`${id}:${method}`, this.serializeArg(args));
+	}
+
+	private serializeArg(args: any[]) {
+		return args.map((item) => {
+			if (URI.isUri(item)) {
+				return { __type: 'URI', value: item.toString() };
+			}
+			if (item instanceof ChannelLogger) {
+				this._listenLogger(item);
+				return { __type: 'ChannelLogger', value: item.serialize() };
+			}
+
+			return item;
+		});
+	}
+
+	private _listenLogger(logger: ChannelLogger) {
+		const { id, window } = logger.serialize();
+		this._listenService(IChannelLogService.toString(), 'logEvent', [id, window]);
+		logger.onDispose(() => {
+			this._callService(IChannelLogService.toString(), 'stopLogEvent', [id, window]);
+		});
 	}
 }
 

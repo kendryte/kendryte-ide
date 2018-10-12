@@ -10,9 +10,9 @@ import { IProgressService2, ProgressLocation } from 'vs/workbench/services/progr
 import { SubProgress } from 'vs/kendryte/vs/platform/common/progress';
 import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
 import { resolvePath } from 'vs/kendryte/vs/platform/node/resolvePath';
-import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/platform/node/channelLogService';
 import { IQuickInputService, IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
+import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 
 export class MaixSerialUploadAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_SERIAL_UPLOAD;
@@ -29,14 +29,12 @@ export class MaixSerialUploadAction extends Action {
 		@INodePathService private nodePathService: INodePathService,
 		@ICMakeService private cMakeService: ICMakeService,
 		@IProgressService2 private progressService: IProgressService2,
-		@IChannelLogService channelLogService: IChannelLogService,
+		@IChannelLogService private channelLogService: IChannelLogService,
 		@IStorageService private storageService: IStorageService,
 		@IQuickInputService protected quickInputService: IQuickInputService,
 	) {
 		super(id, label);
-		this.logger = channelLogService.createChannel({
-			id: CMAKE_CHANNEL, label: 'Build/Run', log: false,
-		});
+		this.logger = channelLogService.createChannel('Build/Run', CMAKE_CHANNEL);
 		this.lastSelected = storageService.get('serial-port.last-selected', StorageScope.WORKSPACE, '');
 	}
 
@@ -76,7 +74,7 @@ export class MaixSerialUploadAction extends Action {
 			return;
 		}
 
-		this.logger.show();
+		this.channelLogService.show(this.logger.id);
 
 		await this.cMakeService.ensureConfiguration();
 

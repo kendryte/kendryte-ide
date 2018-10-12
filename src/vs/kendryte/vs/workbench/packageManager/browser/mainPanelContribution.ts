@@ -12,7 +12,7 @@ import { PackageDetailInput } from 'vs/kendryte/vs/workbench/packageManager/comm
 import { localize } from 'vs/nls';
 import { PackageDetailEditor } from 'vs/kendryte/vs/workbench/packageManager/browser/editors/packageDetail';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { PackageRegistryService } from 'vs/kendryte/vs/workbench/packageManager/node/packageRegistryService';
+import { PackageRegistryService } from 'vs/kendryte/vs/workbench/packageManager/electron-browser/packageRegistryService';
 import { PackageBrowserEditor } from 'vs/kendryte/vs/workbench/packageManager/browser/editors/packageBrowser';
 import { PackageBrowserInput } from 'vs/kendryte/vs/workbench/packageManager/common/editors/packageBrowserInput';
 import { EditorInput, Extensions as EditorInputExtensions, IEditorInputFactory, IEditorInputFactoryRegistry } from 'vs/workbench/common/editor';

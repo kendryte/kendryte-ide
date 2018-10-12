@@ -40,12 +40,14 @@ import { addStatusBarCmakeButtons } from 'vs/kendryte/vs/workbench/cmake/common/
 import { StatusBarController } from 'vs/kendryte/vs/workbench/cmake/common/statusBarController';
 import { CMAKE_TARGET_TYPE } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/config';
 import { MaixBuildSystemPrepare, MaixBuildSystemReload } from 'vs/kendryte/vs/workbench/cmake/electron-browser/maixBuildSystemService';
-import { INodePathService, IPackagesUpdateService } from 'vs/kendryte/vs/platform/common/type';
+import { INodePathService } from 'vs/kendryte/vs/platform/common/type';
 import { executableExtension } from 'vs/kendryte/vs/platform/node/versions';
 import { resolvePath } from 'vs/kendryte/vs/platform/node/resolvePath';
 import { DebugScript, getEnvironment } from 'vs/kendryte/vs/platform/node/nodeEnv';
 import { CMakeBuildErrorProcessor, CMakeBuildProgressProcessor, CMakeProcessList } from 'vs/kendryte/vs/workbench/cmake/node/outputProcessor';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { ICommandService } from 'vs/platform/commands/common/commands';
+import { ACTION_ID_IDE_SELF_UPGRADE, ACTION_ID_UPGRADE_BUILDING_BLOCKS } from 'vs/kendryte/vs/services/update/common/ids';
 
 export interface IPromiseProgress<T> {
 	progress(fn: (p: T) => void): void;
@@ -123,7 +125,7 @@ export class CMakeService implements ICMakeService {
 		@INotificationService protected notificationService: INotificationService,
 		@ILifecycleService lifecycleService: ILifecycleService,
 		@IOutputService protected outputService: IOutputService,
-		@IPackagesUpdateService packagesUpdateService: IPackagesUpdateService,
+		@ICommandService commandService: ICommandService,
 		@INodePathService private nodePathService: INodePathService,
 		@IConfigurationService private configurationService: IConfigurationService,
 	) {
@@ -141,7 +143,8 @@ export class CMakeService implements ICMakeService {
 		lifecycleService.when(LifecyclePhase.Running).then(() => {
 			TPromise.join([
 				instantiationService.invokeFunction(MaixBuildSystemPrepare),
-				packagesUpdateService.run(),
+				commandService.executeCommand(ACTION_ID_UPGRADE_BUILDING_BLOCKS),
+				commandService.executeCommand(ACTION_ID_IDE_SELF_UPGRADE),
 			]).then(() => {
 				return instantiationService.invokeFunction(MaixBuildSystemReload);
 			}).then(() => {

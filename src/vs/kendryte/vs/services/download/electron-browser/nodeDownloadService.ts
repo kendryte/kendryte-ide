@@ -1,7 +1,7 @@
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IKendryteClientService } from 'vs/kendryte/vs/services/ipc/electron-browser/ipcType';
 import { INatureProgressStatus } from 'vs/kendryte/vs/platform/common/progress';
-import { DownloadID, INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
+import { DownloadID, IDownloadTargetInfo, INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
 import { Event } from 'vs/base/common/event';
 import { TPromise } from 'vs/base/common/winjs.base';
 
@@ -28,8 +28,12 @@ class NodeDownloadServiceClient implements INodeDownloadService {
 		return this.ipc.onProgress(download);
 	}
 
-	public download(url: string, target: string): TPromise<DownloadID> {
-		return this.ipc.download(url, target);
+	public download(url: string, target: string, start = true): TPromise<DownloadID> {
+		return this.ipc.download(url, target, start);
+	}
+
+	public start(download: DownloadID): TPromise<void> {
+		return this.ipc.start(download);
 	}
 
 	public cancel(download: DownloadID): TPromise<void> {
@@ -48,8 +52,12 @@ class NodeDownloadServiceClient implements INodeDownloadService {
 		return this.ipc.waitResultFile(downloadId);
 	}
 
-	public downloadTemp(url: string): TPromise<DownloadID> {
-		return this.ipc.downloadTemp(url);
+	public downloadTemp(url: string, start = true): TPromise<DownloadID> {
+		return this.ipc.downloadTemp(url, start);
+	}
+
+	public getStatus(downloadId: DownloadID): TPromise<IDownloadTargetInfo> {
+		return this.ipc.getStatus(downloadId);
 	}
 }
 

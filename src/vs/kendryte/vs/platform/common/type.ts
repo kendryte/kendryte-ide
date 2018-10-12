@@ -2,8 +2,9 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import { createDecorator, ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 import { ISetting } from 'vs/workbench/services/preferences/common/preferences';
-import { IUpdateService } from 'vs/platform/update/common/update';
 import { Event } from 'vs/base/common/event';
+import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
+import { DownloadID } from 'vs/kendryte/vs/services/download/common/download';
 
 export interface EnumProviderService<T> {
 	// get enum selection list
@@ -116,17 +117,22 @@ export interface INodeFileSystemService {
 	readFileIfExists(file: string): TPromise<string>;
 	readFileIfExists(file: string, raw: true): TPromise<Buffer>;
 	writeFileIfChanged(file: string, data: string | Buffer): TPromise<boolean>;
+	copyWithin(from: string, to: string): TPromise<void>;
+	copyReplace(from: string, to: string): TPromise<void>;
 }
 
-export interface IPackagesUpdateService extends IUpdateService {
-	run(force?: boolean): TPromise<void>;
+export type UpdateList = [string, DownloadID][];
+export type UpdateListConfirmed = { [packageName: string]: string };
+
+export interface IIDEBuildingBlocksService {
+	_serviceBrand: any;
+	readonly onProgress: Event<string>;
+
+	fetchUpdateInfo(logger: IChannelLogger, force?: boolean): TPromise<UpdateList>;
+	markUpdate(data: UpdateListConfirmed): TPromise<void>;
 }
 
-export const PACKAGE_UPDATER_LOG_CHANNEL = 'maix-update-output-channel';
-
-export const IPackagesUpdateService = IUpdateService as any as ServiceIdentifier<IPackagesUpdateService>;
-
-export const ACTION_ID_UPGRADE_PACKAGES = 'workbench.action.kendryte.packageUpgrade';
+export const IIDEBuildingBlocksService = createDecorator<IIDEBuildingBlocksService>('ideBuildingBlocksService');
 
 export const ACTION_ID_CREATE_SHORTCUTS = 'workbench.action.kendryte.createShortcuts';
 

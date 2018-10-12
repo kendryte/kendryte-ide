@@ -20,8 +20,8 @@ import { ISPFlashPacker } from 'vs/kendryte/vs/workbench/serialPort/upload/node/
 import { ChunkBuffer } from 'vs/kendryte/vs/workbench/serialPort/upload/node/chunkBuffer';
 import { createCipheriv, createHash } from 'crypto';
 import { drainStream } from 'vs/kendryte/vs/platform/common/drainStream';
-import { IChannelLogger } from 'vs/kendryte/vs/platform/node/channelLogService';
 import { SerialPortBaseBinding } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
+import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
 
 export enum ChipType {
 	OnBoard = 0,

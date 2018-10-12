@@ -1,7 +1,7 @@
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { INodeFileSystemService } from 'vs/kendryte/vs/platform/common/type';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { exists, mkdirp, readFile, stat, writeFile } from 'vs/base/node/pfs';
+import { copy, exists, mkdirp, readFile, rimraf, stat, writeFile } from 'vs/base/node/pfs';
 import { ILogService } from 'vs/platform/log/common/log';
 import { resolvePath } from 'vs/kendryte/vs/platform/node/resolvePath';
 
@@ -63,6 +63,15 @@ class NodeFileSystemService implements INodeFileSystemService {
 		this.logService.debug('writeFile: ' + file);
 		await this.writeFile(file, data);
 		return true;
+	}
+
+	public async copyWithin(from: string, to: string) {
+		await copy(from, to);
+	}
+
+	public async copyReplace(from: string, to: string) {
+		await rimraf(to);
+		await copy(from, to);
 	}
 }
 

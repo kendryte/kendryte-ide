@@ -1,7 +1,7 @@
 import { INatureProgressStatus } from 'vs/kendryte/vs/platform/common/progress';
 import { IRequestService } from 'vs/platform/request/node/request';
 import { Event } from 'vs/base/common/event';
-import { DownloadID, INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
+import { DownloadID, IDownloadTargetInfo, INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
 import { DownloadTask } from 'vs/kendryte/vs/services/download/electron-main/downloadTask';
@@ -24,6 +24,10 @@ export class NodeDownloadService implements INodeDownloadService {
 		return this.downloading.get(download.__id);
 	}
 
+	public async getStatus(downloadId: DownloadID): TPromise<IDownloadTargetInfo> {
+		return this.getTask(downloadId).getInfo();
+	}
+
 	private setTask(download: DownloadID, t: DownloadTask) {
 		return this.downloading.set(download.__id, t);
 	}
@@ -37,18 +41,26 @@ export class NodeDownloadService implements INodeDownloadService {
 		return this.getTask(download).progressEvent;
 	}
 
-	public async download(url: string, target: string): TPromise<DownloadID> {
-		const d = new DownloadTask(url, target, this.requestService, this.nodePathService);
-		const id = await d.getId();
+	public async download(url: string, target: string, start = true): TPromise<DownloadID> {
+		const task = new DownloadTask(url, target, this.requestService, this.nodePathService);
+		await task.prepare();
+
+		const id = task.getInfo().id;
 
 		if (!this.hasTask(id)) {
 			// console.log('!New download item set! (%s)', id);
-			this.setTask(id, d);
+			this.setTask(id, task);
 		}
 
-		this.getTask(id).start();
+		if (start) {
+			await this.getTask(id).start();
+		}
 
 		return id;
+	}
+
+	public start(download: DownloadID): TPromise<void> {
+		return this.getTask(download).start();
 	}
 
 	public async cancel(download: DownloadID): TPromise<void> {
@@ -76,7 +88,7 @@ export class NodeDownloadService implements INodeDownloadService {
 		this.downloading.delete(download.__id);
 	}
 
-	public async waitResultFile(download: DownloadID): TPromise<string> {
+	public waitResultFile(download: DownloadID): TPromise<string> {
 		// console.log('waitResultFile called');
 		const d = this.getTask(download);
 		return new TPromise((resolve, reject) => {
@@ -92,8 +104,8 @@ export class NodeDownloadService implements INodeDownloadService {
 		});
 	}
 
-	public downloadTemp(url: string): TPromise<DownloadID> {
-		return this.download(url, this.nodePathService.tempDir(`download/${hash(url)}${extname(url)}`));
+	public downloadTemp(url: string, start = true): TPromise<DownloadID> {
+		return this.download(url, this.nodePathService.tempDir(`download/${hash(url)}${extname(url)}`), start);
 	}
 }
 

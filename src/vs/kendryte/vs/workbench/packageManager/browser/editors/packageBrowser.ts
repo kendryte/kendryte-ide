@@ -11,6 +11,7 @@ import { IPackageRegistryService, PackageTypes } from 'vs/kendryte/vs/workbench/
 export class PackageBrowserEditor extends BaseEditor {
 	static readonly ID: string = 'workbench.editor.package-market';
 	private $title: HTMLElement;
+	private errorMessage: HTMLElement;
 
 	constructor(
 		@ITelemetryService telemetryService: ITelemetryService,
@@ -57,6 +58,7 @@ export class PackageBrowserEditor extends BaseEditor {
 	}
 
 	private createList(parent: HTMLElement) {
+		this.errorMessage = append(parent, $('h1'));
 
 		this.onTabChange(PackageTypes.Library);
 	}
@@ -64,7 +66,11 @@ export class PackageBrowserEditor extends BaseEditor {
 	public layout(dimension: Dimension): void {
 	}
 
-	private onTabChange(id: PackageTypes) {
-		this.packageRegistryService.queryPackages(id, '', 1);
+	private onTabChange(type: PackageTypes) {
+		this.packageRegistryService.queryPackages(type, '', 1).then(() => {
+
+		}, (e) => {
+			this.errorMessage.textContent = e.message;
+		});
 	}
 }

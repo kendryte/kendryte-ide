@@ -1,4 +1,4 @@
-export const distributeUrl = 'https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/'; // MUST end with /
+import { PACKAGE_MANAGER_DISTRIBUTE_URL } from 'vs/kendryte/vs/services/update/common/protocol';
 
 export interface IPackageVersionDetail {
 	versionName: string;
@@ -13,8 +13,8 @@ export interface IRemotePackageInfo {
 	versions: IPackageVersionDetail[];
 }
 
-export const PACKAGE_LIST_LIBRARY = `${distributeUrl}registry/library.json`;
-export const PACKAGE_LIST_EXAMPLE = `${distributeUrl}registry/example.json`;
+export const PACKAGE_LIST_LIBRARY = `${PACKAGE_MANAGER_DISTRIBUTE_URL}registry/library.json`;
+export const PACKAGE_LIST_EXAMPLE = `${PACKAGE_MANAGER_DISTRIBUTE_URL}registry/example.json`;
 
 /**
  * query return IRemotePackageInfo[]

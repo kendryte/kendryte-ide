@@ -79,19 +79,3 @@ export function CMakeInternalVariants(): CurrentItem[] {
 		},
 	];
 }
-
-export interface IPackageVersionPlatform {
-	32: string;
-	64: string;
-	generic: string;
-}
-
-export interface IPackageVersion {
-	version: string;
-	homepageUrl?: string;
-	ignorePlatform?: string[];
-	source: string;
-	windows: IPackageVersionPlatform;
-	linux: IPackageVersionPlatform;
-	mac: IPackageVersionPlatform;
-}

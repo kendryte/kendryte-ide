@@ -1,49 +1,31 @@
-import { AbstractLogService, ILogService, LogLevel } from 'vs/platform/log/common/log';
-import { Extensions, IOutputChannel, IOutputChannelDescriptor, IOutputChannelRegistry, IOutputService } from 'vs/workbench/parts/output/common/output';
+import { IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { format } from 'util';
+import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
+import { Extensions, IOutputChannel, IOutputChannelRegistry } from 'vs/workbench/parts/output/common/output';
+import { AbstractLogService, ILogService, LogLevel } from 'vs/platform/log/common/log';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { Disposable, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
-import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
+import { Emitter } from 'vs/base/common/event';
 
 const registry = Registry.as<IOutputChannelRegistry>(Extensions.OutputChannels);
 
-export interface IChannelLogger extends ILogService {
-	log(message: string, ...args: any[]): void;
-
-	write(message: string, ...args: any[]): void;
-
-	show(preserveFocus?: boolean);
-
-	show(): void;
-}
-
-export interface IChannelLogService {
+export class ChannelLogger extends AbstractLogService implements IChannelLogger, ILogService, IDisposable {
 	_serviceBrand: any;
 
-	createChannel(channel: IOutputChannelDescriptor): IChannelLogger;
-
-	show(channel: IChannelLogger, preserveFocus?: boolean);
-}
-
-class ChannelLogger extends AbstractLogService implements IChannelLogger, IDisposable {
-	_serviceBrand: any;
+	private readonly _onDispose = new Emitter<void>();
+	public readonly onDispose = this._onDispose.event;
 
 	constructor(
+		private readonly windowId: number,
 		private readonly channel: IOutputChannel,
-		private readonly outputService: IOutputService,
 	) {
 		super();
+
 		this.channel = channel;
 		this._register(toDisposable(() => {
 			this.channel.dispose();
 			registry.removeChannel(this.channel.id);
 			Object.assign(this, { channel: null });
 		}));
-	}
-
-	show(preserveFocus?: boolean) {
-		this.outputService.showChannel(this.channel.id);
 	}
 
 	public println(level: string, _colorTheme: string, message: string, ...args: any[]) {
@@ -96,29 +78,17 @@ class ChannelLogger extends AbstractLogService implements IChannelLogger, IDispo
 			this.println('CRITI', 'background: #f33; color: white', message, ...args);
 		}
 	}
-}
 
-class ChannelLogService extends Disposable implements IChannelLogService {
-	_serviceBrand: any;
-
-	constructor(
-		@IOutputService private outputService: IOutputService,
-	) {
-		super();
+	serialize() {
+		return {
+			id: this.channel.id,
+			window: this.windowId,
+		};
 	}
 
-	public createChannel(channel: IOutputChannelDescriptor): IChannelLogger {
-		registry.registerChannel(channel);
-		const newItem = new ChannelLogger(this.outputService.getChannel(channel.id), this.outputService);
-		this._register(newItem);
-		return newItem;
-	}
-
-	show(channel: IChannelLogger, preserveFocus?: boolean) {
-		channel.show(preserveFocus);
+	dispose() {
+		this._onDispose.fire();
+		this._onDispose.dispose();
+		return super.dispose();
 	}
 }
-
-export const IChannelLogService = createDecorator<IChannelLogService>('IChannelLogService');
-
-registerSingleton(IChannelLogService, ChannelLogService);

@@ -1,10 +1,9 @@
 import { INatureProgressStatus } from 'vs/kendryte/vs/platform/common/progress';
-import { echo, Emitter } from 'vs/base/common/event';
-import { Disposable } from 'vs/base/common/lifecycle';
-import { DownloadID } from 'vs/kendryte/vs/services/download/common/download';
+import { echo, Emitter, Event } from 'vs/base/common/event';
+import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
+import { IDownloadTargetInfo } from 'vs/kendryte/vs/services/download/common/download';
 import { fileExists, mkdirp, readFile, unlink, writeFile } from 'vs/base/node/pfs';
 import { dirname } from 'vs/base/common/paths';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { IRequestService } from 'vs/platform/request/node/request';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { lock as rawLock, unlock as rawUnlock } from 'proper-lockfile';
@@ -15,18 +14,12 @@ import { IRequestContext } from 'vs/base/node/request';
 import uuid = require('uuid');
 
 enum State {
+	INIT,
 	PREPARE,
 	PAUSE,
 	WORKING,
 	ERROR,
 	OK,
-}
-
-interface IPartDownload {
-	id: DownloadID;
-	total: number;
-	current: number;
-	check: string;
 }
 
 export class DownloadTask extends Disposable {
@@ -35,14 +28,12 @@ export class DownloadTask extends Disposable {
 	private readonly nodePathService: INodePathService;
 
 	private readonly _progressEvent = new Emitter<Partial<INatureProgressStatus>>();
-	public readonly progressEvent = this._progressEvent.event;
 	private readonly _finishEvent = new Emitter<[string, Error]>();
 	public readonly finishEvent = echo(this._finishEvent.event);
 
-	private state: State;
+	private state: State = State.INIT;
 	private message = '';
-	private partInfo: TPromise<IPartDownload>;
-	private errorPromise: TPromise<never>;
+	private partInfo: IDownloadTargetInfo;
 
 	private readonly target: string;
 	private readonly resumeFile: string;
@@ -71,19 +62,34 @@ export class DownloadTask extends Disposable {
 
 		this._register(this._progressEvent);
 		this._register(this._finishEvent);
+	}
 
-		this.partInfo = this.prepare().then(undefined, (err) => {
-			this._handleError(err);
-			return null;
+	public get progressEvent(): Event<Partial<INatureProgressStatus>> {
+		return (listener: (e: Partial<INatureProgressStatus>) => any, thisArgs?: any, disposables?: IDisposable[]) => {
+			const result = this.progressEvent(listener, thisArgs);
+			if (disposables) {
+				disposables.push(result);
+			}
+			this.toDispose.push(result);
+			return result;
+		};
+	}
+
+	private _wrapActionPromise<T>(lockFile: string, pc: () => Thenable<T>): Promise<T> {
+		return this.lock(lockFile).then(pc).then((r) => {
+			return this.unlock(lockFile).then(() => r);
+		}, (e) => {
+			return this.unlock(lockFile).then(() => {
+				throw e;
+			});
 		});
-
-		this.partInfo.then(() => this.flush());
 	}
 
 	private async lock(f: string) {
 		const lockFile = this.nodePathService.tempDir('L' + hash(f));
 		// console.log('lock [%s] -> %s', f, lockFile);
 		if (!await fileExists(lockFile)) {
+			await mkdirp(dirname(lockFile));
 			// console.log('    the lock file not exists, create it.');
 			await writeFile(lockFile, 'empty', {});
 		}
@@ -101,70 +107,74 @@ export class DownloadTask extends Disposable {
 		await unlink(lockFile);
 	}
 
-	private async prepare(): TPromise<IPartDownload> {
-		this.state = State.PREPARE;
+	private preparePromise: Promise<void>;
 
-		this.updateMessage('preparing...');
-		let partInfo: IPartDownload;
-
-		await mkdirp(dirname(this.resumeFile));
-
-		await this.lock(this.resumeFile);
-		if (await fileExists(this.resumeFile)) {
-			// console.log('resume file exists.');
-			partInfo = JSON.parse(await readFile(this.resumeFile, 'utf8'));
-			partInfo.total = parseInt(partInfo.total as any); // prevent NaN
-		} else {
-			// console.log('resume file NOT exists.');
-			partInfo = {
-				id: { __id: uuid() },
-				current: 0,
-			} as any;
-
-			await this.getTotal(partInfo);
+	public prepare(): Promise<void> {
+		if (this.state !== State.INIT) {
+			return this.preparePromise;
 		}
-		this.resumeState(partInfo);
 
-		await this.unlock(this.resumeFile);
-		return partInfo;
+		this.state = State.PREPARE;
+		this.updateMessage('preparing...');
+		return this.preparePromise = this.loadResumeFile().then(async (loaded) => {
+			if (this.state === State.OK) {
+				return;
+			}
+			if (loaded) {
+				await this._init_checkTotal();
+			} else { // need create
+				await this._init_getTotal();
+			}
+
+			this.state = State.PAUSE;
+		}).catch((err) => {
+			this._handleError(err);
+			throw err;
+		});
 	}
 
-	start(): any {
+	async start(): Promise<void> {
 		switch (this.state) {
+			case State.INIT:
+				return this.prepare().then(() => this.start());
 			case State.PREPARE:
 				// console.log('delay start after prepare');
-				return this.partInfo.then(() => this.start());
+				return this.preparePromise.then(() => this.start());
 			case State.PAUSE:
-				return this._realStart();
+				this._realStart();
+				return;
+			case State.ERROR:
+				return Promise.reject(new Error('download already failed.'));
 		}
 	}
 
-	private async _realStart() {
+	private _realStart() {
 		this.state = State.WORKING;
 		this.updateMessage('starting...');
 
 		let updateTimer: number;
 
-		this.lock(this.target).then(async (e) => {
-			const partInfo = JSON.parse(await readFile(this.resumeFile, 'utf8'));
-
-			this.resumeState(partInfo, State.WORKING);
-			if (this.state !== State.WORKING) { // must be success
+		this._wrapActionPromise(this.target, async () => {
+			const loaded = await this.loadResumeFile();
+			if (!loaded) {
+				throw new Error(`cannot re-load resume file.`);
+			}
+			if (this.state === State.OK) {
 				return;
 			}
-
-			this.partInfo = TPromise.as(partInfo);
 
 			updateTimer = setInterval(() => {
 				this.triggerCurrentChange();
 			}, 2000);
 
-			return this._lockedStart(partInfo);
+			return this._lockedStart();
 		}).then(() => this._handleSuccess(), (e) => this._handleError(e)).then(async () => {
 			clearInterval(updateTimer);
-			await this.unlock(this.target);
 			if (this.fd) {
-				this.fd.close();
+				try {
+					this.fd.close();
+				} catch (e) {
+				}
 				delete this.fd;
 			}
 		});
@@ -173,20 +183,30 @@ export class DownloadTask extends Disposable {
 	private async _handleSuccess() {
 		// console.log('OK!!');
 		await this.flush();
-		this.state = State.OK;
-		this.updateMessage('complete!');
-		this._finishEvent.fire([this.target, null]);
+		this.updateMessage('download complete!');
+		this._handleFireSuccess();
+	}
+
+	private _handleFireSuccess() {
+		if (this.state !== State.OK && this.state !== State.ERROR) {
+			// console.log('this.state = State.OK');
+			this.state = State.OK;
+			this._finishEvent.fire([this.target, null]);
+		}
 	}
 
 	private _handleError(e) {
 		// console.log('ERR!!', e);
-		this.errorPromise = TPromise.wrapError(e);
-		this.state = State.ERROR;
 		this.updateMessage(e.message);
-		this._finishEvent.fire([null, e]);
+		if (this.state !== State.OK && this.state !== State.ERROR) {
+			this.state = State.ERROR;
+			this._finishEvent.fire([null, e]);
+		}
 	}
 
-	private async _lockedStart(partInfo: IPartDownload) {
+	private async _lockedStart() {
+		const partInfo: IDownloadTargetInfo = this.partInfo;
+
 		if (!await fileExists(this.target)) {
 			await writeFile(this.target, Buffer.alloc(0), {});
 		}
@@ -234,18 +254,14 @@ export class DownloadTask extends Disposable {
 		});
 	}
 
-	async flush(): TPromise<void> {
+	flush(): Thenable<void> {
 		if (this._cancel.token.isCancellationRequested) {
 			// console.log('canceled, not flush');
-			return;
-		}
-		if (this.state === State.ERROR) {
-			// console.log('failed, not flush');
-			return this.errorPromise;
+			return Promise.resolve();
 		}
 
-		// console.log('flush: %j [%s]', await this.partInfo, this.resumeFile);
-		await writeFile(this.resumeFile, JSON.stringify(await this.partInfo));
+		// console.log('flush: %j [%s]', this.partInfo, this.resumeFile);
+		return writeFile(this.resumeFile, JSON.stringify(this.partInfo));
 	}
 
 	private async _stop() {
@@ -272,7 +288,7 @@ export class DownloadTask extends Disposable {
 		this.dispose();
 	}
 
-	async getProgress(): TPromise<INatureProgressStatus> {
+	async getProgress(): Promise<INatureProgressStatus> {
 		const part = await this.partInfo;
 		if (!part) {
 			return {
@@ -288,23 +304,26 @@ export class DownloadTask extends Disposable {
 		};
 	}
 
-	async getId() {
-		if (this.state === State.ERROR) {
-			return this.errorPromise;
+	getInfo() {
+		if (this.state === State.INIT || this.state === State.PREPARE) {
+			throw new Error('not ready, please call prepare()');
 		}
-		if (!this.partInfo) {
-			throw new TypeError('impossible error.');
-		}
-		return (await this.partInfo).id;
+		return this.partInfo;
 	}
 
-	private async getTotal(partInfo: IPartDownload): TPromise<void> {
+	private async _init_getTotal(): Promise<void> {
+		this.partInfo = { id: { __id: uuid() } } as any;
 		const resp = await this.requestService.request({
 			type: 'HEAD',
 			url: this.url,
 			followRedirects: 3,
 		}, this._cancel.token);
+		this._parsePartInfoFromResponse(resp);
+		await this.flush();
+	}
 
+	private _parsePartInfoFromResponse(resp: IRequestContext) {
+		const partInfo = this.partInfo;
 		if (resp.res.statusCode !== 200) {
 			// console.log('request HEAD got error: ', resp.res.statusCode);
 			throw new Error(`HTTP: ${resp.res.statusCode} HEAD ${this.url}`);
@@ -318,35 +337,83 @@ export class DownloadTask extends Disposable {
 			// console.log('request HEAD got not support ranges: NaN');
 		}
 
-		partInfo.check = getFirstHeader(resp.res.headers, 'etag') || getFirstHeader(resp.res.headers, 'last-modified') || '';
+		partInfo.current = 0;
+
+		partInfo.etag = getFirstHeader(resp.res.headers, 'etag') || '';
+		partInfo.lastModified = getFirstHeader(resp.res.headers, 'last-modified') || '';
+		partInfo.check = partInfo.etag || partInfo.lastModified;
 		// console.log('request HEAD got hash: ', partInfo.check);
 	}
 
-	private resumeState(partInfo: IPartDownload, notFinishedState = State.PAUSE) {
-		// console.log('resume state by: ', partInfo);
-		if (partInfo.total && partInfo.current === partInfo.total) {
-			this.state = State.OK;
-			this._finishEvent.fire([this.target, null]);
-			// console.log('this.state = State.OK');
-		} else {
-			this.state = notFinishedState;
-			// console.log('this.state = %s', State[notFinishedState]);
+	private loadResumeFile(): Promise<boolean> {
+		return this._wrapActionPromise(this.resumeFile, async () => {
+			if (await fileExists(this.resumeFile)) {
+				// console.log('resume file exists.');
+				try {
+					const partInfo = JSON.parse(await readFile(this.resumeFile, 'utf8'));
+					partInfo.total = parseInt(partInfo.total as any); // prevent NaN
+
+					// console.log('resume state by: ', partInfo);
+					if (partInfo.total && partInfo.current === partInfo.total) {
+						this._handleFireSuccess();
+					} else {
+						if (!partInfo.total) {
+							partInfo.total = NaN;
+							partInfo.current = 0;
+						}
+					}
+
+					this.partInfo = partInfo;
+					return true;
+				} catch (e) {
+					// console.log('resume file parse failed: ', e);
+					return false;
+				}
+			} else {
+				// console.log('resume file NOT exists.');
+				return false;
+			}
+		});
+	}
+
+	private async _init_checkTotal() {
+		const partInfo = this.partInfo;
+		if (!partInfo.total || !partInfo.check) {
+			return;
 		}
+		const headers: any = {};
+
+		if (partInfo.etag) {
+			headers['if-none-match'] = partInfo.etag;
+		} else if (partInfo.lastModified) {
+			headers['if-modified-since'] = partInfo.lastModified;
+		}
+
+		// console.log('check remote changed: ', headers);
+		const resp = await this.requestService.request({
+			type: 'HEAD',
+			url: this.url,
+			headers,
+			followRedirects: 3,
+		}, this._cancel.token);
+
+		if (resp.res.statusCode === 304) {
+			// console.log('    remote file NOT changed');
+			return;
+		}
+
+		// console.log('    remote file HAS changed');
+		this._parsePartInfoFromResponse(resp);
+		await this.flush();
 	}
 
 	private updateMessage(message: string) {
 		this.message = message;
 		// console.log('message = ', message);
-		if (!this.partInfo) {
-			return;
-		}
 		this.getProgress().then(p => this._progressEvent.fire(p));
 	}
 
 	private triggerCurrentChange() {
-		if (!this.partInfo) {
-			return;
-		}
 		this.getProgress().then(p => {
 			// console.log('progress = %s/%s', p.current, p.total);
 			this._progressEvent.fire(p);

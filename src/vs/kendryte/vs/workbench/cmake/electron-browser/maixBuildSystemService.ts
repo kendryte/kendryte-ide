@@ -108,27 +108,4 @@ export function MaixBuildSystemPrepare(access: ServicesAccessor): TPromise<void>
 
 		return changed;
 	}
-
-	// function setDebugConfig() {
-	// 	if (!this.workspaceContextService.getWorkspace().folders.length) {
-	// 		return;
-	// 	}
-	// 	const resource = this.workspaceContextService.getWorkspace().folders[0].toResource('.vscode/launch.json');
-	//
-	// 	const launchJson = this.configurationService.getValue<IGlobalConfig>('launch', {
-	// 		resource,
-	// 	});
-	//
-	// 	const exists = launchJson.configurations.findIndex((item) => {
-	// 		return item.hasOwnProperty('kendryte');
-	// 	});
-	//
-	// 	// todo: insert startup config?
-	//
-	// 	if (exists === -1) {
-	// 		this.configurationService.updateValue('configurations', {
-	// 			resource,
-	// 		}, ConfigurationTarget.WORKSPACE);
-	// 	}
-	// }
 }

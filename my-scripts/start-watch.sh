@@ -14,4 +14,5 @@ ensure_node_modules_in_current_dir
 
 node build/lib/electron.js || ./node_modules/.bin/gulp electron
 
-yarn watch
+export FORCE_COLOR=yes
+yarn watch | sed "s#${VSCODE_ROOT}/src/##g"

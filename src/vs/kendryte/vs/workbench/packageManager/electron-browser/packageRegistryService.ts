@@ -19,7 +19,6 @@ export class PackageRegistryService implements IPackageRegistryService {
 		@IEditorService private readonly editorService: IEditorService,
 		@IDownloadWithProgressService private readonly downloadWithProgressService: IDownloadWithProgressService,
 	) {
-		this.downloadWithProgressService.downloadTemp('https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/IDE/kendryte-ide-1.28.0-20180930.zip');
 	}
 
 	public async listLocal(query?: string): TPromise<IPackage[]> {
