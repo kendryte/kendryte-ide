@@ -9,6 +9,7 @@ import { Emitter } from 'vs/base/common/event';
 const registry = Registry.as<IOutputChannelRegistry>(Extensions.OutputChannels);
 
 export class ChannelLogger extends AbstractLogService implements IChannelLogger, ILogService, IDisposable {
+	public readonly id: string;
 	_serviceBrand: any;
 
 	private readonly _onDispose = new Emitter<void>();
@@ -21,6 +22,7 @@ export class ChannelLogger extends AbstractLogService implements IChannelLogger,
 		super();
 
 		this.channel = channel;
+		this.id = this.channel.id;
 		this._register(toDisposable(() => {
 			this.channel.dispose();
 			registry.removeChannel(this.channel.id);

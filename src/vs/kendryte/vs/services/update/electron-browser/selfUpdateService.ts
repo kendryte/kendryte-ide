@@ -14,11 +14,13 @@ import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/chan
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IWindowsService } from 'vs/platform/windows/common/windows';
 import { IFileCompressService } from 'vs/kendryte/vs/services/fileCompress/node/fileCompressService';
+import { IDownloadService } from 'vs/platform/download/common/download';
 
 const patchVersionKey = 'hot-patch-version'; // must same with electron main
 
 const UPDATE_KEY_MAIN = 'KendryteIDE';
 const UPDATE_KEY_PATCH = 'KendryteIDEPatch';
+
 
 class SelfUpdateService implements IUpdateService {
 	_serviceBrand: any;
@@ -32,11 +34,12 @@ class SelfUpdateService implements IUpdateService {
 	private downloaded: string;
 
 	constructor(
-		@INodePathService private readonly nodePathService: INodePathService,
 		@IChannelLogService private readonly channelLogService: IChannelLogService,
 		@IEnvironmentService private readonly environmentService: IEnvironmentService,
 		@IStorageService private readonly storageService: IStorageService,
 		@IWindowsService private readonly windowsService: IWindowsService,
+		@INodePathService private readonly nodePathService: INodePathService,
+		@IDownloadService private readonly downloadService: IDownloadService,
 		@IFileCompressService private readonly fileCompressService: IFileCompressService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 	) {
@@ -51,43 +54,6 @@ class SelfUpdateService implements IUpdateService {
 		this.logger.info('update#setState(%s)', state.type);
 		this._state = state;
 		this._onStateChange.fire(state);
-	}
-
-	public async applyUpdate(): TPromise<void> {
-		this.channelLogService.show(this.logger.id);
-		if (!this.downloaded) {
-			await this.downloadUpdate();
-		}
-		const patch = await this.checkUpdateInfo(UPDATE_KEY_PATCH);
-		this.setState(State.Updating({
-			version: patch.version,
-			productVersion: patch.version,
-		}));
-
-		const patchZip = this.downloaded;
-		const installTarget = resolvePath(this.nodePathService.getInstallPath(), 'resources/app');
-		this.logger.info('applyIDEPatch: ', patchZip, installTarget);
-		const targetFolder = await this.fileCompressService.extractTemp(patchZip, this.logger);
-
-
-		this.setState(State.Ready({
-			version: patch.version,
-			productVersion: patch.version,
-		}));
-	}
-
-	protected async notifyUpdate() {
-		const main = await this.checkUpdateInfo(UPDATE_KEY_MAIN);
-		this.logger.warn('Base environment is update: local %s, remote %s', packageJson.version, main.version);
-		const homepage = main.homepageUrl || 'https://github.com/kendryte/kendryte-ide';
-		this.logger.info('remote url: %s', homepage);
-		this.notificationService.prompt(Severity.Info, 'KendryteIDE has updated.\n', [
-			new OpenDownloadAction(homepage),
-			{
-				label: 'Not now',
-				run() { },
-			},
-		]);
 	}
 
 	public async checkForUpdates(context: any): TPromise<void> {
@@ -126,6 +92,43 @@ class SelfUpdateService implements IUpdateService {
 				productVersion: main.version,
 			}));
 		}
+	}
+
+	public async applyUpdate(): TPromise<void> {
+		this.channelLogService.show(this.logger.id);
+		if (!this.downloaded) {
+			await this.downloadUpdate();
+		}
+		const patch = await this.checkUpdateInfo(UPDATE_KEY_PATCH);
+		this.setState(State.Updating({
+			version: patch.version,
+			productVersion: patch.version,
+		}));
+
+		const patchZip = this.downloaded;
+		const installTarget = resolvePath(this.nodePathService.getInstallPath(), 'resources/app');
+		this.logger.info('applyIDEPatch: ', patchZip, installTarget);
+		const targetFolder = await this.fileCompressService.extractTemp(patchZip, this.logger);
+
+
+		this.setState(State.Ready({
+			version: patch.version,
+			productVersion: patch.version,
+		}));
+	}
+
+	protected async notifyUpdate() {
+		const main = await this.checkUpdateInfo(UPDATE_KEY_MAIN);
+		this.logger.warn('Base environment is update: local %s, remote %s', packageJson.version, main.version);
+		const homepage = main.homepageUrl || 'https://github.com/kendryte/kendryte-ide';
+		this.logger.info('remote url: %s', homepage);
+		this.notificationService.prompt(Severity.Info, 'KendryteIDE has updated.\n', [
+			new OpenDownloadAction(homepage),
+			{
+				label: 'Not now',
+				run() { },
+			},
+		]);
 	}
 
 	public async downloadUpdate(): TPromise<void> {
@@ -196,8 +199,6 @@ class SelfUpdateService implements IUpdateService {
 		await this.windowsService.relaunch({});
 		return undefined;
 	}
-
-	protected cache: { [id: string]: IPackageVersion } = {};
 
 	protected async checkUpdateInfo(type: string): TPromise<IPackageVersion> {
 		if (this.cache[type]) {

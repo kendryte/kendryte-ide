@@ -30,7 +30,7 @@ class MainChannelLogService extends Disposable implements IMainChannelLogService
 		if (this.registry.has(id)) {
 			return this.registry.get(id);
 		}
-		const log = new RemoteLogger();
+		const log = new RemoteLogger(id);
 		this.registry.set(id, log);
 
 		return log;
