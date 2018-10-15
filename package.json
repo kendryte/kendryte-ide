@@ -1,6 +1,7 @@
 {
   "name": "code-oss-dev",
-  "version": "1.28.0",
+  "version": "1.28.0-patch.1",
+  "patchVersion": 20181015,
   "distro": "522635a4482922678ade4bdaca2d4032684ed37a",
   "author": {
     "name": "Microsoft Corporation"
@@ -28,6 +29,7 @@
     "@octokit/rest": "^15.13.0",
     "applicationinsights": "0.18.0",
     "buffer-crc32": "^0.2.13",
+    "electron-store": "^2.0.0",
     "fast-plist": "0.1.2",
     "gc-signals": "^0.0.1",
     "getmac": "1.4.1",
@@ -147,10 +149,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/vscode.git"
+    "url": "https://github.com/kendryte/kendryte-ide.git"
   },
   "bugs": {
-    "url": "https://github.com/Microsoft/vscode/issues"
+    "url": "https://github.com/kendryte/kendryte-ide/issues"
   },
   "optionalDependencies": {
     "windows-foreground-love": "0.1.0",

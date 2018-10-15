@@ -5,13 +5,14 @@ import { DownloadID, INodeDownloadService } from 'vs/kendryte/vs/services/downlo
 import { INotificationHandle, INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { unClosableNotify } from 'vs/kendryte/vs/platform/progress/common/unClosableNotify';
 import { showDownloadSpeed } from 'vs/kendryte/vs/base/common/speedShow';
+import { ILogService } from 'vs/platform/log/common/log';
 
 export interface IDownloadWithProgressService {
 	_serviceBrand: any;
 
-	download(url: string, target: string, cancel?: () => void): TPromise<string>;
-	downloadTemp(url: string, cancel?: () => void): TPromise<string>;
-	continue(title: string, id: DownloadID, onDidCancel?: () => void): TPromise<string>;
+	download(url: string, target: string, logger?: ILogService, cancel?: () => void): TPromise<string>;
+	downloadTemp(url: string, logger?: ILogService, cancel?: () => void): TPromise<string>;
+	continue(title: string, id: DownloadID, logger?: ILogService, onDidCancel?: () => void): TPromise<string>;
 }
 
 export const IDownloadWithProgressService = createDecorator<IDownloadWithProgressService>('downloadWithProgressService');
@@ -50,6 +51,9 @@ class DownloadWithProgressService implements IDownloadWithProgressService {
 			handle.progress.done();
 			handle.updateSeverity(Severity.Error);
 			handle.updateMessage(`download ${title} Error: ${e.message}`);
+			if (handle['revoke']) {
+				handle['revoke']();
+			}
 			throw e;
 		};
 
@@ -69,26 +73,28 @@ class DownloadWithProgressService implements IDownloadWithProgressService {
 				last = 0;
 			}
 
-			handle.updateMessage(`downloading file: ${title} - ${v.message}\n` + speed(v.current));
+			handle.updateMessage(`downloading file: ${speed(v.current)}\n${v.message} - ${title}`);
 		});
 
 		return await this.nodeDownloadService.waitResultFile(downloadId).then((r) => {
-			handle.progress.done();
-			handle.updateMessage(`download ${title} complete: ${r}`);
+			if (handle['revoke']) {
+				handle['revoke']();
+			}
+			handle.close();
 			return r;
 		}, (e) => handleError(e));
 	}
 
-	download(url: string, target: string, onDidCancel?: () => void): TPromise<string> {
-		return this.handle(url, onDidCancel, this.nodeDownloadService.download.bind(this.nodeDownloadService), [url, target]);
+	download(url: string, target: string, logger?: ILogService, onDidCancel?: () => void): TPromise<string> {
+		return this.handle(url, onDidCancel, this.nodeDownloadService.download.bind(this.nodeDownloadService), [url, target, logger]);
 	}
 
-	downloadTemp(url: string, onDidCancel?: () => void): TPromise<string> {
-		return this.handle(url, onDidCancel, this.nodeDownloadService.downloadTemp.bind(this.nodeDownloadService), [url]);
+	downloadTemp(url: string, logger?: ILogService, onDidCancel?: () => void): TPromise<string> {
+		return this.handle(url, onDidCancel, this.nodeDownloadService.downloadTemp.bind(this.nodeDownloadService), [url, logger]);
 	}
 
-	continue(title: string, id: DownloadID, onDidCancel?: () => void): TPromise<string> {
-		return this.handle(title, onDidCancel, () => Promise.resolve(id), []);
+	continue(title: string, id: DownloadID, logger?: ILogService, onDidCancel?: () => void): TPromise<string> {
+		return this.handle(title, onDidCancel, this.nodeDownloadService.start.bind(this.nodeDownloadService), [logger]);
 	}
 }
 

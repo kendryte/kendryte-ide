@@ -1,19 +1,20 @@
 import { TPromise } from 'vs/base/common/winjs.base';
 import { resolve as resolveUrl } from 'url';
-import { IIDEBuildingBlocksService, INodePathService, UpdateList, UpdateListConfirmed } from 'vs/kendryte/vs/platform/common/type';
-import { exists, readFile, unlink, writeFile } from 'vs/base/node/pfs';
+import { IIDEBuildingBlocksService, INodePathService, UpdateList, UpdateListFulfilled } from 'vs/kendryte/vs/platform/common/type';
+import { copy, exists, readFile, rimraf, unlink, writeFile } from 'vs/base/node/pfs';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import * as crypto from 'crypto';
 import { dumpDate } from 'vs/kendryte/vs/platform/common/dumpDate';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
 import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
-import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
+import { ILifecycleService } from 'vs/platform/lifecycle/electron-main/lifecycleMain';
 import { IBuildingBlocksUpdateInfo, REQUIRED_BLOCK_DISTRIBUTE_URL } from 'vs/kendryte/vs/services/update/common/protocol';
 import { INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
-import { VersionUrlHandler } from 'vs/kendryte/vs/services/update/node/versionUrlHandler';
-import { MainVersionUrlHandler } from 'vs/kendryte/vs/services/update/electron-main/mainVersionUrlHandler';
+import { IVersionUrlHandler } from 'vs/kendryte/vs/services/update/node/versionUrlHandler';
 import { buffer, Emitter } from 'vs/base/common/event';
+import { app, BrowserWindow } from 'electron';
+import { isWindows } from 'vs/base/common/platform';
 
 const STORAGE_KEY = 'block-update';
 
@@ -24,41 +25,59 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 
 	private running: TPromise<UpdateList>;
 	private bundledVersions: { [packageName: string]: string };
-	private versionHandler: VersionUrlHandler;
 
 	private readonly _onProgress = new Emitter<string>();
 	private currentStatus: string = '';
+	private readonly packageBundleFile: string;
 
 	constructor(
+		@IVersionUrlHandler private readonly versionHandler: IVersionUrlHandler,
 		@IStorageService private storageService: IStorageService,
 		@INodePathService private nodePathService: INodePathService,
-		@ILifecycleService lifecycleService: ILifecycleService,
+		@ILifecycleService private lifecycleService: ILifecycleService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@INodeDownloadService private downloadService: INodeDownloadService,
 	) {
-		lifecycleService.onWillShutdown((e) => {
-			if (this.bundledVersions) {
-				const packageBundleFile = this.nodePathService.getPackagesPath('bundled-versions.json');
-				const p = writeFile(packageBundleFile, JSON.stringify(this.bundledVersions, null, 4)).then(() => false);
-				e.veto(p);
-			}
-		});
-
-		this.versionHandler = instantiationService.createInstance(MainVersionUrlHandler);
+		this.packageBundleFile = this.nodePathService.getPackagesPath('bundled-versions.json');
 	}
 
 	public get onProgress() {
 		return buffer(this._onProgress.event, false, [this.currentStatus]);
 	}
 
-	private setMessage(msg: string) {
+	protected setMessage(msg: string) {
 		this.currentStatus = msg;
 		this._onProgress.fire(msg);
 	}
 
-	markUpdate(data: UpdateListConfirmed): TPromise<void> {
-		const packageUpdateMarker = this.nodePathService.tempDir('update-mark.json');
-		return writeFile(packageUpdateMarker, JSON.stringify(data));
+	async realRunUpdate(data: UpdateListFulfilled) {
+		if (await exists(this.packageBundleFile)) {
+			await unlink(this.packageBundleFile);
+		}
+
+		if (!this.bundledVersions) {
+			this.bundledVersions = {};
+		}
+
+		app.once('will-quit', (e: Event) => {
+			e.preventDefault();
+
+			const win = this._showNotify();
+			this.handleQuit(data).then(() => {
+				console.log('### relaunch');
+				win.close();
+				this.lifecycleService.relaunch();
+			}, (e) => {
+				console.error(e);
+				alert('Error while moving files: ' + e.message);
+				console.log('### relaunch');
+				win.close();
+				this.lifecycleService.relaunch();
+			});
+		});
+
+		this.lifecycleService.quit().then(() => {
+		});
 	}
 
 	public fetchUpdateInfo(logger: IChannelLogger, force?: boolean): TPromise<UpdateList> {
@@ -75,38 +94,48 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 	}
 
 	private async _fetchUpdateInfo(logger: IChannelLogger, force?: boolean): TPromise<UpdateList> {
-		if (await this.isUpdateAlreadyCheckedMomentsAgo(logger)) {
+		logger.info('MAIN::fetchUpdateInfo:');
+		if (!force && await this.isUpdateAlreadyCheckedMomentsAgo(logger)) {
+			logger.info('update check too fast, skip this time.');
 			return [];
 		}
 
-		this.setMessage('fetching registry...');
-
-		const packageBundleFile = this.nodePathService.getPackagesPath('bundled-versions.json');
-		if (await exists(packageBundleFile)) {
-			this.bundledVersions = JSON.parse(await readFile(packageBundleFile, 'utf8'));
+		if (await exists(this.packageBundleFile)) {
+			logger.info('read bundle file versions...');
+			this.bundledVersions = JSON.parse(await readFile(this.packageBundleFile, 'utf8'));
+		} else {
+			logger.info('bundle file not exists...');
+			this.bundledVersions = {};
 		}
-
-		const id = await this.downloadService.downloadTemp(resolveUrl(REQUIRED_BLOCK_DISTRIBUTE_URL, 'projects.json'));
+		const regUrl = resolveUrl(REQUIRED_BLOCK_DISTRIBUTE_URL + '/', 'projects.json');
+		logger.info('fetching registry: ' + regUrl);
+		const id = await this.downloadService.downloadTemp(regUrl, true, logger);
 		const file = await this.downloadService.waitResultFile(id);
+		logger.info('fetching registry complete.');
 		const content: IBuildingBlocksUpdateInfo[] = JSON.parse(await readFile(file, 'utf8'));
 
 		const needUpdate: UpdateList = [];
 		for (const packageData of content) {
-			if (packageData.version === this.currentVersion(packageData.project)) {
+			logger.info(`======= ${packageData.projectName}: (${needUpdate.length + 1}/${content.length})`);
+			if (packageData.version === this.bundledVersions[packageData.projectName]) {
+				logger.info(`up to date: ` + packageData.version);
 				continue;
 			}
 
-			this.setMessage(`checking ${packageData.project}... (${needUpdate.length + 1}/${content.length})`);
-			const downloadUrl = this.versionHandler.getMyVersion(packageData);
-			const downloadId = await this.downloadService.downloadTemp(downloadUrl);
+			logger.info(`need update! local [${this.bundledVersions[packageData.projectName] || 'uninstall'}] remote [${packageData.version}].`);
+			let downloadUrl = this.versionHandler.getMyVersion(packageData);
+			logger.info(`url = ${downloadUrl}`);
+			downloadUrl = resolveUrl(REQUIRED_BLOCK_DISTRIBUTE_URL + '/', downloadUrl);
+			logger.info(`url = ${downloadUrl}`);
 
-			needUpdate.push([packageData.project, downloadId]);
+			needUpdate.push({
+				name: packageData.projectName,
+				version: packageData.version,
+				downloadUrl: downloadUrl,
+			});
 		}
+		logger.debug('need update:', needUpdate);
 		return needUpdate;
-	}
-
-	private currentVersion(blockName: string) {
-		return this.storageService.get(STORAGE_KEY + blockName, StorageScope.GLOBAL, '') || this.bundledVersions[blockName] || '';
 	}
 
 	protected async checkHashIfKnown(hash: string, file: string, logger: IChannelLogger) {
@@ -149,6 +178,47 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 		mustRecheck.setHours(mustRecheck.getMinutes() + 15);
 		logger.info('next update check: %s', dumpDate.time(mustRecheck));
 		return (new Date) <= mustRecheck;
+	}
+
+	private async handleQuit(data: UpdateListFulfilled) {
+		for (const { name, version, downloaded } of data) {
+			console.log('update package:', name);
+
+			const thisPackageLoc = this.nodePathService.getPackagesPath(name);
+
+			console.log('  rimraf(%s)', thisPackageLoc);
+			await rimraf(thisPackageLoc);
+
+			console.log('  copy(%s, %s)', downloaded, thisPackageLoc);
+			await copy(downloaded, thisPackageLoc);
+			this.bundledVersions[name] = version;
+			console.log('  writeFile(%s) -> %s = %s', this.packageBundleFile, name, version);
+			await writeFile(this.packageBundleFile, JSON.stringify(this.bundledVersions, null, 2));
+		}
+	}
+
+	private _showNotify() {
+		const win = new BrowserWindow({
+			height: 240,
+			width: 800,
+			x: 0,
+			y: 0,
+			maximizable: false,
+			closable: false,
+			fullscreenable: false,
+			title: 'Updating...',
+			show: true,
+			titleBarStyle: 'hidden',
+		});
+
+		let message = '<h1>Updating, please wait...</h1>';
+		if (isWindows) {
+			message += '<h2>This will take no more than few minutes.</h2>';
+		} else {
+			message += '<h2>This will take about few seconds.</h2>';
+		}
+		win.webContents.executeJavaScript(`document.body.textContent = ` + JSON.stringify(message)).catch();
+		return win;
 	}
 }
 

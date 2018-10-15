@@ -4,6 +4,7 @@ import { INatureProgressStatus } from 'vs/kendryte/vs/platform/common/progress';
 import { DownloadID, IDownloadTargetInfo, INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
 import { Event } from 'vs/base/common/event';
 import { TPromise } from 'vs/base/common/winjs.base';
+import { ILogService } from 'vs/platform/log/common/log';
 
 class NodeDownloadServiceClient implements INodeDownloadService {
 	_serviceBrand: any;
@@ -12,14 +13,20 @@ class NodeDownloadServiceClient implements INodeDownloadService {
 	constructor(
 		@IKendryteClientService channelService: IKendryteClientService,
 	) {
-		channelService.markEvents(INodeDownloadService, ['onProgress']);
+		channelService.markEventMethod(INodeDownloadService, ['onProgress']);
 		channelService.markMethod(INodeDownloadService, [
 			'download',
-			'cancel',
-			'progress',
-			'destroy',
-			'waitResultFile',
 			'downloadTemp',
+
+			'wait',
+			'waitResultFile',
+
+			'start',
+			'cancel',
+			'destroy',
+
+			'progress',
+			'getStatus',
 		]);
 		this.ipc = channelService.as<INodeDownloadService>(INodeDownloadService);
 	}
@@ -28,8 +35,12 @@ class NodeDownloadServiceClient implements INodeDownloadService {
 		return this.ipc.onProgress(download);
 	}
 
-	public download(url: string, target: string, start = true): TPromise<DownloadID> {
-		return this.ipc.download(url, target, start);
+	public download(url: string, target: string, start = true, logger?: ILogService): TPromise<DownloadID> {
+		return this.ipc.download(url, target, start, logger);
+	}
+
+	public downloadTemp(url: string, start = true, logger?: ILogService): TPromise<DownloadID> {
+		return this.ipc.downloadTemp(url, start, logger);
 	}
 
 	public start(download: DownloadID): TPromise<void> {
@@ -48,12 +59,12 @@ class NodeDownloadServiceClient implements INodeDownloadService {
 		return this.ipc.destroy(download);
 	}
 
-	public waitResultFile(downloadId: DownloadID): TPromise<string> {
-		return this.ipc.waitResultFile(downloadId);
+	public wait(downloadId: DownloadID): TPromise<void> {
+		return this.ipc.wait(downloadId);
 	}
 
-	public downloadTemp(url: string, start = true): TPromise<DownloadID> {
-		return this.ipc.downloadTemp(url, start);
+	public waitResultFile(downloadId: DownloadID): TPromise<string> {
+		return this.ipc.waitResultFile(downloadId);
 	}
 
 	public getStatus(downloadId: DownloadID): TPromise<IDownloadTargetInfo> {

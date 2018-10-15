@@ -1,11 +1,12 @@
-import { VersionUrlHandler } from 'vs/kendryte/vs/services/update/node/versionUrlHandler';
+import { IVersionUrlHandler, VersionUrlHandler } from 'vs/kendryte/vs/services/update/node/versionUrlHandler';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
 import Severity from 'vs/base/common/severity';
 import { localize } from 'vs/nls';
 import { shell } from 'electron';
 import { IDE_HOMEPAGE } from 'vs/kendryte/vs/services/update/common/protocol';
+import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
 
-export class MainVersionUrlHandler extends VersionUrlHandler {
+class MainVersionUrlHandler extends VersionUrlHandler {
 	constructor(
 		@IDialogService private dialogService: IDialogService,
 	) {
@@ -28,3 +29,5 @@ export class MainVersionUrlHandler extends VersionUrlHandler {
 		});
 	}
 }
+
+registerMainSingleton(IVersionUrlHandler, MainVersionUrlHandler);

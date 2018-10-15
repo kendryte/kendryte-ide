@@ -7,9 +7,10 @@ import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { ILogService } from 'vs/platform/log/common/log';
 import { URI } from 'vs/base/common/uri';
 import { ChannelLogger } from 'vs/kendryte/vs/services/channelLogger/electron-browser/logger';
-import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
+import { LogEvent } from 'vs/kendryte/vs/services/channelLogger/common/type';
 
 const symbolMethod = Symbol('ipc-method-mark');
+const symbolEventMethod = Symbol('ipc-event-method-mark');
 const symbolEvent = Symbol('ipc-event-mark');
 
 class KendryteIPCWorkbenchService implements IKendryteClientService {
@@ -51,24 +52,52 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 		service[symbolMethod].push(...methods);
 	}
 
+	markEventMethod<T>(service: ServiceIdentifier<T>, methods: (keyof T)[]) {
+		if (!service.hasOwnProperty(symbolEventMethod)) {
+			Object.defineProperty(service, symbolEventMethod, {
+				value: [],
+				configurable: false,
+				enumerable: true,
+				writable: false,
+			});
+		}
+		service[symbolEventMethod].push(...methods);
+	}
+
 	public as<T>(service: ServiceIdentifier<T>): T {
 		const id = service.toString();
 		if (!this.mapper.has(id)) {
-			const channel = this._create(id, service[symbolMethod] || [], service[symbolEvent] || []);
+			const channel = this._create(id, service[symbolMethod] || [], service[symbolEvent] || [], service[symbolEventMethod] || []);
 			this.mapper.set(id, channel);
 		}
 		return this.mapper.get(id);
 	}
 
-	private _create(id: string, methods: string[], events: string[]) {
+	private _create(id: string, methods: string[], events: string[], eventMethods: string[]) {
 		const proxy = Object.create(null);
 		proxy[Symbol.toStringTag] = () => id;
 
 		for (const method of methods) {
-			proxy[method] = (...arg) => this._callService(id, method, arg);
+			Object.defineProperty(proxy, method, {
+				configurable: false,
+				enumerable: true,
+				value: (...arg) => this._callService(id, method, arg),
+				writable: false,
+			});
 		}
 		for (const event of events) {
-			proxy[event] = (...arg) => this._listenService(id, event, arg);
+			Object.defineProperty(proxy, event, {
+				configurable: false,
+				enumerable: true,
+				get: () => this._listenService(id, event),
+			});
+		}
+		for (const em of eventMethods) {
+			Object.defineProperty(proxy, em, {
+				configurable: false,
+				enumerable: true,
+				value: (...arg) => this._listenService(id, em, arg),
+			});
 		}
 		Object.freeze(proxy);
 		return proxy;
@@ -80,10 +109,14 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 		return this.runnerChannel.call(`${id}:${method}`, this.serializeArg(args));
 	}
 
-	private _listenService(id: string, method: string, args: any[]): Event<any> {
-		this.logService.info(`listenService(${id}, ${method},`, args, ');');
-
-		return this.runnerChannel.listen(`${id}:${method}`, this.serializeArg(args));
+	private _listenService(id: string, method: string, args?: any[]): Event<any> {
+		if (args) {
+			this.logService.info(`listenService(${id}, ${method},`, args, ');');
+			return this.runnerChannel.listen(`${id}:${method}`, this.serializeArg(args));
+		} else {
+			this.logService.info(`listenService(${id}, [getter]${method});`);
+			return this.runnerChannel.listen(`${id}:${method}`);
+		}
 	}
 
 	private serializeArg(args: any[]) {
@@ -102,9 +135,12 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 
 	private _listenLogger(logger: ChannelLogger) {
 		const { id, window } = logger.serialize();
-		this._listenService(IChannelLogService.toString(), 'logEvent', [id, window]);
+		const dis = this.mainChannel.listen<LogEvent>('logEvent', [id, window])((d) => {
+			logger[d.level](d.message, ...d.args);
+		});
 		logger.onDispose(() => {
-			this._callService(IChannelLogService.toString(), 'stopLogEvent', [id, window]);
+			dis.dispose();
+			this.mainChannel.call('stopLogEvent', [id, window]);
 		});
 	}
 }

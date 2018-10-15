@@ -14,5 +14,12 @@ ensure_node_modules_in_current_dir
 
 node build/lib/electron.js || ./node_modules/.bin/gulp electron
 
+if command -v stty &>/dev/null ; then
+	stty intr ^K
+	echo ""
+	echo -e '\e[1;5;38;5;14m!!! Press Ctrl+K instead of Ctrl+C to stop this. !!!\e[0m'
+	echo ""
+fi
+
 export FORCE_COLOR=yes
 yarn watch | sed "s#${VSCODE_ROOT}/src/##g"

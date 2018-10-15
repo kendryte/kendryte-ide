@@ -1,6 +1,8 @@
 import { is64Bit } from 'vs/kendryte/vs/platform/node/versions';
-import { IDE_HOMEPAGE, IDE_MY_PATCH_VERSION, IIDEUpdateInfo, IPackageUpdateInfo, IPatchUpdateInfo } from 'vs/kendryte/vs/services/update/common/protocol';
+import { IBasePackageInfo, IDE_HOMEPAGE, IIDEUpdateInfo, IPatchUpdateInfo } from 'vs/kendryte/vs/services/update/common/protocol';
 import { OperatingSystem, OS } from 'vs/base/common/platform';
+import { IDECurrentPatchVersion } from 'vs/kendryte/vs/services/update/node/myVersion';
+import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 
 type KnownPlatform = 'windows' | 'linux' | 'mac';
 type KnownArch = '32' | '64';
@@ -22,7 +24,18 @@ function platformPropKeyName(): KnownPlatform {
 	}
 }
 
-export abstract class VersionUrlHandler {
+export interface IVersionUrlHandler {
+	_serviceBrand: any;
+
+	getIDE(info: IIDEUpdateInfo): string;
+	getIDEHomePage(info: IIDEUpdateInfo): string;
+	getPatchList(info: IIDEUpdateInfo): { version: number; downloadUrl: string; }[];
+	getMyVersion(info: IPatchUpdateInfo | IBasePackageInfo<any>): string;
+}
+
+export const IVersionUrlHandler = createDecorator<IVersionUrlHandler>('versionUrlHandler');
+
+export abstract class VersionUrlHandler implements IVersionUrlHandler {
 	_serviceBrand: any;
 	private readonly platformKey: KnownPlatform;
 	private readonly archKey: KnownArch;
@@ -47,12 +60,25 @@ export abstract class VersionUrlHandler {
 		return info.homepage || IDE_HOMEPAGE;
 	}
 
-	getPatchList(info: IIDEUpdateInfo): string[] {
-		const startFrom = info.patches.findIndex(e => e.version === IDE_MY_PATCH_VERSION);
-		return info.patches.slice(startFrom + 1).map(e => this.getMyVersion(e));
+	getPatchList(info: IIDEUpdateInfo): { version: number; downloadUrl: string; }[] {
+		const current = IDECurrentPatchVersion();
+		const ret = info.patches.filter((patch) => {
+			return current < parseFloat(patch.version);
+		}).map((patch) => {
+			return {
+				version: parseFloat(patch.version),
+				downloadUrl: this.getMyVersion(patch),
+			};
+		});
+
+		ret.toString = function () {
+			return this.map(e => `  ${e.version}: ${e.downloadUrl}`).join('\n');
+		};
+
+		return ret;
 	}
 
-	getMyVersion(info: IPatchUpdateInfo | IPackageUpdateInfo): string {
+	getMyVersion(info: IPatchUpdateInfo | IBasePackageInfo<any>): string {
 		if (info[this.platformKey]) {
 			const platformVersion = info[this.platformKey];
 			if (platformVersion.ignore) {

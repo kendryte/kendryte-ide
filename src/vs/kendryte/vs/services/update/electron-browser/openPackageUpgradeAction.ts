@@ -15,6 +15,7 @@ import { finishAllPromise } from 'vs/kendryte/vs/base/common/finishAllPromise';
 import { IDownloadWithProgressService } from 'vs/kendryte/vs/services/download/electron-browser/downloadWithProgressService';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { ICommandService } from 'vs/platform/commands/common/commands';
+import { IFileCompressService } from 'vs/kendryte/vs/services/fileCompress/node/fileCompressService';
 
 class BuildingBlocksUpgradeAction extends Action {
 	public static readonly ID = ACTION_ID_UPGRADE_BUILDING_BLOCKS;
@@ -30,8 +31,9 @@ class BuildingBlocksUpgradeAction extends Action {
 		@INotificationService private notificationService: INotificationService,
 		@IChannelLogService private channelLogService: IChannelLogService,
 		@IPartService private partService: IPartService,
-		@IIDEBuildingBlocksService private packagesUpdateService: IIDEBuildingBlocksService,
+		@IIDEBuildingBlocksService private ideBuildingBlocksService: IIDEBuildingBlocksService,
 		@IDownloadWithProgressService private downloadWithProgressService: IDownloadWithProgressService,
+		@IFileCompressService private fileCompressService: IFileCompressService,
 	) {
 		super(id, label, 'terminal-action octicon octicon-repo-sync');
 		this.logger = getUpdateLogger(channelLogService);
@@ -48,6 +50,7 @@ class BuildingBlocksUpgradeAction extends Action {
 		if (!this.partService.isPanelMaximized()) {
 			this.partService.toggleMaximizedPanel();
 		}
+		this.logger.info('check building blocks update...');
 
 		const handle = unClosableNotify(this.notificationService, {
 			severity: Severity.Info,
@@ -55,21 +58,52 @@ class BuildingBlocksUpgradeAction extends Action {
 		});
 		this.dis.push(handle);
 
-		const dis = this.packagesUpdateService.onProgress((message: string) => {
-			handle.updateMessage(message);
+		this.logger.info('  fetchUpdateInfo()');
+		const updateInfos = await this.ideBuildingBlocksService.fetchUpdateInfo(this.logger, true).then(undefined, (e) => {
+			this.showFailedMessage(handle, 'Cannot check update info: ' + e.message);
+			throw e;
 		});
+		this.logger.info('    got %s items.', updateInfos.length);
+		this.logger.info('====================================');
 
-		const updateInfos = await this.packagesUpdateService.fetchUpdateInfo(this.logger, true);
+		if (updateInfos.length === 0) {
+			if (this.partService.isPanelMaximized()) {
+				this.partService.toggleMaximizedPanel();
+			}
+			handle.dispose();
+			this.logger.info('No update.');
+			return;
+		}
 
-		dis.dispose();
+		this.logger.info('Downloading updates');
+		handle.updateMessage(`packages update: download and extract (${updateInfos.length} items)`);
+		const downloadedItems = await finishAllPromise(updateInfos.map(async (pkg) => {
+			this.logger.info('download continue: ' + pkg.name);
+			const file = await this.downloadWithProgressService.downloadTemp(pkg.downloadUrl, this.logger);
 
-		handle.updateMessage(`downloading...`);
-		const downloadedItems = await finishAllPromise(updateInfos.map(([name, downloadId]) => {
-			return this.downloadWithProgressService.continue(name, downloadId);
+			const subHandle = unClosableNotify(this.notificationService, {
+				severity: Severity.Info,
+				message: `extracting ${pkg.name} ...`,
+			});
+
+			const extracted = await this.fileCompressService.extractTemp(file, this.logger).then((p) => {
+				subHandle.dispose();
+				return p;
+			}, (e) => {
+				subHandle.revoke();
+				subHandle.updateSeverity(Severity.Error);
+				subHandle.updateMessage(e);
+				throw e;
+			});
+
+			return Object.assign(pkg, {
+				downloaded: extracted,
+			});
 		}));
 
 		if (downloadedItems.rejected.length) {
-			this.showFailedMessage(
+			handle.revoke();
+			this.buildFailedMessage(
 				handle,
 				downloadedItems.rejected,
 				updateInfos.map(e => e[0]),
@@ -77,15 +111,22 @@ class BuildingBlocksUpgradeAction extends Action {
 			);
 			return;
 		}
+
+		handle.updateMessage('apply updates...');
+		await this.ideBuildingBlocksService.realRunUpdate(downloadedItems.fulfilledResult);
 	}
 
-	private showFailedMessage(handle: INotificationHandle, indexArr: number[], names: string[], errors: Error[]) {
-		handle.updateSeverity(Severity.Error);
+	private buildFailedMessage(handle: INotificationHandle, indexArr: number[], names: string[], errors: Error[]) {
 		let message: string = 'Cannot download Required package:\n';
 		for (const index of indexArr) {
 			message += ` * ${names[index]}: ${errors[index].message}\n`;
 		}
 		message += `Do you want to retry?`;
+		this.showFailedMessage(handle, message);
+	}
+
+	private showFailedMessage(handle: INotificationHandle, message: string) {
+		handle.updateSeverity(Severity.Error);
 		handle.updateMessage(message);
 		handle.updateActions({
 			primary: [

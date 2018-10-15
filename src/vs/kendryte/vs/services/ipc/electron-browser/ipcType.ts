@@ -5,6 +5,7 @@ export interface IKendryteClientService {
 
 	markEvents<T>(service: ServiceIdentifier<T>, events: (keyof T)[]);
 	markMethod<T>(service: ServiceIdentifier<T>, methods: (keyof T)[]);
+	markEventMethod<T>(service: ServiceIdentifier<T>, ems: (keyof T)[]);
 	as<T>(service: ServiceIdentifier<T>): T;
 }
 

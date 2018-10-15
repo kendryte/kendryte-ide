@@ -8,8 +8,9 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { lstat, mkdirp, readdir, rimraf, unlink } from 'vs/base/node/pfs';
 import { resolvePath } from 'vs/kendryte/vs/platform/node/resolvePath';
 import { INodePathService } from 'vs/kendryte/vs/platform/common/type';
-import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { hash } from 'vs/base/common/hash';
+import { ILogService } from 'vs/platform/log/common/log';
+import { basename } from 'vs/base/common/paths';
 import gunzip = require('gunzip-maybe');
 
 export const IFileCompressService = createDecorator<IFileCompressService>('fileCompressService');
@@ -17,7 +18,7 @@ export const IFileCompressService = createDecorator<IFileCompressService>('fileC
 export interface IFileCompressService {
 	_serviceBrand: any;
 
-	extractTemp(zipFile: string, logger: IChannelLogger): TPromise<string>;
+	extractTemp(zipFile: string, logger: ILogService): TPromise<string>;
 }
 
 export class FileCompressService implements IFileCompressService {
@@ -28,16 +29,16 @@ export class FileCompressService implements IFileCompressService {
 	) {
 	}
 
-	private unZip(file: string, target: string, logger: IChannelLogger) {
+	private unZip(file: string, target: string, logger: ILogService) {
 		return extractZip(file, resolveNative(target), { overwrite: true }, logger, CancellationToken.None);
 	}
 
-	private MicrosoftInstall(msi: string, target: string, logger: IChannelLogger) {
+	private MicrosoftInstall(msi: string, target: string, logger: ILogService) {
 		// toWinJsPromise(import('sudo-prompt')).then(
 		return TPromise.wrapError(new Error('not impl'));
 	}
 
-	private unTar(file: string, target: string, logger: IChannelLogger): TPromise<void> {
+	private unTar(file: string, target: string, logger: ILogService): TPromise<void> {
 		return new TPromise((resolve, reject) => {
 			const stream = createReadStream(file)
 				.pipe(gunzip())
@@ -48,9 +49,11 @@ export class FileCompressService implements IFileCompressService {
 		});
 	}
 
-	public async extractTemp(zipFile: string, logger: IChannelLogger): TPromise<string> {
+	public async extractTemp(zipFile: string, logger: ILogService): TPromise<string> {
+		const debugName = basename(zipFile);
+
 		const unzipTarget = this.nodePathService.tempDir('packages-extract/UNZIP_' + hash(zipFile));
-		logger.info('Extract Files:\n  From: %s\n  To: %s', zipFile, unzipTarget);
+		logger.info('[%s] Extract Files:\n  From: %s\n  To: %s', debugName, zipFile, unzipTarget);
 
 		logger.warn('  rmdir & mkdirp -> "To" folder', unzipTarget);
 		await rimraf(unzipTarget);
@@ -58,31 +61,31 @@ export class FileCompressService implements IFileCompressService {
 
 		try {
 			if (/\.zip$/.test(zipFile)) {
-				logger.info('  -> call ZIP.');
+				logger.info('[%s]  -> call ZIP.', debugName);
 				await this.unZip(zipFile, unzipTarget, logger);
 			} else if (/\.msi$/.test(zipFile)) {
-				logger.info('  -> call MSI.');
+				logger.info('[%s]  -> call MSI.', debugName);
 				await this.MicrosoftInstall(zipFile, unzipTarget, logger);
 			} else {
-				logger.info('  -> call TAR.');
+				logger.info('[%s]  -> call TAR.', debugName);
 				await this.unTar(zipFile, unzipTarget, logger);
 			}
-			logger.info('Extracted complete !');
+			logger.info('[%s] Extracted complete.', debugName);
 		} catch (e) {
-			logger.error('decompress throw:\n%s', e.stack.replace(/^/g, '  '));
+			logger.error('[%s] decompress throw:\n%s', debugName, e.stack.replace(/^/g, '  '));
 			logger.warn('rmdir(%s)', unzipTarget);
 			await rimraf(unzipTarget);
-			logger.warn('remove broken zip file.');
+			logger.warn('[%s] remove broken zip file.', debugName);
 			await unlink(zipFile);
 			throw new Error('Cannot decompress file: ' + zipFile + ' \nError:' + e);
 		}
 
 		const contents = await readdir(unzipTarget);
-		logger.info('extracted folder content: [%s]', contents.join(', '));
+		logger.info('[%s] extracted folder content: [%s]', debugName, contents.join(', '));
 		if (contents.length === 1) {
 			const stat = await lstat(resolvePath(unzipTarget, contents[0]));
 			if (stat.isDirectory()) {
-				logger.debug('use only sub folder as root.');
+				logger.info('[%s] use only sub folder as root.', debugName);
 				return resolvePath(unzipTarget, contents[0]);
 			} // else nothing
 		} else if (contents.length === 0) {

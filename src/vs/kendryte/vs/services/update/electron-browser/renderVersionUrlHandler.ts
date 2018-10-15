@@ -1,9 +1,10 @@
-import { VersionUrlHandler } from 'vs/kendryte/vs/services/update/node/versionUrlHandler';
+import { IVersionUrlHandler, VersionUrlHandler } from 'vs/kendryte/vs/services/update/node/versionUrlHandler';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { localize } from 'vs/nls';
 import { shell } from 'electron';
 import { Action } from 'vs/base/common/actions';
 import { IDE_HOMEPAGE } from 'vs/kendryte/vs/services/update/common/protocol';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 
 function notifyAction() {
 	return new Action(
@@ -19,7 +20,7 @@ function notifyAction() {
 	);
 }
 
-export class RenderVersionUrlHandler extends VersionUrlHandler {
+class RenderVersionUrlHandler extends VersionUrlHandler {
 	constructor(
 		@INotificationService private notificationService: INotificationService,
 	) {
@@ -34,3 +35,5 @@ export class RenderVersionUrlHandler extends VersionUrlHandler {
 		});
 	}
 }
+
+registerSingleton(IVersionUrlHandler, RenderVersionUrlHandler);

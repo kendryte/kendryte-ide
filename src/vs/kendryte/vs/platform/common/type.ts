@@ -4,7 +4,6 @@ import { createDecorator, ServiceIdentifier } from 'vs/platform/instantiation/co
 import { ISetting } from 'vs/workbench/services/preferences/common/preferences';
 import { Event } from 'vs/base/common/event';
 import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
-import { DownloadID } from 'vs/kendryte/vs/services/download/common/download';
 
 export interface EnumProviderService<T> {
 	// get enum selection list
@@ -121,15 +120,21 @@ export interface INodeFileSystemService {
 	copyReplace(from: string, to: string): TPromise<void>;
 }
 
-export type UpdateList = [string, DownloadID][];
-export type UpdateListConfirmed = { [packageName: string]: string };
+export interface IUpdate {
+	name: string;
+	version: string;
+	downloadUrl: string;
+}
+
+export type UpdateList = IUpdate[];
+export type UpdateListFulfilled = (IUpdate & { downloaded: string })[];
 
 export interface IIDEBuildingBlocksService {
 	_serviceBrand: any;
 	readonly onProgress: Event<string>;
 
 	fetchUpdateInfo(logger: IChannelLogger, force?: boolean): TPromise<UpdateList>;
-	markUpdate(data: UpdateListConfirmed): TPromise<void>;
+	realRunUpdate(data: UpdateListFulfilled): TPromise<void>;
 }
 
 export const IIDEBuildingBlocksService = createDecorator<IIDEBuildingBlocksService>('ideBuildingBlocksService');

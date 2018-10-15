@@ -11,6 +11,8 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { tmpdir } from 'os';
 import { mkdirp } from 'vs/base/node/pfs';
 import { optional } from 'vs/platform/instantiation/common/instantiation';
+import { ILogService } from 'vs/platform/log/common/log';
+import { IWindowsService } from 'vs/platform/windows/common/windows';
 
 export class NodePathService implements INodePathService {
 	_serviceBrand: any;
@@ -21,6 +23,8 @@ export class NodePathService implements INodePathService {
 	constructor(
 		@optional(IWorkspaceContextService) protected workspaceContextService: IWorkspaceContextService,
 		@IEnvironmentService protected environmentService: IEnvironmentService,
+		@IWindowsService windowsService: IWindowsService,
+		@ILogService protected logger: ILogService,
 	) {
 		if (!workspaceContextService) {
 			this.createUserLink(this.getInstallPath('.fast-links/_Extensions'), pathResolveNow('HOMEPATH', process.env.HOME, product.dataFolderName));
@@ -32,6 +36,10 @@ export class NodePathService implements INodePathService {
 			};
 		}
 
+		mkdirp(this.getPackagesPath()).then(undefined, (err) => {
+			alert('Cannot write files to IDE install path. please check and restart.\n\n' + err.message);
+			windowsService.quit();
+		});
 	}
 
 	createAppLink(): TPromise<void> {
@@ -68,7 +76,7 @@ export class NodePathService implements INodePathService {
 	}
 
 	createUserLink(linkFile: string, existsFile: string, windowsOptions?: Partial<IShortcutOptions>): TPromise<void> {
-		console.log('create user link if not: %s -> %s', linkFile, existsFile);
+		this.logger.info('create user link if not: %s -> %s', linkFile, existsFile);
 		return ensureLinkEquals(linkFile, existsFile, windowsOptions);
 	}
 

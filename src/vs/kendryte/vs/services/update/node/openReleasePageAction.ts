@@ -8,13 +8,15 @@ export class OpenKendryteReleasePageAction extends Action {
 	public static readonly ID = 'workbench.action.kendryte.homepage';
 	public static readonly LABEL = localize('KendryteIOEditor', 'Update now');
 
-	constructor() {
+	constructor(
+		public readonly url = IDE_HOMEPAGE,
+	) {
 		super(OpenKendryteReleasePageAction.ID, OpenKendryteReleasePageAction.LABEL);
 	}
 
 	public run(event?: any): TPromise<boolean> {
 		return new TPromise<boolean>((resolve, reject) => {
-			resolve(shell.openExternal(IDE_HOMEPAGE, undefined, e => reject(e)));
+			resolve(shell.openExternal(this.url, undefined, e => reject(e)));
 		});
 	}
 }

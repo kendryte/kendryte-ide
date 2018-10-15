@@ -1,4 +1,4 @@
-import { IIDEBuildingBlocksService, UpdateList, UpdateListConfirmed } from 'vs/kendryte/vs/platform/common/type';
+import { IIDEBuildingBlocksService, UpdateList, UpdateListFulfilled } from 'vs/kendryte/vs/platform/common/type';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IKendryteClientService } from 'vs/kendryte/vs/services/ipc/electron-browser/ipcType';
 import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
@@ -12,6 +12,13 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 	constructor(
 		@IKendryteClientService channelService: IKendryteClientService,
 	) {
+		channelService.markMethod(IIDEBuildingBlocksService, [
+			'fetchUpdateInfo',
+			'realRunUpdate',
+		]);
+		channelService.markEvents(IIDEBuildingBlocksService, [
+			'onProgress',
+		]);
 		this.ipc = channelService.as<IIDEBuildingBlocksService>(IIDEBuildingBlocksService);
 	}
 
@@ -23,8 +30,8 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 		return this.ipc.fetchUpdateInfo(logger, force);
 	}
 
-	public markUpdate(data: UpdateListConfirmed): TPromise<void> {
-		return this.ipc.markUpdate(data);
+	public realRunUpdate(data: UpdateListFulfilled): TPromise<void> {
+		return this.ipc.realRunUpdate(data);
 	}
 }
 

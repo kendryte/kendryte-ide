@@ -13,8 +13,9 @@ export interface IRemotePackageInfo {
 	versions: IPackageVersionDetail[];
 }
 
-export const PACKAGE_LIST_LIBRARY = `${PACKAGE_MANAGER_DISTRIBUTE_URL}registry/library.json`;
-export const PACKAGE_LIST_EXAMPLE = `${PACKAGE_MANAGER_DISTRIBUTE_URL}registry/example.json`;
+const urlPrefix = /\/$/.test(PACKAGE_MANAGER_DISTRIBUTE_URL) ? PACKAGE_MANAGER_DISTRIBUTE_URL : PACKAGE_MANAGER_DISTRIBUTE_URL + '/';
+export const PACKAGE_LIST_LIBRARY = `${urlPrefix}registry/library.json`;
+export const PACKAGE_LIST_EXAMPLE = `${urlPrefix}registry/example.json`;
 
 /**
  * query return IRemotePackageInfo[]

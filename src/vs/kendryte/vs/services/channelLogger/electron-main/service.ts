@@ -1,17 +1,17 @@
-import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
+import { IChannelLogger, LogEvent } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { Event } from 'vs/base/common/event';
-import { LogEvent, RemoteLogger } from 'vs/kendryte/vs/services/channelLogger/electron-main/remoteLogger';
+import { RemoteLogger } from 'vs/kendryte/vs/services/channelLogger/electron-main/remoteLogger';
 
 export interface IMainChannelLogService {
 	_serviceBrand: any;
 
 	receive(channelId: string, windowId: number): IChannelLogger;
-	logEvent(channelId: string, windowId: number): Event<LogEvent>;
-	stopLogEvent(channelId: string, windowId: number): TPromise<void>;
+	_handleLogEvent(channelId: string, windowId: number): Event<LogEvent>;
+	_handleStopLogEvent(channelId: string, windowId: number): TPromise<void>;
 }
 
 export const IMainChannelLogService = createDecorator<IMainChannelLogService>('mainChannelLogService');
@@ -36,11 +36,11 @@ class MainChannelLogService extends Disposable implements IMainChannelLogService
 		return log;
 	}
 
-	logEvent(channelId: string, windowId: number): Event<LogEvent> {
+	_handleLogEvent(channelId: string, windowId: number): Event<LogEvent> {
 		return this.receive(channelId, windowId).event;
 	}
 
-	async stopLogEvent(channelId: string, windowId: number): TPromise<void> {
+	async _handleStopLogEvent(channelId: string, windowId: number): TPromise<void> {
 		const id = `${windowId}:${channelId}`;
 		if (!this.registry.has(id)) {
 			return null;

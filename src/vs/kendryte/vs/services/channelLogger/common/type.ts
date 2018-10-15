@@ -3,6 +3,12 @@ import { createDecorator } from 'vs/platform/instantiation/common/instantiation'
 import { URI } from 'vs/base/common/uri';
 import { TPromise } from 'vs/base/common/winjs.base';
 
+export interface LogEvent {
+	level: keyof IChannelLogger;
+	message: string;
+	args: any[];
+}
+
 export interface IChannelLogService {
 	_serviceBrand: any;
 

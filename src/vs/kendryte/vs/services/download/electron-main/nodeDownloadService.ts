@@ -8,6 +8,7 @@ import { DownloadTask } from 'vs/kendryte/vs/services/download/electron-main/dow
 import { extname } from 'vs/base/common/paths';
 import { INodePathService } from 'vs/kendryte/vs/platform/common/type';
 import { hash } from 'vs/base/common/hash';
+import { ILogService } from 'vs/platform/log/common/log';
 
 export class NodeDownloadService implements INodeDownloadService {
 	_serviceBrand: any;
@@ -21,7 +22,11 @@ export class NodeDownloadService implements INodeDownloadService {
 	}
 
 	private getTask(download: DownloadID) {
-		return this.downloading.get(download.__id);
+		if (typeof download === 'string') {
+			return this.downloading.get(download);
+		} else {
+			return this.downloading.get(download.__id);
+		}
 	}
 
 	public async getStatus(downloadId: DownloadID): TPromise<IDownloadTargetInfo> {
@@ -41,9 +46,9 @@ export class NodeDownloadService implements INodeDownloadService {
 		return this.getTask(download).progressEvent;
 	}
 
-	public async download(url: string, target: string, start = true): TPromise<DownloadID> {
+	public async download(url: string, target: string, start = true, logger?: ILogService): TPromise<DownloadID> {
 		const task = new DownloadTask(url, target, this.requestService, this.nodePathService);
-		await task.prepare();
+		await task.prepare(logger);
 
 		const id = task.getInfo().id;
 
@@ -55,12 +60,19 @@ export class NodeDownloadService implements INodeDownloadService {
 		if (start) {
 			await this.getTask(id).start();
 		}
+		if (logger) {
+			this.getTask(id).addLogger(logger);
+		}
 
 		return id;
 	}
 
-	public start(download: DownloadID): TPromise<void> {
-		return this.getTask(download).start();
+	public start(download: DownloadID, logger?: ILogService): TPromise<void> {
+		const task = this.getTask(download);
+		if (logger) {
+			task.addLogger(logger);
+		}
+		return task.start();
 	}
 
 	public async cancel(download: DownloadID): TPromise<void> {
@@ -104,8 +116,8 @@ export class NodeDownloadService implements INodeDownloadService {
 		});
 	}
 
-	public downloadTemp(url: string, start = true): TPromise<DownloadID> {
-		return this.download(url, this.nodePathService.tempDir(`download/${hash(url)}${extname(url)}`), start);
+	public downloadTemp(url: string, start = true, logger?: ILogService): TPromise<DownloadID> {
+		return this.download(url, this.nodePathService.tempDir(`download/${hash(url)}${extname(url)}`), start, logger);
 	}
 }
 

@@ -1,12 +1,6 @@
 import { buffer, Emitter } from 'vs/base/common/event';
-import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
+import { IChannelLogger, LogEvent } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { LogLevel } from 'vs/platform/log/common/log';
-
-export interface LogEvent {
-	level: keyof IChannelLogger;
-	message: string;
-	args: any[];
-}
 
 export class RemoteLogger implements IChannelLogger {
 	_serviceBrand: any;
@@ -23,7 +17,11 @@ export class RemoteLogger implements IChannelLogger {
 	) {}
 
 	stop() {
+		this._onDidChangeLogLevel.dispose();
 		this.onOutput.dispose();
+		this.onOutput.fire = () => {
+			throw new Error('this channel has stopped.');
+		};
 	}
 
 	dispose() {
