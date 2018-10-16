@@ -5,7 +5,7 @@ import { localize } from 'vs/nls';
 import { SERIAL_MONITOR_ACTION_REFRESH_DEVICE, SerialPortActionCategory } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import BaseSeverity from 'vs/base/common/severity';
 import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
-import { registerExternalAction } from 'vs/kendryte/vs/platform/common/registerAction';
+import { registerExternalAction } from 'vs/kendryte/vs/base/common/registerAction';
 
 class ReloadSerialPortDevicesAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_ACTION_REFRESH_DEVICE;

@@ -1,4 +1,4 @@
-import { IIDEBuildingBlocksService, UpdateList, UpdateListFulfilled } from 'vs/kendryte/vs/platform/common/type';
+import { IIDEBuildingBlocksService, UpdateList, UpdateListFulfilled } from 'vs/kendryte/vs/services/update/common/type';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IKendryteClientService } from 'vs/kendryte/vs/services/ipc/electron-browser/ipcType';
 import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';

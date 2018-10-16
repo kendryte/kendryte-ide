@@ -3,7 +3,8 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
 import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD, INodePathService } from 'vs/kendryte/vs/platform/common/type';
+import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
+import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { CMAKE_CHANNEL, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { copy, mkdirp } from 'vs/base/node/pfs';
@@ -39,8 +40,8 @@ export class MaixCMakeHelloWorldAction extends Action {
 	async run(): TPromise<void> {
 		this.outputChannel.clear();
 
-		const mainCMakeFile = await this.cmakeService.onFolderChange(true);
-		if (mainCMakeFile) {
+		await this.cmakeService.rescanCurrentFolder();
+		if (this.cmakeService.isEnabled) {
 			return;
 		}
 
@@ -56,7 +57,7 @@ export class MaixCMakeHelloWorldAction extends Action {
 			resource: resolver.toResource('main.c'),
 		});
 
-		await this.cmakeService.onFolderChange(true);
+		await this.cmakeService.rescanCurrentFolder();
 
 		this.outputChannel.append(`start cmake configure\n`);
 		this.cmakeService.configure();

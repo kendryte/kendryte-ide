@@ -1,15 +1,15 @@
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { ConfigurationTarget, IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { Extensions as CategoryExtensions, IConfigCategoryRegistry, INodePathService } from 'vs/kendryte/vs/platform/common/type';
+import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
+import { Extensions as CategoryExtensions, IConfigCategoryRegistry } from 'vs/kendryte/vs/platform/extendSettings/common/type';
 import { Extensions as ConfigurationExtensions, IConfigurationPropertySchema, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
 import { Extensions as WorkbenchExtensions, IWorkbenchContribution, IWorkbenchContributionsRegistry } from 'vs/workbench/common/contributions';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { readdirSync } from 'vs/base/node/extfs';
-import { executableExtension } from 'vs/kendryte/vs/platform/node/versions';
+import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { ILogService } from 'vs/platform/log/common/log';
-import { resolvePath } from 'vs/kendryte/vs/platform/node/resolvePath';
-import { existsSync, readFileSync } from 'fs';
+import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 
 interface SettingsOverwiter<T> {
 	(access: ServicesAccessor, old: T): T;
@@ -27,24 +27,6 @@ const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
 	'C_Cpp.default.includePath'(access: ServicesAccessor) {
 		const nodePathService = access.get<INodePathService>(INodePathService);
 		const ret: string[] = [];
-		const sdk = nodePathService.rawSDKPath();
-
-		if (existsSync(resolvePath(sdk, '.IDE_INCLUDE'))) {
-			const lines = readFileSync(resolvePath(sdk, '.IDE_INCLUDE'), 'utf8')
-				.trim()
-				.split(/\n/g)
-				.map(e => e.trim())
-				.filter(e => !!e)
-				.map(e => resolvePath(sdk, e));
-			ret.push(...lines);
-		}
-		ret.push(resolvePath(sdk, 'lib/bsp/include'));
-		ret.push(resolvePath(sdk, 'lib/drivers/include'));
-		ret.push(resolvePath(sdk, 'lib/freertos/include'));
-		ret.push(resolvePath(sdk, 'lib/math/include'));
-		ret.push(resolvePath(sdk, 'lib/utils/include'));
-
-		ret.push(sdk + '/include');
 
 		const toolchain = nodePathService.rawToolchainPath();
 		ret.push(resolvePath(toolchain, 'riscv64-unknown-elf/include'));

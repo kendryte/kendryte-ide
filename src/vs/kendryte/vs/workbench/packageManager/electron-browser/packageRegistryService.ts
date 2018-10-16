@@ -5,14 +5,15 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { PackageBrowserInput } from 'vs/kendryte/vs/workbench/packageManager/common/editors/packageBrowserInput';
 import { IRemotePackageInfo, PACKAGE_LIST_EXAMPLE, PACKAGE_LIST_LIBRARY } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
 import { CancellationToken } from 'vs/base/common/cancellation';
-import { parseExtendedJson } from 'vs/kendryte/vs/base/common/jsonComments';
 import { readFile } from 'vs/base/node/pfs';
 import { IPager } from 'vs/base/common/paging';
 import { escapeRegExpCharacters } from 'vs/base/common/strings';
 import { IDownloadWithProgressService } from 'vs/kendryte/vs/services/download/electron-browser/downloadWithProgressService';
+import { parseExtendedJson } from 'vs/kendryte/vs/base/common/jsonComments';
 
 export class PackageRegistryService implements IPackageRegistryService {
 	_serviceBrand: any;
+	private cached: any = {};
 
 	constructor(
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
@@ -40,14 +41,30 @@ export class PackageRegistryService implements IPackageRegistryService {
 		}
 	}
 
-	private async getRegistry(type: PackageTypes) {
+	private async getRegistry(type: PackageTypes): Promise<IRemotePackageInfo[]> {
+		if (this.cached[type]) {
+			return this.cached[type];
+		}
 		const filePath = await this.downloadWithProgressService.downloadTemp(this.registryUrl(type));
 		const fileContent = await readFile(filePath, 'utf8');
+
 		const [registry, errors] = parseExtendedJson<IRemotePackageInfo[]>(fileContent);
 		if (errors.length) {
-			console.warn('registry has small error: ', errors);
+			console.warn('registry has error:\n' + errors.map((err) => {
+				return '\t' + err.message;
+			}).join('\n'));
 		}
-		return registry;
+
+		if (!Array.isArray(registry)) {
+			debugger;
+			throw new Error(type + ' registry is invalid. please try again later.');
+		}
+
+		registry.forEach((item) => {
+			item.type = type;
+		});
+
+		return this.cached[type] = registry;
 	}
 
 	public async queryPackageVersions(type: PackageTypes, packageName: string, cancel: CancellationToken = CancellationToken.None): TPromise<IRemotePackageInfo> {

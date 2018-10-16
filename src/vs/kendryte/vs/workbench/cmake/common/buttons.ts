@@ -3,6 +3,8 @@ import { StatusbarAlignment } from 'vs/platform/statusbar/common/statusbar';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { StatusBarItem } from 'vs/kendryte/vs/workbench/cmake/common/statusBarButton';
+import { StatusBarController } from 'vs/kendryte/vs/workbench/cmake/common/statusBarController';
+import { localize } from 'vs/nls';
 import {
 	ACTION_ID_MAIX_CMAKE_BUILD,
 	ACTION_ID_MAIX_CMAKE_CLEANUP,
@@ -10,10 +12,8 @@ import {
 	ACTION_ID_MAIX_CMAKE_RUN,
 	ACTION_ID_MAIX_CMAKE_SELECT_TARGET,
 	ACTION_ID_MAIX_CMAKE_SELECT_VARIANT,
-	ACTION_ID_MAIX_SERIAL_UPLOAD,
-} from 'vs/kendryte/vs/platform/common/type';
-import { StatusBarController } from 'vs/kendryte/vs/workbench/cmake/common/statusBarController';
-import { localize } from 'vs/nls';
+} from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
+import { ACTION_ID_MAIX_SERIAL_UPLOAD } from 'vs/kendryte/vs/workbench/serialUpload/common/actionIds';
 
 let entries: IDisposable[] = [];
 

@@ -4,7 +4,7 @@ import { localize } from 'vs/nls';
 import { CMAKE_CHANNEL, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
 import { IQuickInputService } from 'vs/platform/quickinput/common/quickInput';
-import { ACTION_ID_MAIX_CMAKE_SELECT_VARIANT } from 'vs/kendryte/vs/platform/common/type';
+import { ACTION_ID_MAIX_CMAKE_SELECT_VARIANT } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
 
 export class MaixCMakeSelectVariantAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_SELECT_VARIANT;

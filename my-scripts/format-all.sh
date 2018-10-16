@@ -12,6 +12,8 @@ detect_install_nodejs
 
 ensure_node_modules_in_current_dir
 
+echo -e '\ec'
+
 set +e
 echo "running reformat on ALL source files, this will use about 1min. please wait." >&2
 echo "waiting for 'yarn gulp hygiene'" >&2

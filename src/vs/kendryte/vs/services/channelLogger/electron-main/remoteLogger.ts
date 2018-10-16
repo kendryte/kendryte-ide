@@ -14,7 +14,7 @@ export class RemoteLogger implements IChannelLogger {
 
 	constructor(
 		public readonly id: string,
-	) {}
+	) { }
 
 	stop() {
 		this._onDidChangeLogLevel.dispose();

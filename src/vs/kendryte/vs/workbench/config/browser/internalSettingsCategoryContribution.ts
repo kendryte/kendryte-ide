@@ -1,5 +1,5 @@
 import { Registry } from 'vs/platform/registry/common/platform';
-import { Extensions, IConfigCategoryRegistry } from 'vs/kendryte/vs/platform/common/type';
+import { Extensions, IConfigCategoryRegistry } from 'vs/kendryte/vs/platform/extendSettings/common/type';
 import { commonlyUsedData } from 'vs/workbench/parts/preferences/browser/settingsLayout';
 
 const CategoryRegistry = Registry.as<IConfigCategoryRegistry>(Extensions.ConfigCategory);

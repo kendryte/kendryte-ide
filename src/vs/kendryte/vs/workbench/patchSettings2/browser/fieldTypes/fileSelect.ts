@@ -9,7 +9,7 @@ import { InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { IWindowsService } from 'vs/platform/windows/common/windows';
 import 'vs/css!vs/kendryte/vs/workbench/patchSettings2/browser/ui/fileSelect';
-import { ISettingItemTemplate } from 'vs/kendryte/vs/platform/common/type';
+import { ISettingItemTemplate } from 'vs/kendryte/vs/platform/extendSettings/common/type';
 import { SettingsTreeSettingElement } from 'vs/workbench/parts/preferences/browser/settingsTreeModels';
 
 interface Template {

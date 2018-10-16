@@ -1,6 +1,6 @@
 import { TPromise } from 'vs/base/common/winjs.base';
 import { Event } from 'vs/base/common/event';
-import { INatureProgressStatus } from 'vs/kendryte/vs/platform/common/progress';
+import { INatureProgressStatus } from 'vs/kendryte/vs/workbench/progress/common/progress';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
 
@@ -11,9 +11,9 @@ export interface DownloadID {
 export function createDownloadId(id: string) {
 	return {
 		__id: id,
-		toJSON() {return id;},
-		toString() {return `DownloadID<${id}>`;},
-		[Symbol.toStringTag]() {return 'DownloadID';},
+		toJSON() { return id; },
+		toString() { return `DownloadID<${id}>`; },
+		[Symbol.toStringTag]() { return 'DownloadID'; },
 	};
 }
 

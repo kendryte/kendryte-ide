@@ -3,7 +3,7 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { DownloadID, INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
 import { INotificationHandle, INotificationService, Severity } from 'vs/platform/notification/common/notification';
-import { unClosableNotify } from 'vs/kendryte/vs/platform/progress/common/unClosableNotify';
+import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
 import { showDownloadSpeed } from 'vs/kendryte/vs/base/common/speedShow';
 import { ILogService } from 'vs/platform/log/common/log';
 

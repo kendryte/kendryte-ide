@@ -1,4 +1,4 @@
-import { is64Bit } from 'vs/kendryte/vs/platform/node/versions';
+import { is64Bit } from 'vs/kendryte/vs/base/common/platformEnv';
 import { IBasePackageInfo, IDE_HOMEPAGE, IIDEUpdateInfo, IPatchUpdateInfo } from 'vs/kendryte/vs/services/update/common/protocol';
 import { OperatingSystem, OS } from 'vs/base/common/platform';
 import { IDECurrentPatchVersion } from 'vs/kendryte/vs/services/update/node/myVersion';

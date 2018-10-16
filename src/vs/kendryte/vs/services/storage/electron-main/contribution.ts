@@ -7,7 +7,7 @@ import Store = require('electron-store');
 class MainStorage implements IStorage {
 	private readonly store = new Store();
 
-	get length() {return this.store.size;}
+	get length() { return this.store.size; }
 
 	public key(index: number) {
 		return Object.keys(this.store.store)[index];

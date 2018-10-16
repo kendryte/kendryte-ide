@@ -1,7 +1,6 @@
 import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
-import { ACTION_ID_MAIX_CMAKE_RUN, INodePathService, MAIX_CONFIG_KEY_DEBUG } from 'vs/kendryte/vs/platform/common/type';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { MaixCMakeCleanupAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/cleanupAction';
 import { ICompound, IDebugService, ILaunch } from 'vs/workbench/parts/debug/common/debug';
@@ -11,12 +10,12 @@ import { IEditorService } from 'vs/workbench/services/editor/common/editorServic
 import { URI } from 'vs/base/common/uri';
 import { IEditor } from 'vs/workbench/common/editor';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { resolvePath } from 'vs/kendryte/vs/platform/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ILogService } from 'vs/platform/log/common/log';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
-import { executableExtension } from 'vs/kendryte/vs/platform/node/versions';
-import { DebugScript, getEnvironment } from 'vs/kendryte/vs/platform/node/nodeEnv';
+import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
+import { DebugScript, getEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
 import { JSONVisitor, visit } from 'vs/base/common/json';
 import * as encoding from 'vs/base/node/encoding';
 import { IFileService } from 'vs/platform/files/common/files';
@@ -26,6 +25,9 @@ import { Range } from 'vs/editor/common/core/range';
 import { IIdentifiedSingleEditOperation } from 'vs/editor/common/model';
 import { Position } from 'vs/editor/common/core/position';
 import { generateIndent } from 'vs/editor/contrib/indentation/indentUtils';
+import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
+import { MAIX_CONFIG_KEY_DEBUG } from 'vs/kendryte/vs/platform/extendSettings/common/type';
+import { ACTION_ID_MAIX_CMAKE_RUN } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
 
 class WorkspaceMaixLaunch implements ILaunch {
 	protected GDB: string;

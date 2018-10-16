@@ -1,4 +1,5 @@
 import { PACKAGE_MANAGER_DISTRIBUTE_URL } from 'vs/kendryte/vs/services/update/common/protocol';
+import { PackageTypes } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 
 export interface IPackageVersionDetail {
 	versionName: string;
@@ -11,6 +12,7 @@ export interface IRemotePackageInfo {
 	description?: string;
 	README?: string;
 	versions: IPackageVersionDetail[];
+	type: PackageTypes;
 }
 
 const urlPrefix = /\/$/.test(PACKAGE_MANAGER_DISTRIBUTE_URL) ? PACKAGE_MANAGER_DISTRIBUTE_URL : PACKAGE_MANAGER_DISTRIBUTE_URL + '/';

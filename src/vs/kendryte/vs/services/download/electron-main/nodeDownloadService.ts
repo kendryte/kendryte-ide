@@ -1,4 +1,4 @@
-import { INatureProgressStatus } from 'vs/kendryte/vs/platform/common/progress';
+import { INatureProgressStatus } from 'vs/kendryte/vs/workbench/progress/common/progress';
 import { IRequestService } from 'vs/platform/request/node/request';
 import { Event } from 'vs/base/common/event';
 import { DownloadID, IDownloadTargetInfo, INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
@@ -6,7 +6,7 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
 import { DownloadTask } from 'vs/kendryte/vs/services/download/electron-main/downloadTask';
 import { extname } from 'vs/base/common/paths';
-import { INodePathService } from 'vs/kendryte/vs/platform/common/type';
+import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { hash } from 'vs/base/common/hash';
 import { ILogService } from 'vs/platform/log/common/log';
 

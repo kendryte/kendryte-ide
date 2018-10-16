@@ -1,7 +1,7 @@
 import { Severity } from 'vs/platform/notification/common/notification';
 import { IMarkerData, IMarkerService, MarkerSeverity } from 'vs/platform/markers/common/markers';
 import { URI } from 'vs/base/common/uri';
-import { TextProgressBar } from 'vs/kendryte/vs/platform/common/textProgressBar';
+import { TextProgressBar } from 'vs/kendryte/vs/base/common/textProgressBar';
 import { StatusBarController } from 'vs/kendryte/vs/workbench/cmake/common/statusBarController';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
@@ -9,7 +9,7 @@ import { normalize } from 'path';
 import { isAbsolute } from 'vs/base/common/paths';
 import { isWindows } from 'vs/base/common/platform';
 import { escapeRegExpCharacters } from 'vs/base/common/strings';
-import { normalizePosixPath } from 'vs/kendryte/vs/platform/node/resolvePath';
+import { normalizePosixPath } from 'vs/kendryte/vs/base/node/resolvePath';
 
 const regGCCError = /^(.*?):(\d+):(\d+):\s+(\w*)(?:\sfatale)?\s?:\s+(.*)/;
 const regCMakeProgress = /^\[\s*(\d+)%]/;

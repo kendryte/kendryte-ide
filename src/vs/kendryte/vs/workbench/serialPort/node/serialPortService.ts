@@ -1,4 +1,4 @@
-import { EnumProviderService } from 'vs/kendryte/vs/platform/common/type';
+import { EnumProviderService } from 'vs/kendryte/vs/platform/extendSettings/common/type';
 import { createDecorator, IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { TPromise } from 'vs/base/common/winjs.base';
 import * as SerialPort from 'serialport';
@@ -8,7 +8,7 @@ import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { ILogService } from 'vs/platform/log/common/log';
 import { addStatusBarButtons } from 'vs/kendryte/vs/workbench/serialPort/common/buttons';
 import { SerialPortItem } from 'vs/kendryte/vs/workbench/serialPort/common/type';
-import { array_has_diff_cb } from 'vs/kendryte/vs/platform/common/utils';
+import { array_has_diff_cb } from 'vs/kendryte/vs/base/common/utils';
 import { SerialPortBaseBinding } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
 import { ninvoke } from 'vs/base/common/async';
 

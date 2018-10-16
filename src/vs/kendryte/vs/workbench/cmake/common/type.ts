@@ -11,24 +11,16 @@ export interface CurrentItem extends IQuickPickItem {
 export interface ICMakeService {
 	_serviceBrand: any;
 
-	onFolderChange(force?: boolean): TPromise<string>;
-
+	readonly isEnabled: boolean;
+	rescanCurrentFolder(): TPromise<void>;
 	cleanupMake(): TPromise<void>;
-
 	getOutputFile(): TPromise<string>;
-
 	configure(): TPromise<void>;
-
 	build(): TPromise<void>;
-
 	setVariant(variant: string);
-
 	setTarget(target: string);
-
 	getTargetList(): TPromise<CurrentItem[]>;
-
 	getVariantList(): TPromise<CurrentItem[]>;
-
 	ensureConfiguration(): TPromise<any>;
 }
 

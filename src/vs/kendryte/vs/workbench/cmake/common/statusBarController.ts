@@ -1,5 +1,6 @@
 import { StatusBarItem } from 'vs/kendryte/vs/workbench/cmake/common/statusBarButton';
-import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD } from 'vs/kendryte/vs/platform/common/type';
+import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD, ACTION_ID_OPEN_CMAKE_LIST_CONFIG } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
+import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
 
 enum State {
 	Lock,
@@ -22,6 +23,9 @@ export class StatusBarController {
 
 	protected emptyState(message: string, command: string) {
 		if (this.state === State.Lock) {
+			this.messageButton.text = message;
+			this.messageButton.command = command;
+			this.messageButton.show(true);
 			return;
 		}
 		this.state = State.Lock;
@@ -61,6 +65,14 @@ export class StatusBarController {
 		this.messageButton.show(message.length > 0);
 	}
 
+	setError(e: any) {
+		this.emptyState('CMake config failed: ' + e.message, ACTION_ID_OPEN_CMAKE_LIST_CONFIG);
+	}
+
+	setWorking() {
+		this.emptyState('CMake is working, please wait...', '');
+	}
+
 	setEmptyState(empty: false, cmakeProject: boolean);
 	setEmptyState(empty: true);
 	setEmptyState(empty: boolean, cmakeProject?: boolean) {
@@ -76,7 +88,7 @@ export class StatusBarController {
 		} else {
 			console.log('no cmake file, need create hello_world.');
 			this.emptyState(
-				'$(plus) Create CMakeFiles.txt to start a project.',
+				'$(plus) Create ' + CMAKE_CONFIG_FILE_NAME + ' to start a project.',
 				ACTION_ID_MAIX_CMAKE_HELLO_WORLD,
 			);
 		}

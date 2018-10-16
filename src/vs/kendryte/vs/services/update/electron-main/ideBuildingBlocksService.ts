@@ -1,10 +1,10 @@
 import { TPromise } from 'vs/base/common/winjs.base';
 import { resolve as resolveUrl } from 'url';
-import { IIDEBuildingBlocksService, INodePathService, UpdateList, UpdateListFulfilled } from 'vs/kendryte/vs/platform/common/type';
+import { IIDEBuildingBlocksService, UpdateList, UpdateListFulfilled } from 'vs/kendryte/vs/services/update/common/type';
 import { copy, exists, readFile, rimraf, unlink, writeFile } from 'vs/base/node/pfs';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import * as crypto from 'crypto';
-import { dumpDate } from 'vs/kendryte/vs/platform/common/dumpDate';
+import { dumpDate } from 'vs/kendryte/vs/base/common/dumpDate';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
 import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
@@ -15,6 +15,7 @@ import { IVersionUrlHandler } from 'vs/kendryte/vs/services/update/node/versionU
 import { buffer, Emitter } from 'vs/base/common/event';
 import { app, BrowserWindow } from 'electron';
 import { isWindows } from 'vs/base/common/platform';
+import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 
 const STORAGE_KEY = 'block-update';
 
@@ -112,11 +113,13 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 		const id = await this.downloadService.downloadTemp(regUrl, true, logger);
 		const file = await this.downloadService.waitResultFile(id);
 		logger.info('fetching registry complete.');
+		logger.info('\t' + file);
 		const content: IBuildingBlocksUpdateInfo[] = JSON.parse(await readFile(file, 'utf8'));
 
 		const needUpdate: UpdateList = [];
+		let i = 1;
 		for (const packageData of content) {
-			logger.info(`======= ${packageData.projectName}: (${needUpdate.length + 1}/${content.length})`);
+			logger.info(` * ${packageData.projectName}: (${i++}/${content.length})`);
 			if (packageData.version === this.bundledVersions[packageData.projectName]) {
 				logger.info(`up to date: ` + packageData.version);
 				continue;

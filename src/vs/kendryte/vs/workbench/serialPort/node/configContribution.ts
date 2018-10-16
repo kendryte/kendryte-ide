@@ -1,6 +1,6 @@
 import { Extensions as ConfigurationExtensions, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
 import { localize } from 'vs/nls';
-import { dynamicEnum } from 'vs/kendryte/vs/platform/common/type';
+import { dynamicEnum } from 'vs/kendryte/vs/platform/extendSettings/common/type';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { CONFIG_KEY_SRIAL_PORT, SERIAL_MONITOR_ACTION_REFRESH_DEVICE } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';

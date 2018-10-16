@@ -2,10 +2,10 @@ import product from 'vs/platform/node/product';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { isWindows } from 'vs/base/common/platform';
 import { lstatSync } from 'fs';
-import { resolvePath } from 'vs/kendryte/vs/platform/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
-import { INodePathService } from 'vs/kendryte/vs/platform/common/type';
-import { createLinuxDesktopShortcut, ensureLinkEquals, pathResolveNow } from 'vs/kendryte/vs/platform/node/shortcuts';
+import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
+import { createLinuxDesktopShortcut, ensureLinkEquals, pathResolveNow } from 'vs/kendryte/vs/platform/createShortcut/node/shortcuts';
 import { IShortcutOptions } from 'windows-shortcuts';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { tmpdir } from 'os';
@@ -17,7 +17,6 @@ import { IWindowsService } from 'vs/platform/windows/common/windows';
 export class NodePathService implements INodePathService {
 	_serviceBrand: any;
 
-	private sdkPathExists: boolean;
 	private toolchainPathExists: boolean;
 
 	constructor(
@@ -129,30 +128,6 @@ export class NodePathService implements INodePathService {
 			return path;
 		} else {
 			console.log('%cToolchain is expected to be found at %s, But not found.', 'color:red', path);
-			return '';
-		}
-	}
-
-	rawSDKPath() {
-		return resolvePath(this.getInstallPath(), 'packages/SDK');
-	}
-
-	getSDKPath() {
-		const path = this.rawSDKPath();
-		if (this.sdkPathExists) {
-			return path;
-		} else if (this.sdkPathExists === false) {
-			return '';
-		}
-		try {
-			this.sdkPathExists = lstatSync(resolvePath(path, 'cmake/')).isDirectory();
-		} catch (e) { // noop
-		}
-		if (this.sdkPathExists) {
-			console.log('%cSDK is found at %s.', 'color:green', path);
-			return path;
-		} else {
-			console.log('%cSDK is expected to be found at %s, But not found.', 'color:red', path);
 			return '';
 		}
 	}

@@ -1,15 +1,15 @@
-import { INatureProgressStatus } from 'vs/kendryte/vs/platform/common/progress';
+import { INatureProgressStatus } from 'vs/kendryte/vs/workbench/progress/common/progress';
 import { echo, Emitter, Event } from 'vs/base/common/event';
 import { Disposable, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { createDownloadId, IDownloadTargetInfo } from 'vs/kendryte/vs/services/download/common/download';
-import { fileExists, mkdirp, readFile, unlink, writeFile } from 'vs/base/node/pfs';
+import { fileExists, mkdirp, readFile, truncate, unlink, writeFile } from 'vs/base/node/pfs';
 import { dirname } from 'vs/base/common/paths';
 import { IRequestService } from 'vs/platform/request/node/request';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { lock as rawLock, unlock as rawUnlock } from 'proper-lockfile';
 import { createWriteStream, WriteStream } from 'fs';
 import { hash } from 'vs/base/common/hash';
-import { INodePathService } from 'vs/kendryte/vs/platform/common/type';
+import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { IRequestContext } from 'vs/base/node/request';
 import { ConsoleLogMainService, ILogService, MultiplexLogService } from 'vs/platform/log/common/log';
 import uuid = require('uuid');
@@ -117,7 +117,7 @@ export class DownloadTask extends Disposable {
 		if (!await fileExists(lockFile)) {
 			await mkdirp(dirname(lockFile));
 			this.logger.info('    the lock file not exists, create it.');
-			await writeFile(lockFile, 'empty', {});
+			await writeFile(lockFile, '', { encoding: { charset: 'utf8', addBOM: false } });
 		}
 		await rawLock(lockFile);
 	}
@@ -448,6 +448,8 @@ export class DownloadTask extends Disposable {
 		}
 
 		this.logger.info('  -> changed! reset download status.');
+		await truncate(this.target, 0);
+
 		this._parsePartInfoFromResponse(resp);
 		await this.flush();
 	}

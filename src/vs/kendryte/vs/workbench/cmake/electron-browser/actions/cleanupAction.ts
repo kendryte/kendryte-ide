@@ -2,7 +2,7 @@ import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
 import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
-import { ACTION_ID_MAIX_CMAKE_CLEANUP } from 'vs/kendryte/vs/platform/common/type';
+import { ACTION_ID_MAIX_CMAKE_CLEANUP } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
 import { CMAKE_CHANNEL, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 
 export class MaixCMakeCleanupAction extends Action {

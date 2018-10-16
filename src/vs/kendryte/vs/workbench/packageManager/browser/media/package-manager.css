@@ -11,3 +11,25 @@
 	background-image: url('open-market-dark.svg');
 }
 
+#package-manager {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	overflow: auto;
+}
+
+#package-manager > .error-message,
+#package-manager > .error-message > * {
+	padding: 0 20px;
+	font-size: 28px;
+	line-height: 32px;
+	font-weight: bold;
+}
+
+#package-manager .package-item {
+	padding: 5px 12px;
+}
+
+#package-manager .package-item > .title > .icon {
+	margin-right: 4px;
+}

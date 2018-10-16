@@ -4,18 +4,19 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
-import { IIDEBuildingBlocksService } from 'vs/kendryte/vs/platform/common/type';
+import { IIDEBuildingBlocksService } from 'vs/kendryte/vs/services/update/common/type';
 import { IPartService } from 'vs/workbench/services/part/common/partService';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ACTION_ID_IDE_SELF_UPGRADE, ACTION_ID_UPGRADE_BUILDING_BLOCKS, getUpdateLogger, UpdateActionCategory } from 'vs/kendryte/vs/services/update/common/ids';
 import { IUpdateService } from 'vs/platform/update/common/update';
 import { INotificationHandle, INotificationService, Severity } from 'vs/platform/notification/common/notification';
-import { unClosableNotify } from 'vs/kendryte/vs/platform/progress/common/unClosableNotify';
+import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
 import { finishAllPromise } from 'vs/kendryte/vs/base/common/finishAllPromise';
 import { IDownloadWithProgressService } from 'vs/kendryte/vs/services/download/electron-browser/downloadWithProgressService';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IFileCompressService } from 'vs/kendryte/vs/services/fileCompress/node/fileCompressService';
+import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 
 class BuildingBlocksUpgradeAction extends Action {
 	public static readonly ID = ACTION_ID_UPGRADE_BUILDING_BLOCKS;
@@ -34,6 +35,7 @@ class BuildingBlocksUpgradeAction extends Action {
 		@IIDEBuildingBlocksService private ideBuildingBlocksService: IIDEBuildingBlocksService,
 		@IDownloadWithProgressService private downloadWithProgressService: IDownloadWithProgressService,
 		@IFileCompressService private fileCompressService: IFileCompressService,
+		@INodePathService nodePathService: INodePathService,
 	) {
 		super(id, label, 'terminal-action octicon octicon-repo-sync');
 		this.logger = getUpdateLogger(channelLogService);
@@ -46,10 +48,6 @@ class BuildingBlocksUpgradeAction extends Action {
 	}
 
 	public async run(event?: any): TPromise<void> {
-		await this.channelLogService.show(this.logger.id);
-		if (!this.partService.isPanelMaximized()) {
-			this.partService.toggleMaximizedPanel();
-		}
 		this.logger.info('check building blocks update...');
 
 		const handle = unClosableNotify(this.notificationService, {
@@ -60,19 +58,23 @@ class BuildingBlocksUpgradeAction extends Action {
 
 		this.logger.info('  fetchUpdateInfo()');
 		const updateInfos = await this.ideBuildingBlocksService.fetchUpdateInfo(this.logger, true).then(undefined, (e) => {
+			this.logger.error('==========================');
+			this.logger.error('Cannot update.');
+			this.logger.error(e);
 			this.showFailedMessage(handle, 'Cannot check update info: ' + e.message);
 			throw e;
 		});
-		this.logger.info('    got %s items.', updateInfos.length);
-		this.logger.info('====================================');
+		this.logger.info(' -> %s item(s) to update.', updateInfos.length);
 
 		if (updateInfos.length === 0) {
-			if (this.partService.isPanelMaximized()) {
-				this.partService.toggleMaximizedPanel();
-			}
 			handle.dispose();
 			this.logger.info('No update.');
 			return;
+		}
+
+		await this.channelLogService.show(this.logger.id);
+		if (!this.partService.isPanelMaximized()) {
+			this.partService.toggleMaximizedPanel();
 		}
 
 		this.logger.info('Downloading updates');
@@ -176,14 +178,14 @@ class IDESelfUpgradeAction extends Action {
 	}
 
 	public async run(event?: any): TPromise<void> {
-		await this.channelLogService.show(this.logger.id);
-		if (!this.partService.isPanelMaximized()) {
-			this.partService.toggleMaximizedPanel();
-		}
-
 		await this.updateService.checkForUpdates({});
 		if (await this.updateService.isLatestVersion()) {
 			return;
+		}
+
+		await this.channelLogService.show(this.logger.id);
+		if (!this.partService.isPanelMaximized()) {
+			this.partService.toggleMaximizedPanel();
 		}
 
 		await this.updateService.downloadUpdate();

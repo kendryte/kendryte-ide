@@ -34,3 +34,4 @@ node_modules
 packages
 .idea/deployment.xml
 .idea/typescript-compiler.xml
+/src/vs/kendryte/vs/workbench/serialUpload/common/

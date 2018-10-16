@@ -1,22 +1,31 @@
 import { BaseEditor } from 'vs/workbench/browser/parts/editor/baseEditor';
-import { $, append, Dimension } from 'vs/base/browser/dom';
+import { $, append, Dimension, getTotalHeight } from 'vs/base/browser/dom';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { localize } from 'vs/nls';
 import { vsiconClass } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
 import { PANEL_BACKGROUND } from 'vs/workbench/common/theme';
-import { SimpleNavBar } from 'vs/kendryte/vs/workbench/commonBlocks/browser/simpleNavBar';
+import { SimpleNavBar } from 'vs/kendryte/vs/workbench/commonDomBlocks/browser/simpleNavBar';
 import { IPackageRegistryService, PackageTypes } from 'vs/kendryte/vs/workbench/packageManager/common/type';
+import { IRemotePackageInfo } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
+import { IPager, PagedModel } from 'vs/base/common/paging';
+import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { RemotePackagesListView } from 'vs/kendryte/vs/workbench/packageManager/browser/editors/remotePackagesListView';
+import { renderOcticons } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 
 export class PackageBrowserEditor extends BaseEditor {
 	static readonly ID: string = 'workbench.editor.package-market';
 	private $title: HTMLElement;
 	private errorMessage: HTMLElement;
+	private $list: HTMLElement;
+	private list: RemotePackagesListView;
+	private container: HTMLElement;
 
 	constructor(
 		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IPackageRegistryService private packageRegistryService: IPackageRegistryService,
+		@IInstantiationService private instantiationService: IInstantiationService,
 	) {
 		super(PackageBrowserEditor.ID, telemetryService, themeService);
 	}
@@ -33,12 +42,15 @@ export class PackageBrowserEditor extends BaseEditor {
 	}
 
 	protected createEditor(parent: HTMLElement): void {
-		parent.classList.add('package-manager');
+		this.container = append(parent, $('div#package-manager'));
 
-		const $title = this.$title = append(parent, $('div.title-bar'));
+		const $title = this.$title = append(this.container, $('div.package-title-bar'));
 		this.createTitle($title);
 
-		const $content = append(parent, $('div.content'));
+		this.errorMessage = append(this.container, $('div.error-message'));
+		this.errorMessage.style.display = 'none';
+
+		const $content = this.$list = append(this.container, $('div.package-list-content'));
 		this.createList($content);
 
 		this.updateStyles();
@@ -58,19 +70,38 @@ export class PackageBrowserEditor extends BaseEditor {
 	}
 
 	private createList(parent: HTMLElement) {
-		this.errorMessage = append(parent, $('h1'));
+		parent.style.display = 'none';
+
+		this.list = this.instantiationService.createInstance(RemotePackagesListView, parent);
+		this._register(this.list);
 
 		this.onTabChange(PackageTypes.Library);
 	}
 
 	public layout(dimension: Dimension): void {
+		const bodyHeight = dimension.height - getTotalHeight(this.$title);
+		this.$list.style.height = bodyHeight + 'px';
+		this.list.layout(bodyHeight);
 	}
 
 	private onTabChange(type: PackageTypes) {
-		this.packageRegistryService.queryPackages(type, '', 1).then(() => {
-
+		this.showError(renderOcticons('$(repo-sync~spin) loading...'));
+		this.packageRegistryService.queryPackages(type, '', 1).then((list) => {
+			this.updateList(list);
 		}, (e) => {
-			this.errorMessage.textContent = e.message;
+			this.showError(e.message);
 		});
+	}
+
+	private showError(e: string) {
+		this.errorMessage.innerHTML = e;
+		this.errorMessage.style.display = 'block';
+		this.$list.style.display = 'none';
+	}
+
+	private updateList(list: IPager<IRemotePackageInfo>) {
+		this.list.model = new PagedModel(list);
+		this.errorMessage.style.display = 'none';
+		this.$list.style.display = 'block';
 	}
 }

@@ -9,7 +9,7 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { IWindowsMainService } from 'vs/platform/windows/electron-main/windows';
 import { exists, readFile } from 'vs/base/node/pfs';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { resolvePath } from 'vs/kendryte/vs/platform/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 
 class WrappedWindowsService extends wss.WindowsService {
 	async openAboutDialog(): TPromise<void> {
