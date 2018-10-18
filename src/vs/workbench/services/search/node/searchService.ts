@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { getPathFromAmdModule } from 'vs/base/common/amd';
 import * as arrays from 'vs/base/common/arrays';
@@ -10,7 +9,7 @@ import { CancellationToken } from 'vs/base/common/cancellation';
 import { canceled } from 'vs/base/common/errors';
 import { Event } from 'vs/base/common/event';
 import { Disposable, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
-import { ResourceMap, values } from 'vs/base/common/map';
+import { ResourceMap, values, keys } from 'vs/base/common/map';
 import { Schemas } from 'vs/base/common/network';
 import * as objects from 'vs/base/common/objects';
 import { StopWatch } from 'vs/base/common/stopwatch';
@@ -125,10 +124,18 @@ export class SearchService extends Disposable implements ISearchService {
 
 		const providerActivations: TPromise<any>[] = [TPromise.wrap(null)];
 		schemesInQuery.forEach(scheme => providerActivations.push(this.extensionService.activateByEvent(`onSearch:${scheme}`)));
+		providerActivations.push(this.extensionService.activateByEvent('onSearch:file'));
 
 		const providerPromise = TPromise.join(providerActivations)
 			.then(() => this.extensionService.whenInstalledExtensionsRegistered())
-			.then(() => this.searchWithProviders(query, onProviderProgress, token))
+			.then(() => {
+				// Cancel faster if search was canceled while waiting for extensions
+				if (token && token.isCancellationRequested) {
+					return TPromise.wrapError(canceled());
+				}
+
+				return this.searchWithProviders(query, onProviderProgress, token);
+			})
 			.then(completes => {
 				completes = completes.filter(c => !!c);
 				if (!completes.length) {
@@ -149,7 +156,7 @@ export class SearchService extends Disposable implements ISearchService {
 				return TPromise.wrapError(errs[0]);
 			});
 
-		return providerPromise.then(value => {
+		const searchP = providerPromise.then(value => {
 			const values = [value];
 
 			const result: ISearchComplete = {
@@ -178,6 +185,15 @@ export class SearchService extends Disposable implements ISearchService {
 			return result;
 		});
 
+		return new TPromise((resolve, reject) => {
+			if (token) {
+				token.onCancellationRequested(() => {
+					reject(canceled());
+				});
+			}
+
+			searchP.then(resolve, reject);
+		});
 	}
 
 	private getSchemesInQuery(query: ISearchQuery): Set<string> {
@@ -199,24 +215,26 @@ export class SearchService extends Disposable implements ISearchService {
 		const diskSearchQueries: IFolderQuery[] = [];
 		const searchPs: TPromise<ISearchComplete>[] = [];
 
-		query.folderQueries.forEach(fq => {
+		const fqs = this.groupFolderQueriesByScheme(query);
+		keys(fqs).forEach(scheme => {
+			const schemeFQs = fqs.get(scheme);
 			let provider = query.type === QueryType.File ?
-				this.fileSearchProviders.get(fq.folder.scheme) || this.fileIndexProviders.get(fq.folder.scheme) :
-				this.textSearchProviders.get(fq.folder.scheme);
+				this.fileSearchProviders.get(scheme) || this.fileIndexProviders.get(scheme) :
+				this.textSearchProviders.get(scheme);
 
-			if (!provider && fq.folder.scheme === 'file') {
-				diskSearchQueries.push(fq);
+			if (!provider && scheme === 'file') {
+				diskSearchQueries.push(...schemeFQs);
 			} else if (!provider) {
-				throw new Error('No search provider registered for scheme: ' + fq.folder.scheme);
+				throw new Error('No search provider registered for scheme: ' + scheme);
 			} else {
-				const oneFolderQuery = {
+				const oneSchemeQuery = {
 					...query,
 					...{
-						folderQueries: [fq]
+						folderQueries: schemeFQs
 					}
 				};
 
-				searchPs.push(provider.search(oneFolderQuery, onProviderProgress, token));
+				searchPs.push(provider.search(oneSchemeQuery, onProviderProgress, token));
 			}
 		});
 
@@ -242,6 +260,19 @@ export class SearchService extends Disposable implements ISearchService {
 			});
 			return completes;
 		});
+	}
+
+	private groupFolderQueriesByScheme(query: ISearchQuery): Map<string, IFolderQuery[]> {
+		const queries = new Map<string, IFolderQuery[]>();
+
+		query.folderQueries.forEach(fq => {
+			const schemeFQs = queries.get(fq.folder.scheme) || [];
+			schemeFQs.push(fq);
+
+			queries.set(fq.folder.scheme, schemeFQs);
+		});
+
+		return queries;
 	}
 
 	private sendTelemetry(query: ISearchQuery, endToEndTime: number, complete: ISearchComplete): void {
@@ -445,6 +476,10 @@ export class DiskSearch implements ISearchResultProvider {
 		const folderQueries = query.folderQueries || [];
 		return TPromise.join(folderQueries.map(q => q.folder.scheme === Schemas.file && pfs.exists(q.folder.fsPath)))
 			.then(exists => {
+				if (token && token.isCancellationRequested) {
+					throw canceled();
+				}
+
 				const existingFolders = folderQueries.filter((q, index) => exists[index]);
 				const rawSearch = this.rawSearchQuery(query, existingFolders);
 
@@ -472,6 +507,7 @@ export class DiskSearch implements ISearchResultProvider {
 			cacheKey: query.cacheKey,
 			useRipgrep: query.useRipgrep,
 			disregardIgnoreFiles: query.disregardIgnoreFiles,
+			disregardGlobalIgnoreFiles: query.disregardGlobalIgnoreFiles,
 			ignoreSymlinks: query.ignoreSymlinks,
 			previewOptions: query.previewOptions
 		};
@@ -482,6 +518,7 @@ export class DiskSearch implements ISearchResultProvider {
 				includePattern: q.includePattern,
 				fileEncoding: q.fileEncoding,
 				disregardIgnoreFiles: q.disregardIgnoreFiles,
+				disregardGlobalIgnoreFiles: q.disregardGlobalIgnoreFiles,
 				folder: q.folder.fsPath
 			});
 		}
@@ -571,19 +608,9 @@ export class DiskSearch implements ISearchResultProvider {
 	}
 }
 
-/**
- * While search doesn't support multiline matches, collapse editor matches to a single line
- */
 function editorMatchToTextSearchResult(match: FindMatch, model: ITextModel, previewOptions: ITextSearchPreviewOptions): TextSearchResult {
-	let endLineNumber = match.range.endLineNumber - 1;
-	let endCol = match.range.endColumn - 1;
-	if (match.range.endLineNumber !== match.range.startLineNumber) {
-		endLineNumber = match.range.startLineNumber - 1;
-		endCol = model.getLineLength(match.range.startLineNumber);
-	}
-
 	return new TextSearchResult(
 		model.getLineContent(match.range.startLineNumber),
-		new Range(match.range.startLineNumber - 1, match.range.startColumn - 1, endLineNumber, endCol),
+		new Range(match.range.startLineNumber - 1, match.range.startColumn - 1, match.range.endLineNumber - 1, match.range.endColumn - 1),
 		previewOptions);
 }

@@ -131,7 +131,7 @@ class BaseTreeItem {
 			return child.getChildren();
 		}
 		const array = Object.keys(this._children).map(key => this._children[key]);
-		return TPromise.as(array.sort((a, b) => this.compare(a, b)));
+		return Promise.resolve(array.sort((a, b) => this.compare(a, b)));
 	}
 
 	// skips intermediate single-child nodes
@@ -226,7 +226,7 @@ class SessionTreeItem extends BaseTreeItem {
 	private _map: Map<string, BaseTreeItem>;
 
 	constructor(parent: BaseTreeItem, session: IDebugSession, private _environmentService: IEnvironmentService, private rootProvider: IWorkspaceContextService) {
-		super(parent, session.getName(true));
+		super(parent, session.getLabel());
 		this._initialized = false;
 		this._session = session;
 		this._map = new Map();
@@ -351,11 +351,8 @@ class SessionTreeItem extends BaseTreeItem {
 
 export class LoadedScriptsView extends TreeViewsViewletPanel {
 
-	private static readonly MEMENTO = 'loadedscriptsview.memento';
-
 	private treeContainer: HTMLElement;
 	private loadedScriptsItemType: IContextKey<string>;
-	private settings: any;
 
 	constructor(
 		options: IViewletViewOptions,
@@ -370,7 +367,6 @@ export class LoadedScriptsView extends TreeViewsViewletPanel {
 		@IDebugService private debugService: IDebugService
 	) {
 		super({ ...(options as IViewletPanelOptions), ariaHeaderLabel: nls.localize('loadedScriptsSection', "Loaded Scripts Section") }, keybindingService, contextMenuService, configurationService);
-		this.settings = options.viewletSettings;
 		this.loadedScriptsItemType = CONTEXT_LOADED_SCRIPTS_ITEM_TYPE.bindTo(contextKeyService);
 	}
 
@@ -464,11 +460,6 @@ export class LoadedScriptsView extends TreeViewsViewletPanel {
 		super.layoutBody(size);
 	}
 
-	public shutdown(): void {
-		this.settings[LoadedScriptsView.MEMENTO] = !this.isExpanded();
-		super.shutdown();
-	}
-
 	dispose(): void {
 		this.tree = undefined;
 		super.dispose();
@@ -492,7 +483,7 @@ class LoadedScriptsDataSource implements IDataSource {
 	}
 
 	getParent(tree: ITree, element: any): TPromise<any> {
-		return TPromise.as(element.getParent());
+		return Promise.resolve(element.getParent());
 	}
 
 	shouldAutoexpand?(tree: ITree, element: any): boolean {

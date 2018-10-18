@@ -3,9 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
-import { Uri, commands, Disposable, window, workspace, QuickPickItem, OutputChannel, Range, WorkspaceEdit, Position, LineChange, SourceControlResourceState, TextDocumentShowOptions, ViewColumn, ProgressLocation, TextEditor, MessageOptions } from 'vscode';
+import { Uri, commands, Disposable, window, workspace, QuickPickItem, OutputChannel, Range, WorkspaceEdit, Position, LineChange, SourceControlResourceState, TextDocumentShowOptions, ViewColumn, ProgressLocation, TextEditor, MessageOptions, WorkspaceFolder } from 'vscode';
 import { Git, CommitOptions, Stash, ForcePushMode } from './git';
 import { Repository, Resource, Status, ResourceGroupType } from './repository';
 import { Model } from './model';
@@ -98,7 +96,7 @@ class CreateBranchItem implements QuickPickItem {
 	get label(): string { return localize('create branch', '$(plus) Create new branch'); }
 	get description(): string { return ''; }
 
-	get shouldAlwaysShow(): boolean { return true; }
+	get alwaysShow(): boolean { return true; }
 
 	async run(repository: Repository): Promise<void> {
 		await this.cc.branch(repository);
@@ -120,7 +118,7 @@ interface Command {
 const Commands: Command[] = [];
 
 function command(commandId: string, options: CommandOptions = {}): Function {
-	return (target: any, key: string, descriptor: any) => {
+	return (_target: any, key: string, descriptor: any) => {
 		if (!(typeof descriptor.value === 'function')) {
 			throw new Error('not supported');
 		}
@@ -146,11 +144,11 @@ async function categorizeResourceByResolution(resources: Resource[]): Promise<{ 
 	const possibleUnresolved = merge.filter(isBothAddedOrModified);
 	const promises = possibleUnresolved.map(s => grep(s.resourceUri.fsPath, /^<{7}|^={7}|^>{7}/));
 	const unresolvedBothModified = await Promise.all<boolean>(promises);
-	const resolved = possibleUnresolved.filter((s, i) => !unresolvedBothModified[i]);
+	const resolved = possibleUnresolved.filter((_s, i) => !unresolvedBothModified[i]);
 	const deletionConflicts = merge.filter(s => isAnyDeleted(s));
 	const unresolved = [
 		...merge.filter(s => !isBothAddedOrModified(s) && !isAnyDeleted(s)),
-		...possibleUnresolved.filter((s, i) => unresolvedBothModified[i])
+		...possibleUnresolved.filter((_s, i) => unresolvedBothModified[i])
 	];
 
 	return { merge, resolved, unresolved, deletionConflicts };
@@ -304,6 +302,7 @@ export class CommandCenter {
 			case Status.DELETED_BY_THEM:
 				return this.getURI(resource.resourceUri, '');
 		}
+		return undefined;
 	}
 
 	private async getRightResource(resource: Resource): Promise<Uri | undefined> {
@@ -346,6 +345,7 @@ export class CommandCenter {
 			case Status.BOTH_MODIFIED:
 				return resource.resourceUri;
 		}
+		return undefined;
 	}
 
 	private getTitle(resource: Resource): string {
@@ -481,18 +481,22 @@ export class CommandCenter {
 
 	@command('git.init')
 	async init(): Promise<void> {
-		let repositoryPath: string | undefined;
+		let repositoryPath: string | undefined = undefined;
 
-		if (workspace.workspaceFolders && workspace.workspaceFolders.length > 1) {
+		if (workspace.workspaceFolders) {
 			const placeHolder = localize('init', "Pick workspace folder to initialize git repo in");
-			const items = workspace.workspaceFolders.map(folder => ({ label: folder.name, description: folder.uri.fsPath, folder }));
+			const pick = { label: localize('choose', "Choose Folder...") };
+			const items: { label: string, folder?: WorkspaceFolder }[] = [
+				...workspace.workspaceFolders.map(folder => ({ label: folder.name, description: folder.uri.fsPath, folder })),
+				pick
+			];
 			const item = await window.showQuickPick(items, { placeHolder, ignoreFocusOut: true });
 
 			if (!item) {
 				return;
+			} else if (item.folder) {
+				repositoryPath = item.folder.uri.fsPath;
 			}
-
-			repositoryPath = item.folder.uri.fsPath;
 		}
 
 		if (!repositoryPath) {
@@ -1343,9 +1347,10 @@ export class CommandCenter {
 	}
 
 	@command('git.checkout', { repository: true })
-	async checkout(repository: Repository, treeish: string): Promise<void> {
+	async checkout(repository: Repository, treeish: string): Promise<boolean> {
 		if (typeof treeish === 'string') {
-			return await repository.checkout(treeish);
+			await repository.checkout(treeish);
+			return true;
 		}
 
 		const config = workspace.getConfiguration('git');
@@ -1369,12 +1374,12 @@ export class CommandCenter {
 		const choice = await window.showQuickPick(picks, { placeHolder });
 
 		if (!choice) {
-			return;
+			return false;
 		}
 
 		await choice.run(repository);
+		return true;
 	}
-
 
 	@command('git.branch', { repository: true })
 	async branch(repository: Repository): Promise<void> {
@@ -2047,6 +2052,7 @@ export class CommandCenter {
 			return repository.workingTreeGroup.resourceStates.filter(r => r.resourceUri.toString() === uriString)[0]
 				|| repository.indexGroup.resourceStates.filter(r => r.resourceUri.toString() === uriString)[0];
 		}
+		return undefined;
 	}
 
 	private runByRepository<T>(resource: Uri, fn: (repository: Repository, resource: Uri) => Promise<T>): Promise<T[]>;

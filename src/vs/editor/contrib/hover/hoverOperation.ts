@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { RunOnceScheduler, CancelablePromise, createCancelablePromise } from 'vs/base/common/async';
 import { onUnexpectedError } from 'vs/base/common/errors';
@@ -57,7 +56,7 @@ export class HoverOperation<Result> {
 	private _firstWaitScheduler: RunOnceScheduler;
 	private _secondWaitScheduler: RunOnceScheduler;
 	private _loadingMessageScheduler: RunOnceScheduler;
-	private _asyncComputationPromise: CancelablePromise<Result>;
+	private _asyncComputationPromise: CancelablePromise<Result> | null;
 	private _asyncComputationPromiseDone: boolean;
 
 	private _completeCallback: (r: Result) => void;
@@ -103,7 +102,7 @@ export class HoverOperation<Result> {
 
 		if (this._computer.computeAsync) {
 			this._asyncComputationPromiseDone = false;
-			this._asyncComputationPromise = createCancelablePromise(token => this._computer.computeAsync(token));
+			this._asyncComputationPromise = createCancelablePromise(token => this._computer.computeAsync!(token));
 			this._asyncComputationPromise.then((asyncResult: Result) => {
 				this._asyncComputationPromiseDone = true;
 				this._withAsyncResult(asyncResult);

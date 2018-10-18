@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { TPromise } from 'vs/base/common/winjs.base';
 import * as paths from 'vs/base/common/paths';
@@ -237,7 +236,7 @@ export class FileOperationEvent {
 		return this._resource;
 	}
 
-	get target(): IFileStat {
+	get target(): IFileStat | undefined {
 		return this._target;
 	}
 
@@ -485,12 +484,15 @@ export interface IStringStream {
  * Will return null when finished.
  */
 export interface ITextSnapshot {
-	read(): string;
+	read(): string | null;
 }
 
 export class StringSnapshot implements ITextSnapshot {
-	constructor(private _value: string) { }
-	read(): string {
+	private _value: string | null;
+	constructor(value: string) {
+		this._value = value;
+	}
+	read(): string | null {
 		let ret = this._value;
 		this._value = null;
 		return ret;
@@ -501,7 +503,7 @@ export class StringSnapshot implements ITextSnapshot {
  */
 export function snapshotToString(snapshot: ITextSnapshot): string {
 	const chunks: string[] = [];
-	let chunk: string;
+	let chunk: string | null;
 	while (typeof (chunk = snapshot.read()) === 'string') {
 		chunks.push(chunk);
 	}
@@ -551,12 +553,6 @@ export interface IResolveContentOptions {
 	 * The optional guessEncoding parameter allows to guess encoding from content of the file.
 	 */
 	autoGuessEncoding?: boolean;
-
-	/**
-	 * The optional list of encodings that can be used when guessing. If not provided, all encodings
-	 * will be supported for guessing.
-	 */
-	restrictGuessedEncodings?: string[];
 
 	/**
 	 * Is an integer specifying where to begin reading from in the file. If position is null,
@@ -667,7 +663,6 @@ export interface IFilesConfiguration {
 		watcherExclude: { [filepattern: string]: boolean };
 		encoding: string;
 		autoGuessEncoding: boolean;
-		restrictGuessedEncodings: string[];
 		defaultLanguage: string;
 		trimTrailingWhitespace: boolean;
 		autoSave: string;

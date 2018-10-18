@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { join, relative } from 'path';
 import { delta as arrayDelta } from 'vs/base/common/arrays';
@@ -14,7 +13,6 @@ import { isLinux } from 'vs/base/common/platform';
 import { basenameOrAuthority, dirname, isEqual } from 'vs/base/common/resources';
 import { compare } from 'vs/base/common/strings';
 import { URI } from 'vs/base/common/uri';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
 import { ILogService } from 'vs/platform/log/common/log';
 import { Severity } from 'vs/platform/notification/common/notification';
@@ -374,7 +372,7 @@ export class ExtHostWorkspace implements ExtHostWorkspaceShape {
 		}
 
 		if (token && token.isCancellationRequested) {
-			return TPromise.wrap([]);
+			return Promise.resolve([]);
 		}
 
 		return this._proxy.$startFileSearch(includePattern, includeFolder, excludePatternOrDisregardExcludes, maxResults, token)
@@ -383,10 +381,6 @@ export class ExtHostWorkspace implements ExtHostWorkspaceShape {
 
 	findTextInFiles(query: vscode.TextSearchQuery, options: vscode.FindTextInFilesOptions, callback: (result: vscode.TextSearchResult) => void, extensionId: string, token: vscode.CancellationToken = CancellationToken.None): Thenable<vscode.TextSearchComplete> {
 		this._logService.trace(`extHostWorkspace#findTextInFiles: textSearch, extension: ${extensionId}, entryPoint: findTextInFiles`);
-
-		if (options.previewOptions && options.previewOptions.totalChars <= options.previewOptions.leadingChars) {
-			throw new Error('findTextInFiles: previewOptions.totalChars must be > previewOptions.leadingChars');
-		}
 
 		const requestId = this._requestIdProvider.getNext();
 
@@ -398,13 +392,21 @@ export class ExtHostWorkspace implements ExtHostWorkspaceShape {
 			return join(pattern.base, pattern.pattern);
 		};
 
+		const previewOptions: vscode.TextSearchPreviewOptions = typeof options.previewOptions === 'undefined' ?
+			{
+				matchLines: 100,
+				charsPerLine: 10000
+			} :
+			options.previewOptions;
+
 		const queryOptions: IQueryOptions = {
 			ignoreSymlinks: typeof options.followSymlinks === 'boolean' ? !options.followSymlinks : undefined,
 			disregardIgnoreFiles: typeof options.useIgnoreFiles === 'boolean' ? !options.useIgnoreFiles : undefined,
+			disregardGlobalIgnoreFiles: typeof options.useGlobalIgnoreFiles === 'boolean' ? !options.useGlobalIgnoreFiles : undefined,
 			disregardExcludeSettings: options.exclude === null,
 			fileEncoding: options.encoding,
 			maxResults: options.maxResults,
-			previewOptions: options.previewOptions,
+			previewOptions,
 
 			includePattern: options.include && globPatternToString(options.include),
 			excludePattern: options.exclude && globPatternToString(options.exclude)
@@ -430,18 +432,16 @@ export class ExtHostWorkspace implements ExtHostWorkspaceShape {
 		};
 
 		if (token.isCancellationRequested) {
-			return TPromise.wrap(undefined);
+			return Promise.resolve(undefined);
 		}
 
-		return this._proxy.$startTextSearch(query, queryOptions, requestId, token).then(
-			result => {
-				delete this._activeSearchCallbacks[requestId];
-				return result;
-			},
-			err => {
-				delete this._activeSearchCallbacks[requestId];
-				return TPromise.wrapError(err);
-			});
+		return this._proxy.$startTextSearch(query, queryOptions, requestId, token).then(result => {
+			delete this._activeSearchCallbacks[requestId];
+			return result;
+		}, err => {
+			delete this._activeSearchCallbacks[requestId];
+			return Promise.reject(err);
+		});
 	}
 
 	$handleTextSearchResult(result: IRawFileMatch2, requestId: number): void {

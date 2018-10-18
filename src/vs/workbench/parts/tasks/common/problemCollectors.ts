@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { IStringDictionary, INumberDictionary } from 'vs/base/common/collections';
 import { URI } from 'vs/base/common/uri';
@@ -117,7 +116,7 @@ export class AbstractProblemCollector implements IDisposable {
 	}
 
 	protected tryFindMarker(line: string): ProblemMatch {
-		let result: ProblemMatch = null;
+		let result: ProblemMatch | null = null;
 		if (this.activeMatcher) {
 			result = this.activeMatcher.next(line);
 			if (result) {

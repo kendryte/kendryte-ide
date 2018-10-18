@@ -2,8 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
-
 import * as assert from 'assert';
 import { EditOperation } from 'vs/editor/common/core/editOperation';
 import { Position } from 'vs/editor/common/core/position';
@@ -106,7 +104,7 @@ suite('Editor Model - Model', () => {
 	});
 
 	test('model insert text without newline eventing', () => {
-		let e: ModelRawContentChangedEvent = null;
+		let e: ModelRawContentChangedEvent | null = null;
 		thisModel.onDidChangeRawContent((_e) => {
 			if (e !== null) {
 				assert.fail('Unexpected assertion error');
@@ -125,7 +123,7 @@ suite('Editor Model - Model', () => {
 	});
 
 	test('model insert text with one newline eventing', () => {
-		let e: ModelRawContentChangedEvent = null;
+		let e: ModelRawContentChangedEvent | null = null;
 		thisModel.onDidChangeRawContent((_e) => {
 			if (e !== null) {
 				assert.fail('Unexpected assertion error');
@@ -202,7 +200,7 @@ suite('Editor Model - Model', () => {
 	});
 
 	test('model delete text from one line eventing', () => {
-		let e: ModelRawContentChangedEvent = null;
+		let e: ModelRawContentChangedEvent | null = null;
 		thisModel.onDidChangeRawContent((_e) => {
 			if (e !== null) {
 				assert.fail('Unexpected assertion error');
@@ -221,7 +219,7 @@ suite('Editor Model - Model', () => {
 	});
 
 	test('model delete all text from a line eventing', () => {
-		let e: ModelRawContentChangedEvent = null;
+		let e: ModelRawContentChangedEvent | null = null;
 		thisModel.onDidChangeRawContent((_e) => {
 			if (e !== null) {
 				assert.fail('Unexpected assertion error');
@@ -240,7 +238,7 @@ suite('Editor Model - Model', () => {
 	});
 
 	test('model delete text from two lines eventing', () => {
-		let e: ModelRawContentChangedEvent = null;
+		let e: ModelRawContentChangedEvent | null = null;
 		thisModel.onDidChangeRawContent((_e) => {
 			if (e !== null) {
 				assert.fail('Unexpected assertion error');
@@ -260,7 +258,7 @@ suite('Editor Model - Model', () => {
 	});
 
 	test('model delete text from many lines eventing', () => {
-		let e: ModelRawContentChangedEvent = null;
+		let e: ModelRawContentChangedEvent | null = null;
 		thisModel.onDidChangeRawContent((_e) => {
 			if (e !== null) {
 				assert.fail('Unexpected assertion error');
@@ -311,7 +309,7 @@ suite('Editor Model - Model', () => {
 
 	// --------- setValue
 	test('setValue eventing', () => {
-		let e: ModelRawContentChangedEvent = null;
+		let e: ModelRawContentChangedEvent | null = null;
 		thisModel.onDidChangeRawContent((_e) => {
 			if (e !== null) {
 				assert.fail('Unexpected assertion error');
@@ -394,7 +392,7 @@ suite('Editor Model - Words', () => {
 				tokenize: undefined,
 				tokenize2: (line: string, state: IState): TokenizationResult2 => {
 					const tokensArr: number[] = [];
-					let prevLanguageId: LanguageIdentifier = undefined;
+					let prevLanguageId: LanguageIdentifier | undefined = undefined;
 					for (let i = 0; i < line.length; i++) {
 						const languageId = (line.charAt(i) === 'x' ? INNER_LANGUAGE_ID : OUTER_LANGUAGE_ID);
 						if (prevLanguageId !== languageId) {

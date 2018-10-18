@@ -89,7 +89,10 @@ export class PanelPart extends CompositePart<Panel> implements IPanelService {
 			getActivityAction: (compositeId: string) => this.getCompositeActions(compositeId).activityAction,
 			getCompositePinnedAction: (compositeId: string) => this.getCompositeActions(compositeId).pinnedAction,
 			getOnCompositeClickAction: (compositeId: string) => this.instantiationService.createInstance(PanelActivityAction, this.getPanel(compositeId)),
-			getContextMenuActions: () => [this.instantiationService.createInstance(TogglePanelAction, TogglePanelAction.ID, localize('hidePanel', "Hide Panel"))],
+			getContextMenuActions: () => [
+				this.instantiationService.createInstance(TogglePanelPositionAction, TogglePanelPositionAction.ID, TogglePanelPositionAction.LABEL),
+				this.instantiationService.createInstance(TogglePanelAction, TogglePanelAction.ID, localize('hidePanel', "Hide Panel"))
+			],
 			getDefaultCompositeId: () => Registry.as<PanelRegistry>(PanelExtensions.Panels).getDefaultPanelId(),
 			hidePart: () => this.partService.setPanelHidden(true),
 			compositeSize: 0,
@@ -164,7 +167,7 @@ export class PanelPart extends CompositePart<Panel> implements IPanelService {
 
 	openPanel(id: string, focus?: boolean): TPromise<Panel> {
 		if (this.blockOpeningPanel) {
-			return TPromise.as(null); // Workaround against a potential race condition
+			return Promise.resolve(null); // Workaround against a potential race condition
 		}
 
 		// First check if panel is hidden and show if so
@@ -195,6 +198,13 @@ export class PanelPart extends CompositePart<Panel> implements IPanelService {
 			.sort((v1, v2) => v1.order - v2.order);
 	}
 
+	getPinnedPanels(): PanelDescriptor[] {
+		const pinnedCompositeIds = this.compositeBar.getPinnedComposites().map(c => c.id);
+		return this.getPanels()
+			.filter(p => pinnedCompositeIds.indexOf(p.id) !== -1)
+			.sort((p1, p2) => pinnedCompositeIds.indexOf(p1.id) - pinnedCompositeIds.indexOf(p2.id));
+	}
+
 	setPanelEnablement(id: string, enabled: boolean): void {
 		const descriptor = Registry.as<PanelRegistry>(PanelExtensions.Panels).getPanels().filter(p => p.id === id).pop();
 		if (descriptor && descriptor.enabled !== enabled) {
@@ -210,7 +220,6 @@ export class PanelPart extends CompositePart<Panel> implements IPanelService {
 	protected getActions(): IAction[] {
 		return [
 			this.instantiationService.createInstance(ToggleMaximizedPanelAction, ToggleMaximizedPanelAction.ID, ToggleMaximizedPanelAction.LABEL),
-			this.instantiationService.createInstance(TogglePanelPositionAction, TogglePanelPositionAction.ID, TogglePanelPositionAction.LABEL),
 			this.instantiationService.createInstance(ClosePanelAction, ClosePanelAction.ID, ClosePanelAction.LABEL)
 		];
 	}

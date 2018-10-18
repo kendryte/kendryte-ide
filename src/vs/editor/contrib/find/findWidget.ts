@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import 'vs/css!./findWidget';
 import * as nls from 'vs/nls';
 import { onUnexpectedError } from 'vs/base/common/errors';
@@ -32,7 +30,6 @@ import { IConfigurationChangedEvent } from 'vs/editor/common/config/editorOption
 import { editorFindRangeHighlight, editorFindMatch, editorFindMatchHighlight, contrastBorder, inputBackground, editorWidgetBackground, inputActiveOptionBorder, widgetShadow, inputForeground, inputBorder, inputValidationInfoBackground, inputValidationInfoForeground, inputValidationInfoBorder, inputValidationWarningBackground, inputValidationWarningForeground, inputValidationWarningBorder, inputValidationErrorBackground, inputValidationErrorForeground, inputValidationErrorBorder, errorForeground, editorWidgetBorder, editorFindMatchBorder, editorFindMatchHighlightBorder, editorFindRangeHighlightBorder, editorWidgetResizeBorder } from 'vs/platform/theme/common/colorRegistry';
 import { ContextScopedFindInput, ContextScopedHistoryInputBox } from 'vs/platform/widget/browser/contextScopedHistoryWidget';
 import { toDisposable } from 'vs/base/common/lifecycle';
-
 
 export interface IFindController {
 	replace(): void;
@@ -159,7 +156,12 @@ export class FindWidget extends Widget implements IOverlayWidget, IHorizontalSas
 			if (e.layoutInfo) {
 				this._tryUpdateWidgetWidth();
 			}
+
+			if (e.accessibilitySupport) {
+				this.updateAccessibilitySupport();
+			}
 		}));
+		this.updateAccessibilitySupport();
 		this._register(this._codeEditor.onDidChangeCursorSelection(() => {
 			if (this._isVisible) {
 				this._updateToggleSelectionFindButton();
@@ -200,15 +202,13 @@ export class FindWidget extends Widget implements IOverlayWidget, IHorizontalSas
 		this._applyTheme(themeService.getTheme());
 		this._register(themeService.onThemeChange(this._applyTheme.bind(this)));
 
-		this._register(this._codeEditor.onDidChangeModel((e) => {
+		this._register(this._codeEditor.onDidChangeModel(() => {
 			if (!this._isVisible) {
 				return;
 			}
-
 			if (this._viewZoneId === undefined) {
 				return;
 			}
-
 			this._codeEditor.changeViewZones((accessor) => {
 				accessor.removeZone(this._viewZoneId);
 				this._viewZoneId = undefined;
@@ -265,7 +265,7 @@ export class FindWidget extends Widget implements IOverlayWidget, IHorizontalSas
 		}
 		if (e.isRevealed) {
 			if (this._state.isRevealed) {
-				this._reveal(true);
+				this._reveal();
 			} else {
 				this._hide(true);
 			}
@@ -306,6 +306,7 @@ export class FindWidget extends Widget implements IOverlayWidget, IHorizontalSas
 			dom.toggleClass(this._domNode, 'no-results', showRedOutline);
 
 			this._updateMatchesCount();
+			this._updateButtons();
 		}
 		if (e.searchString || e.currentMatch) {
 			this._layoutViewZone();
@@ -381,8 +382,9 @@ export class FindWidget extends Widget implements IOverlayWidget, IHorizontalSas
 		this._closeBtn.setEnabled(this._isVisible);
 
 		let findInputIsNonEmpty = (this._state.searchString.length > 0);
-		this._prevBtn.setEnabled(this._isVisible && findInputIsNonEmpty);
-		this._nextBtn.setEnabled(this._isVisible && findInputIsNonEmpty);
+		let matchesCount = this._state.matchesCount ? true : false;
+		this._prevBtn.setEnabled(this._isVisible && findInputIsNonEmpty && matchesCount);
+		this._nextBtn.setEnabled(this._isVisible && findInputIsNonEmpty && matchesCount);
 		this._replaceBtn.setEnabled(this._isVisible && this._isReplaceVisible && findInputIsNonEmpty);
 		this._replaceAllBtn.setEnabled(this._isVisible && this._isReplaceVisible && findInputIsNonEmpty);
 
@@ -395,7 +397,7 @@ export class FindWidget extends Widget implements IOverlayWidget, IHorizontalSas
 		this._toggleReplaceBtn.setEnabled(this._isVisible && canReplace);
 	}
 
-	private _reveal(animate: boolean): void {
+	private _reveal(): void {
 		if (!this._isVisible) {
 			this._isVisible = true;
 
@@ -694,13 +696,13 @@ export class FindWidget extends Widget implements IOverlayWidget, IHorizontalSas
 	}
 
 	// ----- sash
-	public getHorizontalSashTop(sash: Sash): number {
+	public getHorizontalSashTop(_sash: Sash): number {
 		return 0;
 	}
-	public getHorizontalSashLeft?(sash: Sash): number {
+	public getHorizontalSashLeft?(_sash: Sash): number {
 		return 0;
 	}
-	public getHorizontalSashWidth?(sash: Sash): number {
+	public getHorizontalSashWidth?(_sash: Sash): number {
 		return 500;
 	}
 
@@ -856,7 +858,7 @@ export class FindWidget extends Widget implements IOverlayWidget, IHorizontalSas
 
 
 		this._register(dom.addStandardDisposableListener(this._replaceInputBox.inputElement, 'keydown', (e) => this._onReplaceInputKeyDown(e)));
-		this._register(this._replaceInputBox.onDidChange((e) => {
+		this._register(this._replaceInputBox.onDidChange(() => {
 			this._state.change({ replaceString: this._replaceInputBox.value }, false);
 		}));
 
@@ -935,7 +937,7 @@ export class FindWidget extends Widget implements IOverlayWidget, IHorizontalSas
 		this._resized = false;
 		let originalWidth = FIND_WIDGET_INITIAL_WIDTH;
 
-		this._register(this._resizeSash.onDidStart((e: ISashEvent) => {
+		this._register(this._resizeSash.onDidStart(() => {
 			originalWidth = dom.getTotalWidth(this._domNode);
 		}));
 
@@ -958,6 +960,11 @@ export class FindWidget extends Widget implements IOverlayWidget, IHorizontalSas
 				this._replaceInputBox.width = inputBoxWidth;
 			}
 		}));
+	}
+
+	private updateAccessibilitySupport(): void {
+		const value = this._codeEditor.getConfiguration().accessibilitySupport;
+		this._findInput.setFocusInputOnOptionClick(value !== platform.AccessibilitySupport.Enabled);
 	}
 }
 
@@ -1002,7 +1009,7 @@ class SimpleCheckbox extends Widget {
 
 		this._opts.parent.appendChild(this._domNode);
 
-		this.onchange(this._checkbox, (e) => {
+		this.onchange(this._checkbox, () => {
 			this._opts.onChange();
 		});
 	}

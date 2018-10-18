@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import * as fs from 'fs';
 import * as platform from 'vs/base/common/platform';
 import product from 'vs/platform/node/product';
@@ -43,9 +41,8 @@ import { LocalizationsChannel } from 'vs/platform/localizations/node/localizatio
 import { DialogChannelClient } from 'vs/platform/dialogs/node/dialogIpc';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { IDisposable, dispose } from 'vs/base/common/lifecycle';
+import { DownloadService } from 'vs/platform/download/node/downloadService';
 import { IDownloadService } from 'vs/platform/download/common/download';
-import { DownloadServiceChannelClient } from 'vs/platform/download/node/downloadIpc';
-import { DefaultURITransformer } from 'vs/base/common/uriIpc';
 
 export interface ISharedProcessConfiguration {
 	readonly machineId: string;
@@ -80,6 +77,7 @@ function main(server: Server, initData: ISharedProcessInitData, configuration: I
 	services.set(ILogService, logService);
 	services.set(IConfigurationService, new SyncDescriptor(ConfigurationService));
 	services.set(IRequestService, new SyncDescriptor(RequestService));
+	services.set(IDownloadService, new SyncDescriptor(DownloadService));
 
 	const windowsChannel = server.getChannel('windows', { routeCall: mainRoute, routeEvent: mainRoute });
 	const windowsService = new WindowsChannelClient(windowsChannel);
@@ -91,9 +89,6 @@ function main(server: Server, initData: ISharedProcessInitData, configuration: I
 	const dialogChannel = server.getChannel('dialog', { routeCall: route, routeEvent: route });
 	services.set(IDialogService, new DialogChannelClient(dialogChannel));
 
-	const downloadChannel = server.getChannel('download', { routeCall: route, routeEvent: route });
-	services.set(IDownloadService, new DownloadServiceChannelClient(downloadChannel, DefaultURITransformer));
-
 	const instantiationService = new InstantiationService(services);
 
 	instantiationService.invokeFunction(accessor => {
@@ -104,7 +99,7 @@ function main(server: Server, initData: ISharedProcessInitData, configuration: I
 		telemetryLogService.info('The below are logs for every telemetry event sent from VS Code once the log level is set to trace.');
 		telemetryLogService.info('===========================================================');
 
-		let appInsightsAppender: ITelemetryAppender = NullAppender;
+		let appInsightsAppender: ITelemetryAppender | null = NullAppender;
 		if (product.aiConfig && product.aiConfig.asimovKey && isBuilt) {
 			appInsightsAppender = new AppInsightsAppender(eventPrefix, null, product.aiConfig.asimovKey, telemetryLogService);
 			disposables.push(appInsightsAppender); // Ensure the AI appender is disposed so that it flushes remaining data

@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { TPromise } from 'vs/base/common/winjs.base';
 import { EditorAction, ServicesAccessor, IActionOptions } from 'vs/editor/browser/editorExtensions';
@@ -27,7 +26,7 @@ export interface ILanguageIdentifierResolver {
 
 class GrammarContributions implements IGrammarContributions {
 
-	private static _grammars: ModeScopeMap = null;
+	private static _grammars: ModeScopeMap | null = null;
 
 	constructor(contributions: ExtensionPointContribution<ITMSyntaxExtensionPoint[]>[]) {
 		if (GrammarContributions._grammars === null) {
@@ -66,8 +65,8 @@ export abstract class EmmetEditorAction extends EditorAction {
 
 	private static readonly emmetSupportedModes = ['html', 'css', 'xml', 'xsl', 'haml', 'jade', 'jsx', 'slim', 'scss', 'sass', 'less', 'stylus', 'styl', 'svg'];
 
-	private _lastGrammarContributions: TPromise<GrammarContributions> = null;
-	private _lastExtensionService: IExtensionService = null;
+	private _lastGrammarContributions: TPromise<GrammarContributions> | null = null;
+	private _lastExtensionService: IExtensionService | null = null;
 	private _withGrammarContributions(extensionService: IExtensionService): TPromise<GrammarContributions> {
 		if (this._lastExtensionService !== extensionService) {
 			this._lastExtensionService = extensionService;

@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { ModelDecorationOptions } from 'vs/editor/common/model/textModel';
 import { Range } from 'vs/editor/common/core/range';
@@ -165,9 +164,9 @@ export class IntervalNode implements IModelDecoration {
 	constructor(id: string, start: number, end: number) {
 		this.metadata = 0;
 
-		this.parent = null;
-		this.left = null;
-		this.right = null;
+		this.parent = this;
+		this.left = this;
+		this.right = this;
 		setNodeColor(this, NodeColor.Red);
 
 		this.start = start;
@@ -178,7 +177,7 @@ export class IntervalNode implements IModelDecoration {
 
 		this.id = id;
 		this.ownerId = 0;
-		this.options = null;
+		this.options = null!;
 		setNodeIsForValidation(this, false);
 		_setNodeStickiness(this, TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges);
 		setNodeIsInOverviewRuler(this, false);
@@ -187,7 +186,7 @@ export class IntervalNode implements IModelDecoration {
 		this.cachedVersionId = 0;
 		this.cachedAbsoluteStart = start;
 		this.cachedAbsoluteEnd = end;
-		this.range = null;
+		this.range = null!;
 
 		setNodeIsVisited(this, false);
 	}
@@ -217,7 +216,7 @@ export class IntervalNode implements IModelDecoration {
 
 	public setCachedOffsets(absoluteStart: number, absoluteEnd: number, cachedVersionId: number): void {
 		if (this.cachedVersionId !== cachedVersionId) {
-			this.range = null;
+			this.range = null!;
 		}
 		this.cachedVersionId = cachedVersionId;
 		this.cachedAbsoluteStart = absoluteStart;
@@ -225,13 +224,13 @@ export class IntervalNode implements IModelDecoration {
 	}
 
 	public detach(): void {
-		this.parent = null;
-		this.left = null;
-		this.right = null;
+		this.parent = null!;
+		this.left = null!;
+		this.right = null!;
 	}
 }
 
-export const SENTINEL: IntervalNode = new IntervalNode(null, 0, 0);
+export const SENTINEL: IntervalNode = new IntervalNode(null!, 0, 0);
 SENTINEL.parent = SENTINEL;
 SENTINEL.left = SENTINEL;
 SENTINEL.right = SENTINEL;

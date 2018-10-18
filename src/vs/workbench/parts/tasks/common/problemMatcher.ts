@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { localize } from 'vs/nls';
 
@@ -350,7 +349,7 @@ abstract class AbstractLineMatcher implements ILineMatcher {
 	}
 
 	private getSeverity(data: ProblemData): MarkerSeverity {
-		let result: Severity = null;
+		let result: Severity | null = null;
 		if (data.severity) {
 			let value = data.severity;
 			if (value) {
@@ -894,7 +893,7 @@ export class ProblemPatternParser extends Parser {
 	}
 
 	private createRegularExpression(value: string): RegExp {
-		let result: RegExp = null;
+		let result: RegExp | null = null;
 		if (!value) {
 			return result;
 		}
@@ -1257,7 +1256,7 @@ export class ProblemMatcherParser extends Parser {
 	}
 
 	private createProblemMatcher(description: Config.ProblemMatcher): ProblemMatcher {
-		let result: ProblemMatcher = null;
+		let result: ProblemMatcher | null = null;
 
 		let owner = description.owner ? description.owner : UUID.generateUuid();
 		let source = Types.isString(description.source) ? description.source : undefined;
@@ -1265,8 +1264,8 @@ export class ProblemMatcherParser extends Parser {
 		if (!applyTo) {
 			applyTo = ApplyToKind.allDocuments;
 		}
-		let fileLocation: FileLocationKind = undefined;
-		let filePrefix: string = undefined;
+		let fileLocation: FileLocationKind | undefined = undefined;
+		let filePrefix: string | undefined = undefined;
 
 		let kind: FileLocationKind;
 		if (Types.isUndefined(description.fileLocation)) {
@@ -1324,6 +1323,9 @@ export class ProblemMatcherParser extends Parser {
 					}
 					if (description.severity) {
 						result.severity = severity;
+					}
+					if (description.applyTo) {
+						result.applyTo = applyTo;
 					}
 				}
 			}
@@ -1429,7 +1431,7 @@ export class ProblemMatcherParser extends Parser {
 	}
 
 	private createRegularExpression(value: string): RegExp {
-		let result: RegExp = null;
+		let result: RegExp | null = null;
 		if (!value) {
 			return result;
 		}

@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { ViewEventHandler } from 'vs/editor/common/viewModel/viewEventHandler';
 import { ViewContext } from 'vs/editor/common/view/viewContext';
@@ -21,7 +20,6 @@ export abstract class ViewPart extends ViewEventHandler {
 
 	public dispose(): void {
 		this._context.removeEventHandler(this);
-		this._context = null;
 		super.dispose();
 	}
 
@@ -59,7 +57,7 @@ export class PartFingerprints {
 		return parseInt(r, 10);
 	}
 
-	public static collect(child: Element, stopAt: Element): Uint8Array {
+	public static collect(child: Element | null, stopAt: Element): Uint8Array {
 		let result: PartFingerprint[] = [], resultLen = 0;
 
 		while (child && child !== document.body) {

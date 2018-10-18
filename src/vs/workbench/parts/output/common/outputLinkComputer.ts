@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { IMirrorModel, IWorkerContext } from 'vs/editor/common/services/editorSimpleWorker';
 import { ILink } from 'vs/editor/common/modes';
@@ -56,7 +55,7 @@ export class OutputLinkComputer {
 		return null;
 	}
 
-	public computeLinks(uri: string): ILink[] {
+	public computeLinks(uri: string): Promise<ILink[]> {
 		const model = this.getModel(uri);
 		if (!model) {
 			return void 0;
@@ -82,7 +81,7 @@ export class OutputLinkComputer {
 			}
 		});
 
-		return links;
+		return Promise.resolve(links);
 	}
 
 	public static createPatterns(workspaceFolder: URI): RegExp[] {

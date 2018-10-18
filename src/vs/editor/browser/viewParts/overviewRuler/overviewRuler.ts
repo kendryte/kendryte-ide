@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { ViewEventHandler } from 'vs/editor/common/viewModel/viewEventHandler';
 import { IOverviewRuler } from 'vs/editor/browser/editorBrowser';
@@ -40,7 +39,6 @@ export class OverviewRuler extends ViewEventHandler implements IOverviewRuler {
 
 	public dispose(): void {
 		this._context.removeEventHandler(this);
-		this._zoneManager = null;
 		super.dispose();
 	}
 
@@ -119,7 +117,7 @@ export class OverviewRuler extends ViewEventHandler implements IOverviewRuler {
 		let colorZones = this._zoneManager.resolveColorZones();
 		let id2Color = this._zoneManager.getId2Color();
 
-		let ctx = this._domNode.domNode.getContext('2d');
+		let ctx = this._domNode.domNode.getContext('2d')!;
 		ctx.clearRect(0, 0, width, height);
 		if (colorZones.length > 0) {
 			this._renderOneLane(ctx, colorZones, id2Color, width);

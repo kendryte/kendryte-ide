@@ -2,11 +2,9 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { URI, UriComponents } from 'vs/base/common/uri';
 import * as nls from 'vs/nls';
-import { TPromise } from 'vs/base/common/winjs.base';
 import * as Objects from 'vs/base/common/objects';
 import { asThenable } from 'vs/base/common/async';
 import { Event, Emitter } from 'vs/base/common/event';
@@ -864,7 +862,7 @@ export class ExtHostTask implements ExtHostTaskShape {
 	public $provideTasks(handle: number, validTypes: { [key: string]: boolean; }): Thenable<tasks.TaskSet> {
 		let handler = this._handlers.get(handle);
 		if (!handler) {
-			return TPromise.wrapError<tasks.TaskSet>(new Error('no handler found'));
+			return Promise.reject(new Error('no handler found'));
 		}
 		return asThenable(() => handler.provider.provideTasks(CancellationToken.None)).then(value => {
 			let sanitized: vscode.Task[] = [];

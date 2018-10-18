@@ -2,8 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
-
 import * as assert from 'assert';
 import { isPromiseCanceledError } from 'vs/base/common/errors';
 import { dispose } from 'vs/base/common/lifecycle';
@@ -18,6 +16,8 @@ import { Range } from 'vs/workbench/api/node/extHostTypes';
 import { TestRPCProtocol } from 'vs/workbench/test/electron-browser/api/testRPCProtocol';
 import * as vscode from 'vscode';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
+import { TestLogService } from 'vs/workbench/test/workbenchTestServices';
+import { ExtHostConfiguration } from 'vs/workbench/api/node/extHostConfiguration';
 
 let rpcProtocol: TestRPCProtocol;
 let extHostSearch: ExtHostSearch;
@@ -56,6 +56,12 @@ class MockMainThreadSearch implements MainThreadSearchShape {
 	}
 
 	dispose() {
+	}
+}
+
+class MockExtHostConfiguration {
+	getConfiguration(section?: string, resource?: URI, extensionId?: string): vscode.WorkspaceConfiguration {
+		return <vscode.WorkspaceConfiguration>{};
 	}
 }
 
@@ -130,11 +136,13 @@ suite('ExtHostSearch', () => {
 		rpcProtocol = new TestRPCProtocol();
 
 		mockMainThreadSearch = new MockMainThreadSearch();
+		const logService = new TestLogService();
+		const ehConfiguration: ExtHostConfiguration = new MockExtHostConfiguration() as any;
 
 		rpcProtocol.set(MainContext.MainThreadSearch, mockMainThreadSearch);
 
 		mockExtfs = {};
-		extHostSearch = new ExtHostSearch(rpcProtocol, null, mockExtfs as typeof extfs);
+		extHostSearch = new ExtHostSearch(rpcProtocol, null, logService, ehConfiguration, mockExtfs as typeof extfs);
 	});
 
 	teardown(() => {
@@ -551,18 +559,16 @@ suite('ExtHostSearch', () => {
 		test('multiroot max results', async () => {
 			let cancels = 0;
 			await registerTestFileSearchProvider({
-				provideFileSearchResults(query: vscode.FileSearchQuery, options: vscode.FileSearchOptions, token: vscode.CancellationToken): Thenable<URI[]> {
+				async provideFileSearchResults(query: vscode.FileSearchQuery, options: vscode.FileSearchOptions, token: vscode.CancellationToken): Promise<URI[]> {
 					token.onCancellationRequested(() => cancels++);
 
 					// Provice results async so it has a chance to invoke every provider
-					return new TPromise(r => process.nextTick(r))
-						.then(() => {
-							return [
-								'file1.ts',
-								'file2.ts',
-								'file3.ts',
-							].map(relativePath => joinPath(options.folder, relativePath));
-						});
+					await new TPromise(r => process.nextTick(r));
+					return [
+						'file1.ts',
+						'file2.ts',
+						'file3.ts',
+					].map(relativePath => joinPath(options.folder, relativePath));
 				}
 			});
 
@@ -1112,18 +1118,15 @@ suite('ExtHostSearch', () => {
 		test('multiroot max results', async () => {
 			let cancels = 0;
 			await registerTestTextSearchProvider({
-				provideTextSearchResults(query: vscode.TextSearchQuery, options: vscode.TextSearchOptions, progress: vscode.Progress<vscode.TextSearchResult>, token: vscode.CancellationToken): Thenable<vscode.TextSearchComplete> {
+				async provideTextSearchResults(query: vscode.TextSearchQuery, options: vscode.TextSearchOptions, progress: vscode.Progress<vscode.TextSearchResult>, token: vscode.CancellationToken): Promise<vscode.TextSearchComplete> {
 					token.onCancellationRequested(() => cancels++);
-					return new TPromise(r => process.nextTick(r))
-						.then(() => {
-							[
-								'file1.ts',
-								'file2.ts',
-								'file3.ts',
-							].forEach(f => progress.report(makeTextResult(options.folder, f)));
-
-							return null;
-						});
+					await new TPromise(r => process.nextTick(r));
+					[
+						'file1.ts',
+						'file2.ts',
+						'file3.ts',
+					].forEach(f => progress.report(makeTextResult(options.folder, f)));
+					return null;
 				}
 			});
 

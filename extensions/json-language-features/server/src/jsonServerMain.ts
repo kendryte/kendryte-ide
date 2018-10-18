@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import {
 	createConnection, IConnection,
@@ -60,7 +59,7 @@ const schemaRequestService = (uri: string): Thenable<string> => {
 		const fsPath = URI.parse(uri).fsPath;
 		return new Promise<string>((c, e) => {
 			fs.readFile(fsPath, 'UTF-8', (err, result) => {
-				err ? e('') : c(result.toString());
+				err ? e(err.message || err.toString()) : c(result.toString());
 			});
 		});
 	} else if (startsWith(uri, 'vscode://')) {

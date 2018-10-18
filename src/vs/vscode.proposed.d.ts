@@ -11,6 +11,46 @@ declare module 'vscode' {
 		export function sampleFunction(): Thenable<any>;
 	}
 
+	//#region Joh - https://github.com/Microsoft/vscode/issues/57093
+
+	/**
+	 * An insert text rule defines how the [`insertText`](#CompletionItem.insertText) of a
+	 * completion item should be modified.
+	 */
+	export enum CompletionItemInsertTextRule {
+
+		/**
+		 * Keep whitespace as is. By default, the editor adjusts leading
+		 * whitespace of new lines so that they match the indentation of
+		 * the line for which the item is accepeted.
+		 */
+		KeepWhitespace = 0b01
+	}
+
+	export interface CompletionItem {
+
+		/**
+		 * Rules about how/if the `insertText` should be modified by the
+		 * editor. Can be a bit mask of many rules.
+		 */
+		insertTextRules?: CompletionItemInsertTextRule;
+	}
+
+	//#endregion
+
+	//#region Joh - clipboard https://github.com/Microsoft/vscode/issues/217
+
+	export interface Clipboard {
+		readText(): Thenable<string>;
+		writeText(value: string): Thenable<void>;
+	}
+
+	export namespace env {
+		export const clipboard: Clipboard;
+	}
+
+	//#endregion
+
 	//#region Joh - read/write in chunks
 
 	export interface FileSystemProvider {
@@ -32,6 +72,11 @@ declare module 'vscode' {
 		 * The text pattern to search for.
 		 */
 		pattern: string;
+
+		/**
+		 * Whether or not `pattern` should match multiple lines of text.
+		 */
+		isMultiline?: boolean;
 
 		/**
 		 * Whether or not `pattern` should be interpreted as a regular expression.
@@ -86,6 +131,13 @@ declare module 'vscode' {
 		 * See the vscode setting `"search.followSymlinks"`.
 		 */
 		followSymlinks: boolean;
+
+		/**
+		 * Whether global files that exclude files, like .gitignore, should be respected.
+		 * See the vscode setting `"search.useGlobalIgnoreFiles"`.
+		 */
+		useGlobalIgnoreFiles: boolean;
+
 	}
 
 	/**
@@ -97,17 +149,12 @@ declare module 'vscode' {
 		 * The maximum number of lines in the preview.
 		 * Only search providers that support multiline search will ever return more than one line in the match.
 		 */
-		maxLines: number;
-
-		/**
-		 * The maximum number of characters included before the start of the match.
-		 */
-		leadingChars: number;
+		matchLines: number;
 
 		/**
 		 * The maximum number of characters included per line.
 		 */
-		totalChars: number;
+		charsPerLine: number;
 	}
 
 	/**
@@ -228,7 +275,7 @@ declare module 'vscode' {
 		 * @param options A set of options to consider while searching.
 		 * @param token A cancellation token.
 		 */
-		provideFileIndex(options: FileIndexOptions, token: CancellationToken): Thenable<Uri[]>;
+		provideFileIndex(options: FileIndexOptions, token: CancellationToken): ProviderResult<Uri[]>;
 	}
 
 	/**
@@ -250,7 +297,7 @@ declare module 'vscode' {
 		 * @param progress A progress callback that must be invoked for all results.
 		 * @param token A cancellation token.
 		 */
-		provideFileSearchResults(query: FileSearchQuery, options: FileSearchOptions, token: CancellationToken): Thenable<Uri[]>;
+		provideFileSearchResults(query: FileSearchQuery, options: FileSearchOptions, token: CancellationToken): ProviderResult<Uri[]>;
 	}
 
 	/**
@@ -264,7 +311,7 @@ declare module 'vscode' {
 		 * @param progress A progress callback that must be invoked for all results.
 		 * @param token A cancellation token.
 		 */
-		provideTextSearchResults(query: TextSearchQuery, options: TextSearchOptions, progress: Progress<TextSearchResult>, token: CancellationToken): Thenable<TextSearchComplete>;
+		provideTextSearchResults(query: TextSearchQuery, options: TextSearchOptions, progress: Progress<TextSearchResult>, token: CancellationToken): ProviderResult<TextSearchComplete>;
 	}
 
 	/**
@@ -295,6 +342,12 @@ declare module 'vscode' {
 		 * See the vscode setting `"search.useIgnoreFiles"`.
 		 */
 		useIgnoreFiles?: boolean;
+
+		/**
+		 * Whether global files that exclude files, like .gitignore, should be respected.
+		 * See the vscode setting `"search.useGlobalIgnoreFiles"`.
+		 */
+		useGlobalIgnoreFiles?: boolean;
 
 		/**
 		 * Whether symlinks should be followed while searching.
@@ -677,7 +730,14 @@ declare module 'vscode' {
 	 */
 
 	interface CommentInfo {
+		/**
+		 * All of the comment threads associated with the document.
+		 */
 		threads: CommentThread[];
+
+		/**
+		 * The ranges of the document which support commenting.
+		 */
 		commentingRanges?: Range[];
 	}
 
@@ -692,14 +752,40 @@ declare module 'vscode' {
 		Expanded = 1
 	}
 
+	/**
+	 * A collection of comments representing a conversation at a particular range in a document.
+	 */
 	interface CommentThread {
+		/**
+		 * A unique identifier of the comment thread.
+		 */
 		threadId: string;
+
+		/**
+		 * The uri of the document the thread has been created on.
+		 */
 		resource: Uri;
+
+		/**
+		 * The range the comment thread is located within the document. The thread icon will be shown
+		 * at the first line of the range.
+		 */
 		range: Range;
+
+		/**
+		 * The ordered comments of the thread.
+		 */
 		comments: Comment[];
+
+		/**
+		 * Whether the thread should be collapsed or expanded when opening the document. Defaults to Collapsed.
+		 */
 		collapsibleState?: CommentThreadCollapsibleState;
 	}
 
+	/**
+	 * A comment is displayed within the editor or the Comments Panel, depending on how it is provided.
+	 */
 	interface Comment {
 		/**
 		 * The id of the comment
@@ -717,9 +803,15 @@ declare module 'vscode' {
 		userName: string;
 
 		/**
-		 * The avatar src of the user who created the comment
+		 * The icon path for the user who created the comment
 		 */
-		gravatar: string;
+		userIconPath?: Uri;
+
+
+		/**
+		 * @deprecated Use userIconPath instead. The avatar src of the user who created the comment
+		 */
+		gravatar?: string;
 
 		/**
 		 * Whether the current user has permission to edit the comment.
@@ -779,7 +871,7 @@ declare module 'vscode' {
 		/**
 		 * Called when a user edits the comment body to the be new text text.
 		 */
-		editComment?(document: TextDocument, comment: Comment, text: string, token: CancellationToken): Promise<Comment>;
+		editComment?(document: TextDocument, comment: Comment, text: string, token: CancellationToken): Promise<void>;
 
 		/**
 		 * Called when a user deletes the comment.
@@ -936,19 +1028,6 @@ declare module 'vscode' {
 
 	export namespace window {
 		/**
-		 * The currently active terminal or `undefined`. The active terminal is the one that
-		 * currently has focus or most recently had focus.
-		 */
-		export const activeTerminal: Terminal | undefined;
-
-		/**
-		 * An [event](#Event) which fires when the [active terminal](#window.activeTerminal)
-		 * has changed. *Note* that the event also fires when the active terminal changes
-		 * to `undefined`.
-		 */
-		export const onDidChangeActiveTerminal: Event<Terminal | undefined>;
-
-		/**
 		 * Create a [TerminalRenderer](#TerminalRenderer).
 		 *
 		 * @param name The name of the terminal renderer, this shows up in the terminal selector.
@@ -1030,6 +1109,18 @@ declare module 'vscode' {
 		provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken, context: SignatureHelpContext): ProviderResult<SignatureHelp>;
 	}
 
+	export interface SignatureHelpProviderMetadata {
+		readonly triggerCharacters: ReadonlyArray<string>;
+		readonly retriggerCharacters: ReadonlyArray<string>;
+	}
+
+	namespace languages {
+		export function registerSignatureHelpProvider(
+			selector: DocumentSelector,
+			provider: SignatureHelpProvider,
+			metadata: SignatureHelpProviderMetadata
+		): Disposable;
+	}
 	//#endregion
 
 	//#region Alex - OnEnter enhancement
@@ -1038,6 +1129,16 @@ declare module 'vscode' {
 		 * This rule will only execute if the text above the this line matches this regular expression.
 		 */
 		oneLineAboveText?: RegExp;
+	}
+	//#endregion
+
+	//#region #59232
+
+	export interface QuickPickItem {
+		/**
+		 * Show this item always
+		 */
+		alwaysShow?: boolean;
 	}
 	//#endregion
 }

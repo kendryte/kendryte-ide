@@ -4,12 +4,14 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { RunOnceScheduler } from 'vs/base/common/async';
+import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import * as errors from 'vs/base/common/errors';
 import { anyEvent, Emitter, Event, fromPromise, stopwatch } from 'vs/base/common/event';
 import { getBaseLabel } from 'vs/base/common/labels';
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { ResourceMap, TernarySearchTree, values } from 'vs/base/common/map';
 import * as objects from 'vs/base/common/objects';
+import { lcut } from 'vs/base/common/strings';
 import { URI } from 'vs/base/common/uri';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { Range } from 'vs/editor/common/core/range';
@@ -24,7 +26,6 @@ import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { overviewRulerFindMatchForeground } from 'vs/platform/theme/common/colorRegistry';
 import { themeColorFromId } from 'vs/platform/theme/common/themeService';
 import { IReplaceService } from 'vs/workbench/parts/search/common/replace';
-import { CancellationTokenSource } from 'vs/base/common/cancellation';
 
 export class Match {
 
@@ -72,6 +73,8 @@ export class Match {
 		let before = this._previewText.substring(0, this._rangeInPreviewText.startColumn - 1),
 			inside = this.getMatchString(),
 			after = this._previewText.substring(this._rangeInPreviewText.endColumn - 1);
+
+		before = lcut(before, 26);
 
 		let charsRemaining = Match.MAX_PREVIEW_CHARS - before.length;
 		inside = inside.substr(0, charsRemaining);
@@ -167,8 +170,8 @@ export class FileMatch extends Disposable {
 			this.bindModel(model);
 			this.updateMatchesForModel();
 		} else {
-			this.rawMatch.matches.forEach((rawLineMatch) => {
-				let match = new Match(this, rawLineMatch);
+			this.rawMatch.matches.forEach(rawMatch => {
+				let match = new Match(this, rawMatch);
 				this.add(match);
 			});
 		}
@@ -407,20 +410,28 @@ export class FolderMatch extends Disposable {
 	}
 
 	public add(raw: IFileMatch[], silent: boolean): void {
-		const changed: FileMatch[] = [];
+		const added: FileMatch[] = [];
+		const updated: FileMatch[] = [];
 		raw.forEach((rawFileMatch) => {
 			if (this._fileMatches.has(rawFileMatch.resource)) {
-				this._fileMatches.get(rawFileMatch.resource).dispose();
+				const existingFileMatch = this._fileMatches.get(rawFileMatch.resource);
+				rawFileMatch.matches.forEach(m => {
+					let match = new Match(existingFileMatch, m);
+					existingFileMatch.add(match);
+				});
+				updated.push(existingFileMatch);
+			} else {
+				const fileMatch = this.instantiationService.createInstance(FileMatch, this._query.contentPattern, this._query.previewOptions, this._query.maxResults, this, rawFileMatch);
+				this.doAdd(fileMatch);
+				added.push(fileMatch);
+				const disposable = fileMatch.onChange(() => this.onFileChange(fileMatch));
+				fileMatch.onDispose(() => disposable.dispose());
 			}
-
-			const fileMatch = this.instantiationService.createInstance(FileMatch, this._query.contentPattern, this._query.previewOptions, this._query.maxResults, this, rawFileMatch);
-			this.doAdd(fileMatch);
-			changed.push(fileMatch);
-			const disposable = fileMatch.onChange(() => this.onFileChange(fileMatch));
-			fileMatch.onDispose(() => disposable.dispose());
 		});
-		if (!silent && changed.length) {
-			this._onChange.fire({ elements: changed, added: true });
+
+		const elements = [...added, ...updated];
+		if (!silent && elements.length) {
+			this._onChange.fire({ elements, added: !!added.length });
 		}
 	}
 
@@ -558,7 +569,7 @@ export class SearchResult extends Disposable {
 		this._folderMatches = (query.folderQueries || [])
 			.map(fq => fq.folder)
 			.map((resource, index) => this.createFolderMatch(resource, resource.toString(), index, query));
-		this._folderMatches.forEach(fm => this._folderMatchesMap.set(fm.resource().fsPath, fm));
+		this._folderMatches.forEach(fm => this._folderMatchesMap.set(fm.resource().toString(), fm));
 
 		this._otherFilesMatch = this.createFolderMatch(null, 'otherFiles', this._folderMatches.length + 1, query);
 	}
@@ -580,7 +591,12 @@ export class SearchResult extends Disposable {
 		const otherFileMatches: IFileMatch[] = [];
 		this._folderMatches.forEach((folderMatch) => rawPerFolder.set(folderMatch.resource(), []));
 		allRaw.forEach(rawFileMatch => {
-			let folderMatch = this.getFolderMatch(rawFileMatch.resource);
+			const folderMatch = this.getFolderMatch(rawFileMatch.resource);
+			if (!folderMatch) {
+				// foldermatch was previously removed by user or disposed for some reason
+				return;
+			}
+
 			if (folderMatch.resource()) {
 				rawPerFolder.get(folderMatch.resource()).push(rawFileMatch);
 			} else {
@@ -674,7 +690,7 @@ export class SearchResult extends Disposable {
 			return;
 		}
 		this._showHighlights = value;
-		let selectedMatch: Match = null;
+		let selectedMatch: Match | null = null;
 		this.matches().forEach((fileMatch: FileMatch) => {
 			fileMatch.updateHighlights();
 			if (!selectedMatch) {
@@ -696,7 +712,7 @@ export class SearchResult extends Disposable {
 	}
 
 	private getFolderMatch(resource: URI): FolderMatch {
-		const folderMatch = this._folderMatchesMap.findSubstr(resource.fsPath);
+		const folderMatch = this._folderMatchesMap.findSubstr(resource.toString());
 		return folderMatch ? folderMatch : this.otherFiles;
 	}
 
@@ -728,10 +744,10 @@ export class SearchResult extends Disposable {
 export class SearchModel extends Disposable {
 
 	private _searchResult: SearchResult;
-	private _searchQuery: ISearchQuery = null;
+	private _searchQuery: ISearchQuery | null = null;
 	private _replaceActive: boolean = false;
-	private _replaceString: string = null;
-	private _replacePattern: ReplacePattern = null;
+	private _replaceString: string | null = null;
+	private _replacePattern: ReplacePattern | null = null;
 
 	private readonly _onReplaceTermChanged: Emitter<void> = this._register(new Emitter<void>());
 	public readonly onReplaceTermChanged: Event<void> = this._onReplaceTermChanged.event;
@@ -917,8 +933,8 @@ export interface ISearchWorkbenchService {
  */
 export class RangeHighlightDecorations implements IDisposable {
 
-	private _decorationId: string = null;
-	private _model: ITextModel = null;
+	private _decorationId: string | null = null;
+	private _model: ITextModel | null = null;
 	private _modelDisposables: IDisposable[] = [];
 
 	constructor(
@@ -989,19 +1005,9 @@ export class RangeHighlightDecorations implements IDisposable {
 	});
 }
 
-/**
- * While search doesn't support multiline matches, collapse editor matches to a single line
- */
 export function editorMatchToTextSearchResult(match: FindMatch, model: ITextModel, previewOptions: ITextSearchPreviewOptions): TextSearchResult {
-	let endLineNumber = match.range.endLineNumber - 1;
-	let endCol = match.range.endColumn - 1;
-	if (match.range.endLineNumber !== match.range.startLineNumber) {
-		endLineNumber = match.range.startLineNumber - 1;
-		endCol = model.getLineLength(match.range.startLineNumber);
-	}
-
 	return new TextSearchResult(
 		model.getLineContent(match.range.startLineNumber),
-		new Range(match.range.startLineNumber - 1, match.range.startColumn - 1, endLineNumber, endCol),
+		new Range(match.range.startLineNumber - 1, match.range.startColumn - 1, match.range.endLineNumber - 1, match.range.endColumn - 1),
 		previewOptions);
 }

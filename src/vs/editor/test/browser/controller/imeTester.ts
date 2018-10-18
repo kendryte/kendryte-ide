@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { TextAreaInput, ITextAreaInputHost } from 'vs/editor/browser/controller/textAreaInput';
 import { ISimpleModel, TextAreaState, PagedScreenReaderStrategy } from 'vs/editor/browser/controller/textAreaState';
@@ -101,7 +100,7 @@ function doCreateTest(description: string, inputStr: string, expectedStr: string
 			return PagedScreenReaderStrategy.fromEditorSelection(currentState, model, selection, true);
 		},
 		deduceModelPosition: (viewAnchorPosition: Position, deltaOffset: number, lineFeedCnt: number): Position => {
-			return null;
+			return null!;
 		}
 	};
 

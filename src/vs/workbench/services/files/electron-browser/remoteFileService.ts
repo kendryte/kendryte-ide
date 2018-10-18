@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { flatten, isFalsyOrEmpty } from 'vs/base/common/arrays';
 import { IDisposable, dispose, Disposable } from 'vs/base/common/lifecycle';
@@ -56,7 +55,7 @@ function toIFileStat(provider: IFileSystemProvider, tuple: [URI, IStat], recurse
 			// dir -> resolve
 			return provider.readdir(resource).then(entries => {
 				// resolve children if requested
-				return TPromise.join(entries.map(tuple => {
+				return Promise.all(entries.map(tuple => {
 					const [name, type] = tuple;
 					const childResource = resources.joinPath(resource, name);
 					return toIFileStat(provider, [childResource, new TypeOnlyStat(type)], recurse);
@@ -69,7 +68,7 @@ function toIFileStat(provider: IFileSystemProvider, tuple: [URI, IStat], recurse
 	}
 
 	// file or (un-resolved) dir
-	return TPromise.as(fileStat);
+	return Promise.resolve(fileStat);
 }
 
 export function toDeepIFileStat(provider: IFileSystemProvider, tuple: [URI, IStat], to: URI[]): Thenable<IFileStat> {
@@ -244,7 +243,7 @@ export class RemoteFileService extends FileService {
 
 	// --- stat
 
-	private _withProvider(resource: URI): TPromise<IFileSystemProvider> {
+	private _withProvider(resource: URI): Promise<IFileSystemProvider> {
 
 		if (!resources.isAbsolutePath(resource)) {
 			throw new FileOperationError(
@@ -253,7 +252,7 @@ export class RemoteFileService extends FileService {
 			);
 		}
 
-		return TPromise.join([
+		return Promise.all([
 			this._extensionService.activateByEvent('onFileSystem:' + resource.scheme)
 		]).then(() => {
 			const provider = this._provider.get(resource.scheme);
@@ -271,7 +270,7 @@ export class RemoteFileService extends FileService {
 		if (resource.scheme === Schemas.file) {
 			return super.existsFile(resource);
 		} else {
-			return this.resolveFile(resource).then(data => true, err => false);
+			return this.resolveFile(resource).then(_data => true, _err => false);
 		}
 	}
 
@@ -316,7 +315,7 @@ export class RemoteFileService extends FileService {
 		return TPromise.join(promises).then(data => flatten(data));
 	}
 
-	private _doResolveFiles(toResolve: { resource: URI; options?: IResolveFileOptions; }[]): TPromise<IResolveFileResult[]> {
+	private _doResolveFiles(toResolve: { resource: URI; options?: IResolveFileOptions; }[]): Promise<IResolveFileResult[]> {
 		return this._withProvider(toResolve[0].resource).then(provider => {
 			let result: IResolveFileResult[] = [];
 			let promises = toResolve.map((item, idx) => {
@@ -328,7 +327,7 @@ export class RemoteFileService extends FileService {
 					result[idx] = { stat: undefined, success: false };
 				});
 			});
-			return TPromise.join(promises).then(() => result);
+			return Promise.all(promises).then(() => result);
 		});
 	}
 
@@ -350,7 +349,7 @@ export class RemoteFileService extends FileService {
 		}
 	}
 
-	private _readFile(resource: URI, options: IResolveContentOptions = Object.create(null)): TPromise<IStreamContent> {
+	private _readFile(resource: URI, options: IResolveContentOptions = Object.create(null)): Promise<IStreamContent> {
 		return this._withProvider(resource).then(provider => {
 
 			return this.resolveFile(resource).then(fileStat => {
@@ -374,7 +373,6 @@ export class RemoteFileService extends FileService {
 
 				const decodeStreamOpts: IDecodeStreamOptions = {
 					guessEncoding: options.autoGuessEncoding,
-					restrictGuessedEncodings: options.restrictGuessedEncodings,
 					overwriteEncoding: detected => {
 						return this.encoding.getReadEncoding(resource, options, { encoding: detected, seemsBinary: false });
 					}
@@ -385,7 +383,7 @@ export class RemoteFileService extends FileService {
 				return toDecodeStream(readable, decodeStreamOpts).then(data => {
 
 					if (options.acceptTextOnly && data.detected.seemsBinary) {
-						return TPromise.wrapError<IStreamContent>(new FileOperationError(
+						return Promise.reject(new FileOperationError(
 							localize('fileBinaryError', "File seems to be binary and cannot be opened as text"),
 							FileOperationResult.FILE_IS_BINARY,
 							options
@@ -545,11 +543,11 @@ export class RemoteFileService extends FileService {
 		}
 	}
 
-	private _doMoveWithInScheme(source: URI, target: URI, overwrite?: boolean): TPromise<IFileStat> {
+	private _doMoveWithInScheme(source: URI, target: URI, overwrite?: boolean): Promise<IFileStat> {
 
 		const prepare = overwrite
-			? this.del(target, { recursive: true }).then(undefined, err => { /*ignore*/ })
-			: TPromise.as(null);
+			? Promise.resolve(this.del(target, { recursive: true }).then(undefined, err => { /*ignore*/ }))
+			: Promise.resolve(null);
 
 		return prepare.then(() => this._withProvider(source)).then(RemoteFileService._throwIfFileSystemIsReadonly).then(provider => {
 			return provider.rename(source, target, { overwrite }).then(() => {
@@ -602,8 +600,8 @@ export class RemoteFileService extends FileService {
 			}
 
 			const prepare = overwrite
-				? this.del(target, { recursive: true }).then(undefined, err => { /*ignore*/ })
-				: TPromise.as(null);
+				? Promise.resolve(this.del(target, { recursive: true }).then(undefined, err => { /*ignore*/ }))
+				: Promise.resolve(null);
 
 			return prepare.then(() => {
 				// todo@ben, can only copy text files
@@ -627,7 +625,7 @@ export class RemoteFileService extends FileService {
 							// file scheme
 							return super.updateContent(target, content.value, { encoding: content.encoding });
 						} else {
-							return TPromise.wrapError(err);
+							return Promise.reject(err);
 						}
 					});
 				});

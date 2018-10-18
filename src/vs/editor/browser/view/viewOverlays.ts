@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { FastDomNode, createFastDomNode } from 'vs/base/browser/fastDomNode';
 import { IConfiguration } from 'vs/editor/common/editorCommon';
@@ -57,7 +56,7 @@ export class ViewOverlays extends ViewPart implements IVisibleLinesHost<ViewOver
 			let dynamicOverlay = this._dynamicOverlays[i];
 			dynamicOverlay.dispose();
 		}
-		this._dynamicOverlays = null;
+		this._dynamicOverlays = [];
 	}
 
 	public getDomNode(): FastDomNode<HTMLElement> {
@@ -124,8 +123,6 @@ export class ViewOverlays extends ViewPart implements IVisibleLinesHost<ViewOver
 			dynamicOverlay.prepareRender(ctx);
 			dynamicOverlay.onDidRender();
 		}
-
-		return null;
 	}
 
 	public render(ctx: RestrictedRenderingContext): void {
@@ -144,8 +141,8 @@ export class ViewOverlayLine implements IVisibleLine {
 
 	private _configuration: IConfiguration;
 	private _dynamicOverlays: DynamicViewOverlay[];
-	private _domNode: FastDomNode<HTMLElement>;
-	private _renderedContent: string;
+	private _domNode: FastDomNode<HTMLElement> | null;
+	private _renderedContent: string | null;
 	private _lineHeight: number;
 
 	constructor(configuration: IConfiguration, dynamicOverlays: DynamicViewOverlay[]) {
@@ -157,7 +154,7 @@ export class ViewOverlayLine implements IVisibleLine {
 		this._renderedContent = null;
 	}
 
-	public getDomNode(): HTMLElement {
+	public getDomNode(): HTMLElement | null {
 		if (!this._domNode) {
 			return null;
 		}

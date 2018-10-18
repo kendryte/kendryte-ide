@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { Event, Emitter } from 'vs/base/common/event';
 import { Disposable } from 'vs/base/common/lifecycle';
@@ -63,7 +62,7 @@ export function restoreFontInfo(storageService: IStorageService): void {
 	if (typeof strStoredFontInfo !== 'string') {
 		return;
 	}
-	let storedFontInfo: ISerializedFontInfo[] = null;
+	let storedFontInfo: ISerializedFontInfo[] | null = null;
 	try {
 		storedFontInfo = JSON.parse(strStoredFontInfo);
 	} catch (err) {
@@ -100,7 +99,7 @@ class CSSBasedConfiguration extends Disposable {
 	public static readonly INSTANCE = new CSSBasedConfiguration();
 
 	private _cache: CSSBasedConfigurationCache;
-	private _evictUntrustedReadingsTimeout: number;
+	private _evictUntrustedReadingsTimeout: any;
 
 	private _onDidChange = this._register(new Emitter<void>());
 	public readonly onDidChange: Event<void> = this._onDidChange.event;
@@ -188,7 +187,7 @@ class CSSBasedConfiguration extends Disposable {
 		return this._cache.get(bareFontInfo);
 	}
 
-	private static createRequest(chr: string, type: CharWidthRequestType, all: CharWidthRequest[], monospace: CharWidthRequest[]): CharWidthRequest {
+	private static createRequest(chr: string, type: CharWidthRequestType, all: CharWidthRequest[], monospace: CharWidthRequest[] | null): CharWidthRequest {
 		let result = new CharWidthRequest(chr, type);
 		all.push(result);
 		if (monospace) {
@@ -291,21 +290,8 @@ class CSSBasedConfiguration extends Disposable {
 
 export class Configuration extends CommonEditorConfiguration {
 
-	private static _massageFontFamily(fontFamily: string): string {
-		if (/[,"']/.test(fontFamily)) {
-			// Looks like the font family might be already escaped
-			return fontFamily;
-		}
-		if (/[+ ]/.test(fontFamily)) {
-			// Wrap a font family using + or <space> with quotes
-			return `"${fontFamily}"`;
-		}
-
-		return fontFamily;
-	}
-
 	public static applyFontInfoSlow(domNode: HTMLElement, fontInfo: BareFontInfo): void {
-		domNode.style.fontFamily = Configuration._massageFontFamily(fontInfo.fontFamily);
+		domNode.style.fontFamily = fontInfo.getMassagedFontFamily();
 		domNode.style.fontWeight = fontInfo.fontWeight;
 		domNode.style.fontSize = fontInfo.fontSize + 'px';
 		domNode.style.lineHeight = fontInfo.lineHeight + 'px';
@@ -313,7 +299,7 @@ export class Configuration extends CommonEditorConfiguration {
 	}
 
 	public static applyFontInfo(domNode: FastDomNode<HTMLElement>, fontInfo: BareFontInfo): void {
-		domNode.setFontFamily(Configuration._massageFontFamily(fontInfo.fontFamily));
+		domNode.setFontFamily(fontInfo.getMassagedFontFamily());
 		domNode.setFontWeight(fontInfo.fontWeight);
 		domNode.setFontSize(fontInfo.fontSize);
 		domNode.setLineHeight(fontInfo.lineHeight);
@@ -322,7 +308,7 @@ export class Configuration extends CommonEditorConfiguration {
 
 	private readonly _elementSizeObserver: ElementSizeObserver;
 
-	constructor(options: IEditorOptions, referenceDomElement: HTMLElement = null) {
+	constructor(options: IEditorOptions, referenceDomElement: HTMLElement | null = null) {
 		super(options);
 
 		this._elementSizeObserver = this._register(new ElementSizeObserver(referenceDomElement, () => this._onReferenceDomElementSizeChanged()));

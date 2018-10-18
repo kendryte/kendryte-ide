@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import { Socket, Server as NetServer, createConnection, createServer } from 'net';
 import { Event, Emitter, once, mapEvent, fromNodeEventEmitter } from 'vs/base/common/event';
 import { IMessagePassingProtocol, ClientConnectionEvent, IPCServer, IPCClient } from 'vs/base/parts/ipc/node/ipc';
@@ -118,7 +116,7 @@ export class Protocol implements IDisposable, IMessagePassingProtocol {
 		const acceptFirstDataChunk = () => {
 			if (firstDataChunk && firstDataChunk.length > 0) {
 				let tmp = firstDataChunk;
-				firstDataChunk = null;
+				firstDataChunk = undefined;
 				acceptChunk(tmp);
 			}
 		};

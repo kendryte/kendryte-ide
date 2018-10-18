@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import * as nls from 'vs/nls';
 import * as types from 'vs/base/common/types';
@@ -112,7 +111,7 @@ export class LanguageConfigurationFileHandler {
 			return null;
 		}
 
-		let result: CommentRule = null;
+		let result: CommentRule | null = null;
 		if (typeof source.lineComment !== 'undefined') {
 			if (typeof source.lineComment !== 'string') {
 				console.warn(`[${languageIdentifier.language}]: language configuration: expected \`comments.lineComment\` to be a string.`);
@@ -142,7 +141,7 @@ export class LanguageConfigurationFileHandler {
 			return null;
 		}
 
-		let result: CharacterPair[] = null;
+		let result: CharacterPair[] | null = null;
 		for (let i = 0, len = source.length; i < len; i++) {
 			const pair = source[i];
 			if (!isCharacterPair(pair)) {
@@ -166,7 +165,7 @@ export class LanguageConfigurationFileHandler {
 			return null;
 		}
 
-		let result: IAutoClosingPairConditional[] = null;
+		let result: IAutoClosingPairConditional[] | null = null;
 		for (let i = 0, len = source.length; i < len; i++) {
 			const pair = source[i];
 			if (Array.isArray(pair)) {
@@ -212,7 +211,7 @@ export class LanguageConfigurationFileHandler {
 			return null;
 		}
 
-		let result: IAutoClosingPair[] = null;
+		let result: IAutoClosingPair[] | null = null;
 		for (let i = 0, len = source.length; i < len; i++) {
 			const pair = source[i];
 			if (Array.isArray(pair)) {

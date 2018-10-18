@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import * as arrays from 'vs/base/common/arrays';
 import { TPromise } from 'vs/base/common/winjs.base';
 import * as nls from 'vs/nls';
@@ -170,7 +168,7 @@ export class OpenAnythingHandler extends QuickOpenHandler {
 			return null;
 		}
 
-		let range: IRange = null;
+		let range: IRange | null = null;
 
 		// Find Line/Column number from search value using RegExp
 		const patternMatch = OpenAnythingHandler.LINE_COLON_PATTERN.exec(value);

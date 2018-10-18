@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import 'vs/css!./media/search.contribution';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
@@ -597,6 +595,12 @@ configurationRegistry.registerConfiguration({
 			default: true,
 			scope: ConfigurationScope.RESOURCE
 		},
+		'search.useGlobalIgnoreFiles': {
+			type: 'boolean',
+			markdownDescription: nls.localize('useGlobalIgnoreFiles', "Controls whether to use global `.gitignore` and `.ignore` files when searching for files."),
+			default: false,
+			scope: ConfigurationScope.RESOURCE
+		},
 		'search.quickOpen.includeSymbols': {
 			type: 'boolean',
 			description: nls.localize('search.quickOpen.includeSymbols', "Whether to include results from a global symbol search in the file results for Quick Open."),
@@ -639,6 +643,27 @@ configurationRegistry.registerConfiguration({
 			],
 			default: 'auto',
 			description: nls.localize('search.collapseAllResults', "Controls whether the search results will be collapsed or expanded."),
+		},
+		'search.useReplacePreview': {
+			type: 'boolean',
+			default: true,
+			description: nls.localize('search.useReplacePreview', "Controls whether to open Replace Preview when selecting or replacing a match."),
+		},
+		'search.showLineNumbers': {
+			type: 'boolean',
+			default: false,
+			description: nls.localize('search.showLineNumbers', "Controls whether to show line numbers for search results."),
+		},
+		'searchRipgrep.enable': {
+			type: 'boolean',
+			default: false,
+			deprecationMessage: nls.localize('search.searchRipgrepEnableDeprecated', "Deprecated. Use \"search.runInExtensionHost\" instead"),
+			description: nls.localize('search.searchRipgrepEnable', "Whether to run search in the extension host")
+		},
+		'search.runInExtensionHost': {
+			type: 'boolean',
+			default: false,
+			description: nls.localize('search.searchRipgrepEnable', "Whether to run search in the extension host")
 		}
 	}
 });

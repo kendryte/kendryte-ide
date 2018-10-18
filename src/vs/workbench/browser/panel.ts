@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Registry } from 'vs/platform/registry/common/platform';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { IPanel } from 'vs/workbench/common/panel';
 import { Composite, CompositeDescriptor, CompositeRegistry } from 'vs/workbench/browser/composite';
 import { Action } from 'vs/base/common/actions';
@@ -76,7 +75,7 @@ export abstract class TogglePanelAction extends Action {
 		this.panelId = panelId;
 	}
 
-	run(): TPromise<any> {
+	run(): Thenable<any> {
 		if (this.isPanelFocused()) {
 			return this.partService.setPanelHidden(true);
 		}
@@ -84,11 +83,16 @@ export abstract class TogglePanelAction extends Action {
 		return this.panelService.openPanel(this.panelId, true);
 	}
 
-	private isPanelFocused(): boolean {
+	private isPanelActive(): boolean {
 		const activePanel = this.panelService.getActivePanel();
+
+		return activePanel && activePanel.getId() === this.panelId;
+	}
+
+	private isPanelFocused(): boolean {
 		const activeElement = document.activeElement;
 
-		return activePanel && activeElement && isAncestor(activeElement, this.partService.getContainer(Parts.PANEL_PART));
+		return this.isPanelActive() && activeElement && isAncestor(activeElement, this.partService.getContainer(Parts.PANEL_PART));
 	}
 }
 

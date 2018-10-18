@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import 'vs/css!./codelensWidget';
 import { IDisposable, dispose } from 'vs/base/common/lifecycle';
 import { format, escape } from 'vs/base/common/strings';
@@ -20,6 +18,7 @@ import { registerThemingParticipant } from 'vs/platform/theme/common/themeServic
 import { editorActiveLinkForeground } from 'vs/platform/theme/common/colorRegistry';
 import { IModelDeltaDecoration, IModelDecorationsChangeAccessor, ITextModel } from 'vs/editor/common/model';
 import { INotificationService } from 'vs/platform/notification/common/notification';
+import { coalesce, isFalsyOrEmpty } from 'vs/base/common/arrays';
 
 class CodeLensViewZone implements editorBrowser.IViewZone {
 
@@ -124,7 +123,8 @@ class CodeLensContentWidget implements editorBrowser.IContentWidget {
 
 	withCommands(symbols: ICodeLensSymbol[]): void {
 		this._commands = Object.create(null);
-		if (!symbols || !symbols.length) {
+		symbols = coalesce(symbols);
+		if (isFalsyOrEmpty(symbols)) {
 			this._domNode.innerHTML = 'no commands';
 			return;
 		}
@@ -323,11 +323,11 @@ export class CodeLens {
 }
 
 registerThemingParticipant((theme, collector) => {
-	let codeLensForeground = theme.getColor(editorCodeLensForeground);
+	const codeLensForeground = theme.getColor(editorCodeLensForeground);
 	if (codeLensForeground) {
 		collector.addRule(`.monaco-editor .codelens-decoration { color: ${codeLensForeground}; }`);
 	}
-	let activeLinkForeground = theme.getColor(editorActiveLinkForeground);
+	const activeLinkForeground = theme.getColor(editorActiveLinkForeground);
 	if (activeLinkForeground) {
 		collector.addRule(`.monaco-editor .codelens-decoration > a:hover { color: ${activeLinkForeground} !important; }`);
 	}
