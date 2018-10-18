@@ -6,7 +6,7 @@
 //@ts-check
 'use strict';
 
-require('source-map-support/register');
+try{require('source-map-support/register');}catch(e){console.error('ignored:',e.message);}
 
 const perf = require('./vs/base/common/performance');
 perf.mark('main:started');

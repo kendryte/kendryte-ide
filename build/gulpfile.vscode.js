@@ -255,13 +255,13 @@ function packageTask(platform, arch, opts) {
 
 		const src = gulp.src(out + '/**', { base: '.' })
 			.pipe(rename(function (path) { path.dirname = path.dirname.replace(new RegExp('^' + out), 'out'); }))
-			.pipe(util.setExecutableBit(['**/*.sh']))
-			.pipe(filter(['**', '!**/*.js.map']));
+			.pipe(util.setExecutableBit(['**/*.sh']));
+			// .pipe(filter(['**', '!**/*.js.map']));
 
 		const root = path.resolve(path.join(__dirname, '..'));
 
 		const sources = es.merge(src, ext.packageExtensionsStream({
-			sourceMappingURLBase: sourceMappingURLBase
+			// sourceMappingURLBase: sourceMappingURLBase
 		}));
 
 		let version = packageJson.version;

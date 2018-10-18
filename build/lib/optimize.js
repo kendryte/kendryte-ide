@@ -219,12 +219,12 @@ function uglifyWithCopyrights() {
     return es.duplex(input, output);
 }
 function minifyTask(src, sourceMapBaseUrl) {
-    var sourceMappingURL = sourceMapBaseUrl && (function (f) { return sourceMapBaseUrl + "/" + f.relative + ".map"; });
+    // const sourceMappingURL = sourceMapBaseUrl && (f => `${sourceMapBaseUrl}/${f.relative}.map`);
     return function (cb) {
         var jsFilter = filter('**/*.js', { restore: true });
         var cssFilter = filter('**/*.css', { restore: true });
         pump(gulp.src([src + '/**', '!' + src + '/**/*.map']), jsFilter, sourcemaps.init({ loadMaps: true }), uglifyWithCopyrights(), jsFilter.restore, cssFilter, minifyCSS({ reduceIdents: false }), cssFilter.restore, sourcemaps.write('./', {
-            sourceMappingURL: sourceMappingURL,
+            // sourceMappingURL,
             sourceRoot: null,
             includeContent: true,
             addComment: true

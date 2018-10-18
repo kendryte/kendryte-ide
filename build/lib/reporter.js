@@ -77,9 +77,9 @@ function createReporter() {
                     if (!errors.__logged__) {
                         log();
                     }
-                    var err = new Error("Found " + errors.length + " errors");
-                    err.__reporter__ = true;
-                    this.emit('error', err);
+                    var err_1 = new Error("Found " + errors.length + " errors");
+                    err_1.__reporter__ = true;
+                    this.emit('error', err_1);
                 }
                 else {
                     this.emit('end');

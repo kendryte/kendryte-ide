@@ -78,7 +78,7 @@ step "Copy Staff (Linux)" \
 step "Move ${RESULT} to ${WANT_RESULT}" \
 	bash -c "rm -rf '${WANT_RESULT}' && mv '${RESULT}' '${WANT_RESULT}'"
 
-step -r "Create ${WANT_RESULT} archive to ${TARBALL_PATH}" \
+step -r "Create ${PRODUCT_NAME} archive to ${TARBALL_FILENAME}" \
 	tar -cJf "${TARBALL_PATH}" "${PRODUCT_NAME}"
 
 echo "Build success, the result file is ${TARBALL_PATH}"

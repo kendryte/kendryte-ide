@@ -14,6 +14,7 @@ function echoStat(){
 
 
 echoStat "checking exists upstream working tree..."
+git worktree prune
 OUT=$(LC_ALL=en_US git worktree remove .release/follow-upstream || true)
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
 	if echo "$OUT" | grep -q "is not a working tree" ; then
@@ -82,4 +83,5 @@ git add .
 git commit . -m "${COMMIT_LOG}" --no-verify
 
 echoStat "pushing working tree..."
+export HOME="$REAL_HOME"
 git push
