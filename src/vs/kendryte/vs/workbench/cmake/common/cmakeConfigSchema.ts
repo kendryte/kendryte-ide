@@ -3,6 +3,7 @@ import { launchSchemaId } from 'vs/workbench/services/configuration/common/confi
 import { localize } from 'vs/nls';
 
 export const CMAKE_CONFIG_FILE_NAME = 'kendryte-package.json';
+export const CMAKE_LIBRARY_FOLDER_NAME = 'kendryte_libraries';
 export const cmakeSchemaId = 'vscode://schemas/CMakeLists';
 
 export interface ICompileOptions {
@@ -17,6 +18,7 @@ export interface ICompileOptions {
 	cpp_flags: string[];
 	c_cpp_flags: string[];
 	link_flags: string[];
+	entry?: string;
 }
 
 export const cmakeSchema: IJSONSchema = {

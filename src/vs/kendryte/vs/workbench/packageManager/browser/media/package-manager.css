@@ -30,6 +30,49 @@
 	padding: 5px 12px;
 }
 
+#package-manager .package-item > .title {
+	display: flex;
+	flex-direction: row;
+	font-size: 28px;
+	line-height: 28px;
+}
+
+#package-manager .package-item > .title > .h {
+	flex: 1;
+}
+
 #package-manager .package-item > .title > .icon {
 	margin-right: 4px;
+}
+
+#package-manager .package-item > .title > .icon.custom {
+	height: 1em;
+	width: 1em;
+	background-repeat: no-repeat;
+	background-position: center center;
+	background-size: contain;
+}
+
+#package-manager .package-item > .actions {
+	display: flex;
+	flex-direction: row;
+}
+
+#package-manager .package-item > .desc {
+	line-height: 1.1em;
+	height: 3.3em;
+	padding: 3px 5px;
+	overflow: hidden;
+	white-space: pre-wrap;
+}
+
+#package-manager .package-item > .actions > .monaco-select-box {
+	width: 28em;
+	padding: 4px 16px;
+	margin-right: 3px;
+}
+
+#package-manager .package-item > .actions > .monaco-button {
+	padding: 4px 16px;
+	margin-right: 12px;
 }

@@ -6,7 +6,7 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { IRunActionInWindowRequest } from 'vs/platform/windows/common/windows';
 import { IWindowsMainService } from 'vs/platform/windows/electron-main/windows';
 
-// SYNC: vs/kendryte/vs/platform/electron-browser/menuContribution.ts
+// SYNC: vs/kendryte/vs/workbench/topMenu/electron-browser/menuContribution
 
 export function installKendryteMenu(access: ServicesAccessor, menubar: Menu) {
 	const configurationService = access.get<IConfigurationService>(IConfigurationService);
@@ -76,15 +76,35 @@ export function installKendryteMenu(access: ServicesAccessor, menubar: Menu) {
 	maixMenu.append(__separator__());
 
 	maixMenu.append(new MenuItem({
-		label: nls.localize({ key: 'KendryteCreateShortcuts', comment: ['&& denotes a mnemonic'] }, 'Create shortcuts'),
+		label: nls.localize({ key: 'PackagesUpdate', comment: ['&& denotes a mnemonic'] }, 'Packages update'),
 		click: (menuItem, win, event) => {
-			runInMain('workbench.action.kendryte.createShortcuts');
+			runInMain('workbench.action.kendryte.packageUpgrade');
 		},
 	}));
 	maixMenu.append(new MenuItem({
-		label: nls.localize({ key: 'PackagesUpdate', comment: ['&& denotes a mnemonic'] }, 'Packages Update'),
+		label: nls.localize({ key: 'PackagesManager', comment: ['&& denotes a mnemonic'] }, 'Open package manager'),
 		click: (menuItem, win, event) => {
-			runInMain('workbench.action.kendryte.packageUpgrade');
+			runInMain('workbench.package-manager.action.open-market');
+		},
+	}));
+	maixMenu.append(new MenuItem({
+		label: nls.localize({ key: 'InstallDependencies', comment: ['&& denotes a mnemonic'] }, 'Install dependencies'),
+		click: (menuItem, win, event) => {
+			runInMain('workbench.package-manager.action.install-everything');
+		},
+	}));
+
+	maixMenu.append(__separator__());
+	const toolsMenu = new Menu();
+	maixMenu.append(new MenuItem({
+		label: nls.localize({ key: 'tools', comment: ['&& denotes a mnemonic'] }, 'Tools'),
+		submenu: toolsMenu,
+	}));
+
+	toolsMenu.append(new MenuItem({
+		label: nls.localize({ key: 'KendryteCreateShortcuts', comment: ['&& denotes a mnemonic'] }, 'Create shortcuts'),
+		click: (menuItem, win, event) => {
+			runInMain('workbench.action.kendryte.createShortcuts');
 		},
 	}));
 

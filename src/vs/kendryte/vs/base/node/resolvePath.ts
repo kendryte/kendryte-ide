@@ -1,5 +1,7 @@
 import { normalize, resolve } from 'path';
 import { isWindows } from 'vs/base/common/platform';
+import product from 'vs/platform/node/product';
+import { tmpdir } from "os";
 
 export interface ResolvePathFunction {
 	(...pathSegments: string[]): string;
@@ -19,4 +21,12 @@ export const normalizePosixPath: NormalizePathFunction = isWindows ? normalizeWi
 
 function normalizeWindowsPath(path: string): string {
 	return normalize(path).replace(/\\/g, '/');
+}
+
+export function osTempDir(name?: string) {
+	if (name) {
+		return resolvePath(tmpdir(), product.dataFolderName, name);
+	} else {
+		return resolvePath(tmpdir(), product.dataFolderName);
+	}
 }

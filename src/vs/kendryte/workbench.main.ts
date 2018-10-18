@@ -8,6 +8,7 @@ import 'vs/kendryte/vs/services/channelLogger/electron-browser/service';
 import 'vs/kendryte/vs/services/github/node/githubServiceContribution';
 import 'vs/kendryte/vs/services/path/electron-browser/contribution';
 import 'vs/kendryte/vs/services/fileCompress/electron-browser/contribution';
+import 'vs/kendryte/vs/services/fileSystem/node/nodeFileSystemService';
 import 'vs/kendryte/vs/services/download/node/nodeRequestService'; // network request
 import 'vs/kendryte/vs/services/download/electron-browser/nodeDownloadService'; // download
 import 'vs/kendryte/vs/services/download/electron-browser/downloadWithProgressService'; // download
@@ -45,5 +46,5 @@ import 'vs/kendryte/vs/workbench/topMenu/node/shortcutsContribution';
 // cmake
 import 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeContribution';
 // Package Manager
-import 'vs/kendryte/vs/workbench/packageManager/node/actionsContribution';
+import 'vs/kendryte/vs/workbench/packageManager/electron-browser/actionsContribution';
 import 'vs/kendryte/vs/workbench/packageManager/browser/mainPanelContribution';

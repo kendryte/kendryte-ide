@@ -13,6 +13,7 @@ import { mkdirp } from 'vs/base/node/pfs';
 import { optional } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IWindowsService } from 'vs/platform/windows/common/windows';
+import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
 
 export class NodePathService implements INodePathService {
 	_serviceBrand: any;
@@ -60,6 +61,11 @@ export class NodePathService implements INodePathService {
 		}
 	}
 
+	getPackageFile() {
+		return this.workspaceFilePath(CMAKE_CONFIG_FILE_NAME);
+	}
+
+	/** @deprecated */
 	tempDir(name?: string) {
 		if (name) {
 			return resolvePath(tmpdir(), product.dataFolderName, name);

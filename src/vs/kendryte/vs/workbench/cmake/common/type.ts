@@ -3,6 +3,7 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
 
 export const CMAKE_CHANNEL = 'maix-make-run';
+export const CMAKE_CHANNEL_TITLE = 'Build/Run';
 
 export interface CurrentItem extends IQuickPickItem {
 	current?: boolean;

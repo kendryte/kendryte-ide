@@ -14,8 +14,9 @@ export interface INodePathService {
 	workspaceFilePath(s?: string): string;
 	createUserLink(existsFile: string, linkFile: string): TPromise<void>;
 	ensureTempDir(name?: string): TPromise<string>;
-	tempDir(name?: string): string;
+	/** @deprecated*/tempDir(name?: string): string;
 	createAppLink(): TPromise<void>;
+	getPackageFile(): string;
 }
 
 export const INodePathService = createDecorator<INodePathService>('nodePathService');

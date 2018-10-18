@@ -6,6 +6,7 @@ import { ChannelLogger } from 'vs/kendryte/vs/services/channelLogger/electron-br
 import { Registry } from 'vs/platform/registry/common/platform';
 import { IWindowService } from 'vs/platform/windows/common/windows';
 import { URI } from 'vs/base/common/uri';
+import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 
 const registry = Registry.as<IOutputChannelRegistry>(Extensions.OutputChannels);
 
@@ -17,10 +18,15 @@ class ChannelLogService extends Disposable implements IChannelLogService {
 	constructor(
 		@IOutputService private outputService: IOutputService,
 		@IWindowService private windowService: IWindowService,
+		@ILifecycleService lifecycleService: ILifecycleService,
 	) {
 		super();
 
 		this.map = new Map;
+
+		lifecycleService.onShutdown(() => {
+			this.dispose();
+		});
 	}
 
 	closeChannel(channel: string) {

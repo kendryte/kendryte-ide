@@ -71,6 +71,7 @@ export function unClosableNotify(notificationService: INotificationService, init
 				handle.progress.worked(value);
 			},
 			done() {
+				closed = true;
 				lastDone = true;
 				lastProgressInfinite = false;
 				handle.progress.done();

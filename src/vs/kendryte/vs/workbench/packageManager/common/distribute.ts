@@ -9,8 +9,9 @@ export interface IPackageVersionDetail {
 
 export interface IRemotePackageInfo {
 	name: string;
+	icon?: string;
 	description?: string;
-	README?: string;
+	homepage?: string;
 	versions: IPackageVersionDetail[];
 	type: PackageTypes;
 }

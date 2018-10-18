@@ -6,45 +6,77 @@ import { MaixCMakeBuildAction } from 'vs/kendryte/vs/workbench/cmake/electron-br
 import { MaixCMakeDebugAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/debugRunAction';
 import { CreateShortcutsAction } from 'vs/kendryte/vs/workbench/topMenu/node/shortcutsContribution';
 import { MaixSerialUploadAction } from 'vs/kendryte/vs/workbench/serialUpload/node/uploadAction';
+import { BuildingBlocksUpgradeAction } from 'vs/kendryte/vs/services/update/electron-browser/openPackageUpgradeAction';
+import { localize } from 'vs/nls';
+import { OpenPackagesMarketPlaceAction } from 'vs/kendryte/vs/workbench/packageManager/common/actions/openPackagesMarketPlaceAction';
+import { InstallDependencyAction } from 'vs/kendryte/vs/workbench/packageManager/common/actions/installDependencyAction';
 
 // SYNC: vs/kendryte/vs/code/patches/electron-main/kendryteMenu.ts
 
-cls('tools');
-register(FpioaEditorAction);
+let clsName = '';
+let clsOrder = 0;
 
-cls('2_cpp');
-register(MaixCMakeCleanupAction);
-register(MaixCMakeConfigureAction);
-register(MaixCMakeBuildAction);
-register(MaixCMakeDebugAction);
-register(MaixSerialUploadAction);
+cls('chipTool');
+registerTop(FpioaEditorAction);
+
+cls('cpp');
+registerTop(MaixCMakeCleanupAction);
+registerTop(MaixCMakeConfigureAction);
+registerTop(MaixCMakeBuildAction);
+registerTop(MaixCMakeDebugAction);
+registerTop(MaixSerialUploadAction);
+
+cls('package');
+registerTop(BuildingBlocksUpgradeAction);
+registerTop(OpenPackagesMarketPlaceAction);
+registerTop(InstallDependencyAction);
 
 cls('others');
-register(CreateShortcutsAction);
+const tools = submenu(localize('tools', 'Tools'));
+register(tools, CreateShortcutsAction);
 
 interface ActionStatic {
 	readonly ID: string;
 	readonly LABEL: string;
 }
 
-let order = 0;
-let clsName = '';
-let clsOrder = 0;
+function submenu(title: string, parent = MenuId.MenubarMaixMenu) {
+	const r = new MenuId();
+	if (!parent['order']) {
+		parent['order'] = 1;
+	} else {
+		parent['order']++;
+	}
+	MenuRegistry.appendMenuItem(parent, {
+		title,
+		group: clsName,
+		order: parent['order'],
+		submenu: r,
+	});
+	return r;
+}
 
-function register(s: ActionStatic) {
-	order++;
-	MenuRegistry.appendMenuItem(MenuId.MenubarMaixMenu, {
+function register(sub: MenuId, s: ActionStatic) {
+	if (!sub['order']) {
+		sub['order'] = 1;
+	} else {
+		sub['order']++;
+	}
+	MenuRegistry.appendMenuItem(sub, {
 		group: clsName,
 		command: {
 			id: s.ID,
 			title: s.LABEL,
 		},
-		order,
+		order: sub['order'],
 	});
+}
+
+function registerTop(s: ActionStatic) {
+	register(MenuId.MenubarMaixMenu, s);
 }
 
 function cls(cls: string) {
 	clsOrder++;
-	order = 0;
 	clsName = `${clsOrder}_${cls}`;
 }

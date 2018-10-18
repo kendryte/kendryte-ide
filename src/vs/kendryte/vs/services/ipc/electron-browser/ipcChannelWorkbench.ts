@@ -133,12 +133,19 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 		});
 	}
 
+	private readonly loggers = new WeakMap<ChannelLogger, boolean>();
+
 	private _listenLogger(logger: ChannelLogger) {
+		if (this.loggers.has(logger)) {
+			return;
+		}
+		this.loggers.set(logger, true);
 		const { id, window } = logger.serialize();
 		const dis = this.mainChannel.listen<LogEvent>('logEvent', [id, window])((d) => {
 			logger[d.level](d.message, ...d.args);
 		});
 		logger.onDispose(() => {
+			this.loggers.delete(logger);
 			dis.dispose();
 			this.mainChannel.call('stopLogEvent', [id, window]);
 		});

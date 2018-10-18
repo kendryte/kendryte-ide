@@ -26,7 +26,7 @@ class DownloadWithProgressService implements IDownloadWithProgressService {
 	) {
 	}
 
-	private async handle(title: string, onDidCancel: () => void, cb: (...args: any[]) => Thenable<DownloadID>, args: any[]): TPromise<string> {
+	private async handle(title: string, onDidCancel: () => void, cb: () => Thenable<DownloadID>): TPromise<string> {
 		let handle: INotificationHandle;
 
 		if (onDidCancel) {
@@ -57,7 +57,7 @@ class DownloadWithProgressService implements IDownloadWithProgressService {
 			throw e;
 		};
 
-		const downloadId = await (cb(...args)).then(undefined, (e) => handleError(e));
+		const downloadId = await (cb()).then(undefined, (e) => handleError(e));
 
 		const info = await this.nodeDownloadService.getStatus(downloadId);
 		const speed = showDownloadSpeed(info.total, info.current);
@@ -86,15 +86,21 @@ class DownloadWithProgressService implements IDownloadWithProgressService {
 	}
 
 	download(url: string, target: string, logger?: ILogService, onDidCancel?: () => void): TPromise<string> {
-		return this.handle(url, onDidCancel, this.nodeDownloadService.download.bind(this.nodeDownloadService), [url, target, logger]);
+		return this.handle(url, onDidCancel, () => {
+			return this.nodeDownloadService.download(url, target, true, logger);
+		});
 	}
 
 	downloadTemp(url: string, logger?: ILogService, onDidCancel?: () => void): TPromise<string> {
-		return this.handle(url, onDidCancel, this.nodeDownloadService.downloadTemp.bind(this.nodeDownloadService), [url, logger]);
+		return this.handle(url, onDidCancel, () => {
+			return this.nodeDownloadService.downloadTemp(url, true, logger);
+		});
 	}
 
 	continue(title: string, id: DownloadID, logger?: ILogService, onDidCancel?: () => void): TPromise<string> {
-		return this.handle(title, onDidCancel, this.nodeDownloadService.start.bind(this.nodeDownloadService), [logger]);
+		return this.handle(title, onDidCancel, () => {
+			return this.nodeDownloadService.start(id, logger).then(() => id);
+		});
 	}
 }
 

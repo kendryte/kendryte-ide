@@ -8,13 +8,16 @@ export interface DownloadID {
 	__id: string;
 }
 
-export function createDownloadId(id: string) {
+export function createDownloadId(id: string): DownloadID {
+	if (typeof id !== 'string') {
+		return id;
+	}
 	return {
 		__id: id,
 		toJSON() { return id; },
 		toString() { return `DownloadID<${id}>`; },
 		[Symbol.toStringTag]() { return 'DownloadID'; },
-	};
+	} as DownloadID;
 }
 
 export interface IDownloadTargetInfo {

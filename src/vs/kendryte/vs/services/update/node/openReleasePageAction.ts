@@ -6,7 +6,7 @@ import { IDE_HOMEPAGE } from 'vs/kendryte/vs/services/update/common/protocol';
 
 export class OpenKendryteReleasePageAction extends Action {
 	public static readonly ID = 'workbench.action.kendryte.homepage';
-	public static readonly LABEL = localize('KendryteIOEditor', 'Update now');
+	public static readonly LABEL = localize('update now', 'Update now');
 
 	constructor(
 		public readonly url = IDE_HOMEPAGE,

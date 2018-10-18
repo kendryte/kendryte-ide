@@ -5,6 +5,7 @@ import { IPackageRegistryService, PACKAGE_MANAGER_ACTION_ID_OPEN_MARKET } from '
 export class OpenPackagesMarketPlaceAction extends Action {
 	static readonly ID = PACKAGE_MANAGER_ACTION_ID_OPEN_MARKET;
 	static readonly LABEL = localize('openMarketPlace', 'Explorer Packages');
+	static readonly LABEL_EXAMPLE = localize('openMarketPlaceExample', 'Find an examples');
 
 	constructor(
 		id: string = OpenPackagesMarketPlaceAction.ID,

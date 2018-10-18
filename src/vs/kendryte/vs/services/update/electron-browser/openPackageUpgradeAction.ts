@@ -18,7 +18,7 @@ import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IFileCompressService } from 'vs/kendryte/vs/services/fileCompress/node/fileCompressService';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 
-class BuildingBlocksUpgradeAction extends Action {
+export class BuildingBlocksUpgradeAction extends Action {
 	public static readonly ID = ACTION_ID_UPGRADE_BUILDING_BLOCKS;
 	public static readonly LABEL = localize('packageManager.upgrade.building', 'Update required packages');
 	protected logger: IChannelLogger;
@@ -47,7 +47,7 @@ class BuildingBlocksUpgradeAction extends Action {
 		return super.dispose();
 	}
 
-	public async run(event?: any): TPromise<void> {
+	public async run(event?: any, data?: any): TPromise<void> {
 		this.logger.info('check building blocks update...');
 
 		const handle = unClosableNotify(this.notificationService, {
@@ -68,6 +68,9 @@ class BuildingBlocksUpgradeAction extends Action {
 
 		if (updateInfos.length === 0) {
 			handle.dispose();
+			if (data && (data.from === 'menu' || data.from === 'touchbar')) {
+				this.notificationService.info('No update available.');
+			}
 			this.logger.info('No update.');
 			return;
 		}

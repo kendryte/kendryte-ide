@@ -1,16 +1,16 @@
 import { TPromise } from 'vs/base/common/winjs.base';
 import { EditorInput } from 'vs/workbench/common/editor';
 import { URI } from 'vs/base/common/uri';
-import { IPackage, PackageTypes } from 'vs/kendryte/vs/workbench/packageManager/common/type';
+import { IRemotePackageInfo } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
 
 export class PackageDetailInput extends EditorInput {
 
 	static readonly ID = 'workbench.package-manager.input';
 
-	get package(): IPackage { return this._package; }
+	get package(): IRemotePackageInfo { return this._package; }
 
 	constructor(
-		private _package: IPackage,
+		private _package: IRemotePackageInfo,
 	) {
 		super();
 	}
@@ -20,7 +20,7 @@ export class PackageDetailInput extends EditorInput {
 	}
 
 	getName(): string {
-		return PackageTypes[this.package.type] + ':' + this.package.name;
+		return this.package.type + ': ' + this.package.name;
 	}
 
 	matches(other: any): boolean {
@@ -30,7 +30,8 @@ export class PackageDetailInput extends EditorInput {
 
 		const otherpackageInput = other as PackageDetailInput;
 
-		return this.package.id === otherpackageInput.package.id;
+		return this.package.type === otherpackageInput.package.type &&
+		       this.package.name === otherpackageInput.package.name;
 	}
 
 	resolve(): TPromise<any> {
@@ -44,7 +45,8 @@ export class PackageDetailInput extends EditorInput {
 	getResource(): URI {
 		return URI.from({
 			scheme: 'package',
-			path: this.package.id,
+			authority: this.package.type,
+			path: '/' + this.package.name,
 		});
 	}
 }

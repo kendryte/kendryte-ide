@@ -1,10 +1,9 @@
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { CMAKE_CHANNEL, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { MenuId, MenuRegistry, SyncActionDescriptor } from 'vs/platform/actions/common/actions';
 import { Extensions as ActionExtensions, IWorkbenchActionRegistry } from 'vs/workbench/common/actions';
 import { localize } from 'vs/nls';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { Extensions, IOutputChannelRegistry } from 'vs/workbench/parts/output/common/output';
 import { CMakeService } from 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeService';
 import { MaixCMakeBuildAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/buildAction';
 import { MaixCMakeDebugAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/debugRunAction';
@@ -21,13 +20,6 @@ import { cmakeSchema, cmakeSchemaId } from 'vs/kendryte/vs/workbench/cmake/commo
 registerSingleton(ICMakeService, CMakeService);
 
 const category = localize('kendryte', 'Kendryte');
-
-const registry = Registry.as<IOutputChannelRegistry>(Extensions.OutputChannels);
-registry.registerChannel({
-	id: CMAKE_CHANNEL,
-	label: 'Build/Run',
-	log: false,
-});
 
 // BUILD
 Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)

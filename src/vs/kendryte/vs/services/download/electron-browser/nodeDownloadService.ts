@@ -5,6 +5,7 @@ import { DownloadID, IDownloadTargetInfo, INodeDownloadService } from 'vs/kendry
 import { Event } from 'vs/base/common/event';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { ILogService } from 'vs/platform/log/common/log';
+import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 
 class NodeDownloadServiceClient implements INodeDownloadService {
 	_serviceBrand: any;
@@ -12,6 +13,7 @@ class NodeDownloadServiceClient implements INodeDownloadService {
 
 	constructor(
 		@IKendryteClientService channelService: IKendryteClientService,
+		@ILifecycleService lifecycleService: ILifecycleService,
 	) {
 		channelService.markEventMethod(INodeDownloadService, ['onProgress']);
 		channelService.markMethod(INodeDownloadService, [

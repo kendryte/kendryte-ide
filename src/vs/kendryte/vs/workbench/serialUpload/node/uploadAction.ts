@@ -3,7 +3,7 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { CMAKE_CHANNEL, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { exists, lstat } from 'vs/base/node/pfs';
 import { IProgressService2, ProgressLocation } from 'vs/workbench/services/progress/common/progress';
 import { SubProgress } from 'vs/kendryte/vs/workbench/progress/common/progress';
@@ -35,7 +35,7 @@ export class MaixSerialUploadAction extends Action {
 		@IQuickInputService protected quickInputService: IQuickInputService,
 	) {
 		super(id, label);
-		this.logger = channelLogService.createChannel('Build/Run', CMAKE_CHANNEL);
+		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 		this.lastSelected = storageService.get('serial-port.last-selected', StorageScope.WORKSPACE, '');
 	}
 
