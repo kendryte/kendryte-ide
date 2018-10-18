@@ -5,7 +5,7 @@ export interface INodePathService {
 	_serviceBrand: any;
 
 	getInstallPath(): string;
-	getDataPath(): string;
+	// getDataPath(): string;
 	exeFile(filePath: string): string;
 	getToolchainBinPath(): string;
 	getToolchainPath(): string;

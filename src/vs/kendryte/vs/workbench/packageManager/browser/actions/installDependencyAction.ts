@@ -5,7 +5,7 @@ import { IPackageRegistryService, PACKAGE_MANAGER_ACTION_ID_INSTALL_DEPENDENCY }
 import { IRemotePackageInfo } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { assumeWorkbench } from 'vs/kendryte/vs/workbench/packageManager/electron-browser/assumeWorkbench';
+import { assumeWorkbench } from 'vs/kendryte/vs/workbench/packageManager/browser/assumeWorkbench';
 
 export class InstallDependencyAction extends Action {
 	public static readonly ID = PACKAGE_MANAGER_ACTION_ID_INSTALL_DEPENDENCY;

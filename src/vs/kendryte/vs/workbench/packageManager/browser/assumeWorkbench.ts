@@ -1,4 +1,4 @@
-import { OpenPackagesMarketPlaceAction } from 'vs/kendryte/vs/workbench/packageManager/common/actions/openPackagesMarketPlaceAction';
+import { OpenPackagesMarketPlaceAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/openPackagesMarketPlaceAction';
 import { OpenFolderAction } from 'vs/workbench/browser/actions/workspaceActions';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';

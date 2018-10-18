@@ -11,7 +11,7 @@ import {
 import { ISerialMonitorControlService } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/outputWindowControlService';
 import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
-import { registerActionWithKey } from 'vs/kendryte/vs/base/common/registerAction';
+import { registerActionWithKey } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 
 export class SerialPortCopyAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_ACTION_COPY;

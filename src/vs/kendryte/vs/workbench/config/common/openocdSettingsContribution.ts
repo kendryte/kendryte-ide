@@ -1,7 +1,7 @@
 import { Extensions as ConfigurationExtensions, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { localize } from 'vs/nls';
-import { MAIX_CONFIG_KEY_DEBUG, MAIX_CONFIG_KEY_SERIAL_BAUDRATE } from 'vs/kendryte/vs/platform/extendSettings/common/type';
+import { MAIX_CONFIG_KEY_DEBUG, MAIX_CONFIG_KEY_SERIAL_BAUDRATE } from 'vs/kendryte/vs/workbench/config/common/type';
 import { standardBaudRate } from 'vs/kendryte/vs/workbench/config/common/baudrate';
 
 Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).registerConfiguration({

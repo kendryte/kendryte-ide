@@ -3,7 +3,7 @@ import { SettingsTreeElement, SettingsTreeSettingElement } from 'vs/workbench/pa
 import { ITree } from 'vs/base/parts/tree/browser/tree';
 import { dispose } from 'vs/base/common/lifecycle';
 import { IInstantiationService, ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
-import { ISettingItemTemplate } from 'vs/kendryte/vs/platform/extendSettings/common/type';
+import { ISettingItemTemplate } from 'vs/kendryte/vs/workbench/config/common/type';
 
 export interface FieldContext {
 	context?: SettingsTreeSettingElement;

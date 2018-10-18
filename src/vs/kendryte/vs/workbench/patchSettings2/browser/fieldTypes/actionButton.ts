@@ -6,7 +6,7 @@ import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { SettingsTreeSettingElement } from 'vs/workbench/parts/preferences/browser/settingsTreeModels';
-import { ISettingItemTemplate } from 'vs/kendryte/vs/platform/extendSettings/common/type';
+import { ISettingItemTemplate } from 'vs/kendryte/vs/workbench/config/common/type';
 
 interface Template {
 	button: Button;

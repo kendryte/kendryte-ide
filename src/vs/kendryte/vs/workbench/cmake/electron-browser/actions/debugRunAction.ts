@@ -26,7 +26,7 @@ import { IIdentifiedSingleEditOperation } from 'vs/editor/common/model';
 import { Position } from 'vs/editor/common/core/position';
 import { generateIndent } from 'vs/editor/contrib/indentation/indentUtils';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { MAIX_CONFIG_KEY_DEBUG } from 'vs/kendryte/vs/platform/extendSettings/common/type';
+import { MAIX_CONFIG_KEY_DEBUG } from 'vs/kendryte/vs/workbench/config/common/type';
 import { ACTION_ID_MAIX_CMAKE_RUN } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
 
 class WorkspaceMaixLaunch implements ILaunch {

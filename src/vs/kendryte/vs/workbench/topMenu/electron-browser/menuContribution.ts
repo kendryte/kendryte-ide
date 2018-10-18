@@ -8,8 +8,8 @@ import { CreateShortcutsAction } from 'vs/kendryte/vs/workbench/topMenu/node/sho
 import { MaixSerialUploadAction } from 'vs/kendryte/vs/workbench/serialUpload/node/uploadAction';
 import { BuildingBlocksUpgradeAction } from 'vs/kendryte/vs/services/update/electron-browser/openPackageUpgradeAction';
 import { localize } from 'vs/nls';
-import { OpenPackagesMarketPlaceAction } from 'vs/kendryte/vs/workbench/packageManager/common/actions/openPackagesMarketPlaceAction';
-import { InstallDependencyAction } from 'vs/kendryte/vs/workbench/packageManager/common/actions/installDependencyAction';
+import { OpenPackagesMarketPlaceAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/openPackagesMarketPlaceAction';
+import { InstallDependencyAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/installDependencyAction';
 
 // SYNC: vs/kendryte/vs/code/patches/electron-main/kendryteMenu.ts
 

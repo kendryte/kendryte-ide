@@ -31,7 +31,7 @@ export class PackageDetailInput extends EditorInput {
 		const otherpackageInput = other as PackageDetailInput;
 
 		return this.package.type === otherpackageInput.package.type &&
-		       this.package.name === otherpackageInput.package.name;
+			this.package.name === otherpackageInput.package.name;
 	}
 
 	resolve(): TPromise<any> {

@@ -18,7 +18,7 @@ import { OutputXTerminal } from 'vs/kendryte/vs/workbench/serialPort/electron-br
 import { SerialScope } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/serialScope';
 import { isMacintosh } from 'vs/base/common/platform';
 import { SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
-import { MAIX_CONFIG_KEY_SERIAL_BAUDRATE } from 'vs/kendryte/vs/platform/extendSettings/common/type';
+import { MAIX_CONFIG_KEY_SERIAL_BAUDRATE } from 'vs/kendryte/vs/workbench/config/common/type';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import {

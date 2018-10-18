@@ -13,7 +13,7 @@ import { MaixCMakeSelectVariantAction } from 'vs/kendryte/vs/workbench/cmake/ele
 import { MaixCMakeHelloWorldAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/helloWorldAction';
 import { MaixCMakeConfigureAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/configureAction';
 import { Extensions as JSONExtensions, IJSONContributionRegistry } from 'vs/platform/jsonschemas/common/jsonContributionRegistry';
-import { registerExternalAction } from 'vs/kendryte/vs/base/common/registerAction';
+import { registerExternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 import { OpenLocalCmakeListAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/openLocalCmakeList';
 import { cmakeSchema, cmakeSchemaId } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
 

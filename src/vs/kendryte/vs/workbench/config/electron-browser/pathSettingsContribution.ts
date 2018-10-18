@@ -1,7 +1,7 @@
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { ConfigurationTarget, IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { Extensions as CategoryExtensions, IConfigCategoryRegistry } from 'vs/kendryte/vs/platform/extendSettings/common/type';
+import { Extensions as CategoryExtensions, IConfigCategoryRegistry } from 'vs/kendryte/vs/workbench/config/common/type';
 import { Extensions as ConfigurationExtensions, IConfigurationPropertySchema, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
 import { Extensions as WorkbenchExtensions, IWorkbenchContribution, IWorkbenchContributionsRegistry } from 'vs/workbench/common/contributions';
 import { Registry } from 'vs/platform/registry/common/platform';

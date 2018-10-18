@@ -1,4 +1,4 @@
-import { EnumProviderService } from 'vs/kendryte/vs/platform/extendSettings/common/type';
+import { EnumProviderService } from 'vs/kendryte/vs/workbench/config/common/type';
 import { createDecorator, IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { TPromise } from 'vs/base/common/winjs.base';
 import * as SerialPort from 'serialport';

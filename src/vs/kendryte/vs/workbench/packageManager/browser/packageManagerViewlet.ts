@@ -9,7 +9,7 @@ import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
 import { Action } from 'vs/base/common/actions';
-import { OpenPackagesMarketPlaceAction } from 'vs/kendryte/vs/workbench/packageManager/common/actions/openPackagesMarketPlaceAction';
+import { OpenPackagesMarketPlaceAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/openPackagesMarketPlaceAction';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { ViewletPanel } from 'vs/workbench/browser/parts/views/panelViewlet';
 import { IAddedViewDescriptorRef } from 'vs/workbench/browser/parts/views/views';

@@ -2,10 +2,10 @@ import product from 'vs/platform/node/product';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { isWindows } from 'vs/base/common/platform';
 import { lstatSync } from 'fs';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath, TEMP_DIR_NAME } from 'vs/kendryte/vs/base/node/resolvePath';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { createLinuxDesktopShortcut, ensureLinkEquals, pathResolveNow } from 'vs/kendryte/vs/platform/createShortcut/node/shortcuts';
+import { createLinuxDesktopShortcut, ensureLinkEquals } from 'vs/kendryte/vs/platform/createShortcut/node/shortcuts';
 import { IShortcutOptions } from 'windows-shortcuts';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { tmpdir } from 'os';
@@ -27,9 +27,10 @@ export class NodePathService implements INodePathService {
 		@ILogService protected logger: ILogService,
 	) {
 		if (!workspaceContextService) {
-			this.createUserLink(this.getInstallPath('.fast-links/_Extensions'), pathResolveNow('HOMEPATH', process.env.HOME, product.dataFolderName));
-			this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorage'), pathResolveNow('AppData', process.env.HOME, '.config', product.nameLong));
-			this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorageDevel'), pathResolveNow('AppData', process.env.HOME, '.config/code-oss-dev'));
+			// FIXME: portable mode do not use HOME
+			// this.createUserLink(this.getInstallPath('.fast-links/_Extensions'), pathResolveNow('HOMEPATH', process.env.HOME, product.dataFolderName));
+			// this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorage'), pathResolveNow('AppData', process.env.HOME, '.config', product.nameLong));
+			// this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorageDevel'), pathResolveNow('AppData', process.env.HOME, '.config/code-oss-dev'));
 
 			this.workspaceFilePath = () => {
 				throw new Error('cannot use NodePathService::workspaceFilePath in main process.');
@@ -68,9 +69,9 @@ export class NodePathService implements INodePathService {
 	/** @deprecated */
 	tempDir(name?: string) {
 		if (name) {
-			return resolvePath(tmpdir(), product.dataFolderName, name);
+			return resolvePath(tmpdir(), TEMP_DIR_NAME, name);
 		} else {
-			return resolvePath(tmpdir(), product.dataFolderName);
+			return resolvePath(tmpdir(), TEMP_DIR_NAME);
 		}
 	}
 
@@ -102,6 +103,7 @@ export class NodePathService implements INodePathService {
 	}
 
 	getDataPath() {
+		// FIXME: portable mode do not use HOME
 		return resolvePath(this.environmentService.userHome, product.dataFolderName);
 	}
 

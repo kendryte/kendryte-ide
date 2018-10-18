@@ -46,5 +46,5 @@ import 'vs/kendryte/vs/workbench/topMenu/node/shortcutsContribution';
 // cmake
 import 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeContribution';
 // Package Manager
-import 'vs/kendryte/vs/workbench/packageManager/electron-browser/actionsContribution';
-import 'vs/kendryte/vs/workbench/packageManager/browser/mainPanelContribution';
+import 'vs/kendryte/vs/workbench/packageManager/browser/actionsContribution';
+import 'vs/kendryte/vs/workbench/packageManager/electron-browser/mainPanelContribution';

@@ -17,7 +17,7 @@ import { localize } from 'vs/nls';
 import { renderOcticons } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
-import { DisplayPackageDetailAction } from 'vs/kendryte/vs/workbench/packageManager/common/actions/displayPackageDetailAction';
+import { DisplayPackageDetailAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/displayPackageDetailAction';
 import { IPackageRegistryService, PackageTypes } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IWindowService, IWindowsService } from 'vs/platform/windows/common/windows';
