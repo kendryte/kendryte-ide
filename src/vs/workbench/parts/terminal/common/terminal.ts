@@ -7,7 +7,6 @@ import { Event } from 'vs/base/common/event';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import * as platform from 'vs/base/common/platform';
 import { RawContextKey, ContextKeyExpr, IContextKey } from 'vs/platform/contextkey/common/contextkey';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { FindReplaceState } from 'vs/editor/contrib/find/findState';
 
@@ -18,17 +17,17 @@ export const TERMINAL_SERVICE_ID = 'terminalService';
 /** A context key that is set when there is at least one opened integrated terminal. */
 export const KEYBINDING_CONTEXT_TERMINAL_IS_OPEN = new RawContextKey<boolean>('terminalIsOpen', false);
 /** A context key that is set when the integrated terminal has focus. */
-export const KEYBINDING_CONTEXT_TERMINAL_FOCUS = new RawContextKey<boolean>('terminalFocus', undefined);
+export const KEYBINDING_CONTEXT_TERMINAL_FOCUS = new RawContextKey<boolean>('terminalFocus', false);
 /** A context key that is set when the integrated terminal does not have focus. */
 export const KEYBINDING_CONTEXT_TERMINAL_NOT_FOCUSED: ContextKeyExpr = KEYBINDING_CONTEXT_TERMINAL_FOCUS.toNegated();
 
 /** A keybinding context key that is set when the integrated terminal has text selected. */
-export const KEYBINDING_CONTEXT_TERMINAL_TEXT_SELECTED = new RawContextKey<boolean>('terminalTextSelected', undefined);
+export const KEYBINDING_CONTEXT_TERMINAL_TEXT_SELECTED = new RawContextKey<boolean>('terminalTextSelected', false);
 /** A keybinding context key that is set when the integrated terminal does not have text selected. */
 export const KEYBINDING_CONTEXT_TERMINAL_TEXT_NOT_SELECTED: ContextKeyExpr = KEYBINDING_CONTEXT_TERMINAL_TEXT_SELECTED.toNegated();
 
 /**  A context key that is set when the find widget in integrated terminal is visible. */
-export const KEYBINDING_CONTEXT_TERMINAL_FIND_WIDGET_VISIBLE = new RawContextKey<boolean>('terminalFindWidgetVisible', undefined);
+export const KEYBINDING_CONTEXT_TERMINAL_FIND_WIDGET_VISIBLE = new RawContextKey<boolean>('terminalFindWidgetVisible', false);
 /**  A context key that is set when the find widget in integrated terminal is not visible. */
 export const KEYBINDING_CONTEXT_TERMINAL_FIND_WIDGET_NOT_VISIBLE: ContextKeyExpr = KEYBINDING_CONTEXT_TERMINAL_FIND_WIDGET_VISIBLE.toNegated();
 /**  A context key that is set when the find widget find input in integrated terminal is focused. */
@@ -100,6 +99,8 @@ export interface ITerminalConfiguration {
 		windows: { [key: string]: string };
 	};
 	showExitAlert: boolean;
+	experimentalBufferImpl: 'JsArray' | 'TypedArray';
+	splitCwd: 'workspaceRoot' | 'sourceInitialCwd' | 'sourceCwd';
 }
 
 export interface ITerminalConfigHelper {
@@ -189,7 +190,7 @@ export interface ITerminalService {
 	onInstanceDimensionsChanged: Event<ITerminalInstance>;
 	onInstanceRequestExtHostProcess: Event<ITerminalProcessExtHostRequest>;
 	onInstancesChanged: Event<void>;
-	onInstanceTitleChanged: Event<string>;
+	onInstanceTitleChanged: Event<ITerminalInstance>;
 	onActiveInstanceChanged: Event<ITerminalInstance>;
 	terminalInstances: ITerminalInstance[];
 	terminalTabs: ITerminalTab[];
@@ -225,16 +226,16 @@ export interface ITerminalService {
 	setActiveTabToPrevious(): void;
 	setActiveTabByIndex(tabIndex: number): void;
 
-	showPanel(focus?: boolean): TPromise<void>;
+	showPanel(focus?: boolean): Promise<void>;
 	hidePanel(): void;
-	focusFindWidget(): TPromise<void>;
+	focusFindWidget(): Promise<void>;
 	hideFindWidget(): void;
 	getFindState(): FindReplaceState;
 	findNext(): void;
 	findPrevious(): void;
 
 	setContainers(panelContainer: HTMLElement, terminalContainer: HTMLElement): void;
-	selectDefaultWindowsShell(): TPromise<string>;
+	selectDefaultWindowsShell(): Promise<string>;
 	setWorkspaceShellAllowed(isAllowed: boolean): void;
 
 	requestExtHostProcess(proxy: ITerminalProcessExtHostProxy, shellLaunchConfig: IShellLaunchConfig, cols: number, rows: number): void;
@@ -311,7 +312,7 @@ export interface ITerminalInstance {
 	/**
 	 * An event that fires when the terminal instance's title changes.
 	 */
-	onTitleChanged: Event<string>;
+	onTitleChanged: Event<ITerminalInstance>;
 
 	/**
 	 * An event that fires when the terminal instance is disposed.
@@ -360,7 +361,7 @@ export interface ITerminalInstance {
 	 */
 	onExit: Event<number>;
 
-	processReady: TPromise<void>;
+	processReady: Promise<void>;
 
 	/**
 	 * The title of the terminal. This is either title or the process currently running or an
@@ -400,6 +401,11 @@ export interface ITerminalInstance {
 	 * them.
 	 */
 	readonly commandTracker: ITerminalCommandTracker;
+
+	/**
+	 * The cwd that the terminal instance was initialized with.
+	 */
+	readonly initialCwd: string;
 
 	/**
 	 * Dispose the terminal instance, removing it from the panel/service and freeing up resources.
@@ -501,6 +507,15 @@ export interface ITerminalInstance {
 	sendText(text: string, addNewLine: boolean): void;
 
 	/**
+	 * Takes a path and returns the properly escaped path to send to the terminal.
+	 * On Windows, this included trying to prepare the path for WSL if needed.
+	 *
+	 * @param path The path to be escaped and formatted.
+	 * @returns An escaped version of the path to be execuded in the terminal.
+	 */
+	preparePathForTerminalAsync(path: string): Promise<string>;
+
+	/**
 	 * Write text directly to the terminal, skipping the process if it exists.
 	 * @param text The text to write.
 	 */
@@ -569,11 +584,15 @@ export interface ITerminalInstance {
 	 */
 	setTitle(title: string, eventFromProcess: boolean): void;
 
+	waitForTitle(): Promise<string>;
+
 	setDimensions(dimensions: ITerminalDimensions): void;
 
 	addDisposable(disposable: IDisposable): void;
 
 	toggleEscapeSequenceLogging(): void;
+
+	getCwd(): Promise<string>;
 }
 
 export interface ITerminalCommandTracker {
@@ -587,7 +606,7 @@ export interface ITerminalCommandTracker {
 
 export interface ITerminalProcessManager extends IDisposable {
 	readonly processState: ProcessState;
-	readonly ptyProcessReady: TPromise<void>;
+	readonly ptyProcessReady: Promise<void>;
 	readonly shellProcessId: number;
 	readonly initialCwd: string;
 

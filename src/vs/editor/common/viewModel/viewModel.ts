@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { INewScrollPosition } from 'vs/editor/common/editorCommon';
 import { EndOfLinePreference, IModelDecorationOptions, IActiveIndentGuideInfo } from 'vs/editor/common/model';
@@ -67,7 +66,7 @@ export interface IViewLayout {
 	isAfterLines(verticalOffset: number): boolean;
 	getLineNumberAtVerticalOffset(verticalOffset: number): number;
 	getVerticalOffsetForLineNumber(lineNumber: number): number;
-	getWhitespaceAtVerticalOffset(verticalOffset: number): IViewWhitespaceViewportData;
+	getWhitespaceAtVerticalOffset(verticalOffset: number): IViewWhitespaceViewportData | null;
 
 	// --------------- Begin vertical whitespace management
 
@@ -150,16 +149,16 @@ export interface IViewModel {
 	deduceModelPositionRelativeToViewPosition(viewAnchorPosition: Position, deltaOffset: number, lineFeedCnt: number): Position;
 	getEOL(): string;
 	getPlainTextToCopy(ranges: Range[], emptySelectionClipboard: boolean, forceCRLF: boolean): string | string[];
-	getHTMLToCopy(ranges: Range[], emptySelectionClipboard: boolean): string;
+	getHTMLToCopy(ranges: Range[], emptySelectionClipboard: boolean): string | null;
 }
 
 export class MinimapLinesRenderingData {
 	public readonly tabSize: number;
-	public readonly data: ViewLineData[];
+	public readonly data: (ViewLineData | null)[];
 
 	constructor(
 		tabSize: number,
-		data: ViewLineData[]
+		data: (ViewLineData | null)[]
 	) {
 		this.tabSize = tabSize;
 		this.data = data;

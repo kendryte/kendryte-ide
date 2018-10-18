@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { IDisposable } from 'vs/base/common/lifecycle';
 import * as dom from 'vs/base/browser/dom';
@@ -235,7 +234,7 @@ export class PointerHandler implements IDisposable {
 		}
 	}
 
-	public getTargetAtClientPoint(clientX: number, clientY: number): IMouseTarget {
+	public getTargetAtClientPoint(clientX: number, clientY: number): IMouseTarget | null {
 		return this.handler.getTargetAtClientPoint(clientX, clientY);
 	}
 

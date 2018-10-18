@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { Disposable } from 'vs/base/common/lifecycle';
 import { TimeoutTimer } from 'vs/base/common/async';
@@ -13,7 +12,7 @@ export class ScrollbarVisibilityController extends Disposable {
 	private _visibility: ScrollbarVisibility;
 	private _visibleClassName: string;
 	private _invisibleClassName: string;
-	private _domNode: FastDomNode<HTMLElement>;
+	private _domNode: FastDomNode<HTMLElement> | null;
 	private _shouldBeVisible: boolean;
 	private _isNeeded: boolean;
 	private _isVisible: boolean;
@@ -90,7 +89,9 @@ export class ScrollbarVisibilityController extends Disposable {
 
 		// The CSS animation doesn't play otherwise
 		this._revealTimer.setIfNotSet(() => {
-			this._domNode.setClassName(this._visibleClassName);
+			if (this._domNode) {
+				this._domNode.setClassName(this._visibleClassName);
+			}
 		}, 0);
 	}
 
@@ -100,6 +101,8 @@ export class ScrollbarVisibilityController extends Disposable {
 			return;
 		}
 		this._isVisible = false;
-		this._domNode.setClassName(this._invisibleClassName + (withFadeAway ? ' fade' : ''));
+		if (this._domNode) {
+			this._domNode.setClassName(this._invisibleClassName + (withFadeAway ? ' fade' : ''));
+		}
 	}
 }

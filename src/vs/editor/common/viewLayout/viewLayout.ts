@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { Scrollable, ScrollEvent, ScrollbarVisibility, IScrollDimensions, IScrollPosition } from 'vs/base/common/scrollable';
@@ -193,7 +192,7 @@ export class ViewLayout extends Disposable implements IViewLayout {
 		return this._linesLayout.getLineNumberAtOrAfterVerticalOffset(verticalOffset);
 	}
 
-	public getWhitespaceAtVerticalOffset(verticalOffset: number): IViewWhitespaceViewportData {
+	public getWhitespaceAtVerticalOffset(verticalOffset: number): IViewWhitespaceViewportData | null {
 		return this._linesLayout.getWhitespaceAtVerticalOffset(verticalOffset);
 	}
 	public getLinesViewportData(): IPartialViewLinesViewportData {

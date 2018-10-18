@@ -2,8 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
-
 import * as assert from 'assert';
 import { Position } from 'vs/editor/common/core/position';
 import { CharacterHardWrappingLineMapping, CharacterHardWrappingLineMapperFactory } from 'vs/editor/common/viewModel/characterHardWrappingLineMapper';
@@ -323,8 +321,8 @@ suite('SplitLinesCollection', () => {
 		]
 	];
 
-	let model: TextModel = null;
-	let languageRegistration: IDisposable = null;
+	let model: TextModel | null = null;
+	let languageRegistration: IDisposable | null = null;
 
 	setup(() => {
 		let _lineIndex = 0;

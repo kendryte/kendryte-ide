@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { Event } from 'vs/base/common/event';
 import * as glob from 'vs/base/common/glob';
@@ -14,6 +13,7 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { IFilesConfiguration } from 'vs/platform/files/common/files';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { CancellationToken } from 'vs/base/common/cancellation';
+import { getNLines } from 'vs/base/common/strings';
 
 export const VIEW_ID = 'workbench.view.search';
 
@@ -66,6 +66,7 @@ export interface IFolderQuery<U extends UriComponents=uri> {
 	includePattern?: glob.IExpression;
 	fileEncoding?: string;
 	disregardIgnoreFiles?: boolean;
+	disregardGlobalIgnoreFiles?: boolean;
 }
 
 export interface ICommonQueryOptions<U> {
@@ -83,6 +84,7 @@ export interface ICommonQueryOptions<U> {
 	cacheKey?: string;
 	useRipgrep?: boolean;
 	disregardIgnoreFiles?: boolean;
+	disregardGlobalIgnoreFiles?: boolean;
 	disregardExcludeSettings?: boolean;
 	ignoreSymlinks?: boolean;
 	maxFileSize?: number;
@@ -140,9 +142,8 @@ export interface IFileMatch<U extends UriComponents = uri> {
 export type IRawFileMatch2 = IFileMatch<UriComponents>;
 
 export interface ITextSearchPreviewOptions {
-	maxLines: number;
-	leadingChars: number;
-	totalChars: number;
+	matchLines: number;
+	charsPerLine: number;
 }
 
 export interface ISearchRange {
@@ -235,37 +236,51 @@ export class TextSearchResult implements ITextSearchResult {
 	range: ISearchRange;
 	preview: ITextSearchResultPreview;
 
-	constructor(fullLine: string, range: ISearchRange, previewOptions?: ITextSearchPreviewOptions) {
+	constructor(text: string, range: ISearchRange, previewOptions?: ITextSearchPreviewOptions) {
 		this.range = range;
-		if (previewOptions) {
-			const previewStart = Math.max(range.startColumn - previewOptions.leadingChars, 0);
-			const previewEnd = previewOptions.totalChars + previewStart;
-			const endOfMatchRangeInPreview = Math.min(previewEnd, range.endColumn - previewStart);
+
+		if (previewOptions && previewOptions.matchLines === 1) {
+			// 1 line preview requested
+			text = getNLines(text, previewOptions.matchLines);
+			const leadingChars = Math.floor(previewOptions.charsPerLine / 5);
+			const previewStart = Math.max(range.startColumn - leadingChars, 0);
+			const previewText = text.substring(previewStart, previewOptions.charsPerLine + previewStart);
+
+			const endColInPreview = (range.endLineNumber - range.startLineNumber + 1) <= previewOptions.matchLines ?
+				Math.min(previewText.length, range.endColumn - previewStart) :  // if number of match lines will not be trimmed by previewOptions
+				previewText.length; // if number of lines is trimmed
 
 			this.preview = {
-				text: fullLine.substring(previewStart, previewEnd),
-				match: new OneLineRange(0, range.startColumn - previewStart, endOfMatchRangeInPreview)
+				text: previewText,
+				match: new OneLineRange(0, range.startColumn - previewStart, endColInPreview)
 			};
 		} else {
+			// n line or no preview requested
 			this.preview = {
-				text: fullLine,
-				match: new OneLineRange(0, range.startColumn, range.endColumn)
+				text,
+				match: new SearchRange(0, range.startColumn, range.endLineNumber - range.startLineNumber, range.endColumn)
 			};
 		}
 	}
 }
 
-export class OneLineRange implements ISearchRange {
+export class SearchRange implements ISearchRange {
 	startLineNumber: number;
 	startColumn: number;
 	endLineNumber: number;
 	endColumn: number;
 
-	constructor(lineNumber: number, startColumn: number, endColumn: number) {
-		this.startLineNumber = lineNumber;
+	constructor(startLineNumber: number, startColumn: number, endLineNumber: number, endColumn: number) {
+		this.startLineNumber = startLineNumber;
 		this.startColumn = startColumn;
-		this.endLineNumber = lineNumber;
+		this.endLineNumber = endLineNumber;
 		this.endColumn = endColumn;
+	}
+}
+
+export class OneLineRange extends SearchRange {
+	constructor(lineNumber: number, startColumn: number, endColumn: number) {
+		super(lineNumber, startColumn, lineNumber, endColumn);
 	}
 }
 
@@ -276,10 +291,13 @@ export interface ISearchConfigurationProperties {
 	 * Use ignore file for file search.
 	 */
 	useIgnoreFiles: boolean;
+	useGlobalIgnoreFiles: boolean;
 	followSymlinks: boolean;
 	smartCase: boolean;
 	globalFindClipboard: boolean;
 	location: 'sidebar' | 'panel';
+	useReplacePreview: boolean;
+	showLineNumbers: boolean;
 }
 
 export interface ISearchConfiguration extends IFilesConfiguration {
@@ -289,7 +307,7 @@ export interface ISearchConfiguration extends IFilesConfiguration {
 	};
 }
 
-export function getExcludes(configuration: ISearchConfiguration): glob.IExpression {
+export function getExcludes(configuration: ISearchConfiguration): glob.IExpression | undefined {
 	const fileExcludes = configuration && configuration.files && configuration.files.exclude;
 	const searchExcludes = configuration && configuration.search && configuration.search.exclude;
 
@@ -320,7 +338,7 @@ export function pathIncludedInQuery(query: ISearchQuery, fsPath: string): boolea
 
 	// If searchPaths are being used, the extra file must be in a subfolder and match the pattern, if present
 	if (query.usingSearchPaths) {
-		return query.folderQueries.every(fq => {
+		return !!query.folderQueries && query.folderQueries.every(fq => {
 			const searchPath = fq.folder.fsPath;
 			if (paths.isEqualOrParent(fsPath, searchPath)) {
 				return !fq.includePattern || !!glob.match(fq.includePattern, fsPath);

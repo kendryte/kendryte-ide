@@ -2,9 +2,8 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
-import { dispose } from 'vs/base/common/lifecycle';
+import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { join } from 'path';
 import { mkdirp, dirExists, realpath, writeFile } from 'vs/base/node/pfs';
 import Severity from 'vs/base/common/severity';
@@ -31,6 +30,7 @@ class ExtensionMemento implements IExtensionMemento {
 
 	private readonly _init: Thenable<ExtensionMemento>;
 	private _value: { [n: string]: any; };
+	private readonly _storageListener: IDisposable;
 
 	constructor(id: string, global: boolean, storage: ExtHostStorage) {
 		this._id = id;
@@ -40,6 +40,12 @@ class ExtensionMemento implements IExtensionMemento {
 		this._init = this._storage.getValue(this._shared, this._id, Object.create(null)).then(value => {
 			this._value = value;
 			return this;
+		});
+
+		this._storageListener = this._storage.onDidChangeStorage(e => {
+			if (e.shared === this._shared && e.key === this._id) {
+				this._value = e.value;
+			}
 		});
 	}
 
@@ -60,6 +66,10 @@ class ExtensionMemento implements IExtensionMemento {
 		return this._storage
 			.setValue(this._shared, this._id, this._value)
 			.then(() => true);
+	}
+
+	dispose(): void {
+		this._storageListener.dispose();
 	}
 }
 
@@ -151,7 +161,7 @@ export class ExtHostExtensionService implements ExtHostExtensionServiceShape {
 		this._activator = null;
 
 		// initialize API first (i.e. do not release barrier until the API is initialized)
-		const apiFactory = createApiFactory(initData, extHostContext, extHostWorkspace, extHostConfiguration, this, this._extHostLogService);
+		const apiFactory = createApiFactory(initData, extHostContext, extHostWorkspace, extHostConfiguration, this, this._extHostLogService, this._storage);
 
 		initializeExtensionApi(this, apiFactory).then(() => {
 
@@ -408,7 +418,7 @@ export class ExtHostExtensionService implements ExtHostExtensionServiceShape {
 }
 
 function loadCommonJSModule<T>(logService: ILogService, modulePath: string, activationTimesBuilder: ExtensionActivationTimesBuilder): TPromise<T> {
-	let r: T = null;
+	let r: T | null = null;
 	activationTimesBuilder.codeLoadingStart();
 	logService.info(`ExtensionService#loadCommonJSModule ${modulePath}`);
 	try {

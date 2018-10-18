@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import * as editorCommon from 'vs/editor/common/editorCommon';
 import { ViewPart } from 'vs/editor/browser/view/viewPart';
@@ -24,13 +23,13 @@ class Settings {
 	public readonly overviewRulerLanes: number;
 
 	public readonly renderBorder: boolean;
-	public readonly borderColor: string;
+	public readonly borderColor: string | null;
 
 	public readonly hideCursor: boolean;
-	public readonly cursorColor: string;
+	public readonly cursorColor: string | null;
 
 	public readonly themeType: 'light' | 'dark' | 'hc';
-	public readonly backgroundColor: string;
+	public readonly backgroundColor: string | null;
 
 	public readonly top: number;
 	public readonly right: number;
@@ -214,7 +213,6 @@ export class DecorationsOverviewRuler extends ViewPart {
 		this._domNode.setLayerHinting(true);
 		this._domNode.setAttribute('aria-hidden', 'true');
 
-		this._settings = null;
 		this._updateSettings(false);
 
 		this._tokensColorTrackerListener = TokenizationRegistry.onDidChange((e) => {
@@ -233,7 +231,7 @@ export class DecorationsOverviewRuler extends ViewPart {
 
 	private _updateSettings(renderNow: boolean): boolean {
 		const newSettings = new Settings(this._context.configuration, this._context.theme);
-		if (this._settings !== null && this._settings.equals(newSettings)) {
+		if (this._settings && this._settings.equals(newSettings)) {
 			// nothing to do
 			return false;
 		}
@@ -311,7 +309,7 @@ export class DecorationsOverviewRuler extends ViewPart {
 		const minDecorationHeight = (Constants.MIN_DECORATION_HEIGHT * this._settings.pixelRatio) | 0;
 		const halfMinDecorationHeight = (minDecorationHeight / 2) | 0;
 
-		const canvasCtx = this._domNode.domNode.getContext('2d');
+		const canvasCtx = this._domNode.domNode.getContext('2d')!;
 		if (this._settings.backgroundColor === null) {
 			canvasCtx.clearRect(0, 0, canvasWidth, canvasHeight);
 		} else {
@@ -373,7 +371,7 @@ export class DecorationsOverviewRuler extends ViewPart {
 		}
 
 		// Draw cursors
-		if (!this._settings.hideCursor) {
+		if (!this._settings.hideCursor && this._settings.cursorColor) {
 			const cursorHeight = (2 * this._settings.pixelRatio) | 0;
 			const halfCursorHeight = (cursorHeight / 2) | 0;
 			const cursorX = this._settings.x[OverviewRulerLane.Full];

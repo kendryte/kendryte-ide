@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import 'vs/css!./links';
 import * as nls from 'vs/nls';
 import { onUnexpectedError } from 'vs/base/common/errors';
@@ -113,7 +111,7 @@ class LinkOccurrence {
 	}
 
 	private static _getOptions(link: Link, useMetaKey: boolean, isActive: boolean): ModelDecorationOptions {
-		if (/^command:/i.test(link.url)) {
+		if (link.url && /^command:/i.test(link.url)) {
 			if (useMetaKey) {
 				return (isActive ? decoration.metaCommandActive : decoration.metaCommand);
 			} else {
@@ -159,8 +157,8 @@ class LinkDetector implements editorCommon.IEditorContribution {
 	private enabled: boolean;
 	private listenersToRemove: IDisposable[];
 	private timeout: async.TimeoutTimer;
-	private computePromise: async.CancelablePromise<Link[]>;
-	private activeLinkDecorationId: string;
+	private computePromise: async.CancelablePromise<Link[]> | null;
+	private activeLinkDecorationId: string | null;
 	private openerService: IOpenerService;
 	private notificationService: INotificationService;
 	private currentOccurrences: { [decorationId: string]: LinkOccurrence; };
@@ -238,15 +236,17 @@ class LinkDetector implements editorCommon.IEditorContribution {
 	}
 
 	private async beginCompute(): Promise<void> {
-		if (!this.editor.getModel() || !this.enabled) {
+		if (!this.editor.hasModel() || !this.enabled) {
 			return;
 		}
 
-		if (!LinkProviderRegistry.has(this.editor.getModel())) {
+		const model = this.editor.getModel();
+
+		if (!LinkProviderRegistry.has(model)) {
 			return;
 		}
 
-		this.computePromise = async.createCancelablePromise(token => getLinks(this.editor.getModel(), token));
+		this.computePromise = async.createCancelablePromise(token => getLinks(model, token));
 		try {
 			const links = await this.computePromise;
 			this.updateDecorations(links);
@@ -285,7 +285,7 @@ class LinkDetector implements editorCommon.IEditorContribution {
 		}
 	}
 
-	private _onEditorMouseMove(mouseEvent: ClickLinkMouseEvent, withKey?: ClickLinkKeyboardEvent): void {
+	private _onEditorMouseMove(mouseEvent: ClickLinkMouseEvent, withKey: ClickLinkKeyboardEvent | null): void {
 		const useMetaKey = (this.editor.getConfiguration().multiCursorModifier === 'altKey');
 		if (this.isEnabled(mouseEvent, withKey)) {
 			this.cleanUpActiveLinkDecoration(); // always remove previous link decoration as their can only be one
@@ -350,7 +350,10 @@ class LinkDetector implements editorCommon.IEditorContribution {
 		});
 	}
 
-	public getLinkOccurrence(position: Position): LinkOccurrence {
+	public getLinkOccurrence(position: Position | null): LinkOccurrence | null {
+		if (!this.editor.hasModel() || !position) {
+			return null;
+		}
 		const decorations = this.editor.getModel().getDecorationsInRange({
 			startLineNumber: position.lineNumber,
 			startColumn: position.column,
@@ -369,9 +372,9 @@ class LinkDetector implements editorCommon.IEditorContribution {
 		return null;
 	}
 
-	private isEnabled(mouseEvent: ClickLinkMouseEvent, withKey?: ClickLinkKeyboardEvent): boolean {
-		return (
-			mouseEvent.target.type === MouseTargetType.CONTENT_TEXT
+	private isEnabled(mouseEvent: ClickLinkMouseEvent, withKey?: ClickLinkKeyboardEvent | null): boolean {
+		return Boolean(
+			(mouseEvent.target.type === MouseTargetType.CONTENT_TEXT)
 			&& (mouseEvent.hasTriggerModifier || (withKey && withKey.keyCodeIsTriggerKey))
 		);
 	}
@@ -407,6 +410,9 @@ class OpenLinkAction extends EditorAction {
 		if (!linkDetector) {
 			return;
 		}
+		if (!editor.hasModel()) {
+			return;
+		}
 
 		let selections = editor.getSelections();
 
@@ -424,7 +430,7 @@ registerEditorContribution(LinkDetector);
 registerEditorAction(OpenLinkAction);
 
 registerThemingParticipant((theme, collector) => {
-	let activeLinkForeground = theme.getColor(editorActiveLinkForeground);
+	const activeLinkForeground = theme.getColor(editorActiveLinkForeground);
 	if (activeLinkForeground) {
 		collector.addRule(`.monaco-editor .detected-link-active { color: ${activeLinkForeground} !important; }`);
 	}

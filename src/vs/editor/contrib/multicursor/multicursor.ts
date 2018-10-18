@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import * as nls from 'vs/nls';
 import { Disposable, IDisposable, dispose } from 'vs/base/common/lifecycle';
@@ -207,7 +206,7 @@ export class MultiCursorSession {
 		const s = editor.getSelection();
 
 		let searchText: string;
-		let currentMatch: Selection = null;
+		let currentMatch: Selection | null = null;
 
 		if (s.isEmpty()) {
 			// selection is empty => expand to current word
@@ -477,7 +476,7 @@ export class MultiCursorSelectionController extends Disposable implements IEdito
 	}
 
 	public selectAll(findController: CommonFindController): void {
-		let matches: FindMatch[] = null;
+		let matches: FindMatch[] | null = null;
 
 		const findState = findController.getState();
 

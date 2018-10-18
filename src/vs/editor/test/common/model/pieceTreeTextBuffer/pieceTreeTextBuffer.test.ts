@@ -2,8 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
-
 import * as assert from 'assert';
 import { Position } from 'vs/editor/common/core/position';
 import { Range } from 'vs/editor/common/core/range';
@@ -1517,7 +1515,7 @@ suite('random is unsupervised', () => {
 
 	test('random chunks', function () {
 		this.timeout(500000);
-		let chunks = [];
+		let chunks: string[] = [];
 		for (let i = 0; i < 5; i++) {
 			chunks.push(randomStr(1000));
 		}
@@ -1552,7 +1550,7 @@ suite('random is unsupervised', () => {
 
 	test('random chunks 2', function () {
 		this.timeout(500000);
-		let chunks = [];
+		let chunks: string[] = [];
 		chunks.push(randomStr(1000));
 
 		let pieceTable = createTextBuffer(chunks, false);

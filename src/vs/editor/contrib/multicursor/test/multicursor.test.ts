@@ -2,8 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
-
 import * as assert from 'assert';
 import { withTestCodeEditor, TestCodeEditor } from 'vs/editor/test/browser/testCodeEditor';
 import { Selection } from 'vs/editor/common/core/selection';
@@ -12,6 +10,7 @@ import { InsertCursorAbove, InsertCursorBelow, MultiCursorSelectionController, S
 import { Handler } from 'vs/editor/common/editorCommon';
 import { EndOfLineSequence } from 'vs/editor/common/model';
 import { IStorageService } from 'vs/platform/storage/common/storage';
+import { Event } from 'vs/base/common/event';
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { CommonFindController } from 'vs/editor/contrib/find/findController';
 
@@ -61,9 +60,14 @@ suite('Multicursor selection', () => {
 	let queryState: { [key: string]: any; } = {};
 	let serviceCollection = new ServiceCollection();
 	serviceCollection.set(IStorageService, {
+		_serviceBrand: undefined,
+		onDidChangeStorage: Event.None,
+		onWillSaveState: Event.None,
 		get: (key: string) => queryState[key],
 		getBoolean: (key: string) => !!queryState[key],
-		store: (key: string, value: any) => { queryState[key] = value; }
+		getInteger: (key: string) => undefined,
+		store: (key: string, value: any) => { queryState[key] = value; return Promise.resolve(); },
+		remove: (key) => void 0
 	} as IStorageService);
 
 	test('issue #8817: Cursor position changes when you cancel multicursor', () => {

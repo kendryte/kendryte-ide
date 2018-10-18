@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import * as nls from 'vs/nls';
 import * as dom from 'vs/base/browser/dom';
@@ -39,6 +38,7 @@ import { IMarginData } from 'vs/editor/browser/controller/mouseTarget';
 import { ModelDecorationOptions } from 'vs/editor/common/model/textModel';
 import { CommentNode } from 'vs/workbench/parts/comments/electron-browser/commentNode';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
+import { INotificationService } from 'vs/platform/notification/common/notification';
 
 export const COMMENTEDITOR_DECORATION_KEY = 'commenteditordecoration';
 const COLLAPSE_ACTION_CLASS = 'expand-review-action octicon octicon-x';
@@ -85,6 +85,7 @@ export class ReviewZoneWidget extends ZoneWidget {
 		private commentService: ICommentService,
 		private openerService: IOpenerService,
 		private dialogService: IDialogService,
+		private notificationService: INotificationService,
 		editor: ICodeEditor,
 		owner: number,
 		commentThread: modes.CommentThread,
@@ -205,7 +206,7 @@ export class ReviewZoneWidget extends ZoneWidget {
 			this._commentsElement.removeChild(commentElementsToDel[i].domNode);
 		}
 
-		let lastCommentElement: HTMLElement = null;
+		let lastCommentElement: HTMLElement | null = null;
 		let newCommentNodeList: CommentNode[] = [];
 		for (let i = newCommentsLen - 1; i >= 0; i--) {
 			let currentComment = commentThread.comments[i];
@@ -263,7 +264,7 @@ export class ReviewZoneWidget extends ZoneWidget {
 		this._commentEditor = this.instantiationService.createInstance(SimpleCommentEditor, this._commentForm, SimpleCommentEditor.getEditorOptions());
 		const modeId = hasExistingComments ? this._commentThread.threadId : ++INMEM_MODEL_ID;
 		const resource = URI.parse(`${COMMENT_SCHEME}:commentinput-${modeId}.md`);
-		const model = this.modelService.createModel('', this.modeService.getOrCreateModeByFilenameOrFirstLine(resource.path), resource, true);
+		const model = this.modelService.createModel('', this.modeService.getOrCreateModeByFilepathOrFirstLine(resource.path), resource, true);
 		this._localToDispose.push(model);
 		this._commentEditor.setModel(model);
 		this._localToDispose.push(this._commentEditor);
@@ -352,7 +353,8 @@ export class ReviewZoneWidget extends ZoneWidget {
 			this.commentService,
 			this.modelService,
 			this.modeService,
-			this.dialogService);
+			this.dialogService,
+			this.notificationService);
 
 		this._disposables.push(newCommentNode);
 		this._disposables.push(newCommentNode.onDidDelete(deletedNode => {
@@ -571,7 +573,7 @@ export class ReviewZoneWidget extends ZoneWidget {
 	}
 
 	private _applyTheme(theme: ITheme) {
-		let borderColor = theme.getColor(peekViewBorder) || Color.transparent;
+		const borderColor = theme.getColor(peekViewBorder) || Color.transparent;
 		this.style({
 			arrowColor: borderColor,
 			frameColor: borderColor

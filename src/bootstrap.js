@@ -37,7 +37,9 @@ exports.enableASARSupport = function (nodeModulesPath) {
 
 	const NODE_MODULES_ASAR_PATH = NODE_MODULES_PATH + '.asar';
 
+	// @ts-ignore
 	const originalResolveLookupPaths = Module._resolveLookupPaths;
+	// @ts-ignore
 	Module._resolveLookupPaths = function (request, parent, newReturn) {
 		const result = originalResolveLookupPaths(request, parent, newReturn);
 
@@ -198,7 +200,7 @@ exports.configurePortable = function () {
 	}
 
 	const portableDataPath = getPortableDataPath();
-	const isPortable = fs.existsSync(portableDataPath);
+	const isPortable = !('target' in product) && fs.existsSync(portableDataPath);
 	const portableTempPath = path.join(portableDataPath, 'tmp');
 	const isTempPortable = isPortable && fs.existsSync(portableTempPath);
 
@@ -216,5 +218,17 @@ exports.configurePortable = function () {
 		portableDataPath,
 		isPortable
 	};
+};
+//#endregion
+
+//#region ApplicationInsights
+/**
+ * Prevents appinsights from monkey patching modules.
+ * This should be called before importing the applicationinsights module
+ */
+exports.avoidMonkeyPatchFromAppInsights = function () {
+	// @ts-ignore
+	process.env['APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL'] = true; // Skip monkey patching of 3rd party modules by appinsights
+	global['diagnosticsSource'] = {}; // Prevents diagnostic channel (which patches "require") from initializing entirely
 };
 //#endregion

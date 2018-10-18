@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import 'vs/css!./accessibilityHelp';
 import * as nls from 'vs/nls';
@@ -78,7 +77,7 @@ const nlsSingleSelection = nls.localize("singleSelection", "Line {0}, Column {1}
 const nlsMultiSelectionRange = nls.localize("multiSelectionRange", "{0} selections ({1} characters selected)");
 const nlsMultiSelection = nls.localize("multiSelection", "{0} selections");
 
-function getSelectionLabel(selections: Selection[], charactersSelected: number): string {
+function getSelectionLabel(selections: Selection[] | null, charactersSelected: number): string | null {
 	if (!selections || selections.length === 0) {
 		return nlsNoSelection;
 	}
@@ -258,13 +257,13 @@ class AccessibilityHelpWidget extends Widget implements IOverlayWidget {
 			}
 		}
 
+		const turnOnMessage = (
+			platform.isMacintosh
+				? nls.localize("changeConfigToOnMac", "To configure the editor to be optimized for usage with a Screen Reader press Command+E now.")
+				: nls.localize("changeConfigToOnWinLinux", "To configure the editor to be optimized for usage with a Screen Reader press Control+E now.")
+		);
 		switch (opts.accessibilitySupport) {
 			case platform.AccessibilitySupport.Unknown:
-				const turnOnMessage = (
-					platform.isMacintosh
-						? nls.localize("changeConfigToOnMac", "To configure the editor to be optimized for usage with a Screen Reader press Command+E now.")
-						: nls.localize("changeConfigToOnWinLinux", "To configure the editor to be optimized for usage with a Screen Reader press Control+E now.")
-				);
 				text += '\n\n - ' + turnOnMessage;
 				break;
 			case platform.AccessibilitySupport.Enabled:
@@ -376,17 +375,17 @@ registerEditorCommand(
 );
 
 registerThemingParticipant((theme, collector) => {
-	let widgetBackground = theme.getColor(editorWidgetBackground);
+	const widgetBackground = theme.getColor(editorWidgetBackground);
 	if (widgetBackground) {
 		collector.addRule(`.monaco-editor .accessibilityHelpWidget { background-color: ${widgetBackground}; }`);
 	}
 
-	let widgetShadowColor = theme.getColor(widgetShadow);
+	const widgetShadowColor = theme.getColor(widgetShadow);
 	if (widgetShadowColor) {
 		collector.addRule(`.monaco-editor .accessibilityHelpWidget { box-shadow: 0 2px 8px ${widgetShadowColor}; }`);
 	}
 
-	let hcBorder = theme.getColor(contrastBorder);
+	const hcBorder = theme.getColor(contrastBorder);
 	if (hcBorder) {
 		collector.addRule(`.monaco-editor .accessibilityHelpWidget { border: 2px solid ${hcBorder}; }`);
 	}

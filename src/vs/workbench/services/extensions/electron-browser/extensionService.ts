@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import * as nls from 'vs/nls';
 import * as errors from 'vs/base/common/errors';
@@ -25,16 +24,16 @@ import { ProxyIdentifier } from 'vs/workbench/services/extensions/node/proxyIden
 import { ExtHostContext, ExtHostExtensionServiceShape, IExtHostContext, MainContext } from 'vs/workbench/api/node/extHost.protocol';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { IStorageService } from 'vs/platform/storage/common/storage';
+import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ExtensionHostProcessWorker, IExtensionHostStarter } from 'vs/workbench/services/extensions/electron-browser/extensionHost';
 import { IMessagePassingProtocol } from 'vs/base/parts/ipc/node/ipc';
 import { ExtHostCustomersRegistry } from 'vs/workbench/api/electron-browser/extHostCustomers';
 import { IWindowService, IWindowsService } from 'vs/platform/windows/common/windows';
 import { IDisposable, Disposable } from 'vs/base/common/lifecycle';
-import { mark } from 'vs/base/common/performance';
+import * as perf from 'vs/base/common/performance';
 import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
-import { Barrier } from 'vs/base/common/async';
+import { Barrier, runWhenIdle } from 'vs/base/common/async';
 import { Event, Emitter } from 'vs/base/common/event';
 import { ExtensionHostProfiler } from 'vs/workbench/services/extensions/electron-browser/extensionHostProfiler';
 import product from 'vs/platform/node/product';
@@ -44,7 +43,7 @@ import { INotificationService, Severity, INotificationHandle } from 'vs/platform
 import { isFalsyOrEmpty } from 'vs/base/common/arrays';
 import { Schemas } from 'vs/base/common/network';
 import { getPathFromAmdModule } from 'vs/base/common/amd';
-import { isEqualOrParent } from 'vs/base/common/resources';
+import { isEqualOrParent, fsPath } from 'vs/base/common/resources';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { RuntimeExtensionsInput } from 'vs/workbench/services/extensions/electron-browser/runtimeExtensionsInput';
 
@@ -52,14 +51,14 @@ import { RuntimeExtensionsInput } from 'vs/workbench/services/extensions/electro
 const LOG_EXTENSION_HOST_COMMUNICATION = false;
 const LOG_USE_COLORS = true;
 
-let _SystemExtensionsRoot: string = null;
+let _SystemExtensionsRoot: string | null = null;
 function getSystemExtensionsRoot(): string {
 	if (!_SystemExtensionsRoot) {
 		_SystemExtensionsRoot = path.normalize(path.join(getPathFromAmdModule(require, ''), '..', 'extensions'));
 	}
 	return _SystemExtensionsRoot;
 }
-let _ExtraDevSystemExtensionsRoot: string = null;
+let _ExtraDevSystemExtensionsRoot: string | null = null;
 function getExtraDevSystemExtensionsRoot(): string {
 	if (!_ExtraDevSystemExtensionsRoot) {
 		_ExtraDevSystemExtensionsRoot = path.normalize(path.join(getPathFromAmdModule(require, ''), '..', '.build', 'builtInExtensions'));
@@ -186,7 +185,7 @@ export class ExtensionHostProcessManager extends Disposable {
 
 	private _createExtensionHostCustomers(protocol: IMessagePassingProtocol): ExtHostExtensionServiceShape {
 
-		let logger: IRPCProtocolLogger = null;
+		let logger: IRPCProtocolLogger | null = null;
 		if (LOG_EXTENSION_HOST_COMMUNICATION || this._environmentService.logExtensionHostCommunication) {
 			logger = new RPCLogger();
 		}
@@ -312,7 +311,7 @@ export class ExtensionService extends Disposable implements IExtensionService {
 		this._extensionHostProcessActivationTimes = Object.create(null);
 		this._extensionHostExtensionRuntimeErrors = Object.create(null);
 
-		this.startDelayed(lifecycleService);
+		this._startDelayed(lifecycleService);
 
 		if (this._extensionEnablementService.allUserExtensionsDisabled) {
 			this._notificationService.prompt(Severity.Info, nls.localize('extensionsDisabled', "All installed extensions are temporarily disabled. Reload the window to return to the previous state."), [{
@@ -324,17 +323,7 @@ export class ExtensionService extends Disposable implements IExtensionService {
 		}
 	}
 
-	private startDelayed(lifecycleService: ILifecycleService): void {
-		let started = false;
-		const startOnce = () => {
-			if (!started) {
-				started = true;
-
-				this._startExtensionHostProcess([]);
-				this._scanAndHandleExtensions();
-			}
-		};
-
+	private _startDelayed(lifecycleService: ILifecycleService): void {
 		// delay extension host creation and extension scanning
 		// until the workbench is restoring. we cannot defer the
 		// extension host more (LifecyclePhase.Running) because
@@ -342,15 +331,14 @@ export class ExtensionService extends Disposable implements IExtensionService {
 		// and this would result in a deadlock
 		// see https://github.com/Microsoft/vscode/issues/41322
 		lifecycleService.when(LifecyclePhase.Restoring).then(() => {
-			// we add an additional delay of 800ms because the extension host
-			// starting is a potential expensive operation and we do no want
-			// to fight with editors, viewlets and panels restoring.
-			setTimeout(() => startOnce(), 800);
+			// reschedule to ensure this runs after restoring viewlets, panels, and editors
+			runWhenIdle(() => {
+				perf.mark('willLoadExtensions');
+				this._scanAndHandleExtensions();
+				this._startExtensionHostProcess([]);
+				this.whenInstalledExtensionsRegistered().then(() => perf.mark('didLoadExtensions'));
+			}, 50 /*max delay*/);
 		});
-
-		// if we are running before the 800ms delay, make sure to start
-		// the extension host right away though.
-		lifecycleService.when(LifecyclePhase.Running).then(() => startOnce());
 	}
 
 	public dispose(): void {
@@ -438,6 +426,13 @@ export class ExtensionService extends Disposable implements IExtensionService {
 	}
 
 	private _onResponsiveStateChanged(state: ResponsiveState): void {
+		// Do not show the notification anymore
+		// See https://github.com/Microsoft/vscode/issues/60318
+		const DISABLE_PROMPT = true;
+		if (this._isDev || DISABLE_PROMPT) {
+			return; // do not show any notification when developing an extension (https://github.com/Microsoft/vscode/issues/59251)
+		}
+
 		if (this._unresponsiveNotificationHandle) {
 			this._unresponsiveNotificationHandle.close();
 			this._unresponsiveNotificationHandle = null;
@@ -598,7 +593,7 @@ export class ExtensionService extends Disposable implements IExtensionService {
 					ExtensionService._handleExtensionPoint(extensionPoints[i], availableExtensions, messageHandler);
 				}
 
-				mark('extensionHostReady');
+				perf.mark('extensionHostReady');
 				this._installedExtensionsReady.open();
 				this._onDidRegisterExtensions.fire(void 0);
 				this._onDidChangeExtensionsStatus.fire(availableExtensions.map(e => e.id));
@@ -691,7 +686,7 @@ export class ExtensionService extends Disposable implements IExtensionService {
 							return TPromise.join(toDisable.map(e => this._extensionEnablementService.setEnablement(e, EnablementState.Disabled)));
 						})
 						.then(() => {
-							this._storageService.store(BetterMergeDisabledNowKey, true);
+							this._storageService.store(BetterMergeDisabledNowKey, true, StorageScope.GLOBAL);
 							return runtimeExtensions;
 						});
 				} else {
@@ -955,7 +950,7 @@ export class ExtensionService extends Disposable implements IExtensionService {
 			let developedExtensions = TPromise.as([]);
 			if (environmentService.isExtensionDevelopment && environmentService.extensionDevelopmentLocationURI.scheme === Schemas.file) {
 				developedExtensions = ExtensionScanner.scanOneOrMultipleExtensions(
-					new ExtensionScannerInput(version, commit, locale, devMode, environmentService.extensionDevelopmentLocationURI.fsPath, false, true, translations), log
+					new ExtensionScannerInput(version, commit, locale, devMode, fsPath(environmentService.extensionDevelopmentLocationURI), false, true, translations), log
 				);
 			}
 

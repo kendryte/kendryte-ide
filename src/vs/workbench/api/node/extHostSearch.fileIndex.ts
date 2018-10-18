@@ -2,13 +2,11 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import * as path from 'path';
 import * as arrays from 'vs/base/common/arrays';
 import { CancelablePromise, createCancelablePromise } from 'vs/base/common/async';
 import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
-import { toErrorMessage } from 'vs/base/common/errorMessage';
 import { canceled } from 'vs/base/common/errors';
 import * as glob from 'vs/base/common/glob';
 import * as resources from 'vs/base/common/resources';
@@ -18,125 +16,9 @@ import { URI } from 'vs/base/common/uri';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { compareItemsByScore, IItemAccessor, prepareQuery, ScorerCache } from 'vs/base/parts/quickopen/common/quickOpenScorer';
 import { ICachedSearchStats, IFileIndexProviderStats, IFileMatch, IFileSearchStats, IFolderQuery, IRawSearchQuery, ISearchCompleteStats, ISearchQuery } from 'vs/platform/search/common/search';
+import { IDirectoryEntry, IDirectoryTree, IInternalFileMatch } from 'vs/workbench/services/search/node/fileSearchManager';
+import { QueryGlobTester, resolvePatternsForProvider } from 'vs/workbench/services/search/node/search';
 import * as vscode from 'vscode';
-
-export interface IInternalFileMatch {
-	base: URI;
-	original?: URI;
-	relativePath?: string; // Not present for extraFiles or absolute path matches
-	basename: string;
-	size?: number;
-}
-
-/**
- *  Computes the patterns that the provider handles. Discards sibling clauses and 'false' patterns
- */
-export function resolvePatternsForProvider(globalPattern: glob.IExpression, folderPattern: glob.IExpression): string[] {
-	const merged = {
-		...(globalPattern || {}),
-		...(folderPattern || {})
-	};
-
-	return Object.keys(merged)
-		.filter(key => {
-			const value = merged[key];
-			return typeof value === 'boolean' && value;
-		});
-}
-
-export class QueryGlobTester {
-
-	private _excludeExpression: glob.IExpression;
-	private _parsedExcludeExpression: glob.ParsedExpression;
-
-	private _parsedIncludeExpression: glob.ParsedExpression;
-
-	constructor(config: ISearchQuery, folderQuery: IFolderQuery) {
-		this._excludeExpression = {
-			...(config.excludePattern || {}),
-			...(folderQuery.excludePattern || {})
-		};
-		this._parsedExcludeExpression = glob.parse(this._excludeExpression);
-
-		// Empty includeExpression means include nothing, so no {} shortcuts
-		let includeExpression: glob.IExpression = config.includePattern;
-		if (folderQuery.includePattern) {
-			if (includeExpression) {
-				includeExpression = {
-					...includeExpression,
-					...folderQuery.includePattern
-				};
-			} else {
-				includeExpression = folderQuery.includePattern;
-			}
-		}
-
-		if (includeExpression) {
-			this._parsedIncludeExpression = glob.parse(includeExpression);
-		}
-	}
-
-	/**
-	 * Guaranteed sync - siblingsFn should not return a promise.
-	 */
-	public includedInQuerySync(testPath: string, basename?: string, hasSibling?: (name: string) => boolean): boolean {
-		if (this._parsedExcludeExpression && this._parsedExcludeExpression(testPath, basename, hasSibling)) {
-			return false;
-		}
-
-		if (this._parsedIncludeExpression && !this._parsedIncludeExpression(testPath, basename, hasSibling)) {
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Guaranteed async.
-	 */
-	public includedInQuery(testPath: string, basename?: string, hasSibling?: (name: string) => boolean | TPromise<boolean>): TPromise<boolean> {
-		const excludeP = this._parsedExcludeExpression ?
-			TPromise.as(this._parsedExcludeExpression(testPath, basename, hasSibling)).then(result => !!result) :
-			TPromise.wrap(false);
-
-		return excludeP.then(excluded => {
-			if (excluded) {
-				return false;
-			}
-
-			return this._parsedIncludeExpression ?
-				TPromise.as(this._parsedIncludeExpression(testPath, basename, hasSibling)).then(result => !!result) :
-				TPromise.wrap(true);
-		}).then(included => {
-			return included;
-		});
-	}
-
-	public hasSiblingExcludeClauses(): boolean {
-		return hasSiblingClauses(this._excludeExpression);
-	}
-}
-
-function hasSiblingClauses(pattern: glob.IExpression): boolean {
-	for (let key in pattern) {
-		if (typeof pattern[key] !== 'boolean') {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-export interface IDirectoryEntry {
-	base: URI;
-	relativePath: string;
-	basename: string;
-}
-
-export interface IDirectoryTree {
-	rootEntries: IDirectoryEntry[];
-	pathToEntries: { [relativePath: string]: IDirectoryEntry[] };
-}
 
 interface IInternalSearchComplete<T = IFileSearchStats> {
 	limitHit: boolean;
@@ -184,10 +66,6 @@ export class FileIndexSearchEngine {
 	}
 
 	public search(_onResult: (match: IInternalFileMatch) => void): TPromise<{ isLimitHit: boolean, stats: IFileIndexProviderStats }> {
-		if (this.config.folderQueries.length !== 1) {
-			throw new Error('Searches just one folder');
-		}
-
 		// Searches a single folder
 		const folderQuery = this.config.folderQueries[0];
 
@@ -216,19 +94,25 @@ export class FileIndexSearchEngine {
 					});
 			}
 
-			return this.searchInFolder(folderQuery, _onResult)
-				.then(stats => {
-					resolve({
-						isLimitHit: this.isLimitHit,
-						stats
-					});
-				}, (errs: Error[]) => {
-					const errMsg = errs
-						.map(err => toErrorMessage(err))
-						.filter(msg => !!msg)[0];
-
-					reject(new Error(errMsg));
+			return Promise.all(this.config.folderQueries.map(fq => this.searchInFolder(folderQuery, onResult))).then(stats => {
+				resolve({
+					isLimitHit: this.isLimitHit,
+					stats: {
+						directoriesWalked: this.dirsWalked,
+						filesWalked: this.filesWalked,
+						fileWalkTime: stats.map(s => s.fileWalkTime).reduce((s, c) => s + c, 0),
+						providerTime: stats.map(s => s.providerTime).reduce((s, c) => s + c, 0),
+						providerResultCount: stats.map(s => s.providerResultCount).reduce((s, c) => s + c, 0)
+					}
 				});
+			}, (errs: Error[]) => {
+				if (!Array.isArray(errs)) {
+					errs = [errs];
+				}
+
+				errs = errs.filter(e => !!e);
+				return TPromise.wrapError(errs[0]);
+			});
 		});
 	}
 
@@ -307,6 +191,7 @@ export class FileIndexSearchEngine {
 			excludes,
 			includes,
 			useIgnoreFiles: !this.config.disregardIgnoreFiles,
+			useGlobalIgnoreFiles: !this.config.disregardGlobalIgnoreFiles,
 			followSymlinks: !this.config.ignoreSymlinks
 		};
 	}

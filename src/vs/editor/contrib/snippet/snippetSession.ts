@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import { groupBy } from 'vs/base/common/arrays';
 import { dispose } from 'vs/base/common/lifecycle';
 import { getLeadingWhitespace } from 'vs/base/common/strings';
@@ -26,7 +24,7 @@ import * as colors from 'vs/platform/theme/common/colorRegistry';
 registerThemingParticipant((theme, collector) => {
 
 	function getColorGraceful(name: string) {
-		let color = theme.getColor(name);
+		const color = theme.getColor(name);
 		return color ? color.toString() : 'transparent';
 	}
 

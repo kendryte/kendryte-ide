@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import { commands, Uri, Command, EventEmitter, Event, scm, SourceControl, SourceControlInputBox, SourceControlResourceGroup, SourceControlResourceState, SourceControlResourceDecorations, SourceControlInputBoxValidation, Disposable, ProgressLocation, window, workspace, WorkspaceEdit, ThemeColor, DecorationData, Memento, SourceControlInputBoxValidationType } from 'vscode';
 import { Repository as BaseRepository, Commit, Stash, GitError, Submodule, CommitOptions, ForcePushMode } from './git';
 import { anyEvent, filterEvent, eventToPromise, dispose, find, isDescendant, IDisposable, onceEvent, EmptyDisposable, debounceEvent } from './util';
@@ -846,7 +844,7 @@ export class Repository implements Disposable {
 		});
 	}
 
-	async branch(name: string, checkout: boolean, ref?: string): Promise<void> {
+	async branch(name: string, _checkout: boolean, _ref?: string): Promise<void> {
 		await this.run(Operation.Branch, () => this.repository.branch(name, true));
 	}
 
@@ -1171,7 +1169,7 @@ export class Repository implements Disposable {
 		this._onRunOperation.fire(operation);
 
 		try {
-			const result = await this.retryRun(runOperation);
+			const result = await this.retryRun(operation, runOperation);
 
 			if (!isReadOnly(operation)) {
 				await this.updateModelState();
@@ -1192,7 +1190,7 @@ export class Repository implements Disposable {
 		}
 	}
 
-	private async retryRun<T>(runOperation: () => Promise<T> = () => Promise.resolve<any>(null)): Promise<T> {
+	private async retryRun<T>(operation: Operation, runOperation: () => Promise<T> = () => Promise.resolve<any>(null)): Promise<T> {
 		let attempt = 0;
 
 		while (true) {
@@ -1200,7 +1198,12 @@ export class Repository implements Disposable {
 				attempt++;
 				return await runOperation();
 			} catch (err) {
-				if (err.gitErrorCode === GitErrorCodes.RepositoryIsLocked && attempt <= 10) {
+				const shouldRetry = attempt <= 10 && (
+					(err.gitErrorCode === GitErrorCodes.RepositoryIsLocked)
+					|| ((operation === Operation.Pull || operation === Operation.Sync || operation === Operation.Fetch) && (err.gitErrorCode === GitErrorCodes.CantLockRef || err.gitErrorCode === GitErrorCodes.CantRebaseMultipleBranches))
+				);
+
+				if (shouldRetry) {
 					// quatratic backoff
 					await timeout(Math.pow(attempt, 2) * 50);
 				} else {
@@ -1287,6 +1290,7 @@ export class Repository implements Disposable {
 				case 'M': workingTree.push(new Resource(ResourceGroupType.WorkingTree, uri, Status.MODIFIED, useIcons, renameUri)); break;
 				case 'D': workingTree.push(new Resource(ResourceGroupType.WorkingTree, uri, Status.DELETED, useIcons, renameUri)); break;
 			}
+			return undefined;
 		});
 
 		// set resource groups
@@ -1337,7 +1341,7 @@ export class Repository implements Disposable {
 		}
 	}
 
-	private onFSChange(uri: Uri): void {
+	private onFSChange(_uri: Uri): void {
 		const config = workspace.getConfiguration('git');
 		const autorefresh = config.get<boolean>('autorefresh');
 

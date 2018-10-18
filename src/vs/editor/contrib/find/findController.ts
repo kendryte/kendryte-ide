@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import * as nls from 'vs/nls';
 import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
@@ -73,7 +72,7 @@ export class CommonFindController extends Disposable implements editorCommon.IEd
 	protected _state: FindReplaceState;
 	protected _updateHistoryDelayer: Delayer<void>;
 	private _model: FindModelBoundToEditorModel;
-	protected _storageService: IStorageService;
+	private _storageService: IStorageService;
 	private _clipboardService: IClipboardService;
 	protected readonly _contextKeyService: IContextKeyService;
 
@@ -196,17 +195,23 @@ export class CommonFindController extends Disposable implements editorCommon.IEd
 
 	public toggleCaseSensitive(): void {
 		this._state.change({ matchCase: !this._state.matchCase }, false);
-		this.highlightFindOptions();
+		if (!this._state.isRevealed) {
+			this.highlightFindOptions();
+		}
 	}
 
 	public toggleWholeWords(): void {
 		this._state.change({ wholeWord: !this._state.wholeWord }, false);
-		this.highlightFindOptions();
+		if (!this._state.isRevealed) {
+			this.highlightFindOptions();
+		}
 	}
 
 	public toggleRegex(): void {
 		this._state.change({ isRegex: !this._state.isRegex }, false);
-		this.highlightFindOptions();
+		if (!this._state.isRevealed) {
+			this.highlightFindOptions();
+		}
 	}
 
 	public toggleSearchScope(): void {
@@ -450,7 +455,7 @@ export class StartFindWithSelectionAction extends EditorAction {
 			precondition: null,
 			kbOpts: {
 				kbExpr: null,
-				primary: null,
+				primary: 0,
 				mac: {
 					primary: KeyMod.CtrlCmd | KeyCode.KEY_E,
 				},

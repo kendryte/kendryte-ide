@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import 'vs/css!./glyphMargin';
 import { DynamicViewOverlay } from 'vs/editor/browser/view/dynamicViewOverlay';
 import { ViewContext } from 'vs/editor/common/view/viewContext';
@@ -49,7 +47,7 @@ export abstract class DedupOverlay extends DynamicViewOverlay {
 			return (a.className < b.className ? -1 : 1);
 		});
 
-		let prevClassName: string = null;
+		let prevClassName: string | null = null;
 		let prevEndLineIndex = 0;
 		for (let i = 0, len = decorations.length; i < len; i++) {
 			let d = decorations[i];
@@ -81,7 +79,7 @@ export class GlyphMarginOverlay extends DedupOverlay {
 	private _glyphMargin: boolean;
 	private _glyphMarginLeft: number;
 	private _glyphMarginWidth: number;
-	private _renderResult: string[];
+	private _renderResult: string[] | null;
 
 	constructor(context: ViewContext) {
 		super();
@@ -96,7 +94,6 @@ export class GlyphMarginOverlay extends DedupOverlay {
 
 	public dispose(): void {
 		this._context.removeEventHandler(this);
-		this._context = null;
 		this._renderResult = null;
 		super.dispose();
 	}

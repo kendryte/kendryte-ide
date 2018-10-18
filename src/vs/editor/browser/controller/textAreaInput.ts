@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { RunOnceScheduler } from 'vs/base/common/async';
 import { Position } from 'vs/editor/common/core/position';
@@ -37,7 +36,7 @@ export interface IPasteData {
 
 export interface ITextAreaInputHost {
 	getPlainTextToCopy(): string;
-	getHTMLToCopy(): string;
+	getHTMLToCopy(): string | null;
 	getScreenReaderContent(currentState: TextAreaState): TextAreaState;
 	deduceModelPosition(viewAnchorPosition: Position, deltaOffset: number, lineFeedCnt: number): Position;
 }
@@ -401,10 +400,10 @@ export class TextAreaInput extends Disposable {
 			}
 
 			const _newSelectionStartPosition = this._textAreaState.deduceEditorPosition(newSelectionStart);
-			const newSelectionStartPosition = this._host.deduceModelPosition(_newSelectionStartPosition[0], _newSelectionStartPosition[1], _newSelectionStartPosition[2]);
+			const newSelectionStartPosition = this._host.deduceModelPosition(_newSelectionStartPosition[0]!, _newSelectionStartPosition[1], _newSelectionStartPosition[2]);
 
 			const _newSelectionEndPosition = this._textAreaState.deduceEditorPosition(newSelectionEnd);
-			const newSelectionEndPosition = this._host.deduceModelPosition(_newSelectionEndPosition[0], _newSelectionEndPosition[1], _newSelectionEndPosition[2]);
+			const newSelectionEndPosition = this._host.deduceModelPosition(_newSelectionEndPosition[0]!, _newSelectionEndPosition[1], _newSelectionEndPosition[2]);
 
 			const newSelection = new Selection(
 				newSelectionStartPosition.lineNumber, newSelectionStartPosition.column,
@@ -480,7 +479,7 @@ export class TextAreaInput extends Disposable {
 			return;
 		}
 
-		let copyHTML: string = null;
+		let copyHTML: string | null = null;
 		if (browser.hasClipboardSupport() && (copyPlainText.length < 65536 || CopyOptions.forceCopyWithSyntaxHighlighting)) {
 			copyHTML = this._host.getHTMLToCopy();
 		}
@@ -514,7 +513,7 @@ class ClipboardEventUtils {
 		throw new Error('ClipboardEventUtils.getTextData: Cannot use text data!');
 	}
 
-	public static setTextData(e: ClipboardEvent, text: string, richText: string): void {
+	public static setTextData(e: ClipboardEvent, text: string, richText: string | null): void {
 		if (e.clipboardData) {
 			e.clipboardData.setData('text/plain', text);
 			if (richText !== null) {

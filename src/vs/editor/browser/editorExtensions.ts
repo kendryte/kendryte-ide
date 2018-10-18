@@ -2,11 +2,9 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { illegalArgument } from 'vs/base/common/errors';
 import { URI } from 'vs/base/common/uri';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { ServicesAccessor, IConstructorSignature1 } from 'vs/platform/instantiation/common/instantiation';
 import { CommandsRegistry, ICommandHandlerDescription } from 'vs/platform/commands/common/commands';
 import { KeybindingsRegistry, IKeybindings } from 'vs/platform/keybinding/common/keybindingsRegistry';
@@ -28,7 +26,7 @@ export type IEditorContributionCtor = IConstructorSignature1<ICodeEditor, editor
 //#region Command
 
 export interface ICommandKeybindingsOptions extends IKeybindings {
-	kbExpr?: ContextKeyExpr;
+	kbExpr?: ContextKeyExpr | null;
 	weight: number;
 }
 export interface ICommandMenubarOptions {
@@ -40,17 +38,17 @@ export interface ICommandMenubarOptions {
 }
 export interface ICommandOptions {
 	id: string;
-	precondition: ContextKeyExpr;
-	kbOpts?: ICommandKeybindingsOptions;
+	precondition: ContextKeyExpr | null;
+	kbOpts?: ICommandKeybindingsOptions | null;
 	description?: ICommandHandlerDescription;
 	menubarOpts?: ICommandMenubarOptions;
 }
 export abstract class Command {
 	public readonly id: string;
-	public readonly precondition: ContextKeyExpr;
-	private readonly _kbOpts: ICommandKeybindingsOptions;
-	private readonly _menubarOpts: ICommandMenubarOptions;
-	private readonly _description: ICommandHandlerDescription;
+	public readonly precondition: ContextKeyExpr | null;
+	private readonly _kbOpts: ICommandKeybindingsOptions | null | undefined;
+	private readonly _menubarOpts: ICommandMenubarOptions | null | undefined;
+	private readonly _description: ICommandHandlerDescription | null | undefined;
 
 	constructor(opts: ICommandOptions) {
 		this.id = opts.id;
@@ -89,7 +87,7 @@ export abstract class Command {
 				id: this.id,
 				handler: (accessor, args) => this.runCommand(accessor, args),
 				weight: this._kbOpts.weight,
-				when: kbWhen,
+				when: kbWhen || null,
 				primary: this._kbOpts.primary,
 				secondary: this._kbOpts.secondary,
 				win: this._kbOpts.win,
@@ -108,7 +106,7 @@ export abstract class Command {
 		}
 	}
 
-	public abstract runCommand(accessor: ServicesAccessor, args: any): void | TPromise<void>;
+	public abstract runCommand(accessor: ServicesAccessor, args: any): void | Thenable<void>;
 }
 
 //#endregion Command
@@ -145,7 +143,7 @@ export abstract class EditorCommand extends Command {
 		};
 	}
 
-	public runCommand(accessor: ServicesAccessor, args: any): void | TPromise<void> {
+	public runCommand(accessor: ServicesAccessor, args: any): void | Thenable<void> {
 		const codeEditorService = accessor.get(ICodeEditorService);
 
 		// Find the editor with text focus or active
@@ -162,11 +160,11 @@ export abstract class EditorCommand extends Command {
 				return;
 			}
 
-			return this.runEditorCommand(editorAccessor, editor, args);
+			return this.runEditorCommand(editorAccessor, editor!, args);
 		});
 	}
 
-	public abstract runEditorCommand(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | TPromise<void>;
+	public abstract runEditorCommand(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | Thenable<void>;
 }
 
 //#endregion EditorCommand
@@ -187,7 +185,7 @@ export abstract class EditorAction extends EditorCommand {
 
 	public label: string;
 	public alias: string;
-	private menuOpts: IEditorCommandMenuOptions;
+	private menuOpts: IEditorCommandMenuOptions | undefined;
 
 	constructor(opts: IActionOptions) {
 		super(opts);
@@ -213,7 +211,7 @@ export abstract class EditorAction extends EditorCommand {
 		super.register();
 	}
 
-	public runEditorCommand(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | TPromise<void> {
+	public runEditorCommand(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | Thenable<void> {
 		this.reportTelemetry(accessor, editor);
 		return this.run(accessor, editor, args || {});
 	}
@@ -231,7 +229,7 @@ export abstract class EditorAction extends EditorCommand {
 		accessor.get(ITelemetryService).publicLog('editorActionInvoked', { name: this.label, id: this.id, ...editor.getTelemetryData() });
 	}
 
-	public abstract run(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | TPromise<void>;
+	public abstract run(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | Thenable<void>;
 }
 
 //#endregion EditorAction

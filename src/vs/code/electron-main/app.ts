@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import { app, ipcMain as ipc, systemPreferences, shell, Event, contentTracing } from 'electron';
 import * as platform from 'vs/base/common/platform';
 import { WindowsManager } from 'vs/code/electron-main/windows';
@@ -63,12 +61,13 @@ import { IMenubarService } from 'vs/platform/menubar/common/menubar';
 import { MenubarService } from 'vs/platform/menubar/electron-main/menubarService';
 import { MenubarChannel } from 'vs/platform/menubar/node/menubarIpc';
 import { ILabelService, RegisterFormatterEvent } from 'vs/platform/label/common/label';
-import { CodeMenu } from 'vs/code/electron-main/menus';
 import { hasArgs } from 'vs/platform/environment/node/argv';
 import { RunOnceScheduler } from 'vs/base/common/async';
 import { registerContextMenuListener } from 'vs/base/parts/contextmenu/electron-main/contextmenu';
 import { THEME_STORAGE_KEY, THEME_BG_STORAGE_KEY } from 'vs/code/electron-main/theme';
-import { nativeSep } from 'vs/base/common/paths';
+import { nativeSep, join } from 'vs/base/common/paths';
+import { homedir } from 'os';
+import { localize } from 'vs/nls';
 
 export class CodeApplication {
 
@@ -166,7 +165,7 @@ export class CodeApplication {
 		});
 
 		let macOpenFileURIs: URI[] = [];
-		let runningTimeout: number = null;
+		let runningTimeout: any = null;
 		app.on('open-file', (event: Event, path: string) => {
 			this.logService.trace('App#open-file: ', path);
 			event.preventDefault();
@@ -234,7 +233,7 @@ export class CodeApplication {
 		});
 
 		ipc.on('vscode:labelRegisterFormatter', (event: any, data: RegisterFormatterEvent) => {
-			this.labelService.registerFormatter(data.scheme, data.formatter);
+			this.labelService.registerFormatter(data.selector, data.formatter);
 		});
 
 		ipc.on('vscode:toggleDevTools', (event: Event) => {
@@ -379,11 +378,16 @@ export class CodeApplication {
 
 						recordingStopped = true; // only once
 
-						contentTracing.stopRecording('', path => {
-							if (timeout) {
-								this.logService.info(`Tracing: data recorded (after 30s timeout) to ${path}`);
+						contentTracing.stopRecording(join(homedir(), `${product.applicationName}-${Math.random().toString(16).slice(-4)}.trace.txt`), path => {
+							if (!timeout) {
+								this.windowsMainService.showMessageBox({
+									type: 'info',
+									message: localize('trace.message', "Successfully created trace."),
+									detail: localize('trace.detail', "Please create an issue and manually attach the following file:\n{0}", path),
+									buttons: [localize('trace.ok', "Ok")]
+								}, this.windowsMainService.getLastActiveWindow());
 							} else {
-								this.logService.info(`Tracing: data recorded to ${path}`);
+								this.logService.info(`Tracing: data recorded (after 30s timeout) to ${path}`);
 							}
 						});
 					};
@@ -552,7 +556,7 @@ export class CodeApplication {
 	private afterWindowOpen(accessor: ServicesAccessor): void {
 		const windowsMainService = accessor.get(IWindowsMainService);
 
-		let windowsMutex: Mutex = null;
+		let windowsMutex: Mutex | null = null;
 		if (platform.isWindows) {
 
 			// Setup Windows mutex
@@ -587,22 +591,6 @@ export class CodeApplication {
 					});
 				}
 			}
-		}
-
-		// TODO@sbatten: Remove when switching back to dynamic menu
-		// Install Menu
-		const instantiationService = accessor.get(IInstantiationService);
-		const configurationService = accessor.get(IConfigurationService);
-
-		let createNativeMenu = true;
-		if (platform.isLinux) {
-			createNativeMenu = configurationService.getValue<string>('window.titleBarStyle') !== 'custom';
-		} else if (platform.isWindows) {
-			createNativeMenu = configurationService.getValue<string>('window.titleBarStyle') === 'native';
-		}
-
-		if (createNativeMenu) {
-			instantiationService.createInstance(CodeMenu);
 		}
 
 		// Jump List

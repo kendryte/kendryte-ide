@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import 'vs/css!./bracketMatching';
 import * as nls from 'vs/nls';
 import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
@@ -73,9 +71,9 @@ type Brackets = [Range, Range];
 
 class BracketsData {
 	public readonly position: Position;
-	public readonly brackets: Brackets;
+	public readonly brackets: Brackets | null;
 
-	constructor(position: Position, brackets: Brackets) {
+	constructor(position: Position, brackets: Brackets | null) {
 		this.position = position;
 		this.brackets = brackets;
 	}
@@ -145,17 +143,17 @@ export class BracketMatchingController extends Disposable implements editorCommo
 	}
 
 	public jumpToBracket(): void {
-		const model = this._editor.getModel();
-		if (!model) {
+		if (!this._editor.hasModel()) {
 			return;
 		}
 
-		let newSelections = this._editor.getSelections().map(selection => {
+		const model = this._editor.getModel();
+		const newSelections = this._editor.getSelections().map(selection => {
 			const position = selection.getStartPosition();
 
 			// find matching brackets if position is on a bracket
 			const brackets = model.matchBracket(position);
-			let newCursorPosition: Position = null;
+			let newCursorPosition: Position | null = null;
 			if (brackets) {
 				if (brackets[0].containsPosition(position)) {
 					newCursorPosition = brackets[1].getStartPosition();
@@ -181,20 +179,19 @@ export class BracketMatchingController extends Disposable implements editorCommo
 	}
 
 	public selectToBracket(): void {
-		const model = this._editor.getModel();
-		if (!model) {
+		if (!this._editor.hasModel()) {
 			return;
 		}
 
-		let newSelections: Selection[] = [];
+		const model = this._editor.getModel();
+		const newSelections: Selection[] = [];
 
 		this._editor.getSelections().forEach(selection => {
 			const position = selection.getStartPosition();
-
 			let brackets = model.matchBracket(position);
 
-			let openBracket: Position = null;
-			let closeBracket: Position = null;
+			let openBracket: Position | null = null;
+			let closeBracket: Position | null = null;
 
 			if (!brackets) {
 				const nextBracket = model.findNextBracket(position);
@@ -258,14 +255,14 @@ export class BracketMatchingController extends Disposable implements editorCommo
 	}
 
 	private _recomputeBrackets(): void {
-		const model = this._editor.getModel();
-		if (!model) {
+		if (!this._editor.hasModel()) {
 			// no model => no brackets!
 			this._lastBracketsData = [];
 			this._lastVersionId = 0;
 			return;
 		}
 
+		const model = this._editor.getModel();
 		const versionId = model.getVersionId();
 		let previousData: BracketsData[] = [];
 		if (this._lastVersionId === versionId) {
@@ -316,11 +313,11 @@ registerEditorContribution(BracketMatchingController);
 registerEditorAction(SelectToBracketAction);
 registerEditorAction(JumpToBracketAction);
 registerThemingParticipant((theme, collector) => {
-	let bracketMatchBackground = theme.getColor(editorBracketMatchBackground);
+	const bracketMatchBackground = theme.getColor(editorBracketMatchBackground);
 	if (bracketMatchBackground) {
 		collector.addRule(`.monaco-editor .bracket-match { background-color: ${bracketMatchBackground}; }`);
 	}
-	let bracketMatchBorder = theme.getColor(editorBracketMatchBorder);
+	const bracketMatchBorder = theme.getColor(editorBracketMatchBorder);
 	if (bracketMatchBorder) {
 		collector.addRule(`.monaco-editor .bracket-match { border: 1px solid ${bracketMatchBorder}; }`);
 	}

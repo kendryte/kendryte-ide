@@ -2,9 +2,7 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
-import { TPromise } from 'vs/base/common/winjs.base';
 import { QuickOpenController } from 'vs/workbench/browser/parts/quickopen/quickOpenController';
 import { QuickInputService } from 'vs/workbench/browser/parts/quickinput/quickInput';
 import { Sash, ISashEvent, IVerticalSashLayoutProvider, IHorizontalSashLayoutProvider, Orientation } from 'vs/base/browser/ui/sash/sash';
@@ -27,6 +25,7 @@ import { SidebarPart } from 'vs/workbench/browser/parts/sidebar/sidebarPart';
 import { PanelPart } from 'vs/workbench/browser/parts/panel/panelPart';
 import { StatusbarPart } from 'vs/workbench/browser/parts/statusbar/statusbarPart';
 import { getZoomFactor } from 'vs/base/browser/browser';
+import { RunOnceScheduler } from 'vs/base/common/async';
 
 const TITLE_BAR_HEIGHT = isMacintosh ? 22 : 30;
 const STATUS_BAR_HEIGHT = 22;
@@ -69,6 +68,8 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 	private _panelHeight: number;
 	private _panelWidth: number;
 
+	private saveStateScheduler: RunOnceScheduler;
+
 	constructor(
 		private parent: HTMLElement,
 		private workbenchContainer: HTMLElement,
@@ -101,6 +102,9 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 		this.sashXTwo = new Sash(this.workbenchContainer, this);
 		this.sashY = new Sash(this.workbenchContainer, this, { orientation: Orientation.HORIZONTAL });
 
+		// State scheduler
+		this.saveStateScheduler = this._register(new RunOnceScheduler(() => this.saveState(), 800));
+
 		this.registerListeners();
 	}
 
@@ -117,6 +121,10 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 	private registerListeners(): void {
 		this._register(this.themeService.onThemeChange(_ => this.layout()));
 		this._register(this.parts.editor.onDidSizeConstraintsChange(() => this.onDidEditorSizeConstraintsChange()));
+		this._register(this.storageService.onWillSaveState(() => {
+			this.saveStateScheduler.dispose();
+			this.saveState();
+		}));
 
 		this.registerSashListeners();
 	}
@@ -262,7 +270,7 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 			let sidebarPosition = this.partService.getSideBarPosition();
 			let isSidebarVisible = this.partService.isVisible(Parts.SIDEBAR_PART);
 			let newSashWidth = (sidebarPosition === Position.LEFT) ? startSidebarWidth + e.currentX - startX : startSidebarWidth - e.currentX + startX;
-			let promise = TPromise.wrap<void>(null);
+			let promise: Thenable<void> = Promise.resolve<void>(null);
 
 			// Sidebar visible
 			if (isSidebarVisible) {
@@ -301,7 +309,7 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 			let doLayout = false;
 			let isPanelVisible = this.partService.isVisible(Parts.PANEL_PART);
 			let newSashHeight = startPanelHeight - (e.currentY - startY);
-			let promise = TPromise.wrap<void>(null);
+			let promise: Thenable<void> = Promise.resolve<void>(null);
 
 			// Panel visible
 			if (isPanelVisible) {
@@ -339,7 +347,7 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 			let doLayout = false;
 			let isPanelVisible = this.partService.isVisible(Parts.PANEL_PART);
 			let newSashWidth = startPanelWidth - (e.currentX - startXTwo);
-			let promise = TPromise.wrap<void>(null);
+			let promise: Thenable<void> = Promise.resolve<void>(null);
 
 			// Panel visible
 			if (isPanelVisible) {
@@ -374,20 +382,22 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 		}));
 
 		this._register(this.sashXOne.onDidEnd(() => {
-			this.storageService.store(WorkbenchLayout.sashXOneWidthSettingsKey, this.sidebarWidth, StorageScope.GLOBAL);
+			this.saveStateScheduler.schedule();
 		}));
 
 		this._register(this.sashY.onDidEnd(() => {
-			this.storageService.store(WorkbenchLayout.sashYHeightSettingsKey, this.panelHeight, StorageScope.GLOBAL);
+			this.saveStateScheduler.schedule();
 		}));
 
 		this._register(this.sashXTwo.onDidEnd(() => {
-			this.storageService.store(WorkbenchLayout.sashXTwoWidthSettingsKey, this.panelWidth, StorageScope.GLOBAL);
+			this.saveStateScheduler.schedule();
 		}));
 
 		this._register(this.sashY.onDidReset(() => {
 			this.panelHeight = this.sidebarHeight * DEFAULT_PANEL_SIZE_COEFFICIENT;
-			this.storageService.store(WorkbenchLayout.sashYHeightSettingsKey, this.panelHeight, StorageScope.GLOBAL);
+
+			this.saveStateScheduler.schedule();
+
 			this.layout();
 		}));
 
@@ -395,18 +405,22 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 			let activeViewlet = this.viewletService.getActiveViewlet();
 			let optimalWidth = activeViewlet && activeViewlet.getOptimalWidth();
 			this.sidebarWidth = Math.max(optimalWidth, DEFAULT_SIDEBAR_PART_WIDTH);
-			this.storageService.store(WorkbenchLayout.sashXOneWidthSettingsKey, this.sidebarWidth, StorageScope.GLOBAL);
+
+			this.saveStateScheduler.schedule();
+
 			this.partService.setSideBarHidden(false).then(() => this.layout());
 		}));
 
 		this._register(this.sashXTwo.onDidReset(() => {
 			this.panelWidth = (this.workbenchSize.width - this.sidebarWidth - this.activitybarWidth) * DEFAULT_PANEL_SIZE_COEFFICIENT;
-			this.storageService.store(WorkbenchLayout.sashXTwoWidthSettingsKey, this.panelWidth, StorageScope.GLOBAL);
+
+			this.saveStateScheduler.schedule();
+
 			this.layout();
 		}));
 	}
 
-	layout(options?: ILayoutOptions): void {
+	layout(options?: ILayoutOptions): void { //
 		this.workbenchSize = getClientArea(this.parent);
 
 		const isActivityBarHidden = !this.partService.isVisible(Parts.ACTIVITYBAR_PART);
@@ -474,7 +488,7 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 				this.panelSizeBeforeMaximized = panelWidth;
 			}
 		}
-		this.storageService.store(WorkbenchLayout.panelSizeBeforeMaximizedKey, this.panelSizeBeforeMaximized, StorageScope.GLOBAL);
+
 		const panelDimension = new Dimension(panelWidth, panelHeight);
 
 		// Editor
@@ -529,31 +543,19 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 
 		if (!isSidebarHidden) {
 			this.sidebarWidth = sidebarSize.width;
-			this.storageService.store(WorkbenchLayout.sashXOneWidthSettingsKey, this.sidebarWidth, StorageScope.GLOBAL);
 		}
 
 		if (!isPanelHidden) {
 			if (panelPosition === Position.BOTTOM) {
 				this.panelHeight = panelDimension.height;
-				this.storageService.store(WorkbenchLayout.sashYHeightSettingsKey, this.panelHeight, StorageScope.GLOBAL);
 			} else {
 				this.panelWidth = panelDimension.width;
-				this.storageService.store(WorkbenchLayout.sashXTwoWidthSettingsKey, this.panelWidth, StorageScope.GLOBAL);
 			}
 		}
 
 		// Workbench
 		position(this.workbenchContainer, 0, 0, 0, 0, 'relative');
 		size(this.workbenchContainer, this.workbenchSize.width, this.workbenchSize.height);
-
-		// Bug on Chrome: Sometimes Chrome wants to scroll the workbench container on layout changes. The fix is to reset scrolling in this case.
-		const workbenchContainer = this.workbenchContainer;
-		if (workbenchContainer.scrollTop > 0) {
-			workbenchContainer.scrollTop = 0;
-		}
-		if (workbenchContainer.scrollLeft > 0) {
-			workbenchContainer.scrollLeft = 0;
-		}
 
 		// Title Part
 		const titleContainer = this.parts.titlebar.getContainer();
@@ -653,6 +655,9 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 
 		// Propagate to Context View
 		this.contextViewService.layout();
+
+		// Schedule save state
+		this.saveStateScheduler.schedule();
 	}
 
 	getVerticalSashTop(sash: Sash): number {
@@ -753,5 +758,14 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 		if (doLayout) {
 			this.layout();
 		}
+	}
+
+	private saveState(): void {
+		this.storageService.store(WorkbenchLayout.sashXOneWidthSettingsKey, this.sidebarWidth, StorageScope.GLOBAL);
+
+		this.storageService.store(WorkbenchLayout.sashYHeightSettingsKey, this.panelHeight, StorageScope.GLOBAL);
+		this.storageService.store(WorkbenchLayout.sashXTwoWidthSettingsKey, this.panelWidth, StorageScope.GLOBAL);
+
+		this.storageService.store(WorkbenchLayout.panelSizeBeforeMaximizedKey, this.panelSizeBeforeMaximized, StorageScope.GLOBAL);
 	}
 }

@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import * as assert from 'assert';
 import { RPCProtocol } from 'vs/workbench/services/extensions/node/rpcProtocol';
 import { IMessagePassingProtocol } from 'vs/base/parts/ipc/node/ipc';
@@ -173,6 +171,21 @@ suite('RPCProtocol', () => {
 			done(null);
 		}, (err) => {
 			assert.equal(err, undefined);
+			done(null);
+		});
+	});
+
+	test('issue #60450: Converting circular structure to JSON', function (done) {
+		delegate = (a1: number, a2: number) => {
+			let circular = <any>{};
+			circular.self = circular;
+			return circular;
+		};
+		bProxy.$m(4, 1).then((res) => {
+			assert.equal(res, null);
+			done(null);
+		}, (err) => {
+			assert.fail('unexpected');
 			done(null);
 		});
 	});

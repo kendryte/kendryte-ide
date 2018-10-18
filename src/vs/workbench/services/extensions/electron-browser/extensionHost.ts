@@ -3,15 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import * as nls from 'vs/nls';
 import { toErrorMessage } from 'vs/base/common/errorMessage';
 import * as objects from 'vs/base/common/objects';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { isWindows } from 'vs/base/common/platform';
 import { findFreePort } from 'vs/base/node/ports';
-import { ILifecycleService, ShutdownEvent } from 'vs/platform/lifecycle/common/lifecycle';
+import { ILifecycleService, WillShutdownEvent } from 'vs/platform/lifecycle/common/lifecycle';
 import { IWindowsService, IWindowService } from 'vs/platform/windows/common/windows';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
@@ -264,7 +262,7 @@ export class ExtensionHostProcessWorker implements IExtensionHostStarter {
 				this._inspectPort = portData.actual;
 
 				// Help in case we fail to start it
-				let startupTimeoutHandle: number;
+				let startupTimeoutHandle: any;
 				if (!this._environmentService.isBuilt || this._isExtensionDevHost) {
 					startupTimeoutHandle = setTimeout(() => {
 						const msg = this._isExtensionDevDebugBrk
@@ -275,7 +273,8 @@ export class ExtensionHostProcessWorker implements IExtensionHostStarter {
 							[{
 								label: nls.localize('reloadWindow', "Reload Window"),
 								run: () => this._windowService.reloadWindow()
-							}]
+							}],
+							{ sticky: true }
 						);
 					}, 10000);
 				}
@@ -538,7 +537,7 @@ export class ExtensionHostProcessWorker implements IExtensionHostStarter {
 		}
 	}
 
-	private _onWillShutdown(event: ShutdownEvent): void {
+	private _onWillShutdown(event: WillShutdownEvent): void {
 
 		// If the extension development host was started without debugger attached we need
 		// to communicate this back to the main side to terminate the debug session

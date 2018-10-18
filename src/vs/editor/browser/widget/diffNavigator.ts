@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import * as assert from 'vs/base/common/assert';
 import * as objects from 'vs/base/common/objects';
@@ -59,7 +58,7 @@ export class DiffNavigator {
 		this.nextIdx = -1;
 		this.ranges = [];
 		this.ignoreSelectionChange = false;
-		this.revealFirst = this._options.alwaysRevealFirst;
+		this.revealFirst = Boolean(this._options.alwaysRevealFirst);
 
 		// hook up to diff editor for diff, disposal, and caret move
 		this._disposables.push(this._editor.onDidDispose(() => this.dispose()));
@@ -104,7 +103,7 @@ export class DiffNavigator {
 		}
 	}
 
-	private _compute(lineChanges: ILineChange[]): void {
+	private _compute(lineChanges: ILineChange[] | null): void {
 
 		// new ranges
 		this.ranges = [];
@@ -151,6 +150,10 @@ export class DiffNavigator {
 	private _initIdx(fwd: boolean): void {
 		let found = false;
 		let position = this._editor.getPosition();
+		if (!position) {
+			this.nextIdx = 0;
+			return;
+		}
 		for (let i = 0, len = this.ranges.length; i < len && !found; i++) {
 			let range = this.ranges[i].range;
 			if (position.isBeforeOrEqual(range.getStartPosition())) {
@@ -216,7 +219,7 @@ export class DiffNavigator {
 		dispose(this._disposables);
 		this._disposables.length = 0;
 		this._onDidUpdate.dispose();
-		this.ranges = null;
+		this.ranges = [];
 		this.disposed = true;
 	}
 }

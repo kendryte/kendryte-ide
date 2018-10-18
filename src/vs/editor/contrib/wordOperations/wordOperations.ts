@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
 import { ScrollType } from 'vs/editor/common/editorCommon';
 import { ITextModel } from 'vs/editor/common/model';
@@ -38,6 +36,9 @@ export abstract class MoveWordCommand extends EditorCommand {
 	}
 
 	public runEditorCommand(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void {
+		if (!editor.hasModel()) {
+			return;
+		}
 		const config = editor.getConfiguration();
 		const wordSeparators = getMapForWordSeparators(config.wordSeparators);
 		const model = editor.getModel();
@@ -263,6 +264,9 @@ export abstract class DeleteWordCommand extends EditorCommand {
 	}
 
 	public runEditorCommand(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void {
+		if (!editor.hasModel()) {
+			return;
+		}
 		const config = editor.getConfiguration();
 		const wordSeparators = getMapForWordSeparators(config.wordSeparators);
 		const model = editor.getModel();

@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import 'vs/css!./textAreaHandler';
 import * as platform from 'vs/base/common/platform';
@@ -30,7 +29,7 @@ import { EndOfLinePreference } from 'vs/editor/common/model';
 import { getMapForWordSeparators, WordCharacterClass } from 'vs/editor/common/controller/wordCharacterClassifier';
 
 export interface ITextAreaHandlerHelper {
-	visibleRangeForPositionRelativeToEditor(lineNumber: number, column: number): HorizontalRange;
+	visibleRangeForPositionRelativeToEditor(lineNumber: number, column: number): HorizontalRange | null;
 }
 
 class VisibleTextAreaData {
@@ -56,7 +55,7 @@ const canUseZeroSizeTextarea = (browser.isEdgeOrIE || browser.isFirefox);
 interface LocalClipboardMetadata {
 	lastCopiedValue: string;
 	isFromEmptySelection: boolean;
-	multicursorText: string[];
+	multicursorText: string[] | null;
 }
 
 /**
@@ -67,17 +66,17 @@ interface LocalClipboardMetadata {
 class LocalClipboardMetadataManager {
 	public static INSTANCE = new LocalClipboardMetadataManager();
 
-	private _lastState: LocalClipboardMetadata;
+	private _lastState: LocalClipboardMetadata | null;
 
 	constructor() {
 		this._lastState = null;
 	}
 
-	public set(state: LocalClipboardMetadata): void {
+	public set(state: LocalClipboardMetadata | null): void {
 		this._lastState = state;
 	}
 
-	public get(pastedText: string): LocalClipboardMetadata {
+	public get(pastedText: string): LocalClipboardMetadata | null {
 		if (this._lastState && this._lastState.lastCopiedValue === pastedText) {
 			// match!
 			return this._lastState;
@@ -105,7 +104,7 @@ export class TextAreaHandler extends ViewPart {
 	/**
 	 * Defined only when the text area is visible (composition case).
 	 */
-	private _visibleTextArea: VisibleTextAreaData;
+	private _visibleTextArea: VisibleTextAreaData | null;
 	private _selections: Selection[];
 
 	public readonly textArea: FastDomNode<HTMLTextAreaElement>;
@@ -173,7 +172,7 @@ export class TextAreaHandler extends ViewPart {
 				const multicursorText = (Array.isArray(rawWhatToCopy) ? rawWhatToCopy : null);
 				const whatToCopy = (Array.isArray(rawWhatToCopy) ? rawWhatToCopy.join(newLineCharacter) : rawWhatToCopy);
 
-				let metadata: LocalClipboardMetadata = null;
+				let metadata: LocalClipboardMetadata | null = null;
 				if (isFromEmptySelection || multicursorText) {
 					// Only store the non-default metadata
 
@@ -192,7 +191,7 @@ export class TextAreaHandler extends ViewPart {
 				return whatToCopy;
 			},
 
-			getHTMLToCopy: (): string => {
+			getHTMLToCopy: (): string | null => {
 				if (!this._copyWithSyntaxHighlighting && !CopyOptions.forceCopyWithSyntaxHighlighting) {
 					return null;
 				}
@@ -251,7 +250,7 @@ export class TextAreaHandler extends ViewPart {
 			const metadata = LocalClipboardMetadataManager.INSTANCE.get(e.text);
 
 			let pasteOnNewLine = false;
-			let multicursorText: string[] = null;
+			let multicursorText: string[] | null = null;
 			if (metadata) {
 				pasteOnNewLine = (this._emptySelectionClipboard && metadata.isFromEmptySelection);
 				multicursorText = metadata.multicursorText;
@@ -308,10 +307,10 @@ export class TextAreaHandler extends ViewPart {
 			if (browser.isEdgeOrIE) {
 				// Due to isEdgeOrIE (where the textarea was not cleared initially)
 				// we cannot assume the text consists only of the composited text
-				this._visibleTextArea = this._visibleTextArea.setWidth(0);
+				this._visibleTextArea = this._visibleTextArea!.setWidth(0);
 			} else {
 				// adjust width by its size
-				this._visibleTextArea = this._visibleTextArea.setWidth(measureText(e.data, this._fontInfo));
+				this._visibleTextArea = this._visibleTextArea!.setWidth(measureText(e.data, this._fontInfo));
 			}
 			this._render();
 		}));
@@ -443,7 +442,7 @@ export class TextAreaHandler extends ViewPart {
 
 	// --- end view API
 
-	private _primaryCursorVisibleRange: HorizontalRange = null;
+	private _primaryCursorVisibleRange: HorizontalRange | null = null;
 
 	public prepareRender(ctx: RenderingContext): void {
 		if (this._accessibilitySupport === platform.AccessibilitySupport.Enabled) {
@@ -565,7 +564,7 @@ export class TextAreaHandler extends ViewPart {
 function measureText(text: string, fontInfo: BareFontInfo): number {
 	// adjust width by its size
 	const canvasElem = <HTMLCanvasElement>document.createElement('canvas');
-	const context = canvasElem.getContext('2d');
+	const context = canvasElem.getContext('2d')!;
 	context.font = createFontString(fontInfo);
 	const metrics = context.measureText(text);
 

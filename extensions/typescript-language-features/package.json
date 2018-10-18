@@ -18,7 +18,7 @@
   "dependencies": {
     "jsonc-parser": "^2.0.1",
     "semver": "5.5.1",
-    "vscode-extension-telemetry": "0.0.20",
+    "vscode-extension-telemetry": "0.1.0",
     "vscode-nls": "^4.0.0"
   },
   "devDependencies": {
@@ -141,23 +141,16 @@
           "description": "%typescript.tsserver.trace%",
           "scope": "window"
         },
-        "typescript.useCodeSnippetsOnMethodSuggest": {
+        "javascript.suggest.completeFunctionCalls": {
           "type": "boolean",
           "default": false,
-          "description": "%typescript.useCodeSnippetsOnMethodSuggest.dec%",
-          "scope": "resource",
-          "deprecationMessage": "%typescript.useCodeSnippetsOnMethodSuggest.deprecationMessage%"
-        },
-        "javascript.suggest.insertParametersForFunctionCalls": {
-          "type": "boolean",
-          "default": false,
-          "description": "%configuration.suggest.insertParametersForFunctionCalls%",
+          "description": "%configuration.suggest.completeFunctionCalls%",
           "scope": "resource"
         },
-        "typescript.suggest.insertParametersForFunctionCalls": {
+        "typescript.suggest.completeFunctionCalls": {
           "type": "boolean",
           "default": false,
-          "description": "%configuration.suggest.insertParametersForFunctionCalls%",
+          "description": "%configuration.suggest.completeFunctionCalls%",
           "scope": "resource"
         },
         "typescript.reportStyleChecksAsWarnings": {
@@ -382,13 +375,6 @@
           "markdownDescription": "%javascript.implicitProjectConfig.experimentalDecorators%",
           "scope": "window"
         },
-        "javascript.nameSuggestions": {
-          "type": "boolean",
-          "default": true,
-          "description": "%javascript.nameSuggestions%",
-          "scope": "resource",
-          "deprecationMessage": "%javascript.nameSuggestions.deprecationMessage%"
-        },
         "javascript.suggest.names": {
           "type": "boolean",
           "default": true,
@@ -404,7 +390,7 @@
             "build",
             "watch"
           ],
-          "enumDescriptions": [
+          "markdownEnumDescriptions": [
             "%typescript.tsc.autoDetect.on%",
             "%typescript.tsc.autoDetect.off%",
             "%typescript.tsc.autoDetect.build%",
@@ -412,13 +398,6 @@
           ],
           "description": "%typescript.tsc.autoDetect%",
           "scope": "window"
-        },
-        "typescript.quickSuggestionsForPaths": {
-          "type": "boolean",
-          "default": true,
-          "description": "%typescript.quickSuggestionsForPaths%",
-          "scope": "resource",
-          "deprecationMessage": "%typescript.quickSuggestionsForPaths.deprecationMessage%"
         },
         "javascript.suggest.paths": {
           "type": "boolean",
@@ -431,13 +410,6 @@
           "default": true,
           "description": "%configuration.suggest.paths%",
           "scope": "resource"
-        },
-        "typescript.autoImportSuggestions.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "%typescript.autoImportSuggestions.enabled%",
-          "scope": "resource",
-          "deprecationMessage": "%typescript.autoImportSuggestions.enabled.deprecationMessage%"
         },
         "javascript.suggest.autoImports": {
           "type": "boolean",
@@ -530,7 +502,7 @@
             "relative",
             "non-relative"
           ],
-          "enumDescriptions": [
+          "markdownEnumDescriptions": [
             "%typescript.preferences.importModuleSpecifier.auto%",
             "%typescript.preferences.importModuleSpecifier.relative%",
             "%typescript.preferences.importModuleSpecifier.nonRelative%"
@@ -546,7 +518,7 @@
             "always",
             "never"
           ],
-          "enumDescriptions": [
+          "markdownEnumDescriptions": [
             "%typescript.updateImportsOnFileMove.enabled.prompt%",
             "%typescript.updateImportsOnFileMove.enabled.always%",
             "%typescript.updateImportsOnFileMove.enabled.never%"
@@ -561,6 +533,11 @@
             "prompt",
             "always",
             "never"
+          ],
+          "markdownEnumDescriptions": [
+            "%typescript.updateImportsOnFileMove.enabled.prompt%",
+            "%typescript.updateImportsOnFileMove.enabled.always%",
+            "%typescript.updateImportsOnFileMove.enabled.never%"
           ],
           "default": "prompt",
           "description": "%typescript.updateImportsOnFileMove.enabled%",

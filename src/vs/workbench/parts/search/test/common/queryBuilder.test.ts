@@ -2,8 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
-
 import * as assert from 'assert';
 import { IExpression } from 'vs/base/common/glob';
 import * as paths from 'vs/base/common/paths';
@@ -18,8 +16,8 @@ import { ISearchPathsResult, QueryBuilder } from 'vs/workbench/parts/search/comm
 import { TestContextService, TestEnvironmentService } from 'vs/workbench/test/workbenchTestServices';
 
 const DEFAULT_EDITOR_CONFIG = {};
-const DEFAULT_USER_CONFIG = { useRipgrep: true, useIgnoreFiles: true };
-const DEFAULT_QUERY_PROPS = { useRipgrep: true, disregardIgnoreFiles: false };
+const DEFAULT_USER_CONFIG = { useRipgrep: true, useIgnoreFiles: true, useGlobalIgnoreFiles: true };
+const DEFAULT_QUERY_PROPS = { useRipgrep: true, disregardIgnoreFiles: false, disregardGlobalIgnoreFiles: false };
 
 suite('QueryBuilder', () => {
 	const PATTERN_INFO: IPatternInfo = { pattern: 'a' };
@@ -54,6 +52,7 @@ suite('QueryBuilder', () => {
 		assertEqualQueries(
 			queryBuilder.text(PATTERN_INFO),
 			<ISearchQuery>{
+				folderQueries: [],
 				contentPattern: PATTERN_INFO,
 				type: QueryType.Text
 			});
@@ -244,6 +243,7 @@ suite('QueryBuilder', () => {
 				{ filePattern: ` ${content} ` }
 			),
 			<ISearchQuery>{
+				folderQueries: [],
 				contentPattern: PATTERN_INFO,
 				filePattern: content,
 				type: QueryType.Text

@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { Range } from 'vs/editor/common/core/range';
 import { Selection } from 'vs/editor/common/core/selection';
@@ -313,7 +312,7 @@ export interface IViewEventListener {
 
 export class ViewEventEmitter extends Disposable {
 	private _listeners: IViewEventListener[];
-	private _collector: ViewEventsCollector;
+	private _collector: ViewEventsCollector | null;
 	private _collectorCnt: number;
 
 	constructor() {
@@ -333,13 +332,13 @@ export class ViewEventEmitter extends Disposable {
 		if (this._collectorCnt === 1) {
 			this._collector = new ViewEventsCollector();
 		}
-		return this._collector;
+		return this._collector!;
 	}
 
 	protected _endEmit(): void {
 		this._collectorCnt--;
 		if (this._collectorCnt === 0) {
-			const events = this._collector.finalize();
+			const events = this._collector!.finalize();
 			this._collector = null;
 			if (events.length > 0) {
 				this._emit(events);
@@ -384,7 +383,7 @@ export class ViewEventsCollector {
 
 	public finalize(): ViewEvent[] {
 		let result = this._events;
-		this._events = null;
+		this._events = [];
 		return result;
 	}
 

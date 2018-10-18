@@ -2,19 +2,18 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { onUnexpectedError } from 'vs/base/common/errors';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import * as dom from 'vs/base/browser/dom';
 import { FastDomNode, createFastDomNode } from 'vs/base/browser/fastDomNode';
-import { Range } from 'vs/editor/common/core/range';
+import { Position } from 'vs/editor/common/core/position';
 import { ViewEventHandler } from 'vs/editor/common/viewModel/viewEventHandler';
 import { IConfiguration } from 'vs/editor/common/editorCommon';
 import { TextAreaHandler, ITextAreaHandlerHelper } from 'vs/editor/browser/controller/textAreaHandler';
 import { PointerHandler } from 'vs/editor/browser/controller/pointerHandler';
 import * as editorBrowser from 'vs/editor/browser/editorBrowser';
-import { ViewController, ExecCoreEditorCommandFunc, ICommandDelegate } from 'vs/editor/browser/view/viewController';
+import { ViewController, ICommandDelegate } from 'vs/editor/browser/view/viewController';
 import { ViewEventDispatcher } from 'vs/editor/common/view/viewEventDispatcher';
 import { ContentViewOverlays, MarginViewOverlays } from 'vs/editor/browser/view/viewOverlays';
 import { ViewContentWidgets } from 'vs/editor/browser/viewParts/contentWidgets/contentWidgets';
@@ -52,13 +51,15 @@ import { IMouseEvent } from 'vs/base/browser/mouseEvent';
 
 export interface IContentWidgetData {
 	widget: editorBrowser.IContentWidget;
-	position: editorBrowser.IContentWidgetPosition;
+	position: editorBrowser.IContentWidgetPosition | null;
 }
 
 export interface IOverlayWidgetData {
 	widget: editorBrowser.IOverlayWidget;
-	position: editorBrowser.IOverlayWidgetPosition;
+	position: editorBrowser.IOverlayWidgetPosition | null;
 }
+
+const invalidFunc = () => { throw new Error(`Invalid change accessor`); };
 
 export class View extends ViewEventHandler {
 
@@ -89,7 +90,7 @@ export class View extends ViewEventHandler {
 	private overflowGuardContainer: FastDomNode<HTMLElement>;
 
 	// Actual mutable state
-	private _renderAnimationFrame: IDisposable;
+	private _renderAnimationFrame: IDisposable | null;
 
 	constructor(
 		commandDelegate: ICommandDelegate,
@@ -97,14 +98,14 @@ export class View extends ViewEventHandler {
 		themeService: IThemeService,
 		model: IViewModel,
 		cursor: Cursor,
-		execCoreEditorCommandFunc: ExecCoreEditorCommandFunc
+		outgoingEvents: ViewOutgoingEvents
 	) {
 		super();
 		this._cursor = cursor;
 		this._renderAnimationFrame = null;
-		this.outgoingEvents = new ViewOutgoingEvents(model);
+		this.outgoingEvents = outgoingEvents;
 
-		let viewController = new ViewController(configuration, model, execCoreEditorCommandFunc, this.outgoingEvents, commandDelegate);
+		let viewController = new ViewController(configuration, model, this.outgoingEvents, commandDelegate);
 
 		// The event dispatcher will always go through _renderOnce before dispatching any events
 		this.eventDispatcher = new ViewEventDispatcher((callback: () => void) => this._renderOnce(callback));
@@ -263,11 +264,7 @@ export class View extends ViewEventHandler {
 
 			visibleRangeForPosition2: (lineNumber: number, column: number) => {
 				this._flushAccumulatedAndRenderNow();
-				let visibleRanges = this.viewLines.visibleRangesForRange2(new Range(lineNumber, column, lineNumber, column));
-				if (!visibleRanges) {
-					return null;
-				}
-				return visibleRanges[0];
+				return this.viewLines.visibleRangeForPosition(new Position(lineNumber, column));
 			},
 
 			getLineWidth: (lineNumber: number) => {
@@ -281,11 +278,7 @@ export class View extends ViewEventHandler {
 		return {
 			visibleRangeForPositionRelativeToEditor: (lineNumber: number, column: number) => {
 				this._flushAccumulatedAndRenderNow();
-				let visibleRanges = this.viewLines.visibleRangesForRange2(new Range(lineNumber, column, lineNumber, column));
-				if (!visibleRanges) {
-					return null;
-				}
-				return visibleRanges[0];
+				return this.viewLines.visibleRangeForPosition(new Position(lineNumber, column));
 			}
 		};
 	}
@@ -464,19 +457,15 @@ export class View extends ViewEventHandler {
 		});
 		let viewPosition = this._context.model.coordinatesConverter.convertModelPositionToViewPosition(modelPosition);
 		this._flushAccumulatedAndRenderNow();
-		let visibleRanges = this.viewLines.visibleRangesForRange2(new Range(viewPosition.lineNumber, viewPosition.column, viewPosition.lineNumber, viewPosition.column));
-		if (!visibleRanges) {
+		const visibleRange = this.viewLines.visibleRangeForPosition(new Position(viewPosition.lineNumber, viewPosition.column));
+		if (!visibleRange) {
 			return -1;
 		}
-		return visibleRanges[0].left;
+		return visibleRange.left;
 	}
 
-	public getTargetAtClientPoint(clientX: number, clientY: number): editorBrowser.IMouseTarget {
+	public getTargetAtClientPoint(clientX: number, clientY: number): editorBrowser.IMouseTarget | null {
 		return this.pointerHandler.getTargetAtClientPoint(clientX, clientY);
-	}
-
-	public getInternalEventBus(): ViewOutgoingEvents {
-		return this.outgoingEvents;
 	}
 
 	public createOverviewRuler(cssClassName: string): OverviewRuler {
@@ -509,8 +498,9 @@ export class View extends ViewEventHandler {
 			safeInvoke1Arg(callback, changeAccessor);
 
 			// Invalidate changeAccessor
-			changeAccessor.addZone = null;
-			changeAccessor.removeZone = null;
+			changeAccessor.addZone = invalidFunc;
+			changeAccessor.removeZone = invalidFunc;
+			changeAccessor.layoutZone = invalidFunc;
 
 			if (zonesHaveChanged) {
 				this._context.viewLayout.onHeightMaybeChanged();

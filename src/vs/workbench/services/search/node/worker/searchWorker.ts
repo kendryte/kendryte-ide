@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import * as fs from 'fs';
 import * as gracefulFs from 'graceful-fs';
 import { onUnexpectedError } from 'vs/base/common/errors';
@@ -126,7 +124,7 @@ export class SearchWorkerEngine {
 	}
 
 	private searchInFile(absolutePath: string, contentPattern: RegExp, fileEncoding: string, maxResults?: number, previewOptions?: ITextSearchPreviewOptions): TPromise<IFileSearchResult> {
-		let fileMatch: FileMatch = null;
+		let fileMatch: FileMatch | null = null;
 		let limitReached = false;
 		let numMatches = 0;
 

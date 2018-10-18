@@ -2,8 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
-
 import * as assert from 'assert';
 import { Position } from 'vs/editor/common/core/position';
 import { Range } from 'vs/editor/common/core/range';
@@ -315,7 +313,7 @@ suite('Editor Model - TextModel', () => {
 			'            ',
 			'              ',
 		], 'whitespace lines don\'t count');
-		assertGuess(true, 4, [
+		assertGuess(true, 3, [
 			'x',
 			'   x',
 			'   x',
@@ -328,8 +326,8 @@ suite('Editor Model - TextModel', () => {
 			'   x',
 			'   x',
 			'    x',
-		], 'odd number is not allowed: 6x3, 3x4');
-		assertGuess(true, 4, [
+		], '6x3, 3x4');
+		assertGuess(true, 5, [
 			'x',
 			'     x',
 			'     x',
@@ -342,8 +340,12 @@ suite('Editor Model - TextModel', () => {
 			'     x',
 			'     x',
 			'    x',
-		], 'odd number is not allowed: 6x5, 3x4');
-		assertGuess(true, 4, [
+		], '6x5, 3x4');
+		assertGuess(true, 7, [
+			'x',
+			'       x',
+			'       x',
+			'     x',
 			'x',
 			'       x',
 			'       x',
@@ -352,11 +354,7 @@ suite('Editor Model - TextModel', () => {
 			'       x',
 			'       x',
 			'    x',
-			'x',
-			'       x',
-			'       x',
-			'    x',
-		], 'odd number is not allowed: 6x7, 3x4');
+		], '6x7, 1x5, 2x4');
 		assertGuess(true, 2, [
 			'x',
 			'  x',
@@ -508,7 +506,7 @@ suite('Editor Model - TextModel', () => {
 			'        x',
 			'        x',
 		], '6x4, 2x5, 4x8');
-		assertGuess(true, undefined, [
+		assertGuess(true, 3, [
 			'x',
 			' x',
 			' x',

@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import 'vs/css!./minimap';
 import { ViewPart, PartFingerprint, PartFingerprints } from 'vs/editor/browser/view/viewPart';
 import * as strings from 'vs/base/common/strings';
@@ -222,7 +220,7 @@ class MinimapLayout {
 		lineCount: number,
 		scrollTop: number,
 		scrollHeight: number,
-		previousLayout: MinimapLayout
+		previousLayout: MinimapLayout | null
 	): MinimapLayout {
 		const pixelRatio = options.pixelRatio;
 		const minimapLineHeight = getMinimapLineHeight(options.renderMinimap);
@@ -447,8 +445,8 @@ export class Minimap extends ViewPart {
 	private readonly _sliderMouseDownListener: IDisposable;
 
 	private _options: MinimapOptions;
-	private _lastRenderData: RenderData;
-	private _buffers: MinimapBuffers;
+	private _lastRenderData: RenderData | null;
+	private _buffers: MinimapBuffers | null;
 
 	constructor(context: ViewContext) {
 		super(context);
@@ -583,13 +581,13 @@ export class Minimap extends ViewPart {
 	private _getBuffer(): ImageData {
 		if (!this._buffers) {
 			this._buffers = new MinimapBuffers(
-				this._canvas.domNode.getContext('2d'),
+				this._canvas.domNode.getContext('2d')!,
 				this._options.canvasInnerWidth,
 				this._options.canvasInnerHeight,
 				this._tokensColorTracker.getColor(ColorId.DefaultBackground)
 			);
 		}
-		return this._buffers.getBuffer();
+		return this._buffers!.getBuffer();
 	}
 
 	private _onOptionsMaybeChanged(): boolean {
@@ -742,7 +740,7 @@ export class Minimap extends ViewPart {
 					getOrCreateMinimapCharRenderer(),
 					dy,
 					tabSize,
-					lineInfo.data[lineIndex]
+					lineInfo.data[lineIndex]!
 				);
 			}
 			renderedLines[lineIndex] = new MinimapLine(dy);
@@ -754,7 +752,7 @@ export class Minimap extends ViewPart {
 		const dirtyHeight = dirtyY2 - dirtyY1;
 
 		// Finally, paint to the canvas
-		const ctx = this._canvas.domNode.getContext('2d');
+		const ctx = this._canvas.domNode.getContext('2d')!;
 		ctx.putImageData(imageData, 0, 0, 0, dirtyY1, imageData.width, dirtyHeight);
 
 		// Save rendered data for reuse on next frame if possible
@@ -770,7 +768,7 @@ export class Minimap extends ViewPart {
 		startLineNumber: number,
 		endLineNumber: number,
 		minimapLineHeight: number,
-		lastRenderData: RenderData,
+		lastRenderData: RenderData | null,
 	): [number, number, boolean[]] {
 
 		let needed: boolean[] = [];

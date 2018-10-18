@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import { CodeEditorServiceImpl } from 'vs/editor/browser/services/codeEditorServiceImpl';
 import { ICodeEditor, isCodeEditor, isDiffEditor } from 'vs/editor/browser/editorBrowser';
 import { IResourceInput } from 'vs/platform/editor/common/editor';
@@ -36,7 +34,7 @@ export class CodeEditorService extends CodeEditorServiceImpl {
 		return null;
 	}
 
-	openCodeEditor(input: IResourceInput, source: ICodeEditor, sideBySide?: boolean): TPromise<ICodeEditor> {
+	openCodeEditor(input: IResourceInput, source: ICodeEditor | null, sideBySide?: boolean): TPromise<ICodeEditor> {
 
 		// Special case: If the active editor is a diff editor and the request to open originates and
 		// targets the modified side of it, we just apply the request there to prevent opening the modified

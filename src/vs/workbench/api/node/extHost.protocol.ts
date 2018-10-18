@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { SerializedError } from 'vs/base/common/errors';
 import { IDisposable } from 'vs/base/common/lifecycle';
@@ -87,6 +86,11 @@ export interface IMainContext extends IRPCProtocol {
 
 // --- main thread
 
+export interface MainThreadClipboardShape extends IDisposable {
+	$readText(): Promise<string>;
+	$writeText(value: string): Promise<void>;
+}
+
 export interface MainThreadCommandsShape extends IDisposable {
 	$registerCommand(id: string): void;
 	$unregisterCommand(id: string): void;
@@ -128,8 +132,8 @@ export interface MainThreadDialogSaveOptions {
 }
 
 export interface MainThreadDiaglogsShape extends IDisposable {
-	$showOpenDialog(options: MainThreadDialogOpenOptions): Thenable<string[]>;
-	$showSaveDialog(options: MainThreadDialogSaveOptions): Thenable<string>;
+	$showOpenDialog(options: MainThreadDialogOpenOptions): Thenable<UriComponents[]>;
+	$showSaveDialog(options: MainThreadDialogSaveOptions): Thenable<UriComponents>;
 }
 
 export interface MainThreadDecorationsShape extends IDisposable {
@@ -262,6 +266,11 @@ export interface ISerializedDocumentFilter {
 	exclusive?: boolean;
 }
 
+export interface ISerializedSignatureHelpProviderMetadata {
+	readonly triggerCharacters: ReadonlyArray<string>;
+	readonly retriggerCharacters: ReadonlyArray<string>;
+}
+
 export interface MainThreadLanguageFeaturesShape extends IDisposable {
 	$unregister(handle: number): void;
 	$registerOutlineSupport(handle: number, selector: ISerializedDocumentFilter[], extensionId: string): void;
@@ -280,7 +289,7 @@ export interface MainThreadLanguageFeaturesShape extends IDisposable {
 	$registerNavigateTypeSupport(handle: number): void;
 	$registerRenameSupport(handle: number, selector: ISerializedDocumentFilter[], supportsResolveInitialValues: boolean): void;
 	$registerSuggestSupport(handle: number, selector: ISerializedDocumentFilter[], triggerCharacters: string[], supportsResolveDetails: boolean): void;
-	$registerSignatureHelpProvider(handle: number, selector: ISerializedDocumentFilter[], triggerCharacter: string[]): void;
+	$registerSignatureHelpProvider(handle: number, selector: ISerializedDocumentFilter[], metadata: ISerializedSignatureHelpProviderMetadata): void;
 	$registerDocumentLinkProvider(handle: number, selector: ISerializedDocumentFilter[]): void;
 	$registerDocumentColorProvider(handle: number, selector: ISerializedDocumentFilter[]): void;
 	$registerFoldingRangeProvider(handle: number, selector: ISerializedDocumentFilter[]): void;
@@ -304,7 +313,8 @@ export interface MainThreadMessageServiceShape extends IDisposable {
 export interface MainThreadOutputServiceShape extends IDisposable {
 	$register(label: string, log: boolean, file?: UriComponents): Thenable<string>;
 	$append(channelId: string, value: string): Thenable<void>;
-	$clear(channelId: string): Thenable<void>;
+	$update(channelId: string): Thenable<void>;
+	$clear(channelId: string, till: number): Thenable<void>;
 	$reveal(channelId: string, preserveFocus: boolean): Thenable<void>;
 	$close(channelId: string): Thenable<void>;
 	$dispose(channelId: string): Thenable<void>;
@@ -420,7 +430,7 @@ export interface MainThreadStatusBarShape extends IDisposable {
 
 export interface MainThreadStorageShape extends IDisposable {
 	$getValue<T>(shared: boolean, key: string): Thenable<T>;
-	$setValue(shared: boolean, key: string, value: any): Thenable<void>;
+	$setValue(shared: boolean, key: string, value: object): Thenable<void>;
 }
 
 export interface MainThreadTelemetryShape extends IDisposable {
@@ -749,7 +759,7 @@ export class IdObject {
 	}
 }
 
-export interface SuggestionDto extends modes.ISuggestion {
+export interface SuggestionDto extends modes.CompletionItem {
 	_id: number;
 	_parentId: number;
 }
@@ -842,8 +852,8 @@ export interface ExtHostLanguageFeaturesShape {
 	$releaseWorkspaceSymbols(handle: number, id: number): void;
 	$provideRenameEdits(handle: number, resource: UriComponents, position: IPosition, newName: string, token: CancellationToken): Thenable<WorkspaceEditDto>;
 	$resolveRenameLocation(handle: number, resource: UriComponents, position: IPosition, token: CancellationToken): Thenable<modes.RenameLocation>;
-	$provideCompletionItems(handle: number, resource: UriComponents, position: IPosition, context: modes.SuggestContext, token: CancellationToken): Thenable<SuggestResultDto>;
-	$resolveCompletionItem(handle: number, resource: UriComponents, position: IPosition, suggestion: modes.ISuggestion, token: CancellationToken): Thenable<modes.ISuggestion>;
+	$provideCompletionItems(handle: number, resource: UriComponents, position: IPosition, context: modes.CompletionContext, token: CancellationToken): Thenable<SuggestResultDto>;
+	$resolveCompletionItem(handle: number, resource: UriComponents, position: IPosition, suggestion: modes.CompletionItem, token: CancellationToken): Thenable<modes.CompletionItem>;
 	$releaseCompletionItems(handle: number, id: number): void;
 	$provideSignatureHelp(handle: number, resource: UriComponents, position: IPosition, context: modes.SignatureHelpContext, token: CancellationToken): Thenable<modes.SignatureHelp>;
 	$provideDocumentLinks(handle: number, resource: UriComponents, token: CancellationToken): Thenable<modes.ILink[]>;
@@ -879,6 +889,7 @@ export interface ExtHostTerminalServiceShape {
 	$acceptTerminalProcessId(id: number, processId: number): void;
 	$acceptTerminalProcessData(id: number, data: string): void;
 	$acceptTerminalRendererInput(id: number, data: string): void;
+	$acceptTerminalTitleChange(id: number, name: string): void;
 	$acceptTerminalRendererDimensions(id: number, cols: number, rows: number): void;
 	$createProcess(id: number, shellLaunchConfig: ShellLaunchConfigDto, cols: number, rows: number): void;
 	$acceptProcessInput(id: number, data: string): void;
@@ -988,6 +999,10 @@ export interface ExtHostLogServiceShape {
 	$setLevel(level: LogLevel): void;
 }
 
+export interface ExtHostOutputServiceShape {
+	$setVisibleChannel(channelId: string | null): void;
+}
+
 export interface ExtHostProgressShape {
 	$acceptProgressCanceled(handle: number): void;
 }
@@ -996,14 +1011,19 @@ export interface ExtHostCommentsShape {
 	$provideDocumentComments(handle: number, document: UriComponents): Thenable<modes.CommentInfo>;
 	$createNewCommentThread(handle: number, document: UriComponents, range: IRange, text: string): Thenable<modes.CommentThread>;
 	$replyToCommentThread(handle: number, document: UriComponents, range: IRange, commentThread: modes.CommentThread, text: string): Thenable<modes.CommentThread>;
-	$editComment(handle: number, document: UriComponents, comment: modes.Comment, text: string): Thenable<modes.Comment>;
+	$editComment(handle: number, document: UriComponents, comment: modes.Comment, text: string): Thenable<void>;
 	$deleteComment(handle: number, document: UriComponents, comment: modes.Comment): Thenable<void>;
 	$provideWorkspaceComments(handle: number): Thenable<modes.CommentThread[]>;
+}
+
+export interface ExtHostStorageShape {
+	$acceptValue(shared: boolean, key: string, value: object): void;
 }
 
 // --- proxy identifiers
 
 export const MainContext = {
+	MainThreadClipboard: <ProxyIdentifier<MainThreadClipboardShape>>createMainId<MainThreadClipboardShape>('MainThreadClipboard'),
 	MainThreadCommands: <ProxyIdentifier<MainThreadCommandsShape>>createMainId<MainThreadCommandsShape>('MainThreadCommands'),
 	MainThreadComments: createMainId<MainThreadCommentsShape>('MainThreadComments'),
 	MainThreadConfiguration: createMainId<MainThreadConfigurationShape>('MainThreadConfiguration'),
@@ -1065,5 +1085,7 @@ export const ExtHostContext = {
 	ExtHostWebviews: createExtId<ExtHostWebviewsShape>('ExtHostWebviews'),
 	ExtHostProgress: createMainId<ExtHostProgressShape>('ExtHostProgress'),
 	ExtHostComments: createMainId<ExtHostCommentsShape>('ExtHostComments'),
-	ExtHostUrls: createExtId<ExtHostUrlsShape>('ExtHostUrls')
+	ExtHostStorage: createMainId<ExtHostStorageShape>('ExtHostStorage'),
+	ExtHostUrls: createExtId<ExtHostUrlsShape>('ExtHostUrls'),
+	ExtHostOutputService: createMainId<ExtHostOutputServiceShape>('ExtHostOutputService'),
 };

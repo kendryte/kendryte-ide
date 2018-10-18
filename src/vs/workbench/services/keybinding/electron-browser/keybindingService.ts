@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import * as nls from 'vs/nls';
 import { IJSONSchema } from 'vs/base/common/jsonSchema';
@@ -42,9 +41,9 @@ import { KeybindingParser } from 'vs/base/common/keybindingParser';
 export class KeyboardMapperFactory {
 	public static readonly INSTANCE = new KeyboardMapperFactory();
 
-	private _layoutInfo: nativeKeymap.IKeyboardLayoutInfo;
-	private _rawMapping: nativeKeymap.IKeyboardMapping;
-	private _keyboardMapper: IKeyboardMapper;
+	private _layoutInfo: nativeKeymap.IKeyboardLayoutInfo | null;
+	private _rawMapping: nativeKeymap.IKeyboardMapping | null;
+	private _keyboardMapper: IKeyboardMapper | null;
 	private _initialized: boolean;
 
 	private readonly _onDidChangeKeyboardMapper: Emitter<void> = new Emitter<void>();
@@ -71,10 +70,10 @@ export class KeyboardMapperFactory {
 			// Forcefully set to use keyCode
 			return new MacLinuxFallbackKeyboardMapper(OS);
 		}
-		return this._keyboardMapper;
+		return this._keyboardMapper!;
 	}
 
-	public getCurrentKeyboardLayout(): nativeKeymap.IKeyboardLayoutInfo {
+	public getCurrentKeyboardLayout(): nativeKeymap.IKeyboardLayoutInfo | null {
 		if (!this._initialized) {
 			this._setKeyboardData(nativeKeymap.getCurrentKeyboardLayout(), nativeKeymap.getKeyMap());
 		}
@@ -100,7 +99,7 @@ export class KeyboardMapperFactory {
 		return false;
 	}
 
-	public getRawKeyboardMapping(): nativeKeymap.IKeyboardMapping {
+	public getRawKeyboardMapping(): nativeKeymap.IKeyboardMapping | null {
 		if (!this._initialized) {
 			this._setKeyboardData(nativeKeymap.getCurrentKeyboardLayout(), nativeKeymap.getKeyMap());
 		}
@@ -145,7 +144,7 @@ export class KeyboardMapperFactory {
 		return new MacLinuxKeyboardMapper(isUSStandard, <IMacLinuxKeyboardMapping>rawMapping, OS);
 	}
 
-	private static _equals(a: nativeKeymap.IKeyboardMapping, b: nativeKeymap.IKeyboardMapping): boolean {
+	private static _equals(a: nativeKeymap.IKeyboardMapping | null, b: nativeKeymap.IKeyboardMapping | null): boolean {
 		if (OS === OperatingSystem.Windows) {
 			return windowsKeyboardMappingEquals(<IWindowsKeyboardMapping>a, <IWindowsKeyboardMapping>b);
 		}
@@ -255,7 +254,7 @@ function getDispatchConfig(configurationService: IConfigurationService): Dispatc
 export class WorkbenchKeybindingService extends AbstractKeybindingService {
 
 	private _keyboardMapper: IKeyboardMapper;
-	private _cachedResolver: KeybindingResolver;
+	private _cachedResolver: KeybindingResolver | null;
 	private _firstTimeComputingResolver: boolean;
 	private userKeybindings: ConfigWatcher<IUserFriendlyKeybinding[]>;
 
@@ -480,7 +479,7 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 		return commandAdded;
 	}
 
-	private _asCommandRule(isBuiltin: boolean, idx: number, binding: ContributedKeyBinding): IKeybindingRule2 {
+	private _asCommandRule(isBuiltin: boolean, idx: number, binding: ContributedKeyBinding): IKeybindingRule2 | undefined {
 
 		let { command, when, key, mac, linux, win } = binding;
 
@@ -491,14 +490,14 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 			weight = KeybindingWeight.ExternalExtension + idx;
 		}
 
-		let desc = {
+		let desc: IKeybindingRule2 = {
 			id: command,
 			when: ContextKeyExpr.deserialize(when),
 			weight: weight,
 			primary: KeybindingParser.parseKeybinding(key, OS),
-			mac: mac && { primary: KeybindingParser.parseKeybinding(mac, OS) },
-			linux: linux && { primary: KeybindingParser.parseKeybinding(linux, OS) },
-			win: win && { primary: KeybindingParser.parseKeybinding(win, OS) }
+			mac: mac ? { primary: KeybindingParser.parseKeybinding(mac, OS) } : null,
+			linux: linux ? { primary: KeybindingParser.parseKeybinding(linux, OS) } : null,
+			win: win ? { primary: KeybindingParser.parseKeybinding(win, OS) } : null
 		};
 
 		if (!desc.primary && !desc.mac && !desc.linux && !desc.win) {

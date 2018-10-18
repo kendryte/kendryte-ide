@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { Color } from 'vs/base/common/color';
@@ -255,63 +254,213 @@ export interface HoverProvider {
 	provideHover(model: model.ITextModel, position: Position, token: CancellationToken): ProviderResult<Hover>;
 }
 
-/**
- * @internal
- */
-export type SuggestionType = 'method'
-	| 'function'
-	| 'constructor'
-	| 'field'
-	| 'variable'
-	| 'class'
-	| 'struct'
-	| 'interface'
-	| 'module'
-	| 'property'
-	| 'event'
-	| 'operator'
-	| 'unit'
-	| 'value'
-	| 'constant'
-	| 'enum'
-	| 'enum-member'
-	| 'keyword'
-	| 'snippet'
-	| 'text'
-	| 'color'
-	| 'file'
-	| 'reference'
-	| 'customcolor'
-	| 'folder'
-	| 'type-parameter';
-
-/**
- * @internal
- */
-export interface ISuggestion {
-	label: string;
-	insertText: string;
-	insertTextIsSnippet?: boolean;
-	type: SuggestionType;
-	detail?: string;
-	documentation?: string | IMarkdownString;
-	filterText?: string;
-	sortText?: string;
-	preselect?: boolean;
-	noAutoAccept?: boolean;
-	commitCharacters?: string[];
-	overwriteBefore?: number;
-	overwriteAfter?: number;
-	additionalTextEdits?: model.ISingleEditOperation[];
-	command?: Command;
-	noWhitespaceAdjust?: boolean;
+export enum CompletionItemKind {
+	Method,
+	Function,
+	Constructor,
+	Field,
+	Variable,
+	Class,
+	Struct,
+	Interface,
+	Module,
+	Property,
+	Event,
+	Operator,
+	Unit,
+	Value,
+	Constant,
+	Enum,
+	EnumMember,
+	Keyword,
+	Text,
+	Color,
+	File,
+	Reference,
+	Customcolor,
+	Folder,
+	TypeParameter,
+	Snippet, // <- highest value (used for compare!)
 }
 
 /**
  * @internal
  */
-export interface ISuggestResult {
-	suggestions: ISuggestion[];
+export let completionKindToCssClass = (function () {
+	let data = Object.create(null);
+	data[CompletionItemKind.Method] = 'method';
+	data[CompletionItemKind.Function] = 'function';
+	data[CompletionItemKind.Constructor] = 'constructor';
+	data[CompletionItemKind.Field] = 'field';
+	data[CompletionItemKind.Variable] = 'variable';
+	data[CompletionItemKind.Class] = 'class';
+	data[CompletionItemKind.Struct] = 'struct';
+	data[CompletionItemKind.Interface] = 'interface';
+	data[CompletionItemKind.Module] = 'module';
+	data[CompletionItemKind.Property] = 'property';
+	data[CompletionItemKind.Event] = 'event';
+	data[CompletionItemKind.Operator] = 'operator';
+	data[CompletionItemKind.Unit] = 'unit';
+	data[CompletionItemKind.Value] = 'value';
+	data[CompletionItemKind.Constant] = 'constant';
+	data[CompletionItemKind.Enum] = 'enum';
+	data[CompletionItemKind.EnumMember] = 'enum-member';
+	data[CompletionItemKind.Keyword] = 'keyword';
+	data[CompletionItemKind.Snippet] = 'snippet';
+	data[CompletionItemKind.Text] = 'text';
+	data[CompletionItemKind.Color] = 'color';
+	data[CompletionItemKind.File] = 'file';
+	data[CompletionItemKind.Reference] = 'reference';
+	data[CompletionItemKind.Customcolor] = 'customcolor';
+	data[CompletionItemKind.Folder] = 'folder';
+	data[CompletionItemKind.TypeParameter] = 'type-parameter';
+
+	return function (kind: CompletionItemKind) {
+		return data[kind] || 'property';
+	};
+})();
+
+/**
+ * @internal
+ */
+export let completionKindFromLegacyString = (function () {
+	let data = Object.create(null);
+	data['method'] = CompletionItemKind.Method;
+	data['function'] = CompletionItemKind.Function;
+	data['constructor'] = CompletionItemKind.Constructor;
+	data['field'] = CompletionItemKind.Field;
+	data['variable'] = CompletionItemKind.Variable;
+	data['class'] = CompletionItemKind.Class;
+	data['struct'] = CompletionItemKind.Struct;
+	data['interface'] = CompletionItemKind.Interface;
+	data['module'] = CompletionItemKind.Module;
+	data['property'] = CompletionItemKind.Property;
+	data['event'] = CompletionItemKind.Event;
+	data['operator'] = CompletionItemKind.Operator;
+	data['unit'] = CompletionItemKind.Unit;
+	data['value'] = CompletionItemKind.Value;
+	data['constant'] = CompletionItemKind.Constant;
+	data['enum'] = CompletionItemKind.Enum;
+	data['enum-member'] = CompletionItemKind.EnumMember;
+	data['keyword'] = CompletionItemKind.Keyword;
+	data['snippet'] = CompletionItemKind.Snippet;
+	data['text'] = CompletionItemKind.Text;
+	data['color'] = CompletionItemKind.Color;
+	data['file'] = CompletionItemKind.File;
+	data['reference'] = CompletionItemKind.Reference;
+	data['customcolor'] = CompletionItemKind.Customcolor;
+	data['folder'] = CompletionItemKind.Folder;
+	data['type-parameter'] = CompletionItemKind.TypeParameter;
+
+	return function (value: string) {
+		return data[value] || 'property';
+	};
+})();
+
+export enum CompletionItemInsertTextRule {
+	/**
+	 * Adjust whitespace/indentation of multiline insert texts to
+	 * match the current line indentation.
+	 */
+	KeepWhitespace = 0b001,
+
+	/**
+	 * `insertText` is a snippet.
+	 */
+	InsertAsSnippet = 0b100,
+}
+
+/**
+ * A completion item represents a text snippet that is
+ * proposed to complete text that is being typed.
+ */
+export interface CompletionItem {
+	/**
+	 * The label of this completion item. By default
+	 * this is also the text that is inserted when selecting
+	 * this completion.
+	 */
+	label: string;
+	/**
+	 * The kind of this completion item. Based on the kind
+	 * an icon is chosen by the editor.
+	 */
+	kind: CompletionItemKind;
+	/**
+	 * A human-readable string with additional information
+	 * about this item, like type or symbol information.
+	 */
+	detail?: string;
+	/**
+	 * A human-readable string that represents a doc-comment.
+	 */
+	documentation?: string | IMarkdownString;
+	/**
+	 * A string that should be used when comparing this item
+	 * with other items. When `falsy` the [label](#CompletionItem.label)
+	 * is used.
+	 */
+	sortText?: string;
+	/**
+	 * A string that should be used when filtering a set of
+	 * completion items. When `falsy` the [label](#CompletionItem.label)
+	 * is used.
+	 */
+	filterText?: string;
+	/**
+	 * Select this item when showing. *Note* that only one completion item can be selected and
+	 * that the editor decides which item that is. The rule is that the *first* item of those
+	 * that match best is selected.
+	 */
+	preselect?: boolean;
+	/**
+	 * A string or snippet that should be inserted in a document when selecting
+	 * this completion. When `falsy` the [label](#CompletionItem.label)
+	 * is used.
+	 */
+	insertText: string;
+	/**
+	 * Addition rules (as bitmask) that should be applied when inserting
+	 * this completion.
+	 */
+	insertTextRules?: CompletionItemInsertTextRule;
+	/**
+	 * A range of text that should be replaced by this completion item.
+	 *
+	 * Defaults to a range from the start of the [current word](#TextDocument.getWordRangeAtPosition) to the
+	 * current position.
+	 *
+	 * *Note:* The range must be a [single line](#Range.isSingleLine) and it must
+	 * [contain](#Range.contains) the position at which completion has been [requested](#CompletionItemProvider.provideCompletionItems).
+	 */
+	range?: IRange;
+	/**
+	 * An optional set of characters that when pressed while this completion is active will accept it first and
+	 * then type that character. *Note* that all commit characters should have `length=1` and that superfluous
+	 * characters will be ignored.
+	 */
+	commitCharacters?: string[];
+	/**
+	 * An optional array of additional text edits that are applied when
+	 * selecting this completion. Edits must not overlap with the main edit
+	 * nor with themselves.
+	 */
+	additionalTextEdits?: model.ISingleEditOperation[];
+	/**
+	 * A command that should be run upon acceptance of this item.
+	 */
+	command?: Command;
+
+	/**@internal*/
+	_labelLow?: string;
+	/**@internal*/
+	_sortTextLow?: string;
+	/**@internal*/
+	_filterTextLow?: string;
+}
+
+export interface CompletionList {
+	suggestions: CompletionItem[];
 	incomplete?: boolean;
 	dispose?(): void;
 }
@@ -319,30 +468,53 @@ export interface ISuggestResult {
 /**
  * How a suggest provider was triggered.
  */
-export enum SuggestTriggerKind {
+export enum CompletionTriggerKind {
 	Invoke = 0,
 	TriggerCharacter = 1,
 	TriggerForIncompleteCompletions = 2
 }
-
 /**
- * @internal
+ * Contains additional information about the context in which
+ * [completion provider](#CompletionItemProvider.provideCompletionItems) is triggered.
  */
-export interface SuggestContext {
-	triggerKind: SuggestTriggerKind;
+export interface CompletionContext {
+	/**
+	 * How the completion was triggered.
+	 */
+	triggerKind: CompletionTriggerKind;
+	/**
+	 * Character that triggered the completion item provider.
+	 *
+	 * `undefined` if provider was not triggered by a character.
+	 */
 	triggerCharacter?: string;
 }
-
 /**
- * @internal
+ * The completion item provider interface defines the contract between extensions and
+ * the [IntelliSense](https://code.visualstudio.com/docs/editor/intellisense).
+ *
+ * When computing *complete* completion items is expensive, providers can optionally implement
+ * the `resolveCompletionItem`-function. In that case it is enough to return completion
+ * items with a [label](#CompletionItem.label) from the
+ * [provideCompletionItems](#CompletionItemProvider.provideCompletionItems)-function. Subsequently,
+ * when a completion item is shown in the UI and gains focus this provider is asked to resolve
+ * the item, like adding [doc-comment](#CompletionItem.documentation) or [details](#CompletionItem.detail).
  */
-export interface ISuggestSupport {
+export interface CompletionItemProvider {
 
 	triggerCharacters?: string[];
+	/**
+	 * Provide completion items for the given position and document.
+	 */
+	provideCompletionItems(model: model.ITextModel, position: Position, context: CompletionContext, token: CancellationToken): ProviderResult<CompletionList>;
 
-	provideCompletionItems(model: model.ITextModel, position: Position, context: SuggestContext, token: CancellationToken): ProviderResult<ISuggestResult>;
-
-	resolveCompletionItem?(model: model.ITextModel, position: Position, item: ISuggestion, token: CancellationToken): ProviderResult<ISuggestion>;
+	/**
+	 * Given a completion item fill in more data, like [doc-comment](#CompletionItem.documentation)
+	 * or [details](#CompletionItem.detail).
+	 *
+	 * The editor will only resolve a completion item once.
+	 */
+	resolveCompletionItem?(model: model.ITextModel, position: Position, item: CompletionItem, token: CancellationToken): ProviderResult<CompletionItem>;
 }
 
 export interface CodeAction {
@@ -395,7 +567,7 @@ export interface ParameterInformation {
 	 * The label of this signature. Will be shown in
 	 * the UI.
 	 */
-	label: string;
+	label: string | [number, number];
 	/**
 	 * The human-readable doc-comment of this signature. Will be shown
 	 * in the UI but can be omitted.
@@ -460,7 +632,8 @@ export interface SignatureHelpContext {
  */
 export interface SignatureHelpProvider {
 
-	signatureHelpTriggerCharacters: string[];
+	readonly signatureHelpTriggerCharacters: ReadonlyArray<string>;
+	readonly signatureHelpRetriggerCharacters: ReadonlyArray<string>;
 
 	/**
 	 * Provide help for the signature at the given position and document.
@@ -690,11 +863,7 @@ export interface DocumentSymbolProvider {
 	provideDocumentSymbols(model: model.ITextModel, token: CancellationToken): ProviderResult<DocumentSymbol[]>;
 }
 
-export interface TextEdit {
-	range: IRange;
-	text: string;
-	eol?: model.EndOfLineSequence;
-}
+export type TextEdit = { range: IRange; text: string; eol?: model.EndOfLineSequence; } | { range: undefined; text: undefined; eol: model.EndOfLineSequence; };
 
 /**
  * Interface used to format a model
@@ -1007,7 +1176,7 @@ export interface Comment {
 	readonly commentId: string;
 	readonly body: IMarkdownString;
 	readonly userName: string;
-	readonly gravatar: string;
+	readonly userIconPath: string;
 	readonly canEdit?: boolean;
 	readonly canDelete?: boolean;
 	readonly command?: Command;
@@ -1041,7 +1210,7 @@ export interface DocumentCommentProvider {
 	provideDocumentComments(resource: URI, token: CancellationToken): Promise<CommentInfo>;
 	createNewCommentThread(resource: URI, range: Range, text: string, token: CancellationToken): Promise<CommentThread>;
 	replyToCommentThread(resource: URI, range: Range, thread: CommentThread, text: string, token: CancellationToken): Promise<CommentThread>;
-	editComment(resource: URI, comment: Comment, text: string, token: CancellationToken): Promise<Comment>;
+	editComment(resource: URI, comment: Comment, text: string, token: CancellationToken): Promise<void>;
 	deleteComment(resource: URI, comment: Comment, token: CancellationToken): Promise<void>;
 	onDidChangeCommentThreads(): Event<CommentThreadChangedEvent>;
 }
@@ -1080,7 +1249,7 @@ export const RenameProviderRegistry = new LanguageFeatureRegistry<RenameProvider
 /**
  * @internal
  */
-export const SuggestRegistry = new LanguageFeatureRegistry<ISuggestSupport>();
+export const CompletionProviderRegistry = new LanguageFeatureRegistry<CompletionItemProvider>();
 
 /**
  * @internal
@@ -1203,16 +1372,16 @@ export interface ITokenizationRegistry {
 	 * Get the promise of a tokenization support for a language.
 	 * `null` is returned if no support is available and no promise for the support has been registered yet.
 	 */
-	getPromise(language: string): Thenable<ITokenizationSupport>;
+	getPromise(language: string): Thenable<ITokenizationSupport> | null;
 
 	/**
 	 * Set the new color map that all tokens will use in their ColorId binary encoded bits for foreground and background.
 	 */
 	setColorMap(colorMap: Color[]): void;
 
-	getColorMap(): Color[];
+	getColorMap(): Color[] | null;
 
-	getDefaultBackground(): Color;
+	getDefaultBackground(): Color | null;
 }
 
 /**

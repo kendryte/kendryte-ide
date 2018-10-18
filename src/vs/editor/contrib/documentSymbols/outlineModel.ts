@@ -2,9 +2,8 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
-import { binarySearch, coalesce, isFalsyOrEmpty } from 'vs/base/common/arrays';
+import { binarySearch, isFalsyOrEmpty, coalesceInPlace } from 'vs/base/common/arrays';
 import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
 import { first, forEach, size } from 'vs/base/common/collections';
 import { onUnexpectedExternalError } from 'vs/base/common/errors';
@@ -134,7 +133,7 @@ export class OutlineGroup extends TreeElement {
 	}
 
 	private _updateMatches(pattern: string, item: OutlineElement, topMatch: OutlineElement): OutlineElement {
-		item.score = fuzzyScore(pattern, item.symbol.name, undefined, true);
+		item.score = fuzzyScore(pattern, pattern.toLowerCase(), 0, item.symbol.name, item.symbol.name.toLowerCase(), 0, true);
 		if (item.score && (!topMatch || item.score[0] > topMatch.score[0])) {
 			topMatch = item;
 		}
@@ -150,13 +149,13 @@ export class OutlineGroup extends TreeElement {
 	}
 
 	getItemEnclosingPosition(position: IPosition): OutlineElement {
-		return this._getItemEnclosingPosition(position, this.children);
+		return position ? this._getItemEnclosingPosition(position, this.children) : undefined;
 	}
 
 	private _getItemEnclosingPosition(position: IPosition, children: { [id: string]: OutlineElement }): OutlineElement {
 		for (let key in children) {
 			let item = children[key];
-			if (!Range.containsPosition(item.symbol.range, position)) {
+			if (!item.symbol.range || !Range.containsPosition(item.symbol.range, position)) {
 				continue;
 			}
 			return this._getItemEnclosingPosition(position, item.children) || item;
@@ -215,7 +214,7 @@ export class OutlineGroup extends TreeElement {
 			};
 		}
 
-		coalesce(markers, true);
+		coalesceInPlace(markers);
 	}
 }
 
@@ -420,7 +419,7 @@ export class OutlineModel extends TreeElement {
 			}
 		}
 
-		let result: OutlineElement = undefined;
+		let result: OutlineElement | undefined = undefined;
 		for (const key in this._groups) {
 			const group = this._groups[key];
 			result = group.getItemEnclosingPosition(position);

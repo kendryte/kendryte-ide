@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -24,7 +22,6 @@ import * as extfs from 'vs/base/node/extfs';
 import * as flow from 'vs/base/node/flow';
 import { IProgress, ISearchEngineStats } from 'vs/platform/search/common/search';
 import { spawnRipgrepCmd } from './ripgrepFileSearch';
-import { rgErrorMsgForDisplay } from './ripgrepTextSearch';
 import { IFolderSearch, IRawFileMatch, IRawSearch, ISearchEngine, ISearchEngineSuccess } from './search';
 import { StopWatch } from 'vs/base/common/stopwatch';
 
@@ -391,8 +388,8 @@ export class FileWalker {
 
 		cmd.on('close', (code: number) => {
 			// ripgrep returns code=1 when no results are found
-			let stderrText, displayMsg: string;
-			if (isRipgrep ? (!gotData && (stderrText = this.decodeData(stderr, encoding)) && (displayMsg = rgErrorMsgForDisplay(stderrText))) : code !== 0) {
+			let stderrText: string;
+			if (isRipgrep ? (!gotData && (stderrText = this.decodeData(stderr, encoding)) && rgErrorMsgForDisplay(stderrText)) : code !== 0) {
 				onData(new Error(`command failed with error code ${code}: ${this.decodeData(stderr, encoding)}`));
 			} else {
 				if (isRipgrep && this.exists && code === 0) {
@@ -755,4 +752,35 @@ class AbsoluteAndRelativeParsedExpression {
 
 		return pathTerms;
 	}
+}
+
+export function rgErrorMsgForDisplay(msg: string): string | undefined {
+	const lines = msg.trim().split('\n');
+	const firstLine = lines[0].trim();
+
+	if (strings.startsWith(firstLine, 'Error parsing regex')) {
+		return firstLine;
+	}
+
+	if (strings.startsWith(firstLine, 'regex parse error')) {
+		return strings.uppercaseFirstLetter(lines[lines.length - 1].trim());
+	}
+
+	if (strings.startsWith(firstLine, 'error parsing glob') ||
+		strings.startsWith(firstLine, 'unsupported encoding')) {
+		// Uppercase first letter
+		return firstLine.charAt(0).toUpperCase() + firstLine.substr(1);
+	}
+
+	if (firstLine === `Literal '\\n' not allowed.`) {
+		// I won't localize this because none of the Ripgrep error messages are localized
+		return `Literal '\\n' currently not supported`;
+	}
+
+	if (strings.startsWith(firstLine, 'Literal ')) {
+		// Other unsupported chars
+		return firstLine;
+	}
+
+	return undefined;
 }

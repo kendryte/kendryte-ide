@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-'use strict';
-
 import 'vs/css!./menu';
 import * as nls from 'vs/nls';
 import * as strings from 'vs/base/common/strings';
@@ -69,7 +67,8 @@ export class Menu extends ActionBar {
 			actionItemProvider: action => this.doGetActionItem(action, options, parentData),
 			context: options.context,
 			actionRunner: options.actionRunner,
-			ariaLabel: options.ariaLabel
+			ariaLabel: options.ariaLabel,
+			triggerKeys: { keys: [KeyCode.Enter], keyDown: true }
 		});
 
 		this.actionsList.setAttribute('role', 'menu');
@@ -155,11 +154,13 @@ export class Menu extends ActionBar {
 		this.domNode.style.backgroundColor = bgColor;
 		container.style.boxShadow = shadow;
 
-		this.items.forEach(item => {
-			if (item instanceof MenuActionItem || item instanceof MenuSeparatorActionItem) {
-				item.style(style);
-			}
-		});
+		if (this.items) {
+			this.items.forEach(item => {
+				if (item instanceof MenuActionItem || item instanceof MenuSeparatorActionItem) {
+					item.style(style);
+				}
+			});
+		}
 	}
 
 	private focusItemByElement(element: HTMLElement) {
@@ -190,7 +191,7 @@ export class Menu extends ActionBar {
 			if (options.enableMnemonics) {
 				const mnemonic = menuActionItem.getMnemonic();
 				if (mnemonic && menuActionItem.isEnabled()) {
-					let actionItems = [];
+					let actionItems: MenuActionItem[] = [];
 					if (this.mnemonics.has(mnemonic)) {
 						actionItems = this.mnemonics.get(mnemonic);
 					}
@@ -216,7 +217,7 @@ export class Menu extends ActionBar {
 			if (options.enableMnemonics) {
 				const mnemonic = menuActionItem.getMnemonic();
 				if (mnemonic && menuActionItem.isEnabled()) {
-					let actionItems = [];
+					let actionItems: MenuActionItem[] = [];
 					if (this.mnemonics.has(mnemonic)) {
 						actionItems = this.mnemonics.get(mnemonic);
 					}
@@ -346,7 +347,7 @@ class MenuActionItem extends BaseActionItem {
 	}
 
 	updateTooltip(): void {
-		let title: string = null;
+		let title: string | null = null;
 
 		if (this.getAction().tooltip) {
 			title = this.getAction().tooltip;

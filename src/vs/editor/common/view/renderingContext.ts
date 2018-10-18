@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import { IViewLayout, ViewModelDecoration } from 'vs/editor/common/viewModel/viewModel';
 import { ViewportData } from 'vs/editor/common/viewLayout/viewLinesViewportData';
@@ -10,8 +9,8 @@ import { Range } from 'vs/editor/common/core/range';
 import { Position } from 'vs/editor/common/core/position';
 
 export interface IViewLines {
-	linesVisibleRangesForRange(range: Range, includeNewLines: boolean): LineVisibleRanges[];
-	visibleRangesForRange2(range: Range): HorizontalRange[];
+	linesVisibleRangesForRange(range: Range, includeNewLines: boolean): LineVisibleRanges[] | null;
+	visibleRangeForPosition(position: Position): HorizontalRange | null;
 }
 
 export abstract class RestrictedRenderingContext {
@@ -74,18 +73,12 @@ export class RenderingContext extends RestrictedRenderingContext {
 		this._viewLines = viewLines;
 	}
 
-	public linesVisibleRangesForRange(range: Range, includeNewLines: boolean): LineVisibleRanges[] {
+	public linesVisibleRangesForRange(range: Range, includeNewLines: boolean): LineVisibleRanges[] | null {
 		return this._viewLines.linesVisibleRangesForRange(range, includeNewLines);
 	}
 
-	public visibleRangeForPosition(position: Position): HorizontalRange {
-		const visibleRanges = this._viewLines.visibleRangesForRange2(
-			new Range(position.lineNumber, position.column, position.lineNumber, position.column)
-		);
-		if (!visibleRanges) {
-			return null;
-		}
-		return visibleRanges[0];
+	public visibleRangeForPosition(position: Position): HorizontalRange | null {
+		return this._viewLines.visibleRangeForPosition(position);
 	}
 }
 

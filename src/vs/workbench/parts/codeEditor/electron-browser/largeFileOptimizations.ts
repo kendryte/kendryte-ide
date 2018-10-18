@@ -2,7 +2,6 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-'use strict';
 
 import * as nls from 'vs/nls';
 import * as path from 'path';
@@ -31,7 +30,7 @@ export class LargeFileOptimizationsWarner extends Disposable implements IEditorC
 	) {
 		super();
 
-		this._isDisabled = this._storageService.getBoolean('editor.neverPromptForLargeFiles', StorageScope.GLOBAL, false);
+		this._isDisabled = Boolean(this._storageService.getBoolean('editor.neverPromptForLargeFiles', StorageScope.GLOBAL, false));
 
 		this._register(this._editor.onDidChangeModel((e) => {
 			const model = this._editor.getModel();
