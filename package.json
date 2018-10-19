@@ -2,7 +2,7 @@
   "name": "code-oss-dev",
   "version": "1.29.0",
   "distro": "eceef408e99ace55c0a17a2a90b88e46a8c9090a",
-  "patchVersion": 20181018,
+  "patchVersion": 20181019.203125,
   "author": {
     "name": "Microsoft Corporation"
   },
@@ -16,7 +16,7 @@
     "watch": "gulp watch --max_old_space_size=4095",
     "watch-client": "gulp watch-client --max_old_space_size=4095",
     "monaco-editor-test": "mocha --only-monaco-editor",
-    "precommit": "bash my-scripts/pre-commit.sh && node build/gulpfile.hygiene.js",
+    "precommit": "bash my-scripts/pre-commit.sh",
     "gulp": "gulp --max_old_space_size=4095",
     "7z": "7z",
     "bash": "bash",
