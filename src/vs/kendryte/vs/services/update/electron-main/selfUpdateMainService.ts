@@ -67,9 +67,9 @@ class SelfUpdateMainService extends AbstractSelfUpdateService {
 		const message = localize('too.old', ' Your IDE is old, please reinstall a newer one.');
 
 		await this.dialogService.show(Severity.Error, message, [
-				open.label,
-				localize('cancel', 'Cancel'),
-			], { cancelId: -1 },
+			open.label,
+			localize('cancel', 'Cancel'),
+		], { cancelId: -1 },
 		).then((selected) => {
 			this.logger.info('selected:', selected);
 			if (selected === 0) {
