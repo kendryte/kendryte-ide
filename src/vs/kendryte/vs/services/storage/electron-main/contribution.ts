@@ -1,34 +1,46 @@
 import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
-import { IStorageService } from 'vs/platform/storage/common/storage';
-import { IStorage, StorageService } from 'vs/platform/storage/common/storageService';
-
+import { IStorageService, IWorkspaceStorageChangeEvent, StorageScope } from 'vs/platform/storage/common/storage';
+import { Disposable } from 'vs/base/common/lifecycle';
+import { Emitter } from 'vs/base/common/event';
+import { isUndefinedOrNull } from 'vs/base/common/types';
 import Store = require('electron-store');
 
-class MainStorage implements IStorage {
-	private readonly store = new Store();
+class StorageMainService extends Disposable implements IStorageService {
+	_serviceBrand: any;
 
-	get length() { return this.store.size; }
+	private readonly _store = new Store();
 
-	public key(index: number) {
-		return Object.keys(this.store.store)[index];
-	}
+	private readonly _onDidChangeStorage: Emitter<IWorkspaceStorageChangeEvent>;
+	public readonly onDidChangeStorage = this._onDidChangeStorage.event;
+	private readonly _onWillSaveState: Emitter<void>;
+	public readonly onWillSaveState = this._onWillSaveState.event;
 
-	public setItem(key: string, value: any): void {
-		this.store.set(key, value);
-	}
-
-	public getItem(key: string): string {
-		return this.store.get(key);
-	}
-
-	public removeItem(key: string): void {
-		return this.store.delete(key);
-	}
-}
-
-class StorageMainService extends StorageService {
 	constructor() {
-		super(new MainStorage, null);
+		super();
+	}
+
+	public get(key: string, scope: StorageScope, fallbackValue?: string): string | undefined {
+		return this._store.get(key) || fallbackValue;
+	}
+
+	public getBoolean(key: string, scope: StorageScope, fallbackValue?: boolean): boolean | undefined {
+		return this._store.has(key) ? !!this._store.get(key) : fallbackValue;
+	}
+
+	public getInteger(key: string, scope: StorageScope, fallbackValue?: number): number | undefined {
+		return this._store.has(key) ? parseInt(this._store.get(key), 10) : fallbackValue;
+	}
+
+	public store(key: string, value: any, scope: StorageScope): void {
+		if (isUndefinedOrNull(value)) {
+			return this.remove(key, null);
+		}
+		const valueStr = String(value);
+		this._store.set(key, valueStr);
+	}
+
+	public remove(key: string, scope: StorageScope): void {
+		this._store.delete(key);
 	}
 }
 

@@ -69,7 +69,6 @@ class SerialMonitorPanel extends Panel {
 
 	private left: HTMLDivElement;
 	private $leftHead: HTMLElement;
-	private right: HTMLElement;
 	private $rightHead: HTMLElement;
 
 	private list: SerialDeviceList;
@@ -92,7 +91,7 @@ class SerialMonitorPanel extends Panel {
 		@IConfigurationService private configurationService: IConfigurationService,
 		@IContextViewService protected contextViewService: IContextViewService,
 	) {
-		super(SERIAL_PANEL_ID, telemetryService, themeService);
+		super(SERIAL_PANEL_ID, telemetryService, themeService, storageService);
 	}
 
 	public getActions(): IAction[] {
@@ -127,7 +126,7 @@ class SerialMonitorPanel extends Panel {
 	}
 
 	private async createRight(parent: HTMLElement) {
-		const $right = this.right = append(parent, $('.right-panel'));
+		const $right = append(parent, $('.right-panel'));
 
 		// buttons line
 		this.$rightHead = append($right, $('.head'));
@@ -258,8 +257,8 @@ class SerialMonitorPanel extends Panel {
 		return theButton;
 	}
 
-	public async create(parent: HTMLElement): TPromise<any> {
-		super.create(parent);
+	public async create(parent: HTMLElement) {
+		await super.create(parent);
 		parent.classList.add('serial-monitor-panel');
 
 		this.createLeft(parent);

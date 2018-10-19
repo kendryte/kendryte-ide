@@ -8,35 +8,43 @@
 
 // Imported from: https://github.com/soywiz/typescript-node-definitions/form-data.d.ts
 
-import * as stream from 'stream';
-import * as http from 'http';
+declare module 'form-data' {
+	import * as stream from 'stream';
+	import * as http from 'http';
 
-export = FormData;
+	export = FormData;
 
-declare class FormData extends stream.Readable {
-    append(key: string, value: any, options?: FormData.AppendOptions | string): void;
-    getHeaders(): FormData.Headers;
-    submit(params: string | FormData.SubmitOptions, callback?: (error: Error | undefined, response: http.IncomingMessage) => void): http.ClientRequest;
-    getBoundary(): string;
-    getLength(callback: (err: Error | undefined, length: number) => void): void;
-    getLengthSync(): number;
-    hasKnownLength(): boolean;
-}
+	class FormData extends stream.Readable {
+		append(key: string, value: any, options?: FormData.AppendOptions | string): void;
 
-declare namespace FormData {
-    interface Headers {
-        [key: string]: any;
-    }
+		getHeaders(): FormData.Headers;
 
-    interface AppendOptions {
-        header?: string | Headers;
-        knownLength?: number;
-        filename?: string;
-        filepath?: string;
-        contentType?: string;
-    }
+		submit(params: string | FormData.SubmitOptions, callback?: (error: Error | undefined, response: http.IncomingMessage) => void): http.ClientRequest;
 
-    interface SubmitOptions extends http.RequestOptions {
-        protocol?: 'https:' | 'http:';
-    }
+		getBoundary(): string;
+
+		getLength(callback: (err: Error | undefined, length: number) => void): void;
+
+		getLengthSync(): number;
+
+		hasKnownLength(): boolean;
+	}
+
+	namespace FormData {
+		interface Headers {
+			[key: string]: any;
+		}
+
+		interface AppendOptions {
+			header?: string | Headers;
+			knownLength?: number;
+			filename?: string;
+			filepath?: string;
+			contentType?: string;
+		}
+
+		interface SubmitOptions extends http.RequestOptions {
+			protocol?: 'https:' | 'http:';
+		}
+	}
 }

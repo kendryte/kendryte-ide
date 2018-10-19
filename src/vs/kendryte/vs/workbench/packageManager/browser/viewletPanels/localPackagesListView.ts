@@ -3,7 +3,7 @@ import { WorkbenchPagedList } from 'vs/platform/list/browser/listService';
 import { localize } from 'vs/nls';
 import { IExtension } from 'vs/workbench/parts/extensions/common/extensions';
 import { IPackageRegistryService } from 'vs/kendryte/vs/workbench/packageManager/common/type';
-import { IVirtualDelegate } from 'vs/base/browser/ui/list/list';
+import { IListVirtualDelegate } from 'vs/base/browser/ui/list/list';
 import { IPagedRenderer } from 'vs/base/browser/ui/list/listPaging';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IViewletViewOptions } from 'vs/workbench/browser/parts/views/viewsViewlet';
@@ -17,7 +17,7 @@ import { IRemotePackageInfo } from 'vs/kendryte/vs/workbench/packageManager/comm
 
 const templateId = 'package';
 
-class Delegate implements IVirtualDelegate<IExtension> {
+class Delegate implements IListVirtualDelegate<IExtension> {
 	getHeight() { return 62; }
 
 	getTemplateId() { return templateId; }

@@ -212,6 +212,7 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 			title: 'Updating...',
 			show: true,
 			titleBarStyle: 'hidden',
+			vibrancy: 'popover',
 		});
 
 		let message = '<h1>Updating, please wait...</h1>';
@@ -220,7 +221,7 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 		} else {
 			message += '<h2>This will take about few seconds.</h2>';
 		}
-		win.webContents.executeJavaScript(`document.body.textContent = ` + JSON.stringify(message)).catch();
+		win.loadURL(`data:text/html;charset=utf8,${encodeURIComponent(message)}`);
 		return win;
 	}
 }

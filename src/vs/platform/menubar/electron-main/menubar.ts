@@ -22,6 +22,7 @@ import { IMenubarData, IMenubarKeybinding, MenubarMenuItem, isMenubarMenuItemSep
 import { URI } from 'vs/base/common/uri';
 import { ILabelService } from 'vs/platform/label/common/label';
 import { IStateService } from 'vs/platform/state/common/state';
+import { installKendryteMenu } from 'vs/kendryte/vs/platform/menubar/electron-main/kendryteMenu';
 
 const telemetryFrom = 'menu';
 
@@ -54,7 +55,7 @@ export class Menubar {
 
 	constructor(
 		@IUpdateService private updateService: IUpdateService,
-		@IInstantiationService instantiationService: IInstantiationService,
+		@IInstantiationService private instantiationService: IInstantiationService,
 		@IConfigurationService private configurationService: IConfigurationService,
 		@IWindowsMainService private windowsMainService: IWindowsMainService,
 		@IEnvironmentService private environmentService: IEnvironmentService,
@@ -312,6 +313,8 @@ export class Menubar {
 
 		this.setMenuById(terminalMenu, 'Terminal');
 		menubar.append(terminalMenuItem);
+
+		this.instantiationService.invokeFunction(installKendryteMenu, menubar);
 
 		// Mac: Window
 		let macWindowMenuItem: Electron.MenuItem;

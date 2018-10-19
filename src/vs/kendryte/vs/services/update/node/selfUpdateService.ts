@@ -1,6 +1,4 @@
 import { resolve as resolveUrl } from 'url';
-import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
-import { INotificationHandle, INotificationService } from 'vs/platform/notification/common/notification';
 import { Emitter, Event } from 'vs/base/common/event';
 import { copy, rimraf } from 'vs/base/node/pfs';
 import { IVersionUrlHandler } from 'vs/kendryte/vs/services/update/node/versionUrlHandler';
@@ -12,52 +10,58 @@ import { IStorageService, StorageScope } from 'vs/platform/storage/common/storag
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
 import packageJson from 'vs/platform/node/package';
-import { getUpdateLogger } from 'vs/kendryte/vs/services/update/common/ids';
-import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
-import Severity from 'vs/base/common/severity';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { IUpdateService, State, StateType, UpdateType } from 'vs/platform/update/common/update';
+import { AvailableForDownload, IUpdateService, State, StateType, UpdateType } from 'vs/platform/update/common/update';
 import { IFileCompressService } from 'vs/kendryte/vs/services/fileCompress/node/fileCompressService';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { asJson } from 'vs/base/node/request';
-import { IInstantiationService, optional } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
-import { IDisposable } from 'vs/base/common/lifecycle';
+import { OpenKendryteReleasePageAction } from 'vs/kendryte/vs/services/update/node/openReleasePageAction';
 
-export class SelfUpdateService implements IUpdateService {
+export interface IUpdateUserInterface {
+	error(e: Error): void;
+	message(m: string): void;
+	start(): void;
+	progress<T>(patch: T, index: number, patches: T[]): void;
+	finish(): void;
+}
+
+export abstract class AbstractSelfUpdateService implements IUpdateService {
 	_serviceBrand: any;
 
-	private readonly logger: ILogService;
+	protected abstract readonly logger: ILogService;
+	private _isLatestVersion: boolean | undefined;
+	private _isReleaseUpdated: boolean;
 
-	private readonly _onStateChange: Emitter<State> = new Emitter<State>();
+	protected abstract notifyError(action: string, e: Error);
+
+	protected abstract getUserInterface(): IUpdateUserInterface;
+
+	protected abstract notifyReleaseUpdate(result: IIDEUpdateInfo): Promise<void>;
+
+	protected abstract notifyUpdateAvailable(): Promise<void>;
+
+	protected abstract askInstall(): Promise<boolean>;
+
+	protected readonly _onStateChange: Emitter<State> = new Emitter<State>();
 	public readonly onStateChange: Event<State> = this._onStateChange.event;
 
-	private _state: State = State.Uninitialized;
-	private downloaded: string;
-	private cached: IIDEUpdateInfo;
+	protected _state: State = State.Uninitialized;
+	protected downloaded: string;
+	protected cached: IIDEUpdateInfo;
 
 	constructor(
-		@IVersionUrlHandler private readonly versionHandler: IVersionUrlHandler,
-		@IInstantiationService instantiationService: IInstantiationService,
-		@optional(IChannelLogService) channelLogService: IChannelLogService,
-		@IEnvironmentService private readonly environmentService: IEnvironmentService,
-		@IStorageService private readonly storageService: IStorageService,
-		@IWindowsService private readonly windowsService: IWindowsService,
-		@INodePathService private readonly nodePathService: INodePathService,
-		@IRequestService private readonly requestService: IRequestService,
-		@INodeDownloadService private readonly downloadService: INodeDownloadService,
-		@IFileCompressService private readonly fileCompressService: IFileCompressService,
-		@optional(INotificationService) private readonly notificationService: INotificationService,
+		@IVersionUrlHandler protected readonly versionHandler: IVersionUrlHandler,
+		@IEnvironmentService protected readonly environmentService: IEnvironmentService,
+		@IStorageService protected readonly storageService: IStorageService,
+		@IWindowsService protected readonly windowsService: IWindowsService,
+		@INodePathService protected readonly nodePathService: INodePathService,
+		@IRequestService protected readonly requestService: IRequestService,
+		@INodeDownloadService protected readonly downloadService: INodeDownloadService,
+		@IFileCompressService protected readonly fileCompressService: IFileCompressService,
 	) {
-		if (channelLogService) {
-			this.logger = getUpdateLogger(channelLogService);
-		} else {
-			this.logger = instantiationService.invokeFunction((access) => {
-				return access.get(ILogService);
-			});
-		}
 	}
 
 	public get state() {
@@ -65,166 +69,195 @@ export class SelfUpdateService implements IUpdateService {
 	}
 
 	protected setState(state: State): void {
-		this.logger.info('kendryteUpdate#setState(%s)', state.type);
+		this.logger.info('⏳ kendryteUpdate#setState(%j)', state);
 		this._state = state;
 		this._onStateChange.fire(state);
 	}
 
-	public async isLatestVersion(): TPromise<boolean | undefined> {
-		if (!this.environmentService.isBuilt) {
-			this.logger.info('KendryteIDE update disabled (dev mode): %s', packageJson.version);
-			return true;
+	protected setErrorState(e: Error): Error {
+		if (!e) {
+			e = new Error('Unknown Error');
+		} else if (!e.message) {
+			e = new Error(e as any);
 		}
-		const result = await this.checkUpdateInfo(true);
-		if (result.version !== packageJson.version) {
-			await this.notifyUpdate();
-			return false;
-		}
-		const patches = this.versionHandler.getPatchList(result);
-		if (patches.length > 0) {
-			const patch = patches[patches.length - 1];
-			this.setState(State.AvailableForDownload({
-				version: patch.version.toString(),
-				productVersion: patch.version.toString(),
-			}));
-			return false;
-		}
-
-		this.setState(State.Idle(UpdateType.Archive));
-
-		// todo: notify
-		return false;
+		this.setState(State.Idle(UpdateType.Archive, e.message));
+		return e;
 	}
 
-	public async checkForUpdates(context: any): TPromise<void> {
-		this.setState(State.Uninitialized);
-		if (!this.environmentService.isBuilt) {
-			this.logger.info('KendryteIDE update disabled (dev mode): %s', packageJson.version);
-			return;
+	public isLatestVersion(): TPromise<boolean | undefined> {
+		if (this.isDisable('isLatestVersion')) {
+			return Promise.resolve(undefined);
 		}
 
-		this.setState(State.CheckingForUpdates({}));
-
-		const result: IIDEUpdateInfo = await this.checkUpdateInfo();
-		if (result.version === packageJson.version) {
-			this.logger.info('Base environment is up to date: [%s].', result.version);
-
-			const patches = await this.versionHandler.getPatchList(result);
-			if (patches.length === 0) {
-				this.logger.info('KendryteIDE is up to date: [%s].', IDECurrentPatchVersion());
-				this.setState(State.Idle(UpdateType.Archive));
-				return;
+		return this.checkUpdateInfo().then((res) => {
+			if (this._isReleaseUpdated) {
+				this.notifyReleaseUpdate(res).catch();
 			} else {
-				this.logger.warn('KendryteIDE is update: local %s, remote:\n%s', IDECurrentPatchVersion(), patches.toString());
-				await this.downloadUpdate();
-				await this.applyUpdate();
-				await this.quitAndInstall();
+				this.notifyUpdateAvailable().catch();
 			}
-		} else {
-			await this.notifyUpdate();
-		}
+			return this._isLatestVersion;
+		}).catch((e) => {
+			this.notifyError('detecting update availability', e);
+			return this._isLatestVersion;
+		});
 	}
 
-	public async downloadUpdate(): TPromise<void> {
+	public checkForUpdates(context: any): TPromise<void> {
+		if (this.isDisable('checkForUpdates')) {
+			return Promise.resolve();
+		}
+		return this.checkUpdateInfo().then((res) => {
+			if (this._isReleaseUpdated) {
+				this.notifyReleaseUpdate(res).catch();
+			} else {
+				this.notifyUpdateAvailable().catch();
+			}
+		}, (e) => {
+			this.notifyError('checking update info', e);
+			throw e;
+		});
+	}
+
+	public downloadUpdate(open = true): TPromise<void> {
+		if (this.isDisable('downloadUpdate')) {
+			return TPromise.wrapError(new Error('downloadUpdate: update is disabled'));
+		}
 		if (this._state.type === StateType.Downloading) {
-			throw new Error('update is in progress...');
+			return TPromise.wrapError(new Error('update is in progress...'));
 		}
 
-		const result = await this.checkUpdateInfo(false);
-		if (result.version !== packageJson.version) {
-			throw new Error('Newer release is required...');
-		}
-		const patches = await this.versionHandler.getPatchList(result);
+		if (!this._isReleaseUpdated && !this._isLatestVersion && (this._state as AvailableForDownload).update) {
+			const lastInfo = (this._state as AvailableForDownload).update;
 
-		let info: { revoke: () => void } & IDisposable & INotificationHandle;
-		if (this.notificationService) {
-			info = unClosableNotify(this.notificationService, {
-				severity: Severity.Info,
-				message: 'update...',
+			if (!lastInfo.supportsFastUpdate) {
+				if (open) {
+					this.logger.info('open browser to download new release.');
+					return new OpenKendryteReleasePageAction(
+						OpenKendryteReleasePageAction.ID,
+						OpenKendryteReleasePageAction.LABEL,
+						this.versionHandler.getIDEHomePage(this.cached),
+					).run() as Promise<any>;
+				} else {
+					this.logger.info('download: release is update, need manual action.');
+					return Promise.resolve();
+				}
+			}
+
+			this.logger.info('confirmed to download.');
+			this.setState(State.Downloading(lastInfo));
+			const context = this.getUserInterface();
+			context.start();
+
+			return this._downloadUpdate(context, this.cached).then(() => {
+				context.finish();
+				this.setState(State.Downloaded(lastInfo));
+			}, (e) => {
+				e = this.setErrorState(e);
+				// no need this.notifyError('checking update info', e);
+				context.finish();
+				throw e;
 			});
-			info.progress.infinite();
+		} else {
+			this.logger.warn('nothing to download...');
 		}
+		return void 0;
+	}
+
+	private async _downloadUpdate(context: IUpdateUserInterface, result: IIDEUpdateInfo): Promise<void> {
+		const patches = this.versionHandler.getPatchList(result);
 
 		const tempUpdateContents = await this.nodePathService.ensureTempDir('update-content');
 		this.logger.info('files will extract to:', tempUpdateContents);
-		this.logger.warn('    rimraf()');
+		this.logger.warn('    rimraf( ^ )');
 		await rimraf(tempUpdateContents);
 
-		let lastInfo;
-		try {
-			for (const patch of patches) {
-				if (this.notificationService) {
-					info.updateMessage('Downloading update: ' + patch + '...');
-				}
+		let i = 1;
+		for (const patch of patches) {
+			context.progress(patch, i++, patches);
 
-				lastInfo = {
-					version: patch.version.toString(),
-					productVersion: patch.version.toString(),
-				};
-				this.setState(State.Downloading(lastInfo));
+			const downloadUrl = resolveUrl(IDE_MAIN_DISTRIBUTE_URL + '/', patch.downloadUrl);
+			this.logger.info('download file from:\n  ', downloadUrl);
+			const id = await this.downloadService.downloadTemp(downloadUrl, true, this.logger);
+			const zipFile = await this.downloadService.waitResultFile(id);
+			this.logger.info('extract file:');
+			const extracted = await this.fileCompressService.extractTemp(zipFile, this.logger);
+			this.logger.info('  extracted:', extracted);
 
-				this.logger.info('download file from:\n  ', patch.downloadUrl);
-				const id = await this.downloadService.downloadTemp(patch.downloadUrl);
-				const zipFile = await this.downloadService.waitResultFile(id);
-				this.logger.info('extract file:');
-				const extracted = await this.fileCompressService.extractTemp(zipFile, this.logger);
-				this.logger.info('  extracted:', extracted);
-
-				this.logger.info('  copy to ', tempUpdateContents);
-				await copy(extracted, tempUpdateContents);
-				this.logger.warn('  rimraf: ', extracted);
-				await rimraf(extracted);
-			}
-
-			if (this.notificationService) {
-				info.close();
-			}
-
-			this.setState(State.Downloaded(lastInfo));
-			this.downloaded = tempUpdateContents;
-		} catch (e) {
-			this.setState(State.AvailableForDownload(lastInfo));
-			this.logger.error('(FAILED)', e.message);
-
-			if (this.notificationService) {
-				info.updateSeverity(Severity.Error);
-				info.updateMessage(e);
-				info.revoke();
-			}
+			this.logger.info('  copy to ', tempUpdateContents);
+			await copy(extracted, tempUpdateContents);
+			this.logger.warn('  rimraf: ', extracted);
+			await rimraf(extracted);
 		}
+
+		this.downloaded = tempUpdateContents;
+		this.logger.warn(' ~ download complete!!!');
 	}
 
-	public async applyUpdate(): TPromise<void> {
-		if (!this.downloaded) {
-			await this.downloadUpdate();
+	public applyUpdate(): TPromise<void> {
+		if (this.isDisable('applyUpdate')) {
+			return TPromise.wrapError(new Error('applyUpdate: update is disabled'));
 		}
-		const patch = await this.checkUpdateInfo();
-		this.setState(State.Updating({
-			version: patch.version,
-			productVersion: patch.version,
-		}));
 
-		const patchResultFolder = this.downloaded;
-		const installTarget = resolvePath(this.nodePathService.getInstallPath(), 'resources/app');
-		this.logger.info('applyIDEPatch:\n  From: %s\n  To: %s', patchResultFolder, installTarget);
+		return this._applyUpdate(false).then(() => void 0);
+	}
 
-		await copy(patchResultFolder, installTarget);
+	protected async _applyUpdate(auto: boolean): TPromise<boolean> {
+		if (auto) {
+			if (this.isDisable('applyAndQuitInstall')) {
+				return TPromise.wrapError(new Error('applyUpdate: update is disabled'));
+			}
+		}
 
-		this.setState(State.Ready({
-			version: patch.version,
-			productVersion: patch.version,
-		}));
+		if (!this.downloaded) {
+			await this.downloadUpdate(false);
+			if (!this.downloaded) {
+				return false;
+			}
+		}
+
+		try {
+			const { version } = this.cached;
+			this.setState(State.Updating({
+				version: version,
+				productVersion: version,
+			}));
+
+			const installTarget = resolvePath(this.nodePathService.getInstallPath(), 'resources/app');
+			this.logger.info('applyIDEPatch:\n  From: %s\n  To: %s', this.downloaded, installTarget);
+
+			await copy(this.downloaded, installTarget);
+
+			if (auto) {
+				if (await this.askInstall()) {
+					await this.quitAndInstall();
+				}
+				return false;
+			} else {
+				this.setState(State.Ready({
+					version: version,
+					productVersion: version,
+				}));
+				return true;
+			}
+		} catch (e) {
+			this.notifyError('apply update files', e);
+			throw e;
+		}
 	}
 
 	public async quitAndInstall(): TPromise<void> {
+		if (this.isDisable('quitAndInstall')) {
+			return TPromise.wrapError(new Error('quitAndInstall: update is disabled'));
+		}
 		this.storageService.store('workbench.panel.pinnedPanels', '[]', StorageScope.GLOBAL);
+		if (process.env.DEBUG_MODE) {
+			this.logger.warn('Debug mode detected, not auto restart.');
+			return;
+		}
 		await this.windowsService.relaunch({});
 	}
 
-	protected async notifyUpdate() {
-		const result = await this.checkUpdateInfo(false);
-		this.logger.warn('Base environment is update: local %s, remote %s', packageJson.version, result.version);
-
+	protected async _notifyReleaseUpdate(result: IIDEUpdateInfo) {
 		this.setState(State.AvailableForDownload({
 			version: result.version,
 			productVersion: result.version,
@@ -232,17 +265,74 @@ export class SelfUpdateService implements IUpdateService {
 			url: this.versionHandler.getIDE(result),
 		}));
 
-		/*this.notificationService.prompt(Severity.Info, 'KendryteIDE has updated.\n', [
-			new OpenKendryteReleasePageAction(this.versionHandler.getIDEHomePage(result)),
-		]);*/
+		this.notifyReleaseUpdate(result).catch();
 	}
 
-	protected async checkUpdateInfo(force: boolean = true): TPromise<IIDEUpdateInfo> {
+	private checkingPromise: Promise<any>;
+
+	protected checkUpdateInfo(force: boolean = false): Promise<IIDEUpdateInfo> {
+		if (this.checkingPromise) {
+			return this.checkingPromise;
+		}
 		if (force || !this.cached) {
 			const url = resolveUrl(IDE_MAIN_DISTRIBUTE_URL + '/', 'IDE.json');
-			this.logger.info('checking update from ' + url + '.');
-			this.cached = await this.requestService.request({ type: 'GET', url: url }, CancellationToken.None).then(asJson) as any;
+			this.logger.info('[IDE] checking update from ' + url + (force ? '(force)' : '') + '.');
+			this.setState(State.CheckingForUpdates({}));
+			return this.checkingPromise = this.requestService.request({ type: 'GET', url: url }, CancellationToken.None).then(asJson).then((result: IIDEUpdateInfo) => {
+				delete this.checkingPromise;
+
+				this.logger.info('result: ', result);
+
+				if (result.version !== packageJson.version) {
+					this.logger.info('[IDE] Base environment has update: local %s, remote: %s.', packageJson.version, result.version);
+					this._isLatestVersion = false;
+					this._isReleaseUpdated = true;
+					this.setState(State.AvailableForDownload({
+						version: result.version,
+						productVersion: '',
+						supportsFastUpdate: false,
+						url: this.versionHandler.getIDEHomePage(result),
+					}));
+				} else {
+					this.logger.info('[IDE] Base environment is up to date: [%s].', result.version);
+					this._isReleaseUpdated = false;
+					const patches = this.versionHandler.getPatchList(result);
+					if (patches.length > 0) {
+						this.logger.warn('[IDE] is update: local %s, remote: %s', IDECurrentPatchVersion(), patches[patches.length - 1].version);
+						this._isLatestVersion = false;
+						this.setState(State.AvailableForDownload({
+							version: result.version,
+							productVersion: patches[patches.length - 1].version.toString(),
+							supportsFastUpdate: true,
+						}));
+					} else {
+						this.logger.info('[IDE] is up to date: [%s].', IDECurrentPatchVersion());
+						this._isLatestVersion = true;
+						this.setState(State.Idle(UpdateType.Archive));
+					}
+				}
+
+				return this.cached = result;
+			}, (e) => {
+				delete this.checkingPromise;
+
+				this._isLatestVersion = void 0;
+				this._isReleaseUpdated = void 0;
+				throw this.setErrorState(e);
+			});
 		}
-		return this.cached;
+		return Promise.resolve(this.cached);
+	}
+
+	protected isDisable(method: string) {
+		if (this.environmentService.isBuilt) {
+			return false;
+		} else {
+			this.logger.info(method + ': KendryteIDE update disabled (dev mode): ' + packageJson.version);
+
+			this.setState(State.Uninitialized);
+			return true;
+			// return false;
+		}
 	}
 }

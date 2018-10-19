@@ -4,6 +4,7 @@ import { ITree } from 'vs/base/parts/tree/browser/tree';
 import { dispose } from 'vs/base/common/lifecycle';
 import { IInstantiationService, ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 import { ISettingItemTemplate } from 'vs/kendryte/vs/workbench/config/common/type';
+import { SettingValueType } from 'vs/workbench/services/preferences/common/preferences';
 
 export interface FieldContext {
 	context?: SettingsTreeSettingElement;
@@ -37,10 +38,11 @@ export abstract class FieldInject<T, EX extends object> {
 
 	protected _dispose(tree: ITree, template: FieldTemplate<T, EX>): void { }
 
-	protected fireChangeEvent(template: FieldContext, value: T) {
+	protected fireChangeEvent(template: FieldContext, event: { value: T, type: SettingValueType }) {
 		this.ref['_onDidChangeSetting'].fire({
 			key: template.context.setting.key,
-			value: value,
+			value: event.value,
+			type: event.type,
 		});
 	}
 

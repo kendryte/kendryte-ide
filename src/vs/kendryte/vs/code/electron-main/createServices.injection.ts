@@ -25,18 +25,18 @@ export function _kendrite_main_hookInstantiationService(
 	setImmediate(() => {
 		instantiationService.invokeFunction((access) => {
 			const env = access.get<IEnvironmentService>(IEnvironmentService);
-			if (env.isBuilt) {
-				return;
-			}
-			const service = access.get<IWindowsService>(IWindowsService);
-			service.getWindows().then((ls) => {
-				ls.forEach(({ id }) => {
+
+			if (!env.isBuilt) { // open dev tools after load
+				const service = access.get<IWindowsService>(IWindowsService);
+				service.getWindows().then((ls) => {
+					ls.forEach(({ id }) => {
+						service.openDevTools(id);
+					});
+				});
+				service.onWindowOpen((id: number) => {
 					service.openDevTools(id);
 				});
-			});
-			service.onWindowOpen((id: number) => {
-				service.openDevTools(id);
-			});
+			}
 		});
 	});
 }

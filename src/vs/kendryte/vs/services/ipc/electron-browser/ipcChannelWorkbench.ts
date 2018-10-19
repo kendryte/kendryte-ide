@@ -8,6 +8,8 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { URI } from 'vs/base/common/uri';
 import { ChannelLogger } from 'vs/kendryte/vs/services/channelLogger/electron-browser/logger';
 import { LogEvent } from 'vs/kendryte/vs/services/channelLogger/common/type';
+import { IPC_ID_IS_ME_FIRST, IPC_ID_STOP_LOG_EVENT } from 'vs/kendryte/vs/base/common/ipcIds';
+import { IWindowService } from 'vs/platform/windows/common/windows';
 
 const symbolMethod = Symbol('ipc-method-mark');
 const symbolEventMethod = Symbol('ipc-event-method-mark');
@@ -19,9 +21,14 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 
 	constructor(
 		@IKendryteMainIpcChannel protected readonly mainChannel: IKendryteMainIpcChannel,
+		@IWindowService protected readonly windowService: IWindowService,
 		@IKendryteServiceRunnerChannel protected readonly runnerChannel: IKendryteServiceRunnerChannel,
 		@ILogService protected readonly logService: ILogService,
 	) {
+	}
+
+	async isMeFirst() {
+		return await this.mainChannel.call<boolean>(IPC_ID_IS_ME_FIRST, this.windowService.getCurrentWindowId());
 	}
 
 	public listen<T>(event: string): Event<T> {
@@ -147,7 +154,7 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 		logger.onDispose(() => {
 			this.loggers.delete(logger);
 			dis.dispose();
-			this.mainChannel.call('stopLogEvent', [id, window]);
+			this.mainChannel.call(IPC_ID_STOP_LOG_EVENT, [id, window]);
 		});
 	}
 }

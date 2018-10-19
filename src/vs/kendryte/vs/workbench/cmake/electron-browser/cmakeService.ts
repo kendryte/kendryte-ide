@@ -1,6 +1,6 @@
 import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE, CMakeInternalVariants, CurrentItem, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
-import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
+import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { exists, fileExists, mkdirp, readFile, rename, rimraf, writeFile } from 'vs/base/node/pfs';
@@ -37,7 +37,6 @@ import { cpus } from 'os';
 import { addStatusBarCmakeButtons } from 'vs/kendryte/vs/workbench/cmake/common/buttons';
 import { StatusBarController } from 'vs/kendryte/vs/workbench/cmake/common/statusBarController';
 import { CMAKE_TARGET_TYPE } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/config';
-import { MaixBuildSystemPrepare, MaixBuildSystemReload } from 'vs/kendryte/vs/workbench/cmake/electron-browser/maixBuildSystemService';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { DebugScript, getEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
@@ -45,7 +44,6 @@ import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { CMakeBuildErrorProcessor, CMakeBuildProgressProcessor, CMakeProcessList } from 'vs/kendryte/vs/workbench/cmake/node/outputProcessor';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { ACTION_ID_IDE_SELF_UPGRADE, ACTION_ID_UPGRADE_BUILDING_BLOCKS } from 'vs/kendryte/vs/services/update/common/ids';
 import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
 import { ExParseError } from 'vs/kendryte/vs/base/common/jsonComments';
 import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
@@ -144,18 +142,6 @@ export class CMakeService implements ICMakeService {
 
 		this.localDefine = [];
 		this.localDefine.push(`-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE`);
-
-		lifecycleService.when(LifecyclePhase.Running).then(() => {
-			TPromise.join([
-				instantiationService.invokeFunction(MaixBuildSystemPrepare),
-				commandService.executeCommand(ACTION_ID_UPGRADE_BUILDING_BLOCKS),
-				commandService.executeCommand(ACTION_ID_IDE_SELF_UPGRADE),
-			]).then(() => {
-				return instantiationService.invokeFunction(MaixBuildSystemReload);
-			}).then(() => {
-				return instantiationService.invokeFunction(this.init.bind(this));
-			}); // handle error?
-		});
 	}
 
 	init(access: ServicesAccessor) {

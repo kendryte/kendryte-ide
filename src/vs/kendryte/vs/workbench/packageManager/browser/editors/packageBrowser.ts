@@ -16,6 +16,7 @@ import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common
 import { ILogService } from 'vs/platform/log/common/log';
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
+import { IStorageService } from 'vs/platform/storage/common/storage';
 
 export class PackageBrowserEditor extends BaseEditor {
 	static readonly ID: string = 'workbench.editor.package-market';
@@ -35,8 +36,9 @@ export class PackageBrowserEditor extends BaseEditor {
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IChannelLogService channelLogService: IChannelLogService,
 		@IWorkspaceContextService private workspaceService: IWorkspaceContextService,
+		@IStorageService storageService: IStorageService,
 	) {
-		super(PackageBrowserEditor.ID, telemetryService, themeService);
+		super(PackageBrowserEditor.ID, telemetryService, themeService, storageService);
 		this.logger = channelLogService.createChannel('Package Manager', PACKAGE_MANAGER_LOG_CHANNEL_ID, true);
 		const sc = new ServiceCollection([ILogService, this.logger]);
 		this.instantiationService = instantiationService.createChild(sc);

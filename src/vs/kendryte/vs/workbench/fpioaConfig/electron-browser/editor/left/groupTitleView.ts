@@ -1,5 +1,5 @@
 import { $, addClass, addDisposableListener, append } from 'vs/base/browser/dom';
-import { IRenderer } from 'vs/base/browser/ui/list/list';
+import { IListRenderer } from 'vs/base/browser/ui/list/list';
 import { IListGroupEntry, TEMPLATE_ID } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/left/ids';
 import { Emitter, Event } from 'vs/base/common/event';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
@@ -12,7 +12,7 @@ export interface IGroupTitleEntry {
 	currentId?: string;
 }
 
-export class GroupTitleRenderer implements IRenderer<IListGroupEntry, any> {
+export class GroupTitleRenderer implements IListRenderer<IListGroupEntry, any> {
 	private readonly _onClick = new Emitter<string>();
 	readonly onClick: Event<string> = this._onClick.event;
 

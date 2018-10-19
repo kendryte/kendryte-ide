@@ -1,4 +1,4 @@
-import { IRenderer } from 'vs/base/browser/ui/list/list';
+import { IListRenderer } from 'vs/base/browser/ui/list/list';
 import { IListFuncMapEntry, TEMPLATE_ID } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/left/ids';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
@@ -17,7 +17,7 @@ export interface IFuncMapTemplate {
 	$desc: HTMLDivElement;
 }
 
-export class FuncMapListItemRender implements IRenderer<IListFuncMapEntry, IFuncMapTemplate> {
+export class FuncMapListItemRender implements IListRenderer<IListFuncMapEntry, IFuncMapTemplate> {
 	private readonly _onSetPin = new Emitter<PinFuncSetEvent>();
 	readonly onSetPin: Event<PinFuncSetEvent> = this._onSetPin.event;
 

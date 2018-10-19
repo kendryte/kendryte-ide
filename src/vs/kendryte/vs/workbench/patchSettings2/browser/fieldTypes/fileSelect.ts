@@ -65,7 +65,10 @@ export class FileInject extends FieldInject<string, Template> {
 
 		template.toDispose.push(
 			$input.onDidChange(e => {
-				this.fireChangeEvent(template, e);
+				this.fireChangeEvent(template, {
+					value: e,
+					type: template.context.valueType,
+				});
 			}));
 
 		return {

@@ -4,7 +4,7 @@ import { Emitter, Event } from 'vs/base/common/event';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { localize } from 'vs/nls';
-import { IRenderer, IVirtualDelegate } from 'vs/base/browser/ui/list/list';
+import { IListRenderer, IListVirtualDelegate } from 'vs/base/browser/ui/list/list';
 import { SerialPortItem } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import 'vs/css!vs/kendryte/vs/workbench/serialPort/electron-browser/panel';
 import { OcticonLabel } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
@@ -62,7 +62,7 @@ export class SerialDeviceList extends Disposable {
 		this.list.layout(height);
 	}
 
-	protected createDelegate(): IVirtualDelegate<IStatusWithSelect> {
+	protected createDelegate(): IListVirtualDelegate<IStatusWithSelect> {
 		return {
 			getHeight(element: IStatusWithSelect): number {
 				return 24;
@@ -128,7 +128,7 @@ interface ISerialPortItemTemplate {
 	current: IStatusWithSelect;
 }
 
-class SerialPortItemRenderer implements IRenderer<IStatusWithSelect, ISerialPortItemTemplate> {
+class SerialPortItemRenderer implements IListRenderer<IStatusWithSelect, ISerialPortItemTemplate> {
 	constructor(
 		private readonly onClick: Emitter<IStatusWithSelect>,
 	) {

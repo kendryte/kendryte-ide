@@ -302,7 +302,7 @@ function uglifyWithCopyrights(): NodeJS.ReadWriteStream {
 }
 
 export function minifyTask(src: string, sourceMapBaseUrl?: string): (cb: any) => void {
-	// const sourceMappingURL = sourceMapBaseUrl ? ((f: any) => `${sourceMapBaseUrl}/${f.relative}.map`) : undefined;
+	const sourceMappingURL = sourceMapBaseUrl ? ((f: any) => `${sourceMapBaseUrl}/${f.relative}.map`) : undefined;
 
 	return cb => {
 		const jsFilter = filter('**/*.js', { restore: true });
@@ -318,8 +318,8 @@ export function minifyTask(src: string, sourceMapBaseUrl?: string): (cb: any) =>
 			minifyCSS({ reduceIdents: false }),
 			cssFilter.restore,
 			sourcemaps.write('./', {
-				// sourceMappingURL,
-				sourceRoot: undefined,
+				sourceMappingURL,
+				sourceRoot: null,
 				includeContent: true,
 				addComment: true
 			} as any),

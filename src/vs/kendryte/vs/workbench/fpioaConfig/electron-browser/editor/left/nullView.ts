@@ -1,7 +1,7 @@
 import { IListFuncMapEntry, TEMPLATE_ID } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/left/ids';
-import { IRenderer } from 'vs/base/browser/ui/list/list';
+import { IListRenderer } from 'vs/base/browser/ui/list/list';
 
-export class NullRenderer implements IRenderer<IListFuncMapEntry, any> {
+export class NullRenderer implements IListRenderer<IListFuncMapEntry, any> {
 	get templateId(): string {
 		return TEMPLATE_ID.FUNC_MAP_HIDE;
 	}

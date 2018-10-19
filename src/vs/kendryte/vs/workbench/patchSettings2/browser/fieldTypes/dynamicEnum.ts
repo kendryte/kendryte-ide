@@ -27,7 +27,7 @@ export class DynamicEnumInject extends FieldInject<string, Template> {
 		template.toDispose.push(attachEditableSelectBoxStyler(input, this.themeService));
 
 		template.toDispose.push(input.onDidChange(e => {
-			this.fireChangeEvent(template, e);
+			this.fireChangeEvent(template, { value: e, type: template.context.valueType });
 		}));
 
 		return {

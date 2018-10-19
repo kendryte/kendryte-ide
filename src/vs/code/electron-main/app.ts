@@ -68,7 +68,7 @@ import { THEME_STORAGE_KEY, THEME_BG_STORAGE_KEY } from 'vs/code/electron-main/t
 import { nativeSep, join } from 'vs/base/common/paths';
 import { homedir } from 'os';
 import { localize } from 'vs/nls';
-import { _kendrite_main_hookInstantiationService } from 'vs/kendryte/vs/code/electron-main/createServices';
+import { _kendrite_main_hookInstantiationService } from 'vs/kendryte/vs/code/electron-main/createServices.injection';
 
 export class CodeApplication {
 

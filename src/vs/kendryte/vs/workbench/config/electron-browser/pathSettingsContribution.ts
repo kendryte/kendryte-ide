@@ -12,7 +12,7 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 
 interface SettingsOverwiter<T> {
-	(access: ServicesAccessor, old: T): T;
+	(access: ServicesAccessor, old: T, defaultVal?: T): T;
 }
 
 const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {

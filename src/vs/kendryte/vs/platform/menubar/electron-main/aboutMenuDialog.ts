@@ -28,9 +28,9 @@ class WrappedWindowsService extends wss.WindowsService {
 
 		let versionsFile = '';
 		if (environmentService.isBuilt) {
-			versionsFile = resolvePath(environmentService.execPath, '..', 'packages/versions.json');
+			versionsFile = resolvePath(environmentService.execPath, '..', 'packages/bundled-versions.json');
 		} else {
-			versionsFile = resolvePath(environmentService.execPath, '../../..', 'packages/versions.json');
+			versionsFile = resolvePath(environmentService.execPath, '../../..', 'packages/bundled-versions.json');
 		}
 
 		console.log(`versionsFile=${versionsFile}`);

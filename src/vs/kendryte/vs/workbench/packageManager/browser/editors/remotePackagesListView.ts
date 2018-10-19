@@ -4,7 +4,7 @@ import { attachButtonStyler, attachListStyler, attachSelectBoxStyler } from 'vs/
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { IVirtualDelegate } from 'vs/base/browser/ui/list/list';
+import { IListVirtualDelegate } from 'vs/base/browser/ui/list/list';
 import { IRemotePackageInfo } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
 import { IPagedRenderer } from 'vs/base/browser/ui/list/listPaging';
 import { $, append } from 'vs/base/browser/dom';
@@ -26,7 +26,7 @@ import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/
 
 const TEMPLATE_ID = 'remote-packages';
 
-class ListDelegate implements IVirtualDelegate<number> {
+class ListDelegate implements IListVirtualDelegate<number> {
 	public getHeight(element: number): number {
 		return 130;
 	}

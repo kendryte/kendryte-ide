@@ -219,13 +219,13 @@ function uglifyWithCopyrights() {
     return es.duplex(input, output);
 }
 function minifyTask(src, sourceMapBaseUrl) {
-    // const sourceMappingURL = sourceMapBaseUrl ? ((f) => `${sourceMapBaseUrl}/${f.relative}.map`) : undefined;
+    const sourceMappingURL = sourceMapBaseUrl ? ((f) => `${sourceMapBaseUrl}/${f.relative}.map`) : undefined;
     return cb => {
         const jsFilter = filter('**/*.js', { restore: true });
         const cssFilter = filter('**/*.css', { restore: true });
         pump(gulp.src([src + '/**', '!' + src + '/**/*.map']), jsFilter, sourcemaps.init({ loadMaps: true }), uglifyWithCopyrights(), jsFilter.restore, cssFilter, minifyCSS({ reduceIdents: false }), cssFilter.restore, sourcemaps.write('./', {
-            // sourceMappingURL,
-            sourceRoot: undefined,
+            sourceMappingURL,
+            sourceRoot: null,
             includeContent: true,
             addComment: true
         }), gulp.dest(src + '-min'), (err) => {

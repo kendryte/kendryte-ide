@@ -13,6 +13,7 @@ import { URI } from 'vs/base/common/uri';
 import { IMainChannelLogService } from 'vs/kendryte/vs/services/channelLogger/electron-main/service';
 import { processErrorStack } from 'vs/kendryte/vs/base/electron-main/errorStack';
 import { memoize } from 'vs/base/common/decorators';
+import { IPC_ID_IS_ME_FIRST, IPC_ID_STOP_LOG_EVENT } from 'vs/kendryte/vs/base/common/ipcIds';
 
 class KendryteIPCMainService implements IKendryteMainIpcChannel {
 	_serviceBrand: any;
@@ -36,8 +37,10 @@ class KendryteIPCMainService implements IKendryteMainIpcChannel {
 		this.logger.debug('[IPC] command', command);
 		// arg = this.instantiationService.invokeFunction(parseArgs, arg || []);
 		switch (command) {
-			case 'stopLogEvent':
-				return this.mainChannelLogService._handleStopLogEvent(arg[0], arg[1]) as TPromise<any>;
+			case IPC_ID_STOP_LOG_EVENT:
+				return this.mainChannelLogService._handleStopLogEvent(arg[0], arg[1]) as Thenable<any>;
+			case IPC_ID_IS_ME_FIRST:
+				return this.isFirstWindow(arg[0]) as Thenable<any>;
 		}
 		throw new Error(`No command "${command}" found`);
 	}
@@ -51,6 +54,18 @@ class KendryteIPCMainService implements IKendryteMainIpcChannel {
 				return this.mainChannelLogService._handleLogEvent(arg[0], arg[1]) as Event<any>;
 			default:
 				throw new Error(`No event "${event}" found`);
+		}
+	}
+
+	private firstWindow: number = null;
+
+	private async isFirstWindow(windowId: number) {
+		// 明明是我先来的……
+		if (this.firstWindow === null) {
+			this.firstWindow = windowId;
+			return true;
+		} else {
+			return false;
 		}
 	}
 }

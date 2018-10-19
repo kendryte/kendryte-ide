@@ -4,7 +4,7 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
-import { IIDEBuildingBlocksService } from 'vs/kendryte/vs/services/update/common/type';
+import { IIDEBuildingBlocksService, IUpdate, UpdateFulfilled } from 'vs/kendryte/vs/services/update/common/type';
 import { IPartService } from 'vs/workbench/services/part/common/partService';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ACTION_ID_IDE_SELF_UPGRADE, ACTION_ID_UPGRADE_BUILDING_BLOCKS, getUpdateLogger, UpdateActionCategory } from 'vs/kendryte/vs/services/update/common/ids';
@@ -47,32 +47,44 @@ export class BuildingBlocksUpgradeAction extends Action {
 		return super.dispose();
 	}
 
-	public async run(event?: any, data?: any): TPromise<void> {
-		this.logger.info('check building blocks update...');
-
+	public run(event?: any, data?: any): TPromise<boolean> {
 		const handle = unClosableNotify(this.notificationService, {
 			severity: Severity.Info,
 			message: 'prepare update...',
 		});
 		this.dis.push(handle);
 
-		this.logger.info('  fetchUpdateInfo()');
-		const updateInfos = await this.ideBuildingBlocksService.fetchUpdateInfo(this.logger, true).then(undefined, (e) => {
+		this.logger.info('Start update ==========================');
+		return this._run(handle).then((updated) => {
+			handle.dispose();
+
+			if (!updated) {
+				if (data && (data.from === 'menu' || data.from === 'touchbar')) {
+					this.notificationService.info('No update available.');
+				}
+			}
+
+			return updated;
+		}, (e) => {
 			this.logger.error('==========================');
 			this.logger.error('Cannot update.');
 			this.logger.error(e);
-			this.showFailedMessage(handle, 'Cannot check update info: ' + e.message);
+			this.showFailedMessage(`Cannot update required packages:\n${e.message}\nDo you want to retry?`);
 			throw e;
 		});
+	}
+
+	public async _run(handle: INotificationHandle) {
+		handle.updateMessage(`checking update...`);
+		this.logger.info('check building blocks update...');
+		this.logger.info('  fetchUpdateInfo()');
+
+		const updateInfos = await this.ideBuildingBlocksService.fetchUpdateInfo(this.logger, true);
 		this.logger.info(' -> %s item(s) to update.', updateInfos.length);
 
 		if (updateInfos.length === 0) {
-			handle.dispose();
-			if (data && (data.from === 'menu' || data.from === 'touchbar')) {
-				this.notificationService.info('No update available.');
-			}
 			this.logger.info('No update.');
-			return;
+			return false;
 		}
 
 		await this.channelLogService.show(this.logger.id);
@@ -82,66 +94,69 @@ export class BuildingBlocksUpgradeAction extends Action {
 
 		this.logger.info('Downloading updates');
 		handle.updateMessage(`packages update: download and extract (${updateInfos.length} items)`);
-		const downloadedItems = await finishAllPromise(updateInfos.map(async (pkg) => {
-			this.logger.info('download continue: ' + pkg.name);
-			const file = await this.downloadWithProgressService.downloadTemp(pkg.downloadUrl, this.logger);
-
-			const subHandle = unClosableNotify(this.notificationService, {
-				severity: Severity.Info,
-				message: `extracting ${pkg.name} ...`,
-			});
-
-			const extracted = await this.fileCompressService.extractTemp(file, this.logger).then((p) => {
-				subHandle.dispose();
-				return p;
-			}, (e) => {
-				subHandle.revoke();
-				subHandle.updateSeverity(Severity.Error);
-				subHandle.updateMessage(e);
-				throw e;
-			});
-
-			return Object.assign(pkg, {
-				downloaded: extracted,
-			});
-		}));
+		const downloadedItems = await finishAllPromise(updateInfos.map((pkg) => this.handleEveryPackage(pkg)));
+		handle.updateMessage(`completing...)`);
 
 		if (downloadedItems.rejected.length) {
-			handle.revoke();
-			this.buildFailedMessage(
-				handle,
+			throw this.buildFailedMessage(
 				downloadedItems.rejected,
-				updateInfos.map(e => e[0]),
+				updateInfos.map(e => e.name),
 				downloadedItems.rejectedResult,
 			);
-			return;
 		}
 
 		handle.updateMessage('apply updates...');
 		await this.ideBuildingBlocksService.realRunUpdate(downloadedItems.fulfilledResult);
+
+		return true;
 	}
 
-	private buildFailedMessage(handle: INotificationHandle, indexArr: number[], names: string[], errors: Error[]) {
-		let message: string = 'Cannot download Required package:\n';
+	private async handleEveryPackage(pkg: IUpdate): Promise<UpdateFulfilled> {
+		this.logger.info('download: ' + pkg.name);
+		const file = await this.downloadWithProgressService.downloadTemp(pkg.downloadUrl, this.logger);
+		this.logger.info('download complete: ' + pkg.name);
+
+		const subHandle = unClosableNotify(this.notificationService, {
+			severity: Severity.Info,
+			message: `extracting ${pkg.name} ...`,
+		});
+
+		return this.fileCompressService.extractTemp(file, this.logger).then((extracted) => {
+			this.logger.info('extract complete: ' + pkg.name);
+			subHandle.dispose();
+
+			return Object.assign(pkg, {
+				downloaded: extracted,
+			});
+		}, (e) => {
+			this.logger.error('extract error: ' + pkg.name + ': ' + e.message);
+			subHandle.dispose();
+			throw e;
+		});
+	}
+
+	private buildFailedMessage(indexArr: number[], names: string[], errors: Error[]) {
+		let message: string = '';
 		for (const index of indexArr) {
 			message += ` * ${names[index]}: ${errors[index].message}\n`;
 		}
-		message += `Do you want to retry?`;
-		this.showFailedMessage(handle, message);
+		return new Error(message);
 	}
 
-	private showFailedMessage(handle: INotificationHandle, message: string) {
-		handle.updateSeverity(Severity.Error);
-		handle.updateMessage(message);
-		handle.updateActions({
-			primary: [
-				new Action('retry', localize('retry', 'Retry'), 'primary', true, async () => {
-					setInterval(() => {
-						this.commandService.executeCommand(ACTION_ID_UPGRADE_BUILDING_BLOCKS);
-					}, 100);
-				}),
-				new Action('cancel', localize('cancel', 'Cancel'), '', true),
-			],
+	private showFailedMessage(message: string) {
+		this.notificationService.notify({
+			severity: Severity.Error,
+			message,
+			actions: {
+				primary: [
+					new Action('retry', localize('retry', 'Retry'), 'primary', true, async () => {
+						setInterval(() => {
+							this.commandService.executeCommand(ACTION_ID_UPGRADE_BUILDING_BLOCKS).catch();
+						}, 100);
+					}),
+					new Action('cancel', localize('cancel', 'Cancel'), '', true),
+				],
+			},
 		});
 	}
 }
@@ -180,20 +195,19 @@ class IDESelfUpgradeAction extends Action {
 		this.logger = getUpdateLogger(channelLogService);
 	}
 
-	public async run(event?: any): TPromise<void> {
-		await this.updateService.checkForUpdates({});
-		if (await this.updateService.isLatestVersion()) {
-			return;
+	public async run(event?: any): TPromise<boolean> {
+		if (await this.updateService.isLatestVersion() !== false) {
+			this.logger.info('is already up to date.');
+			return false;
 		}
-
 		await this.channelLogService.show(this.logger.id);
 		if (!this.partService.isPanelMaximized()) {
 			this.partService.toggleMaximizedPanel();
 		}
 
-		await this.updateService.downloadUpdate();
-		await this.updateService.applyUpdate();
-		await this.updateService.quitAndInstall();
+		await this.updateService.checkForUpdates({ notify: true });
+
+		return true;
 	}
 }
 

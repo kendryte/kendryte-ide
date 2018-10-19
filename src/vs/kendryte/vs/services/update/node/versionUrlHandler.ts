@@ -57,7 +57,7 @@ export abstract class VersionUrlHandler implements IVersionUrlHandler {
 	}
 
 	getIDEHomePage(info: IIDEUpdateInfo): string {
-		return info.homepage || IDE_HOMEPAGE;
+		return (info && info.homepage) || IDE_HOMEPAGE;
 	}
 
 	getPatchList(info: IIDEUpdateInfo): { version: number; downloadUrl: string; }[] {

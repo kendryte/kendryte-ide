@@ -1,8 +1,8 @@
 import { $, append } from 'vs/base/browser/dom';
-import { IRenderer } from 'vs/base/browser/ui/list/list';
+import { IListRenderer } from 'vs/base/browser/ui/list/list';
 import { IListSplitEntry, TEMPLATE_ID } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/left/ids';
 
-export class SplitRenderer implements IRenderer<IListSplitEntry, any> {
+export class SplitRenderer implements IListRenderer<IListSplitEntry, any> {
 	get templateId(): string {
 		return TEMPLATE_ID.SPLIT;
 	}

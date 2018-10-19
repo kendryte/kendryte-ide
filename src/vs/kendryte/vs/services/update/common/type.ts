@@ -4,7 +4,8 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
 
 export type UpdateList = IUpdate[];
-export type UpdateListFulfilled = (IUpdate & { downloaded: string })[];
+export type UpdateFulfilled = IUpdate & { downloaded: string };
+export type UpdateListFulfilled = UpdateFulfilled[];
 
 export interface IUpdate {
 	name: string;

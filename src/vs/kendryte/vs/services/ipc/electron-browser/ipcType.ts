@@ -7,6 +7,8 @@ export interface IKendryteClientService {
 	markMethod<T>(service: ServiceIdentifier<T>, methods: (keyof T)[]);
 	markEventMethod<T>(service: ServiceIdentifier<T>, ems: (keyof T)[]);
 	as<T>(service: ServiceIdentifier<T>): T;
+
+	isMeFirst(): Promise<boolean>;
 }
 
 export const IKendryteClientService = createDecorator<IKendryteClientService>('kendryteIPCService');

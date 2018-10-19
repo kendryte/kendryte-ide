@@ -19,6 +19,8 @@ if command -v stty &>/dev/null ; then
 	echo ""
 	echo -e '\e[1;5;38;5;14m!!! Press Ctrl+K instead of Ctrl+C to stop this. !!!\e[0m'
 	echo ""
+	ORIG=$(stty -a | grep -oE 'intr\s*=\s*[^;]+' | sed 's/=//g')
+	trap "stty ${ORIG}" EXIT INT TERM
 fi
 
 export FORCE_COLOR=yes

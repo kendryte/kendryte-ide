@@ -1,5 +1,5 @@
 import { $, addClass, append } from 'vs/base/browser/dom';
-import { IRenderer } from 'vs/base/browser/ui/list/list';
+import { IListRenderer } from 'vs/base/browser/ui/list/list';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IListEntry } from 'vs/workbench/services/preferences/common/keybindingsEditorModel';
 
@@ -15,7 +15,7 @@ interface ISplitTemplate {
 
 const SPLIT_TEMPLATE_ID = 'SplitRenderer';
 
-class SplitRenderer implements IRenderer<ISplitEntry, ISplitTemplate> {
+class SplitRenderer implements IListRenderer<ISplitEntry, ISplitTemplate> {
 	private $root: HTMLDivElement;
 
 	get templateId(): string {

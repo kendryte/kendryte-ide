@@ -3,37 +3,15 @@ import { EnablementState, IExtensionEnablementService, IExtensionGalleryService,
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { IProgressService2, IProgressStep, ProgressLocation } from 'vs/workbench/services/progress/common/progress';
-import { IWindowService, IWindowsService } from 'vs/platform/windows/common/windows';
 import { IProgress } from 'vs/platform/progress/common/progress';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 
-enum ReloadType {
-	NO_NEED,
-	RELOAD,
-	RELAUNCH,
-}
-
-let reloadType: ReloadType = ReloadType.NO_NEED;
-
-export function MaixBuildSystemReload(access: ServicesAccessor) {
-	switch (reloadType) {
-		case ReloadType.RELAUNCH:
-			const windowsService: IWindowsService = access.get(IWindowsService);
-			return windowsService.relaunch({});
-		case ReloadType.RELOAD:
-			const windowService: IWindowService = access.get(IWindowService);
-			return windowService.reloadWindow();
-	}
-	return TPromise.as(void 0);
-}
-
-export function MaixBuildSystemPrepare(access: ServicesAccessor): TPromise<void> {
+// TODO: need change to action
+export function MaixBuildSystemPrepare(access: ServicesAccessor): TPromise<boolean> {
 	const extensionManagementService: IExtensionManagementService = access.get(IExtensionManagementService);
 	const extensionGalleryService: IExtensionGalleryService = access.get(IExtensionGalleryService);
 	const extensionEnablementService: IExtensionEnablementService = access.get(IExtensionEnablementService);
 	const notificationService: INotificationService = access.get(INotificationService);
 	const progressService: IProgressService2 = access.get(IProgressService2);
-	const environmentService: IEnvironmentService = access.get(IEnvironmentService);
 
 	return installExtension(
 		'webfreak.debug',
@@ -41,19 +19,10 @@ export function MaixBuildSystemPrepare(access: ServicesAccessor): TPromise<void>
 		'ms-vscode.cpptools',
 		'ms-ceintl.vscode-language-pack-zh-hans',
 	).then((changed) => {
-		if (changed.indexOf('ms-ceintl.vscode-language-pack-zh-hans') !== -1) {
-			if (environmentService.isBuilt) {
-				reloadType = ReloadType.RELAUNCH;
-			} else {
-				reloadType = ReloadType.RELOAD;
-			}
-		} else if (changed.length) {
-			reloadType = ReloadType.RELOAD;
-		}
+		return changed.length > 0;
 	});
 
 	function _installExtension(id: string, reporter: IProgress<IProgressStep>): TPromise<boolean> {
-		console.log('install extension %s', id);
 		reporter.report({ message: id });
 		return extensionGalleryService.query({ names: [id], source: 'install-recommendation', pageSize: 1 }).then(pager => {
 			if (pager && pager.firstPage && pager.firstPage.length) {

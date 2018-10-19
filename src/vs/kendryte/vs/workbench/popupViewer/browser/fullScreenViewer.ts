@@ -2,7 +2,6 @@ import { $, addDisposableListener, append, Dimension, EventType, getClientArea, 
 import { IDisposable } from 'vs/base/common/lifecycle';
 import { assign } from 'vs/base/common/objects';
 import { isWindows } from 'vs/base/common/platform';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { editorBackground, editorForeground, editorWidgetBorder } from 'vs/platform/theme/common/colorRegistry';
@@ -10,6 +9,7 @@ import { ITheme, IThemeService } from 'vs/platform/theme/common/themeService';
 import { Composite } from 'vs/workbench/browser/composite';
 import { BaseEditor } from 'vs/workbench/browser/parts/editor/baseEditor';
 import 'vs/css!vs/kendryte/vs/workbench/popupViewer/browser/frame';
+import { IStorageService } from 'vs/platform/storage/common/storage';
 
 const zIndex = 998;
 
@@ -32,8 +32,9 @@ export class FullScreenEditor extends Composite {
 		private readonly $editor: BaseEditor,
 		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
+		@IStorageService storageService: IStorageService,
 	) {
-		super($editor.getId(), telemetryService, themeService);
+		super($editor.getId(), telemetryService, themeService, storageService);
 
 		const id = $editor.getId();
 
@@ -72,12 +73,12 @@ export class FullScreenEditor extends Composite {
 		lbl.style.color = theme.getColor(editorForeground).toString();
 	}
 
-	async create(): TPromise<void> {
+	async create() {
 		append(document.body, this.$root);
 		await this.$mask.create();
 	}
 
-	async setVisible(visible: boolean): TPromise<void> {
+	async setVisible(visible: boolean) {
 		await this.$mask.setVisible(visible);
 		if (visible) {
 			this.$root.style.display = 'flex';

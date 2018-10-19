@@ -18,6 +18,7 @@ import { ICommandService } from 'vs/platform/commands/common/commands';
 import { SAVE_FILE_COMMAND_ID } from 'vs/workbench/parts/files/electron-browser/fileCommands';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IEditorGroup } from 'vs/workbench/services/group/common/editorGroupsService';
+import { IStorageService } from 'vs/platform/storage/common/storage';
 
 export class FpioaEditor extends BaseEditor {
 	public static readonly ID: string = 'workbench.editor.fpioaEditor';
@@ -35,8 +36,9 @@ export class FpioaEditor extends BaseEditor {
 		@INotificationService private notifyService: INotificationService,
 		@IInstantiationService private instantiationService: IInstantiationService,
 		@ICommandService commandService: ICommandService,
+		@IStorageService storageService: IStorageService,
 	) {
-		super(FpioaEditor.ID, telemetryService, themeService);
+		super(FpioaEditor.ID, telemetryService, themeService, storageService);
 
 		this._register(commandService.onWillExecuteCommand(({ commandId }) => this.saveCommandHandler(commandId)));
 	}

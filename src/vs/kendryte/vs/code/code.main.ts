@@ -2,4 +2,4 @@
 
 import 'vs/kendryte/main.main';
 
-import 'vs/kendryte/vs/code/electron-main/aboutMenuDialog';
+import 'vs/kendryte/vs/platform/menubar/electron-main/aboutMenuDialog';

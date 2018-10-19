@@ -19,6 +19,7 @@
     "precommit": "bash my-scripts/pre-commit.sh && node build/gulpfile.hygiene.js",
     "gulp": "gulp --max_old_space_size=4095",
     "7z": "7z",
+    "bash": "bash",
     "update-grammars": "node build/npm/update-all-grammars.js",
     "update-localization-extension": "node build/npm/update-localization-extension.js",
     "smoketest": "cd test/smoke && node test/index.js",

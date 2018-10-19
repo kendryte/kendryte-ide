@@ -1,7 +1,7 @@
 import { Transform } from 'stream';
 
 export class TimeoutBuffer extends Transform {
-	private to: number;
+	private to: NodeJS.Timer;
 	private _enabled: boolean;
 
 	constructor(private readonly timeoutSeconds: number) {
@@ -18,7 +18,7 @@ export class TimeoutBuffer extends Transform {
 		callback();
 	}
 
-	_destroy(err: Error, callback: Function) {
+	_destroy(err: Error, callback: (error?: Error) => void) {
 		clearTimeout(this.to);
 		if (err) {
 			this.emit('error', err);
@@ -30,7 +30,7 @@ export class TimeoutBuffer extends Transform {
 		this._enabled = false;
 		if (this.to) {
 			clearTimeout(this.to);
-			this.to = 0;
+			this.to = null;
 		}
 	}
 
@@ -52,7 +52,7 @@ export class TimeoutBuffer extends Transform {
 		this._enabled = true;
 		if (this.to) {
 			clearTimeout(this.to);
-			this.to = 0;
+			this.to = null;
 		}
 		this.to = setTimeout(() => {
 			console.error('a buffer has timeout');

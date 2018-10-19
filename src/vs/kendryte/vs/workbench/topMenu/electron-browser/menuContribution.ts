@@ -6,7 +6,7 @@ import { MaixCMakeBuildAction } from 'vs/kendryte/vs/workbench/cmake/electron-br
 import { MaixCMakeDebugAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/debugRunAction';
 import { CreateShortcutsAction } from 'vs/kendryte/vs/workbench/topMenu/node/shortcutsContribution';
 import { MaixSerialUploadAction } from 'vs/kendryte/vs/workbench/serialUpload/node/uploadAction';
-import { BuildingBlocksUpgradeAction } from 'vs/kendryte/vs/services/update/electron-browser/openPackageUpgradeAction';
+import { BuildingBlocksUpgradeAction } from 'vs/kendryte/vs/services/update/electron-browser/buildingBlocksUpgradeAction';
 import { localize } from 'vs/nls';
 import { OpenPackagesMarketPlaceAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/openPackagesMarketPlaceAction';
 import { InstallDependencyAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/installDependencyAction';

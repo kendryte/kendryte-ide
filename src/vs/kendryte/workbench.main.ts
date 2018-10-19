@@ -1,5 +1,7 @@
 //// included by "vs/workbench/workbench.main.ts"
 
+// bootstrap
+import 'vs/kendryte/vs/workbench/bootstrap/electron-browser/kendryteBootstrap';
 // ipc channel (client)
 import 'vs/kendryte/vs/services/ipc/electron-browser/ipcChannelWorkbench';
 // Logger
@@ -14,9 +16,9 @@ import 'vs/kendryte/vs/services/download/electron-browser/nodeDownloadService'; 
 import 'vs/kendryte/vs/services/download/electron-browser/downloadWithProgressService'; // download
 // Update service
 import 'vs/kendryte/vs/services/update/electron-browser/ideBuildingBlocksService';
-import 'vs/kendryte/vs/services/update/electron-browser/openPackageUpgradeAction';
+import 'vs/kendryte/vs/services/update/electron-browser/buildingBlocksUpgradeAction';
 import 'vs/kendryte/vs/services/update/node/openReleasePageAction';
-import 'vs/kendryte/vs/services/update/electron-browser/selfUpdateService';
+import 'vs/kendryte/vs/services/update/electron-browser/selfUpdateWorkbenchService';
 // Settings sections
 import 'vs/kendryte/vs/workbench/config/browser/categoryContribution';
 import 'vs/kendryte/vs/workbench/config/electron-browser/pathSettingsContribution';

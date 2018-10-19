@@ -1,4 +1,4 @@
-import { IRenderer } from 'vs/base/browser/ui/list/list';
+import { IListRenderer } from 'vs/base/browser/ui/list/list';
 import { IListChipSelectEntry, TEMPLATE_ID } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/left/ids';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { ISelectData, SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
@@ -17,7 +17,7 @@ export interface IChipSelectTemplate {
 	toDispose: IDisposable[];
 }
 
-export class ChipSelectRenderer implements IRenderer<IListChipSelectEntry, IChipSelectTemplate> {
+export class ChipSelectRenderer implements IListRenderer<IListChipSelectEntry, IChipSelectTemplate> {
 	private names: string[];
 
 	private readonly _onDidChange = new Emitter<string>();

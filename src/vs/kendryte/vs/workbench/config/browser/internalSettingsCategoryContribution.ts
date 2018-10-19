@@ -5,7 +5,7 @@ import { commonlyUsedData } from 'vs/workbench/parts/preferences/browser/setting
 const CategoryRegistry = Registry.as<IConfigCategoryRegistry>(Extensions.ConfigCategory);
 if (!CategoryRegistry) {
 	debugger;
-	require('electron').remote.getCurrentWindow().reload();
+	(require('electron') as any).remote.getCurrentWindow().reload();
 }
 
 CategoryRegistry.registerCategory({ id: 'build-deploy', category: '构建与调试' });

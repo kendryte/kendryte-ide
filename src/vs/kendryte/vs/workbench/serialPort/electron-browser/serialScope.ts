@@ -14,6 +14,7 @@ import { ILocalOptions, SerialPortBaseBinding, serialPortEOL } from 'vs/kendryte
 import { OutputXTerminal } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/outputWindow';
 import { ISerialMonitorControlService } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/outputWindowControlService';
 import { ILogService } from 'vs/platform/log/common/log';
+import { IDebugSession } from 'vs/workbench/parts/debug/common/debug';
 
 export class SerialScope extends Disposable implements ISerialPrivateReplService {
 	_serviceBrand: any;
@@ -75,6 +76,15 @@ export class SerialScope extends Disposable implements ISerialPrivateReplService
 	setOutput(xterm: OutputXTerminal) {
 		this.logService.info('setOutput()');
 		this.serialMonitorControlService.setSingleton(xterm);
+	}
+
+	public selectSession(session: IDebugSession): void {
+		this.logService.info('selectSession');
+	}
+
+	public clearRepl(): void {
+		this.logService.info('clearRepl');
+		this.model.setValue('');
 	}
 }
 

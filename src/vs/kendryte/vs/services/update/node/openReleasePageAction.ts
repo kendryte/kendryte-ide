@@ -9,9 +9,10 @@ export class OpenKendryteReleasePageAction extends Action {
 	public static readonly LABEL = localize('update now', 'Update now');
 
 	constructor(
+		id = OpenKendryteReleasePageAction.ID, label = OpenKendryteReleasePageAction.LABEL,
 		public readonly url = IDE_HOMEPAGE,
 	) {
-		super(OpenKendryteReleasePageAction.ID, OpenKendryteReleasePageAction.LABEL);
+		super(id, label);
 	}
 
 	public run(event?: any): TPromise<boolean> {

@@ -16,11 +16,13 @@ import { IAddedViewDescriptorRef } from 'vs/workbench/browser/parts/views/views'
 import { always } from 'vs/base/common/async';
 import { IProgressService } from 'vs/platform/progress/common/progress';
 import { LocalPackagesListView } from 'vs/kendryte/vs/workbench/packageManager/browser/viewletPanels/localPackagesListView';
+import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 
 export class PackageManagerViewlet extends ViewContainerViewlet implements IPackageManagerViewlet {
 	private primaryActions: Action[];
 
 	constructor(
+		@IConfigurationService configurationService: IConfigurationService,
 		@IPartService partService: IPartService,
 		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
@@ -31,7 +33,7 @@ export class PackageManagerViewlet extends ViewContainerViewlet implements IPack
 		@IWorkspaceContextService contextService: IWorkspaceContextService,
 		@IProgressService private progressService: IProgressService,
 	) {
-		super(VIEWLET_ID, `${VIEWLET_ID}.state`, true, partService, telemetryService, storageService, instantiationService, themeService, contextMenuService, extensionService, contextService);
+		super(VIEWLET_ID, `${VIEWLET_ID}.state`, true, configurationService, partService, telemetryService, storageService, instantiationService, themeService, contextMenuService, extensionService, contextService);
 	}
 
 	getOptimalWidth(): number {

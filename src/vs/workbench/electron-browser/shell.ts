@@ -100,7 +100,7 @@ import { IDownloadService } from 'vs/platform/download/common/download';
 import { DownloadService } from 'vs/platform/download/node/downloadService';
 import { runWhenIdle } from 'vs/base/common/async';
 import { TextResourcePropertiesService } from 'vs/workbench/services/textfile/electron-browser/textResourcePropertiesService';
-import { _kendrite_workbench_hookInstantiationService } from 'vs/kendryte/vs/platform/vscode/electron-browser/createChannels';
+import { _kendrite_workbench_hookInstantiationService } from 'vs/kendryte/vs/platform/vscode/electron-browser/createChannels.injection';
 
 /**
  * Services that we require for the Shell
