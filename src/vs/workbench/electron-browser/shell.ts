@@ -39,7 +39,6 @@ import { IIntegrityService } from 'vs/platform/integrity/common/integrity';
 import { EditorWorkerServiceImpl } from 'vs/editor/common/services/editorWorkerServiceImpl';
 import { IEditorWorkerService } from 'vs/editor/common/services/editorWorkerService';
 import { ExtensionService } from 'vs/workbench/services/extensions/electron-browser/extensionService';
-import { IStorageLegacyService } from 'vs/platform/storage/common/storageLegacyService';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { InstantiationService } from 'vs/platform/instantiation/node/instantiationService';
@@ -76,7 +75,7 @@ import { HashService } from 'vs/workbench/services/hash/node/hashService';
 import { IHashService } from 'vs/workbench/services/hash/common/hashService';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
-import { DelegatingStorageService } from 'vs/platform/storage/electron-browser/storageService';
+import { DelegatingStorageService } from 'vs/platform/storage/node/storageService';
 import { Event, Emitter } from 'vs/base/common/event';
 import { WORKBENCH_BACKGROUND } from 'vs/workbench/common/theme';
 import { ILocalizationsChannel, LocalizationsChannelClient } from 'vs/platform/localizations/node/localizationsIpc';
@@ -109,7 +108,6 @@ export interface ICoreServices {
 	configurationService: IConfigurationService;
 	environmentService: IEnvironmentService;
 	logService: ILogService;
-	storageLegacyService: IStorageLegacyService;
 	storageService: DelegatingStorageService;
 }
 
@@ -122,7 +120,9 @@ export class WorkbenchShell extends Disposable {
 	private readonly _onShutdown = this._register(new Emitter<ShutdownEvent>());
 	get onShutdown(): Event<ShutdownEvent> { return this._onShutdown.event; }
 
-	private storageLegacyService: IStorageLegacyService;
+	private readonly _onRunning = this._register(new Emitter<void>());
+	get onRunning(): Event<void> { return this._onRunning.event; }
+
 	private storageService: DelegatingStorageService;
 	private environmentService: IEnvironmentService;
 	private logService: ILogService;
@@ -153,7 +153,6 @@ export class WorkbenchShell extends Disposable {
 		this.configurationService = coreServices.configurationService;
 		this.environmentService = coreServices.environmentService;
 		this.logService = coreServices.logService;
-		this.storageLegacyService = coreServices.storageLegacyService;
 		this.storageService = coreServices.storageService;
 
 		this.mainProcessServices = mainProcessServices;
@@ -212,8 +211,10 @@ export class WorkbenchShell extends Disposable {
 			// Startup Workbench
 			workbench.startup().then(startupInfos => {
 
-				// Set lifecycle phase to `Runnning` so that other contributions can now do something
+				// Set lifecycle phase to `Runnning` so that other contributions can
+				// now do something we also emit this as event to interested parties outside
 				this.lifecycleService.phase = LifecyclePhase.Running;
+				this._onRunning.fire();
 
 				// Startup Telemetry
 				this.logStartupTelemetry(startupInfos);
@@ -301,7 +302,7 @@ export class WorkbenchShell extends Disposable {
 				loggedStorageErrors.add(errorStr);
 
 				/* __GDPR__
-					"sqliteStorageError" : {
+					"sqliteStorageError2" : {
 						"globalReadTime" : { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true },
 						"workspaceReadTime" : { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true },
 						"localStorageAccessTime" : { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true },
@@ -314,7 +315,7 @@ export class WorkbenchShell extends Disposable {
 						"storageError": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true }
 					}
 				*/
-				this.telemetryService.publicLog('sqliteStorageError', {
+				this.telemetryService.publicLog('sqliteStorageError2', {
 					'globalReadTime': globalStorageInitDuration,
 					'workspaceReadTime': workspaceStorageInitDuration,
 					'localStorageAccessTime': localStorageAccessDuration,
@@ -336,7 +337,7 @@ export class WorkbenchShell extends Disposable {
 			workspaceIntegrity = integrity;
 
 			/* __GDPR__
-				"sqliteStorageTimers" : {
+				"sqliteStorageTimers2" : {
 					"globalReadTime" : { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true },
 					"workspaceReadTime" : { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true },
 					"localStorageAccessTime" : { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true },
@@ -349,7 +350,7 @@ export class WorkbenchShell extends Disposable {
 					"startupKind": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true }
 				}
 			*/
-			this.telemetryService.publicLog('sqliteStorageTimers', {
+			this.telemetryService.publicLog('sqliteStorageTimers2', {
 				'globalReadTime': globalStorageInitDuration,
 				'workspaceReadTime': workspaceStorageInitDuration,
 				'localStorageAccessTime': localStorageAccessDuration,
@@ -371,7 +372,6 @@ export class WorkbenchShell extends Disposable {
 		serviceCollection.set(IEnvironmentService, this.environmentService);
 		serviceCollection.set(ILabelService, new SyncDescriptor(LabelService));
 		serviceCollection.set(ILogService, this._register(this.logService));
-		serviceCollection.set(IStorageLegacyService, this.storageLegacyService);
 		serviceCollection.set(IStorageService, this.storageService);
 
 		this.mainProcessServices.forEach((serviceIdentifier, serviceInstance) => {
