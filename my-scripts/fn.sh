@@ -13,7 +13,14 @@ function dieFile() {
 	echo -en "\n\e[38;5;9m" >&2
 	echo -n  "$1" >&2
 	echo -e "\e[0m\n" >&2
-	echo -e "$(< "$2")" >&2
+	if [ -e "$2" ]; then
+		echo "$(< "$2")" >&2
+	else
+		die "FATAL ERROR: No error log file: $2."
+	fi
+	echo -en "\n\e[38;5;9m" >&2
+	echo -n  "$1" >&2
+	echo -e "\e[0m\n" >&2
 	exit 1
 }
 

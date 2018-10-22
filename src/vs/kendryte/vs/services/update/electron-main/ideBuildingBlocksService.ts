@@ -16,6 +16,7 @@ import { buffer, Emitter } from 'vs/base/common/event';
 import { app, BrowserWindow } from 'electron';
 import { isWindows } from 'vs/base/common/platform';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
+import { format } from 'util';
 
 const STORAGE_KEY = 'block-update';
 
@@ -64,19 +65,27 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 			e.preventDefault();
 
 			const win = this._showNotify();
-			this.handleQuit(data).then(() => {
+			const logg = (message: string, ...args: any[]) => {
+				const msg = format(message, ...args);
+				console.log(msg);
+				win.webContents.executeJavaScript(`doLog(${JSON.stringify(msg)})`).catch();
+			};
+
+			const finish = () => {
 				debugger;
-				console.log('### relaunch');
-				win.close();
-				this.lifecycleService.relaunch();
-			}, (e) => {
-				debugger;
+				logg('### relaunch');
+				setTimeout(() => {
+					win.destroy();
+					app.relaunch();
+					app.quit();
+				}, 2000);
+			};
+
+			this.handleQuit(data, logg).catch((e) => {
 				console.error(e);
+				logg('Failed with ' + e.message);
 				alert('Error while moving files: ' + e.message);
-				console.log('### relaunch');
-				win.close();
-				this.lifecycleService.relaunch();
-			});
+			}).then(finish);
 		});
 
 		this.lifecycleService.quit().then(() => {
@@ -185,26 +194,26 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 		return (new Date) <= mustRecheck;
 	}
 
-	private async handleQuit(data: UpdateListFulfilled) {
+	private async handleQuit(data: UpdateListFulfilled, logger: (msg: string, ...args: any[]) => void) {
 		for (const { name, version, downloaded } of data) {
-			console.log('update package:', name);
+			logger('update package:', name);
 
 			const thisPackageLoc = this.nodePathService.getPackagesPath(name);
 
-			console.log('  rimraf(%s)', thisPackageLoc);
+			logger('  rimraf(%s)', thisPackageLoc);
 			await rimraf(thisPackageLoc);
 
-			console.log('  copy(%s, %s)', downloaded, thisPackageLoc);
+			logger('  copy(%s, %s)', downloaded, thisPackageLoc);
 			await copy(downloaded, thisPackageLoc);
 			this.bundledVersions[name] = version;
-			console.log('  writeFile(%s) -> %s = %s', this.packageBundleFile, name, version);
+			logger('  writeFile(%s) -> %s = %s', this.packageBundleFile, name, version);
 			await writeFile(this.packageBundleFile, JSON.stringify(this.bundledVersions, null, 2));
 		}
 	}
 
 	private _showNotify() {
 		const win = new BrowserWindow({
-			height: 240,
+			height: 800,
 			width: 800,
 			x: 0,
 			y: 0,
@@ -217,12 +226,26 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 			vibrancy: 'popover',
 		});
 
-		let message = '<h1>Updating, please wait...</h1>';
+		let message = '<body style="display:flex;flex-direction:column;"><h1>Updating, please wait...</h1>';
+
 		if (isWindows) {
 			message += '<h2>This will take no more than few minutes.</h2>';
 		} else {
 			message += '<h2>This will take about few seconds.</h2>';
 		}
+
+		message += `<div id="log" style="width:100%;flex:1;overflow-y:scroll;word-break:break-all;"></div><script type="text/javascript">
+window.doLog = function (msg){
+	console.log(msg);
+	const d = document.createElement('DIV');
+	d.innerText = msg;
+	
+	const l = document.getElementById('log');
+	l.appendChild(d);
+	l.scrollTop = d.scrollHeight;
+}
+</script>`;
+		message += '</body>';
 		win.loadURL(`data:text/html;charset=utf8,${encodeURIComponent(message)}`);
 		return win;
 	}

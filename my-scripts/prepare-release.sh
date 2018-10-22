@@ -33,8 +33,19 @@ function prepare_arch() {
 
 	if [ "$SYSTEM" = "windows" ]; then
 		if ! cat $(cygpath -u "$(yarn global dir)/package.json") | grep -q windows-build-tools ; then
-			echo -e "===========================\n\n\tPlease Wait for install windows-build-tools\n\n==========================="
-			cygstart --wait --action=runas ./node.exe $(cygpath -m "${VSCODE_ROOT}/my-scripts/windows-install.js")
+			pushd "${TEMP-${TMP}}" &>/dev/null || die "Cannot get temp folder by env var: TMP, TEMP"
+			echo -e "===========================\n\n\tPlease Wait for install windows-build-tools\n : You will need \"Press any key to continue\" in That window .\n\n==========================="
+
+			echo "@echo off" > install-windows-build-tools.cmd
+			echo "
+			set PATH=$(cygpath -m "$NODEJS");%PATH%
+			set HTTP_PROXY=$HTTP_PROXY
+			set YARN_CACHE_FOLDER=$YARN_CACHE_FOLDER
+			start $(cygpath -m "${NODEJS}") $(cygpath -m "${VSCODE_ROOT}/my-scripts/windows-install.js") --prefer-offline --cache-folder "${YARN_CACHE_FOLDER}"
+			" >> install-windows-build-tools.cmd
+
+			cygstart --wait --action=runas ${NODEJS} $(cygpath -m "${VSCODE_ROOT}/my-scripts/windows-install.js") || dieFile "Install windows-build-tools Failed" "$(yarn global dir)/yarn-error.log"
+			popd &>/dev/null
 		fi
 	fi
 }
