@@ -28,6 +28,8 @@
 
 #package-manager .package-item {
 	padding: 5px 12px;
+	line-height: initial;
+	height: initial;
 }
 
 #package-manager .package-item > .title {

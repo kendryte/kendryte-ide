@@ -73,11 +73,11 @@ class ListRenderer implements IPagedRenderer<IRemotePackageInfo, ITemplateData> 
 	public renderPlaceholder(index: number, templateData: ITemplateData): void {
 	}
 
-	public renderTemplate(container: HTMLElement): ITemplateData {
+	public renderTemplate(parent: HTMLElement): ITemplateData {
 		const disposables: IDisposable[] = [];
 		const elementDisposables: IDisposable[] = [];
 
-		container.classList.add('package-item');
+		const container = append(parent, $('div.package-item'));
 
 		const titleLine = append(container, $('div.title'));
 		const icon = append(titleLine, $('span.icon'));
