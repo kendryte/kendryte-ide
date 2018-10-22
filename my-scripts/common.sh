@@ -49,7 +49,7 @@ fi
 
 export YARN_CACHE_FOLDER="${RELEASE_ROOT}/yarn-cache"
 if [ "$SYSTEM" = "windows" ]; then
-		export YARN_CACHE_FOLDER="$(cygpath -m "${YARN_CACHE_FOLDER}")"
+	export YARN_CACHE_FOLDER="$(cygpath -m "${YARN_CACHE_FOLDER}")"
 fi
 
 if [ -n "${ORIGINAL_PATH}" ]; then
@@ -70,8 +70,9 @@ if [ "$SYSTEM" = "windows" ]; then
 	}
 	path_foreach "${ORIGINAL_PATH}" pushP
 
-	GIT="$(PATH="$WinPath" command -v git)" || die "git not installed"
-	PATH="$(dirname "$GIT"):$PATH:$(cygpath -W):$(cygpath -S):$(cygpath -S)/Wbem:$(cygpath -S)/WindowsPowerShell/v1.0/"
+	GIT="$(PATH="$WinPath" command -v git)" || die "git not installed.\n\n================${WinPath}\n================"
+	PYTHON="$(PATH="$WinPath" command -v python)" || die "python not installed, 'windows-build-tools' is required.\n\n================${WinPath}\n================"
+	PATH="$(dirname "$GIT"):$(dirname "$PYTHON"):$PATH:$(cygpath -W):$(cygpath -S):$(cygpath -S)/Wbem:$(cygpath -S)/WindowsPowerShell/v1.0/"
 fi
 
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =

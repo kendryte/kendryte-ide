@@ -1,9 +1,19 @@
 #!/usr/bin/env bash
 
+export LANG="en_US.ascii"
+export LC_ALL="en_US.ascii"
+
 function die() {
 	echo -en "\n\e[38;5;9m" >&2
 	echo -n  "$@" >&2
 	echo -e "\e[0m\n" >&2
+	exit 1
+}
+function dieFile() {
+	echo -en "\n\e[38;5;9m" >&2
+	echo -n  "$1" >&2
+	echo -e "\e[0m\n" >&2
+	echo -e "$(< "$2")" >&2
 	exit 1
 }
 

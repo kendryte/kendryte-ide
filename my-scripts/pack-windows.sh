@@ -19,68 +19,53 @@ fi
 
 function yarn_location_of() {
 	local WHAT=$1
-	echo "${HOME}/yarn-dir/$WHAT"
+	echo "${RELEASE_ROOT}/yarn-dir/$WHAT"
 }
 
-function yarn_install() { # what
-	local WHAT=$1
-	local TARGET="$(yarn_location_of ${WHAT})"
-	mkdir -p "${TARGET}"
-
-	echo 'disturl "https://atom.io/download/electron"
-target "2.0.7"
-runtime "electron"
-cache-folder "'${YARN_CACHE_FOLDER}'"
-' > "${TARGET}/.yarnrc"
-	node -p "JSON.stringify({dependencies: require('./package.json').$WHAT})" > "${TARGET}/package.json"
-	cp -f "yarn.lock" "${TARGET}"
-
-	pushd "${TARGET}" &>/dev/null
-	yarn install -y --use-yarnrc .yarnrc --prefer-offline --cache-folder "${YARN_CACHE_FOLDER}"
+function yarn_install() {
+	echo "install $1... (please wait)"
+	pushd "$(yarn_location_of "$1")" &>/dev/null
+	echo "  logfile is at `pwd`/install.log"
+	yarn install &>install.log || dieFile "=======================" install.log
+	echo "  complete."
 	popd &>/dev/null
 }
 
-if ! command -v "lnk" &>/dev/null ; then
-	npm install lnk-cli --global
-fi
-
-DevModules="$(yarn_location_of devDependencies)/node_modules"
-yarn_install devDependencies
-lnk $(native_path "${DevModules}") ./
-
-ModulesRoot="$(yarn_location_of dependencies)"
-yarn_install dependencies
-
-echo "install complete..."
-
-export ARG_CODE_ROOT="$(native_path "$VSCODE_ROOT")"
-export ARG_MODULES="$(native_path "$ModulesRoot")"
-
-
-C_YARN="$(command -v yarn)"
-O_YARN="$(cygpath -w "${C_YARN}")"
-
-C_YARN_RC="$(yarn_location_of .yarnrc)"
-O_YARN_RC="$(cygpath -w "${C_YARN_RC}")"
-
-echo 'disturl "https://atom.io/download/electron"
-target "2.0.7"
-runtime "electron"
-' > "${C_YARN_RC}"
-
-cd "$(yarn_location_of .)"
-echo "exec '${C_YARN}' --use-yarnrc '${O_YARN_RC}' --prefer-offline --cache-folder '${YARN_CACHE_FOLDER}' \"\$@\"" > yarn
-echo "@echo off
-\"${O_YARN}\" --use-yarnrc \"${O_YARN_RC}\" --prefer-offline --cache-folder \"${YARN_CACHE_FOLDER}\" %*" > yarn.cmd
-chmod a+x yarn yarn.cmd
+echo "prepare..."
+node my-scripts/build-env/pack-win.prepare.js
 
 export PATH="$(yarn_location_of .):$PATH"
 
-"$DevModules/.bin/gulp" --gulpfile "${ARG_CODE_ROOT}/my-scripts/gulpfile/pack-win.js"
+### devDependencies
+yarn_install devDependencies
+DevModules="$(yarn_location_of devDependencies)/node_modules"
 
-cd "$ModulesRoot"
-echo ":: $ModulesRoot"
+## link them
+if ! command -v "lnk" &>/dev/null ; then
+	yarn global add lnk-cli
+fi
+echo "  link dev modules to worktree"
+lnk ./.release/yarn-dir/devDependencies/node_modules ./
+
+### dependencies
+yarn_install dependencies
+ModulesRoot="$(yarn_location_of dependencies)"
+echo "  package it..."
+echo "    (wd: $(pwd))"
+echo "    \$0: $DevModules/.bin/gulp"
+echo "         --gulpfile my-scripts/gulpfile/pack-win.js"
+LOG="$ModulesRoot/pack.log"
+"$DevModules/.bin/gulp" --gulpfile "my-scripts/gulpfile/pack-win.js" &>"$LOG" || dieFile "=======================" "$LOG"
+
+## copy
+pushd "$ModulesRoot" &>/dev/null
+echo "    move asar result files..."
 mv node_modules.asar.unpacked node_modules.asar "$VSCODE_ROOT"
+popd &>/dev/null
 
-cd "$VSCODE_ROOT"
-yarn run postinstall
+### run post install (eg. install extensions node_modules)
+echo "run post-install script..."
+LOG="$(yarn_location_of postinstall.log)"
+yarn run postinstall &>${LOG} || dieFile "=======================" "$LOG"
+echo "Everything complete."
+

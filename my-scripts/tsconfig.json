@@ -1,0 +1,23 @@
+{
+	"extends": "../src/tsconfig.base.json",
+	"compilerOptions": {
+		"declaration": false,
+		"inlineSourceMap": true,
+		"module": "commonjs",
+		"target": "esnext",
+		"lib": [
+			"es5",
+			"es6",
+			"es7",
+			"esnext"
+		],
+		"allowJs": false,
+		"checkJs": false,
+		"outDir": ".",
+		"noEmitOnError": false
+	},
+	"exclude": [],
+	"include": [
+		"./**/*.ts"
+	]
+}

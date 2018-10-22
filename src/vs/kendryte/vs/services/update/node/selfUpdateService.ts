@@ -92,7 +92,7 @@ export abstract class AbstractSelfUpdateService implements IUpdateService {
 		return this.checkUpdateInfo().then((res) => {
 			if (this._isReleaseUpdated) {
 				this.notifyReleaseUpdate(res).catch();
-			} else {
+			} else if (!this._isLatestVersion) {
 				this.notifyUpdateAvailable().catch();
 			}
 			return this._isLatestVersion;
@@ -109,7 +109,7 @@ export abstract class AbstractSelfUpdateService implements IUpdateService {
 		return this.checkUpdateInfo().then((res) => {
 			if (this._isReleaseUpdated) {
 				this.notifyReleaseUpdate(res).catch();
-			} else {
+			} else if (!this._isLatestVersion) {
 				this.notifyUpdateAvailable().catch();
 			}
 		}, (e) => {

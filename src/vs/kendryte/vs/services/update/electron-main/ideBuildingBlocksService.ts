@@ -65,10 +65,12 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 
 			const win = this._showNotify();
 			this.handleQuit(data).then(() => {
+				debugger;
 				console.log('### relaunch');
 				win.close();
 				this.lifecycleService.relaunch();
 			}, (e) => {
+				debugger;
 				console.error(e);
 				alert('Error while moving files: ' + e.message);
 				console.log('### relaunch');
