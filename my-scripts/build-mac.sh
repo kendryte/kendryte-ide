@@ -45,7 +45,7 @@ step "Build minified" \
 	npm run gulp -- "vscode-darwin-min"
 
 ############# create tar.gz
-TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.tar.xz"
+TARBALL_FILENAME="darwin-${BUILD_NAME}-${BUILD_VERSION}.tar.xz"
 TARBALL_PATH="${RELEASE_ROOT}/${TARBALL_FILENAME}"
 
 RESULT="${RELEASE_ROOT}/VSCode-darwin/${BUILD_NAME_LONG}.app"

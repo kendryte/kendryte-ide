@@ -64,7 +64,7 @@ step "Copy Staff (Windows)" \
 step -r "Move ${RESULT} to ${WANT_RESULT}" \
 	bash -c "rm -rf '${WANT_RESULT}' && mv '${RESULT}' '${WANT_RESULT}'"
 
-TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.zip"
+TARBALL_FILENAME="windows-${BUILD_NAME}-${BUILD_VERSION}.zip"
 step "Create ${PRODUCT_NAME} archive to ${TARBALL_FILENAME}" \
 	yarn run 7z a -tzip -y -r "../${TARBALL_FILENAME}" "../${PRODUCT_NAME}" 2>&1 | iconv -t utf8
 
