@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-export LANG="en_US"
-export LC_ALL="en_US"
+export LANG="C"
+export LC_ALL="C"
 
 function die() {
 	echo -en "\n\e[38;5;9m" >&2
