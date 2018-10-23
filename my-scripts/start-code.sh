@@ -13,11 +13,26 @@ detect_install_nodejs
 ensure_node_modules_in_current_dir
 
 unset VSCODE_PORTABLE
-mkdir -p data
+
+function do_start(){
+	echo -e "\e[38;5;14;1m> $*\e[0m"
+	exec "$@"
+}
 
 echo -en '\ec'
 if [ "$SYSTEM" = "windows" ]; then
-	cmd /c my-scripts\\build-env\\start-code-encode.cmd "$@" 2>&1
+	mkdir -p data
+	do_start cmd /c my-scripts\\build-env\\start-code-encode.cmd "$@" 2>&1
+elif [ "$SYSTEM" = "mac" ]; then
+	mkdir -p ~/kendryte-ide-user-data
+	
+	if [ -L ../data ] && [ "$(readlink ../data)" != ~/kendryte-ide-user-data ] ; then
+		unlink ../data
+		ln -s ~/kendryte-ide-user-data ../data
+	fi
+	
+	do_start bash scripts/code.sh "$@"
 else
-	bash scripts/code.sh "$@"
+	mkdir -p data
+	do_start bash scripts/code.sh "$@"
 fi
