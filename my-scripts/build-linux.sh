@@ -10,7 +10,6 @@ source common.sh "$@"
 export BUILDING=TRUE
 
 echo 8000000 | sudo tee /proc/sys/fs/file-max >/dev/null
-sudo ulimit -n 1000000
 
 detect_install_nodejs
 
