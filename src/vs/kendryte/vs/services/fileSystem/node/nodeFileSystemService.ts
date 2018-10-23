@@ -109,7 +109,7 @@ class NodeFileSystemService implements INodeFileSystemService {
 	}
 
 	public async tryWriteInFolder(target: string): TPromise<boolean> {
-		if (exists(target)) {
+		if (await exists(target)) {
 			try {
 				const testFile = resolvePath(target, '.a-file-for-test-permission.txt');
 				await writeFile(testFile, 'this file can delete.');
