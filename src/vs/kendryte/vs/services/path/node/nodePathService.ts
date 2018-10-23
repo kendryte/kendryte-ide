@@ -141,18 +141,15 @@ export class NodePathService implements INodePathService {
 		return isWindows ? filePath + '.exe' : filePath;
 	}
 
-	@memoize
 	getToolchainBinPath() {
 		const rel = this.getToolchainPath();
 		return rel ? resolvePath(rel, 'bin') : '';
 	}
 
-	@memoize
 	rawToolchainPath() {
 		return resolvePath(this.getDataPath(), 'packages/toolchain');
 	}
 
-	@memoize
 	getToolchainPath() {
 		const path = this.rawToolchainPath();
 		if (this.toolchainPathExists) {
