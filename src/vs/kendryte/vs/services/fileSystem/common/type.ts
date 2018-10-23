@@ -16,6 +16,7 @@ export interface INodeFileSystemService {
 	readJsonFile<T>(file: string): TPromise<[T, ExParseError[]]>;
 	editJsonFile(file: string, key: Segment[] | Segment, value: any): TPromise<void>;
 	readPackageFile(): TPromise<[ICompileOptions, ExParseError[]]>;
+	tryWriteInFolder(packagesPath: string): TPromise<boolean>;
 }
 
 export const INodeFileSystemService = createDecorator<INodeFileSystemService>('nodeFileSystemService');

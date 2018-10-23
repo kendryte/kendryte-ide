@@ -13,6 +13,10 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { MaixBuildSystemPrepare } from 'vs/kendryte/vs/workbench/cmake/electron-browser/maixBuildSystemService';
+import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
+import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
+import { isMacintosh, isWindows } from 'vs/base/common/platform';
+import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
 
 class KendryteBootstrapAction extends Action {
 	public static readonly ID = KENDRYTE_ACTIONID_BOOTSTRAP;
@@ -27,6 +31,8 @@ class KendryteBootstrapAction extends Action {
 		@INotificationService private readonly notificationService: INotificationService,
 		@IWindowService private readonly windowService: IWindowService,
 		@IKendryteClientService private readonly client: IKendryteClientService,
+		@INodePathService private readonly nodePathService: INodePathService,
+		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 	) {
 		super(KENDRYTE_ACTIONID_BOOTSTRAP);
 	}
@@ -68,6 +74,35 @@ class KendryteBootstrapAction extends Action {
 
 	async _run() {
 		await this.lifecycleService.when(LifecyclePhase.Running);
+
+		const hasPermInPackages = await this.nodeFileSystemService.tryWriteInFolder(this.nodePathService.getPackagesPath('test-perm'));
+		const installingRoot = this.nodePathService.getSelfControllingRoot();
+		const hasPermInRoot = await this.nodeFileSystemService.tryWriteInFolder(installingRoot);
+		if (!hasPermInPackages || !hasPermInRoot) {
+			let platformMessage = '';
+			if (isMacintosh) {
+				if (/\/Downloads\//.test(installingRoot)) {
+					platformMessage = 'please move IDE out from Downloads folder';
+				} else {
+					platformMessage = '"chown" is needed';
+				}
+			} else if (isWindows) {
+				if (/c:\//i.test(installingRoot) && !/c:\/users\//i.test(installingRoot)) {
+					platformMessage = 'do not place IDE in C:';
+				} else {
+					platformMessage = 'check your anti-virus program and "Safe" tab.';
+				}
+			} else {
+				platformMessage = '"chown" is needed';
+			}
+
+			unClosableNotify(this.notificationService, {
+				severity: Severity.Error,
+				message: 'Kendryte IDE cannot write data on disk, ' + platformMessage,
+				source: hasPermInRoot ? this.nodePathService.getPackagesPath() : this.nodePathService.getSelfControllingRoot(),
+			});
+			return;
+		}
 
 		if (await this.client.isMeFirst()) {
 			this.logService.info('{update} I\'m first window in this session, start check self update.');

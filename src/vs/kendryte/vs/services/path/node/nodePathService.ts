@@ -12,7 +12,6 @@ import { tmpdir } from 'os';
 import { mkdirp } from 'vs/base/node/pfs';
 import { optional } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
-import { IWindowsService } from 'vs/platform/windows/common/windows';
 import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
 import { memoize } from 'vs/base/common/decorators';
 
@@ -24,7 +23,6 @@ export class NodePathService implements INodePathService {
 	constructor(
 		@optional(IWorkspaceContextService) protected workspaceContextService: IWorkspaceContextService,
 		@IEnvironmentService protected environmentService: IEnvironmentService,
-		@IWindowsService windowsService: IWindowsService,
 		@ILogService protected logger: ILogService,
 	) {
 		const keys: (keyof NodePathService)[] = [
@@ -47,11 +45,6 @@ export class NodePathService implements INodePathService {
 				throw new Error('cannot use NodePathService::workspaceFilePath in main process.');
 			};
 		}
-
-		mkdirp(this.getPackagesPath()).then(undefined, (err) => {
-			alert('Cannot write files to IDE install path. please check and restart.\n\n' + err.message);
-			windowsService.quit();
-		});
 	}
 
 	@memoize

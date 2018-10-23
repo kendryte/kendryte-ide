@@ -26,7 +26,9 @@ export function unClosableNotify(notificationService: INotificationService, init
 	const start = () => {
 		handle = notificationService.notify(init);
 		if (isNaN(total)) {
-			handle.progress.infinite();
+			if (lastProgressInfinite) {
+				handle.progress.infinite();
+			}
 		} else {
 			handle.progress.total(total);
 			handle.progress.worked(last);

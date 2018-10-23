@@ -1,7 +1,7 @@
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { copy, exists, mkdirp, readFile, rimraf, stat, writeFile } from 'vs/base/node/pfs';
+import { copy, exists, mkdirp, readFile, rimraf, stat, unlink, writeFile } from 'vs/base/node/pfs';
 import { ILogService } from 'vs/platform/log/common/log';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { Segment } from 'vs/base/common/json';
@@ -106,6 +106,25 @@ class NodeFileSystemService implements INodeFileSystemService {
 
 	public readPackageFile(): TPromise<[ICompileOptions, ExParseError[]]> {
 		return this.readJsonFile(this.nodePathService.getPackageFile());
+	}
+
+	public async tryWriteInFolder(target: string): TPromise<boolean> {
+		if (exists(target)) {
+			try {
+				const testFile = resolvePath(target, '.a-file-for-test-permission.txt');
+				await writeFile(testFile, 'this file can delete.');
+				await unlink(testFile);
+				return true;
+			} catch (e) {
+				return false;
+			}
+		} else {
+			return mkdirp(target).then(() => {
+				return true;
+			}, () => {
+				return false;
+			});
+		}
 	}
 
 	public async editJsonFile(file: string, key: Segment[] | Segment, value: any): TPromise<void> {

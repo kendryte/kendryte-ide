@@ -278,7 +278,10 @@ export abstract class AbstractSelfUpdateService implements IUpdateService {
 			const url = resolveUrl(IDE_MAIN_DISTRIBUTE_URL + '/', 'IDE.json');
 			this.logger.info('[IDE] checking update from ' + url + (force ? '(force)' : '') + '.');
 			this.setState(State.CheckingForUpdates({}));
-			return this.checkingPromise = this.requestService.request({ type: 'GET', url: url }, CancellationToken.None).then(asJson).then((result: IIDEUpdateInfo) => {
+			return this.checkingPromise = this.requestService.request({
+				type: 'GET',
+				url: url + '?_=' + Date.now().toFixed(0),
+			}, CancellationToken.None).then(asJson).then((result: IIDEUpdateInfo) => {
 				delete this.checkingPromise;
 
 				this.logger.info('result: ', result);
