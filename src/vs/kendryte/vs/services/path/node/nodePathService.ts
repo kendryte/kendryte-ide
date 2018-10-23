@@ -14,6 +14,7 @@ import { optional } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
 import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
 import { memoize } from 'vs/base/common/decorators';
+import { basename } from 'vs/base/common/paths';
 
 export class NodePathService implements INodePathService {
 	_serviceBrand: any;
@@ -81,7 +82,11 @@ export class NodePathService implements INodePathService {
 				resolvePath(this.getSelfControllingRoot(), 'bin/code'),
 			);
 		} else {
-			return Promise.reject(new Error('This feature does not support MacOS now'));
+			const root = this.getSelfControllingRoot();
+			return this.createUserLink(
+				resolvePath('/Applications', basename(root)),
+				resolvePath(root),
+			);
 		}
 	}
 

@@ -7,6 +7,7 @@ import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { ACTION_ID_CREATE_SHORTCUTS } from 'vs/kendryte/vs/workbench/topMenu/common/actionIds';
+import { isMacintosh, isWindows } from 'vs/base/common/platform';
 
 export class CreateShortcutsAction extends Action {
 	public static readonly ID = ACTION_ID_CREATE_SHORTCUTS;
@@ -23,7 +24,13 @@ export class CreateShortcutsAction extends Action {
 	async run(): TPromise<void> {
 		console.log('create app link');
 		await this.nodePathService.createAppLink();
-		this.notificationService.info('Icons is placed in Start Menu');
+		if (isWindows) {
+			this.notificationService.info('Created shortcut in Start Menu');
+		} else if (isMacintosh) {
+			this.notificationService.info('Created shortcut in Launchpad');
+		} else {
+			this.notificationService.info('Created shortcut in system menu');
+		}
 	}
 }
 

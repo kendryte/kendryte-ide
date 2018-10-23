@@ -196,7 +196,7 @@ exports.configurePortable = function () {
 		}
 
 		const portableDataName = product.portable || `${product.applicationName}-portable-data`;
-		return path.join(path.dirname(getApplicationPath()), portableDataName);
+		return path.join(getApplicationPath(), portableDataName);
 	}
 
 	const portableDataPath = getPortableDataPath();

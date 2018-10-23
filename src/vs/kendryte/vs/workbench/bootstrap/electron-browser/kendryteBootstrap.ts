@@ -77,8 +77,7 @@ class KendryteBootstrapAction extends Action {
 
 		const hasPermInPackages = await this.nodeFileSystemService.tryWriteInFolder(this.nodePathService.getPackagesPath('test-perm'));
 		const installingRoot = this.nodePathService.getSelfControllingRoot();
-		const hasPermInRoot = await this.nodeFileSystemService.tryWriteInFolder(installingRoot);
-		if (!hasPermInPackages || !hasPermInRoot) {
+		if (!hasPermInPackages) {
 			let platformMessage = '';
 			if (isMacintosh) {
 				if (/\/Downloads\//.test(installingRoot)) {
@@ -99,7 +98,7 @@ class KendryteBootstrapAction extends Action {
 			unClosableNotify(this.notificationService, {
 				severity: Severity.Error,
 				message: 'Kendryte IDE cannot write data on disk, ' + platformMessage,
-				source: hasPermInRoot ? this.nodePathService.getPackagesPath() : this.nodePathService.getSelfControllingRoot(),
+				source: this.nodePathService.getPackagesPath(),
 			});
 			return;
 		}
