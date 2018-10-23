@@ -37,13 +37,9 @@ if [ -z "${FOUND_CYGWIN}" ] || [ -z "${NODEJS}" ] ; then
 	if [ "${SYSTEM}" = "windows" ]; then
 		export NODEJS="${NODEJS_INSTALL}/node.exe"
 		export NODEJS_BIN="${NODEJS_INSTALL}"
-		function sudo() { "$@"; }
 	else
 		export NODEJS="${NODEJS_INSTALL}/bin/node"
 		export NODEJS_BIN="${NODEJS_INSTALL}/bin"
-		if ! command -v sudo &>/dev/null ; then
-			function sudo() { "$@"; }
-		fi
 	fi
 fi
 

@@ -31,16 +31,7 @@ class KendryteBootstrapAction extends Action {
 		super(KENDRYTE_ACTIONID_BOOTSTRAP);
 	}
 
-	async _run() {
-		if (!await this.client.isMeFirst()) {
-			this.logService.info('{update} not first window, skip update progress...');
-			return;
-		}
-		this.logService.info('{update} I\'m first window in this session, start check update.');
-
-		await this.lifecycleService.when(LifecyclePhase.Running);
-
-		// ide itself
+	private async ide_self() {
 		this.logService.info('{update}', ACTION_ID_IDE_SELF_UPGRADE);
 		const updated = await this.commandService.executeCommand(ACTION_ID_IDE_SELF_UPGRADE);
 		if (updated) {
@@ -48,8 +39,9 @@ class KendryteBootstrapAction extends Action {
 			return;
 		}
 		this.logService.info('{update}', ACTION_ID_IDE_SELF_UPGRADE, '{complete}');
+	}
 
-		// packages
+	async packages() {
 		this.logService.info('{update}', ACTION_ID_UPGRADE_BUILDING_BLOCKS);
 		const packagesChanged = await this.commandService.executeCommand(ACTION_ID_UPGRADE_BUILDING_BLOCKS);
 		if (packagesChanged) {
@@ -57,8 +49,9 @@ class KendryteBootstrapAction extends Action {
 			return;
 		}
 		this.logService.info('{update}', ACTION_ID_UPGRADE_BUILDING_BLOCKS, '{complete}');
+	}
 
-		// extensions
+	async extensions() {
 		this.logService.info('{update} Install Extensions');
 		const extensionChanged = await this.instantiationService.invokeFunction(MaixBuildSystemPrepare);
 		if (extensionChanged) {
@@ -67,11 +60,27 @@ class KendryteBootstrapAction extends Action {
 			return;
 		}
 		this.logService.info('{update} Install Extensions {complete}');
+	}
 
-		// ensure cmake service active
+	async activateCmake() {
 		this.instantiationService.invokeFunction((accessor) => accessor.get(ICMakeService));
+	}
+
+	async _run() {
+		await this.lifecycleService.when(LifecyclePhase.Running);
+
+		if (await this.client.isMeFirst()) {
+			this.logService.info('{update} I\'m first window in this session, start check self update.');
+			await this.ide_self();
+			await this.packages();
+		} else {
+			this.logService.info('{update} not first window, skip self update progress');
+		}
+
+		await this.extensions();
 
 		this.logService.info('{update} {COMPLETE}');
+		await this.activateCmake();
 	}
 
 	async run() {

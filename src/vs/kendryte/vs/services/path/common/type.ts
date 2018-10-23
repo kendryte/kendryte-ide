@@ -4,8 +4,9 @@ import { createDecorator } from 'vs/platform/instantiation/common/instantiation'
 export interface INodePathService {
 	_serviceBrand: any;
 
-	getInstallPath(): string;
-	// getDataPath(): string;
+	getIDESourceCodeRoot(): string;
+	getDataPath(): string;
+	getSelfControllingRoot(): string;
 	exeFile(filePath: string): string;
 	getToolchainBinPath(): string;
 	getToolchainPath(): string;

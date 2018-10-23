@@ -71,7 +71,7 @@ WANT_RESULT="${RELEASE_ROOT}/${PRODUCT_NAME}"
 mkdir -p "${RESULT}/packages/"
 step "Copy Staff (Linux)" \
 	bash -c "
-	cp -r ./my-scripts/staff/packages_skel/. '${RESULT}/packages/'
+	cp -r ./my-scripts/staff/skel/. '${RESULT}/'
 	cp ./resources/linux/code.png '${RESULT}/icon.png'
 "
 

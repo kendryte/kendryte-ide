@@ -222,7 +222,7 @@ export abstract class AbstractSelfUpdateService implements IUpdateService {
 				productVersion: version,
 			}));
 
-			const installTarget = resolvePath(this.nodePathService.getInstallPath(), 'resources/app');
+			const installTarget = resolvePath(this.nodePathService.getIDESourceCodeRoot());
 			this.logger.info('applyIDEPatch:\n  From: %s\n  To: %s', this.downloaded, installTarget);
 
 			await copy(this.downloaded, installTarget);

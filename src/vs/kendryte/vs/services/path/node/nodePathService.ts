@@ -1,6 +1,6 @@
 import product from 'vs/platform/node/product';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { isWindows } from 'vs/base/common/platform';
+import { isLinux, isMacintosh, isWindows } from 'vs/base/common/platform';
 import { lstatSync } from 'fs';
 import { resolvePath, TEMP_DIR_NAME } from 'vs/kendryte/vs/base/node/resolvePath';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
@@ -14,6 +14,7 @@ import { optional } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IWindowsService } from 'vs/platform/windows/common/windows';
 import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
+import { memoize } from 'vs/base/common/decorators';
 
 export class NodePathService implements INodePathService {
 	_serviceBrand: any;
@@ -26,6 +27,16 @@ export class NodePathService implements INodePathService {
 		@IWindowsService windowsService: IWindowsService,
 		@ILogService protected logger: ILogService,
 	) {
+		const keys: (keyof NodePathService)[] = [
+			'getIDESourceCodeRoot',
+			'getDataPath',
+			'getPackagesPath',
+			'getSelfControllingRoot',
+		];
+		for (const k of keys) {
+			logger.info(` {NodePathService} ${k} = ${this[k]()}`);
+		}
+
 		if (!workspaceContextService) {
 			// FIXME: portable mode do not use HOME
 			// this.createUserLink(this.getInstallPath('.fast-links/_Extensions'), pathResolveNow('HOMEPATH', process.env.HOME, product.dataFolderName));
@@ -43,22 +54,41 @@ export class NodePathService implements INodePathService {
 		});
 	}
 
+	@memoize
+	getSelfControllingRoot() {
+		if (!this.environmentService.isBuilt) {
+			// when dev, source code is always version control root
+			return resolvePath(this.environmentService.appRoot);
+		}
+		if (isMacintosh) {
+			// Mac has a Contents folder, other platform do not have
+			return resolvePath(this.environmentService.appRoot, '../../..');
+		}
+
+		return resolvePath(this.environmentService.appRoot, '../..');
+	}
+
 	createAppLink(): TPromise<void> {
+		if (!this.environmentService.isBuilt) {
+			return Promise.reject(new Error('development mode do not support create link'));
+		}
 		if (isWindows) {
 			return this.createUserLink(
 				`%APPDATA%/Microsoft/Windows/Start Menu/Programs/${product.nameLong}.lnk`,
-				this.getInstallPath('bin/code.cmd'),
+				resolvePath(this.getSelfControllingRoot(), 'bin/code.cmd'),
 				{
-					workingDir: this.getInstallPath(),
+					workingDir: this.getSelfControllingRoot(),
 					desc: product.nameLong,
 					icon: this.environmentService.execPath,
 				},
 			);
-		} else {
+		} else if (isLinux) {
 			return createLinuxDesktopShortcut(
-				this.getInstallPath(),
-				this.getInstallPath('bin/code'),
+				this.getSelfControllingRoot(),
+				resolvePath(this.getSelfControllingRoot(), 'bin/code'),
 			);
+		} else {
+			return Promise.reject(new Error('This feature does not support MacOS now'));
 		}
 	}
 
@@ -88,38 +118,43 @@ export class NodePathService implements INodePathService {
 
 	getPackagesPath(project?: string) {
 		if (project) {
-			return resolvePath(this.getInstallPath(), 'packages', project);
+			return resolvePath(this.getDataPath(), 'packages', project);
 		} else {
-			return resolvePath(this.getInstallPath(), 'packages');
+			return resolvePath(this.getDataPath(), 'packages');
 		}
 	}
 
-	getInstallPath(...path: string[]) {
-		if (this.environmentService.isBuilt) {
-			return resolvePath(this.environmentService.execPath, '..', ...path);
-		} else {
-			return resolvePath(this.environmentService.execPath, '../../..', ...path);
-		}
+	@memoize
+	getIDESourceCodeRoot() {
+		// this is electron's resource/app
+		return resolvePath(this.environmentService.appRoot);
 	}
 
+	@memoize
 	getDataPath() {
-		// FIXME: portable mode do not use HOME
-		return resolvePath(this.environmentService.userHome, product.dataFolderName);
+		if (process.env['VSCODE_PORTABLE']) {
+			return resolvePath(process.env['VSCODE_PORTABLE']);
+		} else {
+			return resolvePath(this.environmentService.userHome, product.dataFolderName);
+		}
 	}
 
 	exeFile(filePath: string) {
 		return isWindows ? filePath + '.exe' : filePath;
 	}
 
+	@memoize
 	getToolchainBinPath() {
 		const rel = this.getToolchainPath();
 		return rel ? resolvePath(rel, 'bin') : '';
 	}
 
+	@memoize
 	rawToolchainPath() {
-		return resolvePath(this.getInstallPath(), 'packages/toolchain');
+		return resolvePath(this.getDataPath(), 'packages/toolchain');
 	}
 
+	@memoize
 	getToolchainPath() {
 		const path = this.rawToolchainPath();
 		if (this.toolchainPathExists) {

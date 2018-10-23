@@ -21,7 +21,6 @@ test-results/
 yarn-error.log
 .release/
 .dockerignore
-packages/
 .idea/workspace.xml
 .idea/inspectionProfiles
 run.sh
@@ -31,7 +30,7 @@ run.sh
 *.asarsource
 .fast-links
 node_modules
-packages
 .idea/deployment.xml
 .idea/typescript-compiler.xml
-data/
+/data
+

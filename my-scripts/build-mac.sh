@@ -16,15 +16,12 @@ source ./scripts/env.sh
 
 source ./my-scripts/build-env/build-common-source.sh
 
-export HOME="$(cygpath -m "$HOME")"
-
 ############# define const to create filenames
-pushd "${VSCODE_ROOT}" &>/dev/null
-BUILD_VERSION=$(node -p "require(\"./package.json\").version")
-BUILD_NAME=$(node -p "require(\"./product.json\").applicationName")
-BUILD_QUALITY=$(node -p "require(\"./product.json\").quality")
-BUILD_COMMIT=$(node -p "require(\"./product.json\").commit")
-popd &>/dev/null
+BUILD_VERSION=$(node -p "require(\"${VSCODE_ROOT}/package.json\").version")
+BUILD_NAME=$(node -p "require(\"${VSCODE_ROOT}/product.json\").applicationName")
+BUILD_QUALITY=$(node -p "require(\"${VSCODE_ROOT}/product.json\").quality")
+BUILD_COMMIT=$(node -p "require(\"${VSCODE_ROOT}/product.json\").commit")
+
 
 ############# download electron executable
 step "Get Electron" \
@@ -45,27 +42,25 @@ step "Build extensions" \
 
 ############# minify source code
 step "Build minified" \
-	npm run gulp -- "vscode-win32-$ARCH-min"
+	npm run gulp -- "vscode-darwin-min"
 
-############# copy updater
-step "copy inno updater" \
-	npm run gulp -- "vscode-win32-$ARCH-copy-inno-updater"
+############# create tar.gz
+TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.tar.xz"
+TARBALL_PATH="${RELEASE_ROOT}/${TARBALL_FILENAME}"
 
-RESULT="${RELEASE_ROOT}/VSCode-win32-${ARCH}"
+RESULT="${RELEASE_ROOT}/VSCode-darwin"
 WANT_RESULT="${RELEASE_ROOT}/${PRODUCT_NAME}"
 
-############# copy skel
 mkdir -p "${RESULT}/packages/"
-step "Copy Staff (Windows)" \
+step "Copy Staff (Darwin)" \
 	bash -c "
 	cp -r ./my-scripts/staff/skel/. '${RESULT}/'
 "
 
-step -r "Move ${RESULT} to ${WANT_RESULT}" \
+step "Move ${RESULT} to ${WANT_RESULT}" \
 	bash -c "rm -rf '${WANT_RESULT}' && mv '${RESULT}' '${WANT_RESULT}'"
 
-TARBALL_FILENAME="${BUILD_NAME}-${BUILD_VERSION}.zip"
-step "Create ${PRODUCT_NAME} archive to ${TARBALL_FILENAME}" \
-	yarn run 7z a -tzip -y -r "../${TARBALL_FILENAME}" "../${PRODUCT_NAME}" 2>&1 | iconv -t utf8
+step -r "Create ${PRODUCT_NAME} archive to ${TARBALL_FILENAME}" \
+	tar -cJf "${TARBALL_PATH}" "${PRODUCT_NAME}"
 
-echo "Build success, the result file is ${RELEASE_ROOT}/${TARBALL_FILENAME}"
+echo "Build success, the result file is ${TARBALL_PATH}"

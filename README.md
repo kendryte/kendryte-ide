@@ -30,7 +30,7 @@ wqy-zenhei-fonts wqy-unibit-fonts wqy-bitmap-fonts # locale font
 
 #### On MacOS:
 ```bash
-brew install coreutils findutils gnu-tar gnu-sed gawk gnutls gnu-indent gnu-getopt
+brew install coreutils findutils gnu-tar gnu-sed gawk gnutls gnu-indent gnu-getopt wget md5sha1sum
 ```
 
 

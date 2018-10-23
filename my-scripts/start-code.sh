@@ -12,6 +12,9 @@ detect_install_nodejs
 
 ensure_node_modules_in_current_dir
 
+unset VSCODE_PORTABLE
+mkdir -p data
+
 echo -en '\ec'
 if [ "$SYSTEM" = "windows" ]; then
 	cmd /c my-scripts\\build-env\\start-code-encode.cmd "$@" 2>&1
