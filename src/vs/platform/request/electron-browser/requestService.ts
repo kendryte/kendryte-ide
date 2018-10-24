@@ -9,6 +9,9 @@ import { RequestService as NodeRequestService } from 'vs/platform/request/node/r
 import { CancellationToken } from 'vscode';
 import { canceled } from 'vs/base/common/errors';
 
+///<reference types="node"/>
+
+
 /**
  * This service exposes the `request` API, while using the global
  * or configured proxy settings.
@@ -43,7 +46,7 @@ export const xhrRequest: IRequestFunction = (options: IRequestOptions, token: Ca
 
 					constructor(arraybuffer: ArrayBuffer) {
 						super();
-						this._buffer = Buffer.from(new Uint8Array(arraybuffer));
+						this._buffer = new Buffer(new Uint8Array(arraybuffer));
 						this._offset = 0;
 						this._length = this._buffer.length;
 					}

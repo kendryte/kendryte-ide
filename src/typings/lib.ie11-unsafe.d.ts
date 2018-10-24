@@ -3,79 +3,343 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-interface Array<T> {
-	find<S extends T>(predicate: (this: void, value: T, index: number, obj: T[]) => value is S, thisArg?: any): S | undefined;
-	find(predicate: (value: T, index: number, obj: T[]) => boolean, thisArg?: any): T | undefined;
-	findIndex(predicate: (value: T, index: number, obj: T[]) => boolean, thisArg?: any): number;
-	fill(value: T, start?: number, end?: number): this;
-	copyWithin(target: number, start: number, end?: number): this;
+/// <reference types="node"/>
+
+/// <reference lib="es2015.core"/>
+/// <reference lib="es2015.symbol"/>
+/// <reference lib="es2015.iterable"/>
+/// <reference lib="es2017.object"/>
+/// <reference lib="es2015.proxy"/>
+/// <reference lib="es2015.collection"/>
+
+declare interface NodeBuffer {
+	from(data: Uint8Array): Buffer;
 }
 
-interface ArrayConstructor {
-	from<T, U = T>(iterable: Iterable<T>, mapfn?: (v: T, k: number) => U, thisArg?: any): U[];
+/* ie11 safe */
+interface Map<K, V> {
+	set(key: K, value?: V): Map<K, V>;
+}
+
+interface MapConstructor {
+	new <K, V>(): Map<K, V>;
+}
+
+declare var Map: MapConstructor;
+
+interface Set<T> {
+}
+
+interface SetConstructor {
+	new <T>(): Set<T>;
+}
+
+declare var Set: SetConstructor;
+
+interface WeakMap<K, V> {
+	set(key: K, value?: V): undefined;
+}
+
+interface WeakMapConstructor {
+}
+
+declare var WeakMap: WeakMapConstructor;
+/* ie11 safe END */
+
+/* symbol.wellknown (without promise) */
+interface SymbolConstructor {
+	/**
+	 * A method that determines if a constructor object recognizes an object as one of the
+	 * constructor’s instances. Called by the semantics of the instanceof operator.
+	 */
+	readonly hasInstance: symbol;
+
+	/**
+	 * A Boolean value that if true indicates that an object should flatten to its array elements
+	 * by Array.prototype.concat.
+	 */
+	readonly isConcatSpreadable: symbol;
+
+	/**
+	 * A regular expression method that matches the regular expression against a string. Called
+	 * by the String.prototype.match method.
+	 */
+	readonly match: symbol;
+
+	/**
+	 * A regular expression method that replaces matched substrings of a string. Called by the
+	 * String.prototype.replace method.
+	 */
+	readonly replace: symbol;
+
+	/**
+	 * A regular expression method that returns the index within a string that matches the
+	 * regular expression. Called by the String.prototype.search method.
+	 */
+	readonly search: symbol;
+
+	/**
+	 * A function valued property that is the constructor function that is used to create
+	 * derived objects.
+	 */
+	readonly species: symbol;
+
+	/**
+	 * A regular expression method that splits a string at the indices that match the regular
+	 * expression. Called by the String.prototype.split method.
+	 */
+	readonly split: symbol;
+
+	/**
+	 * A method that converts an object to a corresponding primitive value.
+	 * Called by the ToPrimitive abstract operation.
+	 */
+	readonly toPrimitive: symbol;
+
+	/**
+	 * A String value that is used in the creation of the default string description of an object.
+	 * Called by the built-in method Object.prototype.toString.
+	 */
+	readonly toStringTag: symbol;
+
+	/**
+	 * An Object whose own property names are property names that are excluded from the 'with'
+	 * environment bindings of the associated objects.
+	 */
+	readonly unscopables: symbol;
+}
+
+interface Symbol {
+	readonly [Symbol.toStringTag]: 'Symbol';
+}
+
+interface Array<T> {
+	/**
+	 * Returns an object whose properties have the value 'true'
+	 * when they will be absent when used in a 'with' statement.
+	 */
+		[Symbol.unscopables](): {
+		copyWithin: boolean;
+		entries: boolean;
+		fill: boolean;
+		find: boolean;
+		findIndex: boolean;
+		keys: boolean;
+		values: boolean;
+	};
+}
+
+interface Date {
+	/**
+	 * Converts a Date object to a string.
+	 */
+		[Symbol.toPrimitive](hint: 'default'): string;
+	/**
+	 * Converts a Date object to a string.
+	 */
+		[Symbol.toPrimitive](hint: 'string'): string;
+	/**
+	 * Converts a Date object to a number.
+	 */
+		[Symbol.toPrimitive](hint: 'number'): number;
+	/**
+	 * Converts a Date object to a string or number.
+	 *
+	 * @param hint The strings "number", "string", or "default" to specify what primitive to return.
+	 *
+	 * @throws {TypeError} If 'hint' was given something other than "number", "string", or "default".
+	 * @returns A number if 'hint' was "number", a string if 'hint' was "string" or "default".
+	 */
+		[Symbol.toPrimitive](hint: string): string | number;
 }
 
 interface Map<K, V> {
-	entries(): IterableIterator<[K, V]>;
-	keys(): IterableIterator<K>;
-	values(): IterableIterator<V>;
-	[Symbol.iterator](): IterableIterator<[K, V]>;
-	// [Symbol.toStringTag]: string;
+	readonly [Symbol.toStringTag]: 'Map';
 }
 
-interface ObjectConstructor {
-	assign<T, U>(target: T, source: U): T & U;
-	assign<T, U, V>(target: T, source1: U, source2: V): T & U & V;
-	assign<T, U, V, W>(target: T, source1: U, source2: V, source3: W): T & U & V & W;
-	assign(target: object, ...sources: any[]): any;
+interface WeakMap<K extends object, V> {
+	readonly [Symbol.toStringTag]: 'WeakMap';
 }
 
-interface IterableIterator<T> extends Iterator<T> {
-	[Symbol.iterator](): IterableIterator<T>;
+interface Set<T> {
+	readonly [Symbol.toStringTag]: 'Set';
 }
 
-interface Iterator<T> {
-	next(value?: any): IteratorResult<T>;
-	return?(value?: any): IteratorResult<T>;
-	throw?(e?: any): IteratorResult<T>;
+interface WeakSet<T extends object> {
+	readonly [Symbol.toStringTag]: 'WeakSet';
 }
 
-interface IteratorResult<T> {
-	done: boolean;
-	value: T;
+interface JSON {
+	readonly [Symbol.toStringTag]: 'JSON';
 }
 
-interface SymbolConstructor {
-	readonly prototype: Symbol;
-	(description?: string | number): symbol;
-	for(key: string): symbol;
-	keyFor(sym: symbol): string | undefined;
+interface Function {
+	/**
+	 * Determines whether the given value inherits from this function if this function was used
+	 * as a constructor function.
+	 *
+	 * A constructor function can control which objects are recognized as its instances by
+	 * 'instanceof' by overriding this method.
+	 */
+		[Symbol.hasInstance](value: any): boolean;
 }
 
-interface ProxyHandler<T extends object> {
-	getPrototypeOf? (target: T): object | null;
-	setPrototypeOf? (target: T, v: any): boolean;
-	isExtensible? (target: T): boolean;
-	preventExtensions? (target: T): boolean;
-	getOwnPropertyDescriptor? (target: T, p: PropertyKey): PropertyDescriptor | undefined;
-	has? (target: T, p: PropertyKey): boolean;
-	get? (target: T, p: PropertyKey, receiver: any): any;
-	set? (target: T, p: PropertyKey, value: any, receiver: any): boolean;
-	deleteProperty? (target: T, p: PropertyKey): boolean;
-	defineProperty? (target: T, p: PropertyKey, attributes: PropertyDescriptor): boolean;
-	enumerate? (target: T): PropertyKey[];
-	ownKeys? (target: T): PropertyKey[];
-	apply? (target: T, thisArg: any, argArray?: any): any;
-	construct? (target: T, argArray: any, newTarget?: any): object;
+interface GeneratorFunction {
+	readonly [Symbol.toStringTag]: 'GeneratorFunction';
 }
 
-interface ProxyConstructor {
-	revocable<T extends object>(target: T, handler: ProxyHandler<T>): { proxy: T; revoke: () => void; };
-	new <T extends object>(target: T, handler: ProxyHandler<T>): T;
+interface Math {
+	readonly [Symbol.toStringTag]: 'Math';
 }
 
-declare var Proxy: ProxyConstructor;
+interface RegExp {
+	/**
+	 * Matches a string with this regular expression, and returns an array containing the results of
+	 * that search.
+	 * @param string A string to search within.
+	 */
+		[Symbol.match](string: string): RegExpMatchArray | null;
 
-interface SymbolConstructor {
-	readonly toStringTag: symbol;
+	/**
+	 * Replaces text in a string, using this regular expression.
+	 * @param string A String object or string literal whose contents matching against
+	 *               this regular expression will be replaced
+	 * @param replaceValue A String object or string literal containing the text to replace for every
+	 *                     successful match of this regular expression.
+	 */
+		[Symbol.replace](string: string, replaceValue: string): string;
+
+	/**
+	 * Replaces text in a string, using this regular expression.
+	 * @param string A String object or string literal whose contents matching against
+	 *               this regular expression will be replaced
+	 * @param replacer A function that returns the replacement text.
+	 */
+		[Symbol.replace](string: string, replacer: (substring: string, ...args: any[]) => string): string;
+
+	/**
+	 * Finds the position beginning first substring match in a regular expression search
+	 * using this regular expression.
+	 *
+	 * @param string The string to search within.
+	 */
+		[Symbol.search](string: string): number;
+
+	/**
+	 * Returns an array of substrings that were delimited by strings in the original input that
+	 * match against this regular expression.
+	 *
+	 * If the regular expression contains capturing parentheses, then each time this
+	 * regular expression matches, the results (including any undefined results) of the
+	 * capturing parentheses are spliced.
+	 *
+	 * @param string string value to split
+	 * @param limit if not undefined, the output array is truncated so that it contains no more
+	 * than 'limit' elements.
+	 */
+		[Symbol.split](string: string, limit?: number): string[];
 }
+
+interface RegExpConstructor {
+	readonly [Symbol.species]: RegExpConstructor;
+}
+
+interface String {
+	/**
+	 * Matches a string an object that supports being matched against, and returns an array containing the results of that search.
+	 * @param matcher An object that supports being matched against.
+	 */
+	match(matcher: { [Symbol.match](string: string): RegExpMatchArray | null; }): RegExpMatchArray | null;
+
+	/**
+	 * Replaces text in a string, using an object that supports replacement within a string.
+	 * @param searchValue A object can search for and replace matches within a string.
+	 * @param replaceValue A string containing the text to replace for every successful match of searchValue in this string.
+	 */
+	replace(searchValue: { [Symbol.replace](string: string, replaceValue: string): string; }, replaceValue: string): string;
+
+	/**
+	 * Replaces text in a string, using an object that supports replacement within a string.
+	 * @param searchValue A object can search for and replace matches within a string.
+	 * @param replacer A function that returns the replacement text.
+	 */
+	replace(
+		searchValue: { [Symbol.replace](string: string, replacer: (substring: string, ...args: any[]) => string): string; },
+		replacer: (substring: string, ...args: any[]) => string,
+	): string;
+
+	/**
+	 * Finds the first substring match in a regular expression search.
+	 * @param searcher An object which supports searching within a string.
+	 */
+	search(searcher: { [Symbol.search](string: string): number; }): number;
+
+	/**
+	 * Split a string into substrings using the specified separator and return them as an array.
+	 * @param splitter An object that can split a string.
+	 * @param limit A value used to limit the number of elements returned in the array.
+	 */
+	split(splitter: { [Symbol.split](string: string, limit?: number): string[]; }, limit?: number): string[];
+}
+
+interface ArrayBuffer {
+	readonly [Symbol.toStringTag]: 'ArrayBuffer';
+}
+
+interface DataView {
+	readonly [Symbol.toStringTag]: 'DataView';
+}
+
+interface Int8Array {
+	readonly [Symbol.toStringTag]: 'Int8Array';
+}
+
+interface Uint8Array {
+	readonly [Symbol.toStringTag]: 'UInt8Array';
+}
+
+interface Uint8ClampedArray {
+	readonly [Symbol.toStringTag]: 'Uint8ClampedArray';
+}
+
+interface Int16Array {
+	readonly [Symbol.toStringTag]: 'Int16Array';
+}
+
+interface Uint16Array {
+	readonly [Symbol.toStringTag]: 'Uint16Array';
+}
+
+interface Int32Array {
+	readonly [Symbol.toStringTag]: 'Int32Array';
+}
+
+interface Uint32Array {
+	readonly [Symbol.toStringTag]: 'Uint32Array';
+}
+
+interface Float32Array {
+	readonly [Symbol.toStringTag]: 'Float32Array';
+}
+
+interface Float64Array {
+	readonly [Symbol.toStringTag]: 'Float64Array';
+}
+
+interface ArrayConstructor {
+	readonly [Symbol.species]: ArrayConstructor;
+}
+
+interface MapConstructor {
+	readonly [Symbol.species]: MapConstructor;
+}
+
+interface SetConstructor {
+	readonly [Symbol.species]: SetConstructor;
+}
+
+interface ArrayBufferConstructor {
+	readonly [Symbol.species]: ArrayBufferConstructor;
+}
+
+/* symbol.wellknown END */
