@@ -110,15 +110,21 @@ export class StorageService extends Disposable implements IStorageService {
 		]).then(() => void 0);
 	}
 
-	get(key: string, scope: StorageScope, fallbackValue?: string): string {
+	get(key: string, scope: StorageScope, fallbackValue: string): string;
+	get(key: string, scope: StorageScope): string | undefined;
+	get(key: string, scope: StorageScope, fallbackValue?: string): string | undefined {
 		return this.getStorage(scope).get(key, fallbackValue);
 	}
 
-	getBoolean(key: string, scope: StorageScope, fallbackValue?: boolean): boolean {
+	getBoolean(key: string, scope: StorageScope, fallbackValue: boolean): boolean;
+	getBoolean(key: string, scope: StorageScope): boolean | undefined;
+	getBoolean(key: string, scope: StorageScope, fallbackValue?: boolean): boolean | undefined {
 		return this.getStorage(scope).getBoolean(key, fallbackValue);
 	}
 
-	getInteger(key: string, scope: StorageScope, fallbackValue?: number): number {
+	getInteger(key: string, scope: StorageScope, fallbackValue: number): number;
+	getInteger(key: string, scope: StorageScope): number | undefined;
+	getInteger(key: string, scope: StorageScope, fallbackValue?: number): number | undefined {
 		return this.getStorage(scope).getInteger(key, fallbackValue);
 	}
 
@@ -169,28 +175,36 @@ export class StorageService extends Disposable implements IStorageService {
 				}
 			};
 
-			const globalItems = Object.create(null);
-			const globalItemsParsed = Object.create(null);
+			const globalItems = new Map<string, string>();
+			const globalItemsParsed = new Map<string, string>();
 			result[0].forEach((value, key) => {
-				globalItems[key] = value;
-				globalItemsParsed[key] = safeParse(value);
+				globalItems.set(key, value);
+				globalItemsParsed.set(key, safeParse(value));
 			});
 
-			const workspaceItems = Object.create(null);
-			const workspaceItemsParsed = Object.create(null);
+			const workspaceItems = new Map<string, string>();
+			const workspaceItemsParsed = new Map<string, string>();
 			result[1].forEach((value, key) => {
-				workspaceItems[key] = value;
-				workspaceItemsParsed[key] = safeParse(value);
+				workspaceItems.set(key, value);
+				workspaceItemsParsed.set(key, safeParse(value));
 			});
 
 			console.group(`Storage: Global (check: ${result[2]}, load: ${getDuration('willInitGlobalStorage', 'didInitGlobalStorage')}, path: ${this.globalStorageWorkspacePath})`);
-			console.table(globalItems);
+			let globalValues = [];
+			globalItems.forEach((value, key) => {
+				globalValues.push({ key, value });
+			});
+			console.table(globalValues);
 			console.groupEnd();
 
 			console.log(globalItemsParsed);
 
 			console.group(`Storage: Workspace (check: ${result[3]}, load: ${getDuration('willInitWorkspaceStorage', 'didInitWorkspaceStorage')}, path: ${this.workspaceStoragePath})`);
-			console.table(workspaceItems);
+			let workspaceValues = [];
+			workspaceItems.forEach((value, key) => {
+				workspaceValues.push({ key, value });
+			});
+			console.table(workspaceValues);
 			console.groupEnd();
 
 			console.log(workspaceItemsParsed);
@@ -222,7 +236,7 @@ export class StorageService extends Disposable implements IStorageService {
 export class LogStorageAction extends Action {
 
 	static readonly ID = 'workbench.action.logStorage';
-	static LABEL = localize('logStorage', "Log Storage");
+	static LABEL = localize({ key: 'logStorage', comment: ['A developer only action to log the contents of the storage for the current window.'] }, "Log Storage Database Contents");
 
 	constructor(
 		id: string,

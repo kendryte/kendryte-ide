@@ -3,23 +3,23 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { join } from 'path';
-import { realpath } from 'vs/base/node/pfs';
-import Severity from 'vs/base/common/severity';
-import { ExtensionDescriptionRegistry } from 'vs/workbench/services/extensions/node/extensionDescriptionRegistry';
-import { IExtensionDescription } from 'vs/workbench/services/extensions/common/extensions';
-import { ExtHostStorage } from 'vs/workbench/api/node/extHostStorage';
-import { createApiFactory, initializeExtensionApi } from 'vs/workbench/api/node/extHost.api.impl';
-import { MainContext, MainThreadExtensionServiceShape, IInitData, ExtHostExtensionServiceShape, MainThreadTelemetryShape, IMainContext } from './extHost.protocol';
-import { IExtensionMemento, ExtensionsActivator, ActivatedExtension, IExtensionAPI, IExtensionContext, EmptyExtension, IExtensionModule, ExtensionActivationTimesBuilder, ExtensionActivationTimes, ExtensionActivationReason, ExtensionActivatedByEvent, ExtensionActivatedByAPI } from 'vs/workbench/api/node/extHostExtensionActivator';
-import { ExtHostConfiguration } from 'vs/workbench/api/node/extHostConfiguration';
-import { ExtHostWorkspace } from 'vs/workbench/api/node/extHostWorkspace';
-import { TernarySearchTree } from 'vs/base/common/map';
 import { Barrier } from 'vs/base/common/async';
-import { ILogService } from 'vs/platform/log/common/log';
-import { ExtHostLogService } from 'vs/workbench/api/node/extHostLogService';
+import { IDisposable, dispose } from 'vs/base/common/lifecycle';
+import { TernarySearchTree } from 'vs/base/common/map';
+import Severity from 'vs/base/common/severity';
 import { URI } from 'vs/base/common/uri';
+import { dirExists, mkdirp, realpath, writeFile } from 'vs/base/node/pfs';
+import { ILogService } from 'vs/platform/log/common/log';
+import { createApiFactory, initializeExtensionApi } from 'vs/workbench/api/node/extHost.api.impl';
+import { ExtHostExtensionServiceShape, IEnvironment, IInitData, IMainContext, IWorkspaceData, MainContext, MainThreadExtensionServiceShape, MainThreadTelemetryShape } from 'vs/workbench/api/node/extHost.protocol';
+import { ExtHostConfiguration } from 'vs/workbench/api/node/extHostConfiguration';
+import { ActivatedExtension, EmptyExtension, ExtensionActivatedByAPI, ExtensionActivatedByEvent, ExtensionActivationReason, ExtensionActivationTimes, ExtensionActivationTimesBuilder, ExtensionsActivator, IExtensionAPI, IExtensionContext, IExtensionMemento, IExtensionModule } from 'vs/workbench/api/node/extHostExtensionActivator';
+import { ExtHostLogService } from 'vs/workbench/api/node/extHostLogService';
+import { ExtHostStorage } from 'vs/workbench/api/node/extHostStorage';
+import { ExtHostWorkspace } from 'vs/workbench/api/node/extHostWorkspace';
+import { IExtensionDescription } from 'vs/workbench/services/extensions/common/extensions';
+import { ExtensionDescriptionRegistry } from 'vs/workbench/services/extensions/node/extensionDescriptionRegistry';
 
 class ExtensionMemento implements IExtensionMemento {
 
@@ -72,13 +72,70 @@ class ExtensionMemento implements IExtensionMemento {
 	}
 }
 
+class ExtensionStoragePath {
+
+	private readonly _workspace: IWorkspaceData;
+	private readonly _environment: IEnvironment;
+
+	private readonly _ready: Promise<string>;
+	private _value: string;
+
+	constructor(workspace: IWorkspaceData, environment: IEnvironment) {
+		this._workspace = workspace;
+		this._environment = environment;
+		this._ready = this._getOrCreateWorkspaceStoragePath().then(value => this._value = value);
+	}
+
+	get whenReady(): Promise<any> {
+		return this._ready;
+	}
+
+	value(extension: IExtensionDescription): string {
+		if (this._value) {
+			return join(this._value, extension.id);
+		}
+		return undefined;
+	}
+
+	private async _getOrCreateWorkspaceStoragePath(): Promise<string> {
+		if (!this._workspace) {
+			return Promise.resolve(undefined);
+		}
+
+		const storageName = this._workspace.id;
+		const storagePath = join(this._environment.appSettingsHome.fsPath, 'workspaceStorage', storageName);
+
+		const exists = await dirExists(storagePath);
+
+		if (exists) {
+			return storagePath;
+		}
+
+		try {
+			await mkdirp(storagePath);
+			await writeFile(
+				join(storagePath, 'meta.json'),
+				JSON.stringify({
+					id: this._workspace.id,
+					configuration: this._workspace.configuration && URI.revive(this._workspace.configuration).toString(),
+					name: this._workspace.name
+				}, undefined, 2)
+			);
+			return storagePath;
+
+		} catch (e) {
+			console.error(e);
+			return undefined;
+		}
+	}
+}
 export class ExtHostExtensionService implements ExtHostExtensionServiceShape {
 
 	private readonly _barrier: Barrier;
 	private readonly _registry: ExtensionDescriptionRegistry;
 	private readonly _mainThreadTelemetry: MainThreadTelemetryShape;
 	private readonly _storage: ExtHostStorage;
-	private readonly _workspaceStoragePath: string;
+	private readonly _storagePath: ExtensionStoragePath;
 	private readonly _proxy: MainThreadExtensionServiceShape;
 	private readonly _extHostLogService: ExtHostLogService;
 	private _activator: ExtensionsActivator;
@@ -90,14 +147,15 @@ export class ExtHostExtensionService implements ExtHostExtensionServiceShape {
 		extHostContext: IMainContext,
 		extHostWorkspace: ExtHostWorkspace,
 		extHostConfiguration: ExtHostConfiguration,
-		extHostLogService: ExtHostLogService
+		extHostLogService: ExtHostLogService,
+		mainThreadTelemetry: MainThreadTelemetryShape
 	) {
 		this._barrier = new Barrier();
 		this._registry = new ExtensionDescriptionRegistry(initData.extensions);
 		this._extHostLogService = extHostLogService;
-		this._mainThreadTelemetry = extHostContext.getProxy(MainContext.MainThreadTelemetry);
+		this._mainThreadTelemetry = mainThreadTelemetry;
 		this._storage = new ExtHostStorage(extHostContext);
-		this._workspaceStoragePath = initData.workspace ? join(initData.environment.appSettingsHome.fsPath, 'workspaceStorage', initData.workspace.id) : undefined;
+		this._storagePath = new ExtensionStoragePath(initData.workspace, initData.environment);
 		this._proxy = extHostContext.getProxy(MainContext.MainThreadExtensionService);
 		this._activator = null;
 
@@ -292,7 +350,8 @@ export class ExtHostExtensionService implements ExtHostExtensionServiceShape {
 		this._extHostLogService.trace(`ExtensionService#loadExtensionContext ${extensionDescription.id}`);
 		return Promise.all([
 			globalState.whenReady,
-			workspaceState.whenReady
+			workspaceState.whenReady,
+			this._storagePath.whenReady
 		]).then(() => {
 			const that = this;
 			return Object.freeze(<IExtensionContext>{
@@ -300,7 +359,7 @@ export class ExtHostExtensionService implements ExtHostExtensionServiceShape {
 				workspaceState,
 				subscriptions: [],
 				get extensionPath() { return extensionDescription.extensionLocation.fsPath; },
-				storagePath: this._workspaceStoragePath ? join(this._workspaceStoragePath, extensionDescription.id) : undefined,
+				storagePath: this._storagePath.value(extensionDescription),
 				asAbsolutePath: (relativePath: string) => { return join(extensionDescription.extensionLocation.fsPath, relativePath); },
 				logPath: that._extHostLogService.getLogDirectory(extensionDescription.id)
 			});
