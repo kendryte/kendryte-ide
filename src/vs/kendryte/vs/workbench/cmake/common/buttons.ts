@@ -29,8 +29,14 @@ export function addStatusBarCmakeButtons(access: ServicesAccessor) {
 
 	const selectTip = instantiationService.createInstance(StatusBarItem, StatusbarAlignment.LEFT, 3.9);
 	selectTip.text = '$(book)';
-	selectTip.tooltip = 'CMake';
+	selectTip.tooltip = localize(
+		'and',
+		'{0} and {1}',
+		localize('Cleanup', 'Cleanup'),
+		localize('Build', 'Build'),
+	);
 	selectTip.command = ACTION_ID_MAIX_CMAKE_CONFIGURE;
+
 	entries.push(selectTip);
 
 	const selectVariantButton = instantiationService.createInstance(StatusBarItem, StatusbarAlignment.LEFT, 3.89);

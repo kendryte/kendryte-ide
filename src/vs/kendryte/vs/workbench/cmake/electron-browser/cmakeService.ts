@@ -123,7 +123,7 @@ export class CMakeService implements ICMakeService {
 
 	constructor(
 		@ILifecycleService lifecycleService: ILifecycleService,
-		@IChannelLogService channelLogService: IChannelLogService,
+		@IChannelLogService private readonly channelLogService: IChannelLogService,
 		@ICommandService commandService: ICommandService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
@@ -142,9 +142,12 @@ export class CMakeService implements ICMakeService {
 
 		this.localDefine = [];
 		this.localDefine.push(`-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE`);
+
+		instantiationService.invokeFunction(this.init.bind(this));
 	}
 
 	init(access: ServicesAccessor) {
+		console.log('cmake service init.');
 		this.localEnv.TOOLCHAIN = this.nodePathService.getToolchainBinPath();
 		this.localEnv.CMAKE_SYSTEM = 'Generic';
 		if (isWindows) {
@@ -408,7 +411,10 @@ ${JSON.stringify(payload)}
 		this.statusBarController.setWorking();
 		const p = this._rescanCurrentFolder();
 		p.catch((e) => {
-			this.statusBarController.setError(e);
+			this.logger.info('rescan current folder error!');
+			this.logger.error(e.message);
+			this.channelLogService.show(CMAKE_CHANNEL);
+			this.statusBarController.setError();
 		});
 		return p;
 	}

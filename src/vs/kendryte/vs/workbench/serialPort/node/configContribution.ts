@@ -1,21 +1,28 @@
-import { Extensions as ConfigurationExtensions, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
 import { localize } from 'vs/nls';
-import { dynamicEnum } from 'vs/kendryte/vs/workbench/config/common/type';
-import { Registry } from 'vs/platform/registry/common/platform';
-import { CONFIG_KEY_SRIAL_PORT, SERIAL_MONITOR_ACTION_REFRESH_DEVICE } from 'vs/kendryte/vs/workbench/serialPort/common/type';
-import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
+import { SERIAL_MONITOR_ACTION_REFRESH_DEVICE } from 'vs/kendryte/vs/workbench/serialPort/common/type';
+import { registerConfiguration } from 'vs/kendryte/vs/platform/config/common/extendWithCategory';
+import { CONFIG_CATEGORY_DEPLOY, CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE, CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
+import { standardBaudRate } from 'vs/kendryte/vs/workbench/config/common/baudrate';
 
-Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).registerConfiguration({
+registerConfiguration({
 	id: 'serialport',
+	category: CONFIG_CATEGORY_DEPLOY,
 	overridable: true,
 	properties: {
-		[CONFIG_KEY_SRIAL_PORT]: {
-			title: localize('serialport.device.title', 'UART Device'),
+		[CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE]: {
+			title: localize('serialport.baudrate.monitor', 'Monitor Baudrate'),
 			type: 'string',
-			enumDescriptions: dynamicEnum(ISerialPortService, true),
-			description: localize('serialport.device.desc', 'Select Device'),
-			overridable: true,
-		} as any,
+			enum: standardBaudRate.map(e => e.toString()),
+			default: '115200',
+			description: localize('flash.device.id.desc', 'Default baudrate to use when connect to new serial port.'),
+		},
+		[CONFIG_KEY_FLASH_SERIAL_BAUDRATE]: {
+			title: localize('serialport.baudrate.flash', 'Flash Baudrate'),
+			type: 'string',
+			enum: standardBaudRate.map(e => e.toString()),
+			default: '115200',
+			description: localize('flash.device.id.desc', 'Default baudrate when flashing program.'),
+		},
 		'serialport.reloadDevice': {
 			title: localize('serialport.reloadDevice.title', 'Reload device list'),
 			type: 'button',

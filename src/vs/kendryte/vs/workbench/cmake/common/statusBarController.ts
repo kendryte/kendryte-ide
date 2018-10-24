@@ -22,6 +22,7 @@ export class StatusBarController {
 	}
 
 	protected emptyState(message: string, command: string) {
+		// console.log('[cmake] message =', message);
 		if (this.state === State.Lock) {
 			this.messageButton.text = message;
 			this.messageButton.command = command;
@@ -45,12 +46,14 @@ export class StatusBarController {
 		}
 		this.state = State.Unlock;
 
+		// console.log('[cmake] button =', this.lastArgs);
 		this.messageButton.wakeup(this.lastArgs);
 
 		this.showWorkspace(true);
 	}
 
 	protected showWorkspace(isShow: boolean) {
+		// console.log('[cmake] workspace =', isShow);
 		for (const item of this.workspaceButtons) {
 			item.show(isShow);
 		}
@@ -65,8 +68,8 @@ export class StatusBarController {
 		this.messageButton.show(message.length > 0);
 	}
 
-	setError(e: any) {
-		this.emptyState('CMake config failed: ' + e.message, ACTION_ID_OPEN_CMAKE_LIST_CONFIG);
+	setError() {
+		this.emptyState('CMake config failed!', ACTION_ID_OPEN_CMAKE_LIST_CONFIG);
 	}
 
 	setWorking() {
@@ -77,16 +80,16 @@ export class StatusBarController {
 	setEmptyState(empty: true);
 	setEmptyState(empty: boolean, cmakeProject?: boolean) {
 		if (empty) {
-			console.log('empty, need open folder.');
+			// console.log('empty, need open folder.');
 			this.emptyState(
 				'$(file-directory) Open any project to start.',
 				'workbench.action.files.openFolder',
 			);
 		} else if (cmakeProject) {
-			console.log('CMake project found');
+			// console.log('CMake project found');
 			this.notEmptyState();
 		} else {
-			console.log('no cmake file, need create hello_world.');
+			// console.log('no cmake file, need create hello_world.');
 			this.emptyState(
 				'$(plus) Create ' + CMAKE_CONFIG_FILE_NAME + ' to start a project.',
 				ACTION_ID_MAIX_CMAKE_HELLO_WORLD,

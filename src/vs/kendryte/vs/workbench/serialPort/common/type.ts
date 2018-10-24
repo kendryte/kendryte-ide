@@ -3,7 +3,6 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { RawContextKey } from 'vs/platform/contextkey/common/contextkey';
 
 export const SerialPortActionCategory = localize('serialport', 'Serial Port');
-export const CONFIG_KEY_SRIAL_PORT = 'serialport.pre_defined';
 export const ConfigSerialPortActionId = 'ToggleMonitorAction';
 
 export const SERIAL_PORT_HISTORY_STORAGE_KEY = 'storage.serial-port.history';

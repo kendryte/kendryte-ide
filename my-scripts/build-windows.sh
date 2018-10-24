@@ -55,7 +55,6 @@ RESULT="${RELEASE_ROOT}/VSCode-win32-${ARCH}"
 WANT_RESULT="${RELEASE_ROOT}/${PRODUCT_NAME}"
 
 ############# copy skel
-mkdir -p "${RESULT}/packages/"
 step "Copy Staff (Windows)" \
 	bash -c "
 	cp -r ./my-scripts/staff/skel/. '${RESULT}/'

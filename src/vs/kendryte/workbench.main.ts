@@ -1,9 +1,15 @@
 //// included by "vs/workbench/workbench.main.ts"
 
-// bootstrap
-import 'vs/kendryte/vs/workbench/bootstrap/electron-browser/kendryteBootstrap';
+// Settings sections
+import 'vs/kendryte/vs/workbench/config/browser/categoryContribution';
+import 'vs/kendryte/vs/workbench/config/electron-browser/pathSettingsContribution';
+import 'vs/kendryte/vs/workbench/config/common/openocdSettingsContribution';
+import 'vs/kendryte/vs/workbench/config/common/flashSettingsContribution';
+import 'vs/kendryte/vs/workbench/config/browser/internalSettingsCategoryContribution';
 // ipc channel (client)
 import 'vs/kendryte/vs/services/ipc/electron-browser/ipcChannelWorkbench';
+// bootstrap
+import 'vs/kendryte/vs/workbench/bootstrap/electron-browser/kendryteBootstrap';
 // Logger
 import 'vs/kendryte/vs/services/channelLogger/electron-browser/service';
 // Misc Services
@@ -19,12 +25,6 @@ import 'vs/kendryte/vs/services/update/electron-browser/ideBuildingBlocksService
 import 'vs/kendryte/vs/services/update/electron-browser/buildingBlocksUpgradeAction';
 import 'vs/kendryte/vs/services/update/node/openReleasePageAction';
 import 'vs/kendryte/vs/services/update/electron-browser/selfUpdateWorkbenchService';
-// Settings sections
-import 'vs/kendryte/vs/workbench/config/browser/categoryContribution';
-import 'vs/kendryte/vs/workbench/config/electron-browser/pathSettingsContribution';
-import 'vs/kendryte/vs/workbench/config/common/openocdSettingsContribution';
-import 'vs/kendryte/vs/workbench/config/common/flashSettingsContribution';
-import 'vs/kendryte/vs/workbench/config/browser/internalSettingsCategoryContribution';
 // Settings Page Patcher
 import 'vs/kendryte/vs/workbench/patchSettings2/browser/settingsTreePathcer';
 import 'vs/kendryte/vs/workbench/patchSettings2/browser/settingsPage2Pathcer';

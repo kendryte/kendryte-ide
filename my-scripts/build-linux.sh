@@ -67,7 +67,6 @@ TARBALL_PATH="${RELEASE_ROOT}/${TARBALL_FILENAME}"
 RESULT="${RELEASE_ROOT}/VSCode-linux-${ARCH}"
 WANT_RESULT="${RELEASE_ROOT}/${PRODUCT_NAME}"
 
-mkdir -p "${RESULT}/packages/"
 step "Copy Staff (Linux)" \
 	bash -c "
 	cp -r ./my-scripts/staff/skel/. '${RESULT}/'

@@ -6,7 +6,7 @@
 
 import { Registry } from 'vs/platform/registry/common/platform';
 import { ITOCEntry, tocData } from 'vs/workbench/parts/preferences/browser/settingsLayout';
-import { Extensions, ICategoryConfig, IConfigCategoryRegistry } from 'vs/kendryte/vs/workbench/config/common/type';
+import { Extensions, ICategoryConfig, IConfigCategoryRegistry } from 'vs/kendryte/vs/platform/config/common/category';
 
 Registry.add(Extensions.ConfigCategory, new class implements IConfigCategoryRegistry {
 	private map: { [id: string]: ITOCEntry } = {};

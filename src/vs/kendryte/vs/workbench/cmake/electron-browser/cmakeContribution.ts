@@ -16,6 +16,7 @@ import { Extensions as JSONExtensions, IJSONContributionRegistry } from 'vs/plat
 import { registerExternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 import { OpenLocalCmakeListAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/openLocalCmakeList';
 import { cmakeSchema, cmakeSchemaId } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
+import { registerCMakeConfig } from 'vs/kendryte/vs/workbench/cmake/common/configFile';
 
 registerSingleton(ICMakeService, CMakeService);
 
@@ -104,3 +105,6 @@ registerExternalAction(category, OpenLocalCmakeListAction);
 // CONFIG json
 const jsonRegistry = Registry.as<IJSONContributionRegistry>(JSONExtensions.JSONContribution);
 jsonRegistry.registerSchema(cmakeSchemaId, cmakeSchema);
+
+// config sections
+registerCMakeConfig();

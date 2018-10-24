@@ -1,11 +1,12 @@
 import { FieldContext, FieldInject, FieldTemplate } from 'vs/kendryte/vs/workbench/patchSettings2/browser/typedFieldElementBase';
 import { createDecorator, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
-import { EnumProviderService, getDynamicEnum, isDynamicEnum, ISettingItemTemplate } from 'vs/kendryte/vs/workbench/config/common/type';
+import { getDynamicEnum, isDynamicEnum, ISettingItemTemplate } from 'vs/kendryte/vs/workbench/config/common/type';
 import { ITree } from 'vs/base/parts/tree/browser/tree';
 import { attachEditableSelectBoxStyler, EditableSelectBox } from 'vs/kendryte/vs/workbench/patchSettings2/browser/ui/editableSelect';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { SettingsTreeSettingElement } from 'vs/workbench/parts/preferences/browser/settingsTreeModels';
+import { EnumProviderService } from 'vs/kendryte/vs/platform/config/common/dynamicEnum';
 
 interface Template {
 	input: EditableSelectBox;

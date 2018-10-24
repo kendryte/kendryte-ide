@@ -3,7 +3,7 @@ import { $, append, Dimension, getTotalHeight, hide, show } from 'vs/base/browse
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { SERIAL_MONITOR_ACTION_REFRESH_DEVICE, SERIAL_PANEL_ID, SerialPortActionCategory, } from 'vs/kendryte/vs/workbench/serialPort/common/type';
+import { SERIAL_MONITOR_ACTION_REFRESH_DEVICE, SERIAL_PANEL_ID, SerialPortActionCategory } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { attachButtonStyler, attachSelectBoxStyler } from 'vs/platform/theme/common/styler';
@@ -18,7 +18,7 @@ import { OutputXTerminal } from 'vs/kendryte/vs/workbench/serialPort/electron-br
 import { SerialScope } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/serialScope';
 import { isMacintosh } from 'vs/base/common/platform';
 import { SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
-import { MAIX_CONFIG_KEY_SERIAL_BAUDRATE } from 'vs/kendryte/vs/workbench/config/common/type';
+import { CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import {
@@ -181,7 +181,7 @@ class SerialMonitorPanel extends Panel {
 			return o;
 		};
 		append($openOptions, TextBox('Baud Rate:'));
-		const br = parseInt(this.configurationService.getValue(MAIX_CONFIG_KEY_SERIAL_BAUDRATE)) || 115200;
+		const br = parseInt(this.configurationService.getValue(CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE)) || 115200;
 		this.controlList.baudRate = this.createSelect(6, $openOptions, standardBaudRate, br, 'baudRateValue', true);
 		append($openOptions, TextBox('Data Bits:'));
 		this.controlList.dataBits = this.createSelect(6, $openOptions, standardDataBits, null, 'dataBitsValue', true);

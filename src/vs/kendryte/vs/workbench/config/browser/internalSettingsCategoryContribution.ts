@@ -1,6 +1,7 @@
 import { Registry } from 'vs/platform/registry/common/platform';
-import { Extensions, IConfigCategoryRegistry } from 'vs/kendryte/vs/workbench/config/common/type';
+import { Extensions, IConfigCategoryRegistry } from 'vs/kendryte/vs/platform/config/common/category';
 import { commonlyUsedData } from 'vs/workbench/parts/preferences/browser/settingsLayout';
+import { localize } from 'vs/nls';
 
 const CategoryRegistry = Registry.as<IConfigCategoryRegistry>(Extensions.ConfigCategory);
 if (!CategoryRegistry) {
@@ -8,9 +9,10 @@ if (!CategoryRegistry) {
 	(require('electron') as any).remote.getCurrentWindow().reload();
 }
 
-CategoryRegistry.registerCategory({ id: 'build-deploy', category: '构建与调试' });
-CategoryRegistry.registerCategory({ id: 'debugger', category: '调试器', parent: 'build-deploy' });
-CategoryRegistry.registerCategory({ id: 'deployment', category: '上传', parent: 'build-deploy' });
+CategoryRegistry.registerCategory({ id: 'build-deploy', category: localize('and', '{0} and {1}', localize('build', 'Build'), localize('debug', 'Debug')) });
+CategoryRegistry.registerCategory({ id: 'build', category: localize('build', 'Build'), parent: 'build-deploy' });
+CategoryRegistry.registerCategory({ id: 'debugger', category: localize('debug', 'Debug'), parent: 'build-deploy' });
+CategoryRegistry.registerCategory({ id: 'deployment', category: localize('deploy', 'Deploy'), parent: 'build-deploy' });
 
 commonlyUsedData.settings = [
 	'workbench.colorTheme',

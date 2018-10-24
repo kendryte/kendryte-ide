@@ -27,7 +27,7 @@ writeFileSync('package.json', JSON.stringify({
 writeFileSync('.yarnrc', yarnRc);
 writeFileSync('yarn.lock', originalLock);
 
-const bothDependencies = ['applicationinsights'];
+const bothDependencies = ['applicationinsights', 'source-map-support'];
 bothDependencies.forEach((item) => {
 	originalPkg.devDependencies[item] = originalPkg.dependencies[item];
 });

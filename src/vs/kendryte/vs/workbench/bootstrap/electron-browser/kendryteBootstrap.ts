@@ -6,7 +6,7 @@ import { localize } from 'vs/nls';
 import { KENDRYTE_ACTIONID_BOOTSTRAP } from 'vs/kendryte/vs/platform/vscode/common/actionId';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { OpenDevToolsAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/openDevToolsAction';
-import { IWindowService } from 'vs/platform/windows/common/windows';
+import { IWindowService, IWindowsService } from 'vs/platform/windows/common/windows';
 import { ACTION_ID_IDE_SELF_UPGRADE, ACTION_ID_UPGRADE_BUILDING_BLOCKS } from 'vs/kendryte/vs/services/update/common/ids';
 import { IKendryteClientService } from 'vs/kendryte/vs/services/ipc/electron-browser/ipcType';
 import { ILogService } from 'vs/platform/log/common/log';
@@ -30,6 +30,7 @@ class KendryteBootstrapAction extends Action {
 		@ICommandService private readonly commandService: ICommandService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@IWindowService private readonly windowService: IWindowService,
+		@IWindowsService private readonly windowsService: IWindowsService,
 		@IKendryteClientService private readonly client: IKendryteClientService,
 		@INodePathService private readonly nodePathService: INodePathService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
@@ -42,9 +43,10 @@ class KendryteBootstrapAction extends Action {
 		const updated = await this.commandService.executeCommand(ACTION_ID_IDE_SELF_UPGRADE);
 		if (updated) {
 			this.logService.info('{update} will relaunch now');
-			return;
+			return true;
 		}
 		this.logService.info('{update}', ACTION_ID_IDE_SELF_UPGRADE, '{complete}');
+		return false;
 	}
 
 	async packages() {
@@ -61,8 +63,8 @@ class KendryteBootstrapAction extends Action {
 		this.logService.info('{update} Install Extensions');
 		const extensionChanged = await this.instantiationService.invokeFunction(MaixBuildSystemPrepare);
 		if (extensionChanged) {
-			this.logService.info('{update} will reload now');
-			this.windowService.reloadWindow();
+			this.logService.info('{update} will relaunch now');
+			this.windowsService.relaunch({});
 			return;
 		}
 		this.logService.info('{update} Install Extensions {complete}');
@@ -105,13 +107,14 @@ class KendryteBootstrapAction extends Action {
 
 		if (await this.client.isMeFirst()) {
 			this.logService.info('{update} I\'m first window in this session, start check self update.');
-			await this.ide_self();
+			if (await this.ide_self()) {
+				return;
+			}
 			await this.packages();
+			await this.extensions();
 		} else {
 			this.logService.info('{update} not first window, skip self update progress');
 		}
-
-		await this.extensions();
 
 		this.logService.info('{update} {COMPLETE}');
 		await this.activateCmake();

@@ -5,6 +5,9 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { normalizeArray } from 'vs/kendryte/vs/base/common/normalizeArray';
+import { isWindows } from 'vs/base/common/platform';
+import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { CONFIG_KEY_BUILD_VERBOSE } from 'vs/kendryte/vs/base/common/configKeys';
 
 export const CMAKE_LIST_GENERATED_WARNING = '# [NEVER REMOVE THIS LINE] WARNING: this file is generated, please edit ' + CMAKE_CONFIG_FILE_NAME + ' file instead.';
 
@@ -25,7 +28,8 @@ export class CMakeListsCreator {
 	private config: ICompileOptions;
 	private extraListContent: string;
 	private myDependency: string[] = [];
-	private isRoot: boolean;
+	private readonly isRoot: boolean;
+	private readonly isDebugMode: boolean;
 
 	constructor(
 		private readonly listSourceFile: string,
@@ -33,7 +37,9 @@ export class CMakeListsCreator {
 		depsRef: CMakeListsCreator,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@INodePathService private readonly nodePathService: INodePathService,
+		@IConfigurationService configurationService: IConfigurationService,
 	) {
+		this.isDebugMode = configurationService.getValue<boolean>(CONFIG_KEY_BUILD_VERBOSE);
 		if (depsRef) {
 			this.isRoot = false;
 			this.projectDependencies = depsRef.projectDependencies;
@@ -63,6 +69,10 @@ export class CMakeListsCreator {
 		const content = [CMAKE_LIST_GENERATED_WARNING];
 
 		content.push(`set(PROJECT_NAME ${JSON.stringify(config.name)})`);
+
+		if (this.isDebugMode) {
+			content.push('set(CMAKE_VERBOSE_MAKEFILE TRUE)');
+		}
 
 		if (this.isRoot) {
 			content.push('##### dependencies #####');
@@ -105,7 +115,16 @@ export class CMakeListsCreator {
 		content.push(readed.fix9985);
 
 		content.push('##### Main Section #####');
-		content.push('project(${PROJECT_NAME})');
+		if (isWindows) {
+			content.push(`
+if("\${CMAKE_MAKE_PROGRAM}" STREQUAL "mingw32-make.exe")
+	set(CMAKE_MAKE_PROGRAM "\${TOOLCHAIN}/\${CMAKE_MAKE_PROGRAM}" CACHE FILEPATH "make" FORCE)
+endif()
+project(\${PROJECT_NAME})
+`);
+		} else {
+			content.push('project(${PROJECT_NAME})');
+		}
 
 		content.push('## add source from config json');
 		if (config.source && config.source.length > 0) {
@@ -127,6 +146,14 @@ export class CMakeListsCreator {
 		content.push('## final create executable');
 		const verbose = config.type === 'library' ? 'add_library' : 'add_executable';
 		content.push(verbose + '(${PROJECT_NAME} ${SOURCE_FILES})');
+
+		if (this.isDebugMode) {
+			content.push(
+				'set_property(GLOBAL PROPERTY JOB_POOLS single_debug=1)',
+				'set_property(TARGET ${PROJECT_NAME} PROPERTY JOB_POOL_COMPILE single_debug)',
+				'set_property(TARGET ${PROJECT_NAME} PROPERTY JOB_POOL_LINK single_debug)'
+			);
+		}
 
 		content.push('target_link_libraries(${PROJECT_NAME} -Wl,--start-group');
 		content.push('    m ' + this.spaceArray(this.myDependency));

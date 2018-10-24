@@ -1,8 +1,7 @@
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { ConfigurationTarget, IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { Extensions as CategoryExtensions, IConfigCategoryRegistry } from 'vs/kendryte/vs/workbench/config/common/type';
-import { Extensions as ConfigurationExtensions, IConfigurationPropertySchema, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
+import { Extensions as ConfigurationExtensions, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
 import { Extensions as WorkbenchExtensions, IWorkbenchContribution, IWorkbenchContributionsRegistry } from 'vs/workbench/common/contributions';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
@@ -66,22 +65,17 @@ forceOverride.forEach((v, k) => {
 
 class SettingCategoryContribution implements IWorkbenchContribution {
 	private registry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration);
-	private categoryRegistry = Registry.as<IConfigCategoryRegistry>(CategoryExtensions.ConfigCategory);
 
 	constructor(
 		@IInstantiationService private instantiationService: IInstantiationService,
 		@IConfigurationService private configurationService: IConfigurationService,
 		@ILogService private logService: ILogService,
 	) {
-		Object.keys(this.registry.getConfigurationProperties()).forEach((key: string) => this.checkCategory(key));
-		this.registry.onDidRegisterConfiguration((keys: string[]) => keys.forEach(this.checkCategory, this));
+		Object.keys(this.registry.getConfigurationProperties()).forEach((key: string) => this.doOverrideValue(key));
+		this.registry.onDidRegisterConfiguration((keys: string[]) => keys.forEach(this.doOverrideValue, this));
 	}
 
-	private checkCategory(key: string) {
-		const schema: IConfigurationPropertySchema = this.registry.getConfigurationProperties()[key];
-		if (schema.hasOwnProperty('category')) {
-			this.categoryRegistry.addSetting((schema as any).category, key);
-		}
+	private doOverrideValue(key: string) {
 		const overwrite = configOverwrites[key];
 		if (overwrite) {
 			const old = this.configurationService.inspect(key);
