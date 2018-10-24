@@ -7,7 +7,6 @@ import { asThenable } from 'vs/base/common/async';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { Emitter } from 'vs/base/common/event';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { ExtHostCommands } from 'vs/workbench/api/node/extHostCommands';
 import { ExtHostWorkspace } from 'vs/workbench/api/node/extHostWorkspace';
 import { InputBox, InputBoxOptions, QuickInput, QuickInputButton, QuickPick, QuickPickItem, QuickPickOptions, WorkspaceFolder, WorkspaceFolderPickOptions } from 'vscode';
@@ -43,7 +42,7 @@ export class ExtHostQuickOpen implements ExtHostQuickOpenShape {
 		// clear state from last invocation
 		this._onDidSelectItem = undefined;
 
-		const itemsPromise = <TPromise<Item[]>>TPromise.wrap(itemsOrItemsPromise);
+		const itemsPromise = <Promise<Item[]>>Promise.resolve(itemsOrItemsPromise);
 
 		const quickPickWidget = this._proxy.$show({
 			placeHolder: options && options.placeHolder,
@@ -80,9 +79,7 @@ export class ExtHostQuickOpen implements ExtHostQuickOpenShape {
 						description = item.description;
 						detail = item.detail;
 						picked = item.picked;
-						if (enableProposedApi) {
-							alwaysShow = item.alwaysShow;
-						}
+						alwaysShow = item.alwaysShow;
 					}
 					pickItems.push({
 						label,
@@ -120,7 +117,7 @@ export class ExtHostQuickOpen implements ExtHostQuickOpenShape {
 
 			this._proxy.$setError(err);
 
-			return TPromise.wrapError(err);
+			return Promise.reject(err);
 		});
 	}
 
@@ -145,7 +142,7 @@ export class ExtHostQuickOpen implements ExtHostQuickOpenShape {
 
 				this._proxy.$setError(err);
 
-				return TPromise.wrapError(err);
+				return Promise.reject(err);
 			});
 	}
 
@@ -480,7 +477,7 @@ class ExtHostQuickPick<T extends QuickPickItem> extends ExtHostQuickInput implem
 	private _selectedItems: T[] = [];
 	private _onDidChangeSelectionEmitter = new Emitter<T[]>();
 
-	constructor(proxy: MainThreadQuickOpenShape, extensionId: string, private _enableProposedApi: boolean, onDispose: () => void) {
+	constructor(proxy: MainThreadQuickOpenShape, extensionId: string, enableProposedApi: boolean, onDispose: () => void) {
 		super(proxy, extensionId, onDispose);
 		this._disposables.push(
 			this._onDidChangeActiveEmitter,
@@ -508,7 +505,7 @@ class ExtHostQuickPick<T extends QuickPickItem> extends ExtHostQuickInput implem
 				handle: i,
 				detail: item.detail,
 				picked: item.picked,
-				alwaysShow: this._enableProposedApi ? item.alwaysShow : undefined
+				alwaysShow: item.alwaysShow
 			}))
 		});
 	}

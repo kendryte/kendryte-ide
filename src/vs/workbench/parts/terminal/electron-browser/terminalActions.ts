@@ -95,7 +95,7 @@ export class KillTerminalAction extends Action {
 	public run(event?: any): PromiseLike<any> {
 		const instance = this.terminalService.getActiveInstance();
 		if (instance) {
-			instance.dispose();
+			instance.dispose(true);
 			if (this.terminalService.terminalInstances.length > 0) {
 				this.terminalService.showPanel(true);
 			}
@@ -120,7 +120,7 @@ export class QuickKillTerminalAction extends Action {
 	public run(event?: any): Promise<any> {
 		const instance = this.terminalEntry.instance;
 		if (instance) {
-			instance.dispose();
+			instance.dispose(true);
 		}
 		return Promise.resolve(timeout(50)).then(result => this.quickOpenService.show(TERMINAL_PICKER_PREFIX, null));
 	}
@@ -217,6 +217,20 @@ export class DeleteWordRightTerminalAction extends BaseSendTextTerminalAction {
 	) {
 		// Send alt+D
 		super(id, label, '\x1bD', terminalService);
+	}
+}
+
+export class DeleteToLineStartTerminalAction extends BaseSendTextTerminalAction {
+	public static readonly ID = TERMINAL_COMMAND_ID.DELETE_TO_LINE_START;
+	public static readonly LABEL = nls.localize('workbench.action.terminal.deleteToLineStart', "Delete to Line Start");
+
+	constructor(
+		id: string,
+		label: string,
+		@ITerminalService terminalService: ITerminalService
+	) {
+		// Send ctrl+u
+		super(id, label, '\u0015', terminalService);
 	}
 }
 
@@ -717,7 +731,7 @@ export class SwitchTerminalActionItem extends SelectActionItem {
 		@IThemeService themeService: IThemeService,
 		@IContextViewService contextViewService: IContextViewService
 	) {
-		super(null, action, terminalService.getTabLabels(), terminalService.activeTabIndex, contextViewService, { ariaLabel: nls.localize('terminals', 'Terminals') });
+		super(null, action, terminalService.getTabLabels(), terminalService.activeTabIndex, contextViewService, { ariaLabel: nls.localize('terminals', 'Open Terminals.') });
 
 		this.toDispose.push(terminalService.onInstancesChanged(this._updateItems, this));
 		this.toDispose.push(terminalService.onActiveTabChanged(this._updateItems, this));

@@ -25,7 +25,7 @@ import { SidebarPart } from 'vs/workbench/browser/parts/sidebar/sidebarPart';
 import { PanelPart } from 'vs/workbench/browser/parts/panel/panelPart';
 import { StatusbarPart } from 'vs/workbench/browser/parts/statusbar/statusbarPart';
 import { getZoomFactor } from 'vs/base/browser/browser';
-import { RunOnceScheduler } from 'vs/base/common/async';
+import * as perf from 'vs/base/common/performance';
 
 const TITLE_BAR_HEIGHT = isMacintosh ? 22 : 30;
 const STATUS_BAR_HEIGHT = 22;
@@ -68,8 +68,6 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 	private _panelHeight: number;
 	private _panelWidth: number;
 
-	private saveStateScheduler: RunOnceScheduler;
-
 	constructor(
 		private parent: HTMLElement,
 		private workbenchContainer: HTMLElement,
@@ -102,9 +100,6 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 		this.sashXTwo = new Sash(this.workbenchContainer, this);
 		this.sashY = new Sash(this.workbenchContainer, this, { orientation: Orientation.HORIZONTAL });
 
-		// State scheduler
-		this.saveStateScheduler = this._register(new RunOnceScheduler(() => this.saveState(), 800));
-
 		this.registerListeners();
 	}
 
@@ -121,10 +116,6 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 	private registerListeners(): void {
 		this._register(this.themeService.onThemeChange(_ => this.layout()));
 		this._register(this.parts.editor.onDidSizeConstraintsChange(() => this.onDidEditorSizeConstraintsChange()));
-		this._register(this.storageService.onWillSaveState(() => {
-			this.saveStateScheduler.dispose();
-			this.saveState();
-		}));
 
 		this.registerSashListeners();
 	}
@@ -382,21 +373,20 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 		}));
 
 		this._register(this.sashXOne.onDidEnd(() => {
-			this.saveStateScheduler.schedule();
+			this.storageService.store(WorkbenchLayout.sashXOneWidthSettingsKey, this.sidebarWidth, StorageScope.GLOBAL);
 		}));
 
 		this._register(this.sashY.onDidEnd(() => {
-			this.saveStateScheduler.schedule();
+			this.storageService.store(WorkbenchLayout.sashYHeightSettingsKey, this.panelHeight, StorageScope.GLOBAL);
 		}));
 
 		this._register(this.sashXTwo.onDidEnd(() => {
-			this.saveStateScheduler.schedule();
+			this.storageService.store(WorkbenchLayout.sashXTwoWidthSettingsKey, this.panelWidth, StorageScope.GLOBAL);
 		}));
 
 		this._register(this.sashY.onDidReset(() => {
 			this.panelHeight = this.sidebarHeight * DEFAULT_PANEL_SIZE_COEFFICIENT;
-
-			this.saveStateScheduler.schedule();
+			this.storageService.store(WorkbenchLayout.sashYHeightSettingsKey, this.panelHeight, StorageScope.GLOBAL);
 
 			this.layout();
 		}));
@@ -405,22 +395,20 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 			let activeViewlet = this.viewletService.getActiveViewlet();
 			let optimalWidth = activeViewlet && activeViewlet.getOptimalWidth();
 			this.sidebarWidth = Math.max(optimalWidth, DEFAULT_SIDEBAR_PART_WIDTH);
-
-			this.saveStateScheduler.schedule();
+			this.storageService.store(WorkbenchLayout.sashXOneWidthSettingsKey, this.sidebarWidth, StorageScope.GLOBAL);
 
 			this.partService.setSideBarHidden(false).then(() => this.layout());
 		}));
 
 		this._register(this.sashXTwo.onDidReset(() => {
 			this.panelWidth = (this.workbenchSize.width - this.sidebarWidth - this.activitybarWidth) * DEFAULT_PANEL_SIZE_COEFFICIENT;
-
-			this.saveStateScheduler.schedule();
+			this.storageService.store(WorkbenchLayout.sashXTwoWidthSettingsKey, this.panelWidth, StorageScope.GLOBAL);
 
 			this.layout();
 		}));
 	}
 
-	layout(options?: ILayoutOptions): void { //
+	layout(options?: ILayoutOptions): void {
 		this.workbenchSize = getClientArea(this.parent);
 
 		const isActivityBarHidden = !this.partService.isVisible(Parts.ACTIVITYBAR_PART);
@@ -489,6 +477,8 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 			}
 		}
 
+		this.storageService.store(WorkbenchLayout.panelSizeBeforeMaximizedKey, this.panelSizeBeforeMaximized, StorageScope.GLOBAL);
+
 		const panelDimension = new Dimension(panelWidth, panelHeight);
 
 		// Editor
@@ -543,19 +533,36 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 
 		if (!isSidebarHidden) {
 			this.sidebarWidth = sidebarSize.width;
+			this.storageService.store(WorkbenchLayout.sashXOneWidthSettingsKey, this.sidebarWidth, StorageScope.GLOBAL);
 		}
 
 		if (!isPanelHidden) {
 			if (panelPosition === Position.BOTTOM) {
 				this.panelHeight = panelDimension.height;
+				this.storageService.store(WorkbenchLayout.sashYHeightSettingsKey, this.panelHeight, StorageScope.GLOBAL);
 			} else {
 				this.panelWidth = panelDimension.width;
+				this.storageService.store(WorkbenchLayout.sashXTwoWidthSettingsKey, this.panelWidth, StorageScope.GLOBAL);
 			}
 		}
 
 		// Workbench
 		position(this.workbenchContainer, 0, 0, 0, 0, 'relative');
 		size(this.workbenchContainer, this.workbenchSize.width, this.workbenchSize.height);
+
+		// Bug on Chrome: Sometimes Chrome wants to scroll the workbench container on layout changes. The fix is to reset scrolling in this case.
+		// uses set time to ensure this happens in th next frame (RAF will be at the end of this JS time slice and we don't want that)
+		setTimeout(() => {
+			perf.mark('willCheckAndFixWorkbenchLayout');
+			const workbenchContainer = this.workbenchContainer;
+			if (workbenchContainer.scrollTop > 0) {
+				workbenchContainer.scrollTop = 0;
+			}
+			if (workbenchContainer.scrollLeft > 0) {
+				workbenchContainer.scrollLeft = 0;
+			}
+			perf.mark('didCheckAndFixWorkbenchLayout');
+		});
 
 		// Title Part
 		const titleContainer = this.parts.titlebar.getContainer();
@@ -655,9 +662,6 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 
 		// Propagate to Context View
 		this.contextViewService.layout();
-
-		// Schedule save state
-		this.saveStateScheduler.schedule();
 	}
 
 	getVerticalSashTop(sash: Sash): number {
@@ -758,14 +762,5 @@ export class WorkbenchLayout extends Disposable implements IVerticalSashLayoutPr
 		if (doLayout) {
 			this.layout();
 		}
-	}
-
-	private saveState(): void {
-		this.storageService.store(WorkbenchLayout.sashXOneWidthSettingsKey, this.sidebarWidth, StorageScope.GLOBAL);
-
-		this.storageService.store(WorkbenchLayout.sashYHeightSettingsKey, this.panelHeight, StorageScope.GLOBAL);
-		this.storageService.store(WorkbenchLayout.sashXTwoWidthSettingsKey, this.panelWidth, StorageScope.GLOBAL);
-
-		this.storageService.store(WorkbenchLayout.panelSizeBeforeMaximizedKey, this.panelSizeBeforeMaximized, StorageScope.GLOBAL);
 	}
 }
