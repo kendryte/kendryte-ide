@@ -8,16 +8,24 @@ set_path_when_developing
 source common.sh
 cd ..
 
-function echoStat(){
+function echoStat() {
 	echo -e "\e[38;5;10m" "$@" "\e[0m"
 }
 
+GIT="$(command -v git)"
+function git() {
+	HOME="${REAL_HOME}" "$GIT" "$@"
+}
 
 echoStat "checking exists upstream working tree..."
 git worktree prune
-OUT=$(LC_ALL=en_US git worktree remove .release/follow-upstream || true)
-if [ ${PIPESTATUS[0]} -ne 0 ]; then
+
+git worktree remove .release/follow-upstream &>".release/fu-temp-out.txt" || {
+	echo "worktree removal failed with $?"
+	OUT=$(< ".release/fu-temp-out.txt")
 	if echo "$OUT" | grep -q "is not a working tree" ; then
+		rm -rf .release/follow-upstream
+	elif echo "$OUT" | grep -q "is dirty" ; then
 		rm -rf .release/follow-upstream
 	elif echo "$OUT" | grep -q "No such file or directory" ; then
 		echo -n ""
@@ -25,7 +33,7 @@ if [ ${PIPESTATUS[0]} -ne 0 ]; then
 		echo "$OUT" >&2
 		exit 1
 	fi
-fi
+}
 
 if ! git branch -r | grep -q microsoft ; then
 	echoStat "fetching origin upstream branch..."
@@ -36,30 +44,43 @@ echoStat "checking out upstream working tree..."
 git worktree add -f .release/follow-upstream microsoft
 
 cd .release/follow-upstream
+git checkout microsoft
+git reset --hard
+git clean -q -f -d -x
+git pull
 LAST_COMMIT=$(git log -1 --format='%s' | sed -E 's/.+#\s*//g')
 echoStat "last upstream commit id is: ${LAST_COMMIT}."
 
 echoStat "cleaning up working tree..."
 find . -maxdepth 1 ! -name .git ! -name . -exec rm -rf "{}" \;
 
-cd "${RELEASE_ROOT}"
-
-if ! [ -d MicrosoftVSCode ]; then
-	echoStat "cloning Microsoft/vscode..."
-	git clone -b master --single-branch https://github.com/Microsoft/vscode.git MicrosoftVSCode
+if [ -z "${MICROSOFT_VSCODE_ROOT}" ]; then
+	MICROSOFT_VSCODE_ROOT="$(cd "${VSCODE_ROOT}" && cd .. && pwd)/MicrosoftVSCode"
 fi
 
-cd MicrosoftVSCode
-echoStat "resetting everything at Microsoft/vscode..."
-git checkout master
-git reset --hard
-git clean -q -f -d -x
-
-echoStat "detect any changes..."
-git pull
+if ! [ -d "${MICROSOFT_VSCODE_ROOT}" ]; then
+	echoStat "cloning Microsoft/vscode to ${MICROSOFT_VSCODE_ROOT}"
+	git clone -b master --single-branch https://github.com/Microsoft/vscode.git "${MICROSOFT_VSCODE_ROOT}"
+	cd "${MICROSOFT_VSCODE_ROOT}"
+	
+	echoStat "resetting everything at Microsoft/vscode..."
+	git checkout master
+	git reset --hard
+	git clean -q -f -d -x
+else
+	cd "${MICROSOFT_VSCODE_ROOT}"
+	
+	echoStat "resetting everything at ${MICROSOFT_VSCODE_ROOT}..."
+	git checkout master
+	git reset --hard
+	git clean -q -f -d -x
+	
+	echoStat "detect any changes..."
+	git pull
+fi
 
 echoStat "overriding content into upstream working tree..."
-git archive --format tar HEAD | tar x -C "../follow-upstream"
+git archive --format tar HEAD | tar x -C "${RELEASE_ROOT}/follow-upstream"
 
 COMMIT="$(git rev-parse HEAD)"
 LOGS="$(git log --format='%h %s' "${LAST_COMMIT}...HEAD")"
@@ -71,7 +92,7 @@ if [ ${CNT} -eq 0 ]; then
 	exit 1
 fi
 
-cd "../follow-upstream"
+cd "${RELEASE_ROOT}/follow-upstream"
 
 COMMIT_LOG="sync with upstream # ${COMMIT}
 
