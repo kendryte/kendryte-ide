@@ -27,7 +27,7 @@ function yarn_install() {
 	pushd "$(yarn_location_of "$1")" &>/dev/null
 	echo "  logfile is at `pwd`/install.log"
 	yarn install &>install.log || dieFile "=======================" install.log
-	echo "  complete."
+	echo "  install $1 complete."
 	popd &>/dev/null
 }
 
@@ -41,11 +41,8 @@ yarn_install devDependencies
 DevModules="$(yarn_location_of devDependencies)/node_modules"
 
 ## link them
-if ! command -v "lnk" &>/dev/null ; then
-	yarn global add lnk-cli
-fi
 echo "  link dev modules to worktree"
-lnk ./.release/yarn-dir/devDependencies/node_modules ./
+"${DevModules}/.bin/lnk" ./.release/yarn-dir/devDependencies/node_modules ./
 
 ### dependencies
 yarn_install dependencies

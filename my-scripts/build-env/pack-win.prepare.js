@@ -34,6 +34,7 @@ include_1.cdNewDir(include_1.yarnPackageDir('devDependencies'));
 fs_1.writeFileSync('package.json', JSON.stringify({
     dependencies: {
         ...originalPkg.devDependencies,
+	    'lnk-cli': 'latest',
     },
 }));
 fs_1.writeFileSync('yarn.lock', originalLock);
