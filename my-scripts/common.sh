@@ -56,7 +56,12 @@ if [ "$SYSTEM" = "mac" ]; then
 	MAC_LOCAL='/usr/local/bin:' # brew default
 fi
 
-export PATH="./node_modules/.bin:${TOOLCHAIN_BIN}:${NODEJS_BIN}:${MAC_LOCAL}/bin:/usr/bin:/usr/sbin"
+export TMP="${RELEASE_ROOT}/tmp"
+export TEMP="${TMP}"
+
+mkdir -p "${RELEASE_ROOT}/bin"
+
+export PATH="${RELEASE_ROOT}/bin:./node_modules/.bin:${TOOLCHAIN_BIN}:${NODEJS_BIN}:${MAC_LOCAL}/bin:/usr/bin:/usr/sbin"
 if [ "$SYSTEM" = "windows" ]; then
 	WinPath=''
 	function pushP(){
@@ -66,10 +71,52 @@ if [ "$SYSTEM" = "windows" ]; then
 	}
 	path_foreach "${ORIGINAL_PATH}" pushP
 
-	GIT="$(PATH="$WinPath" command -v git)" || die "git not installed.\n\n================${WinPath}\n================"
-	PYTHON="$(PATH="$WinPath" command -v python)" || die "python not installed, 'windows-build-tools' is required.\n\n================${WinPath}\n================"
-	PATH="$(dirname "$GIT"):$(dirname "$PYTHON"):$PATH:$(cygpath -W):$(cygpath -S):$(cygpath -S)/Wbem:$(cygpath -S)/WindowsPowerShell/v1.0/"
+	PATH="$PATH:$(cygpath -W):$(cygpath -S):$(cygpath -S)/Wbem:$(cygpath -S)/WindowsPowerShell/v1.0/"
+	
+	export NATIVE_TEMP=$(native_path "$TEMP")
+	
+	function wrapCommand() {
+		local CMD="$1"
+		local ERR_MSG="$2"
+		local EX="$3"
+		local WIN_CMD=$(PATH="$WinPath" command -v "$CMD") || die "required command $CMD not installed on windows\n$ERR_MSG\n"
+		echo "#!/bin/sh
+export TEMP='${NATIVE_TEMP}'
+export TMP='${NATIVE_TEMP}'
+$EX
+export PATH=\"\$(echo \$PATH | sed 's|${RELEASE_ROOT}/bin:||g')\"
+exec '$WIN_CMD' \"\$@\"
+" > "${RELEASE_ROOT}/bin/$CMD"
+		chmod a+x "${RELEASE_ROOT}/bin/$CMD"
+	}
+
+	wrapCommand git "HOME='$REAL_HOME'" "install it from git-scm"
+	wrapCommand python "" "'windows-build-tools' is required"
+else
+	function wrapCommand() {
+		local CMD="$1"
+		local ERR_MSG="$2"
+		local EX="$3"
+		local ABS_CMD=$(PATH="$WinPath" command -v "$CMD") || die "required command $CMD not installed\n$ERR_MSG\n"
+		echo "#!/bin/sh
+$EX
+export PATH=\"\$(echo \$PATH | sed 's|${RELEASE_ROOT}/bin:||g')\"
+exec '$ABS_CMD' \"\$@\"
+" > "${RELEASE_ROOT}/bin/$CMD"
+		chmod a+x "${RELEASE_ROOT}/bin/$CMD"
+	}
+	
+	wrapCommand git "HOME='$REAL_HOME'" ""
+	wrapCommand python "" ""
 fi
+
+export TMP="$(native_path "${RELEASE_ROOT}/tmp")"
+export TEMP="${TMP}"
+
+CMD_GIT=$(command -v git)
+function git() {
+	TMP="$NATIVE_TEMP" TEMP="$NATIVE_TEMP" "$CMD_GIT" "$@"
+}
 
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
 echo -e "\e[1;38;5;9m\$BASH_SOURCE\e[0m=\e[2m${BASH_SOURCE[@]}\e[0m"
@@ -80,6 +127,7 @@ echo -e "\e[1;38;5;9mYARN_CACHE_FOLDER\e[0m=\e[2m${YARN_CACHE_FOLDER}\e[0m"
 echo -e "\e[1;38;5;9mRELEASE_ROOT\e[0m=\e[2m${RELEASE_ROOT}\e[0m"
 echo -e "\e[1;38;5;9mARCH_RELEASE_ROOT\e[0m=\e[2m${ARCH_RELEASE_ROOT}\e[0m"
 echo -e "\e[1;38;5;9mPATH\e[0m=\e[2m${PATH}\e[0m"
+echo -e "\e[1;38;5;9mTEMP\e[0m=\e[2m${TEMP}\e[0m"
 echo -e "\e[1;38;5;9mREAL_HOME\e[0m=\e[2m${REAL_HOME}\e[0m"
 echo -e "\e[1;38;5;9mHOME\e[0m=\e[2m${HOME}\e[0m"
 echo -e "\e[1;38;5;9mFOUND_CYGWIN\e[0m=\e[2m${FOUND_CYGWIN}\e[0m"

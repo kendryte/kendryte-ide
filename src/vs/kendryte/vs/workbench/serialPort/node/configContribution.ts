@@ -14,14 +14,14 @@ registerConfiguration({
 			type: 'string',
 			enum: standardBaudRate.map(e => e.toString()),
 			default: '115200',
-			description: localize('flash.device.id.desc', 'Default baudrate to use when connect to new serial port.'),
+			description: localize('serialport.baudrate.monitor.desc', 'Default baudrate to use when connect to new serial port.'),
 		},
 		[CONFIG_KEY_FLASH_SERIAL_BAUDRATE]: {
 			title: localize('serialport.baudrate.flash', 'Flash Baudrate'),
 			type: 'string',
 			enum: standardBaudRate.map(e => e.toString()),
 			default: '115200',
-			description: localize('flash.device.id.desc', 'Default baudrate when flashing program.'),
+			description: localize('serialport.baudrate.flash.desc', 'Default baudrate when flashing program.'),
 		},
 		'serialport.reloadDevice': {
 			title: localize('serialport.reloadDevice.title', 'Reload device list'),

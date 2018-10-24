@@ -12,11 +12,6 @@ function echoStat() {
 	echo -e "\e[38;5;10m" "$@" "\e[0m"
 }
 
-GIT="$(command -v git)"
-function git() {
-	HOME="${REAL_HOME}" "$GIT" "$@"
-}
-
 echoStat "checking exists upstream working tree..."
 git worktree prune
 
@@ -104,5 +99,4 @@ git add .
 git commit . -m "${COMMIT_LOG}" --no-verify
 
 echoStat "pushing working tree..."
-export HOME="$REAL_HOME"
 git push

@@ -41,8 +41,6 @@ fi
 NATIVE_VSCODE_ROOT=$(native_path "${VSCODE_ROOT}/src")
 echo -e "\e[38;5;14mCompile output processor: replace '${NATIVE_VSCODE_ROOT}/' with ''.\e[0m"
 
-export TMP="$(native_path "${RELEASE_ROOT}/tmp")"
-export TEMP="${TMP}"
 # prevent respawn, resolve windows Ctrl+C issue
 node --max-old-space-size=4096 ./node_modules/gulp/bin/gulp.js -- watch-client \
 	| sed "s#${NATIVE_VSCODE_ROOT}/##g"
