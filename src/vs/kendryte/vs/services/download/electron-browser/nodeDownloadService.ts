@@ -1,6 +1,6 @@
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IKendryteClientService } from 'vs/kendryte/vs/services/ipc/electron-browser/ipcType';
-import { INatureProgressStatus } from 'vs/kendryte/vs/workbench/progress/common/progress';
+import { INatureProgressStatus } from 'vs/kendryte/vs/platform/config/common/progress';
 import { DownloadID, IDownloadTargetInfo, INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
 import { Event } from 'vs/base/common/event';
 import { TPromise } from 'vs/base/common/winjs.base';

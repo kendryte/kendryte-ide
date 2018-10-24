@@ -1,4 +1,4 @@
-import { INatureProgressStatus } from 'vs/kendryte/vs/workbench/progress/common/progress';
+import { INatureProgressStatus } from 'vs/kendryte/vs/platform/config/common/progress';
 import { echo, Emitter, Event } from 'vs/base/common/event';
 import { Disposable, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { createDownloadId, DownloadID, IDownloadTargetInfo } from 'vs/kendryte/vs/services/download/common/download';

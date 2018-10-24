@@ -13,7 +13,7 @@ import { ISPMemoryPacker } from 'vs/kendryte/vs/workbench/serialUpload/node/ispM
 import { addDisposableEventEmitterListener } from 'vs/kendryte/vs/base/node/disposableEvents';
 import { TimeoutBuffer } from 'vs/kendryte/vs/workbench/serialUpload/node/timoutBuffer';
 import { disposableStream } from 'vs/kendryte/vs/base/node/disposableStream';
-import { SubProgress } from 'vs/kendryte/vs/workbench/progress/common/progress';
+import { SubProgress } from 'vs/kendryte/vs/platform/config/common/progress';
 import { lstat } from 'vs/base/node/pfs';
 import { timeout } from 'vs/base/common/async';
 import { ISPFlashPacker } from 'vs/kendryte/vs/workbench/serialUpload/node/ispFlashPacker';

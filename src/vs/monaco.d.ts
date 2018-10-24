@@ -26,7 +26,7 @@ declare namespace monaco {
 	}
 
 
-	export const enum MarkerTag {
+	export enum MarkerTag {
 		Unnecessary = 1
 	}
 
@@ -203,6 +203,187 @@ declare namespace monaco {
 		path: string;
 		query: string;
 		fragment: string;
+	}
+
+	/**
+	 * Virtual Key Codes, the value does not hold any inherent meaning.
+	 * Inspired somewhat from https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
+	 * But these are "more general", as they should work across browsers & OS`s.
+	 */
+	export enum KeyCode {
+		/**
+		 * Placed first to cover the 0 value of the enum.
+		 */
+		Unknown = 0,
+		Backspace = 1,
+		Tab = 2,
+		Enter = 3,
+		Shift = 4,
+		Ctrl = 5,
+		Alt = 6,
+		PauseBreak = 7,
+		CapsLock = 8,
+		Escape = 9,
+		Space = 10,
+		PageUp = 11,
+		PageDown = 12,
+		End = 13,
+		Home = 14,
+		LeftArrow = 15,
+		UpArrow = 16,
+		RightArrow = 17,
+		DownArrow = 18,
+		Insert = 19,
+		Delete = 20,
+		KEY_0 = 21,
+		KEY_1 = 22,
+		KEY_2 = 23,
+		KEY_3 = 24,
+		KEY_4 = 25,
+		KEY_5 = 26,
+		KEY_6 = 27,
+		KEY_7 = 28,
+		KEY_8 = 29,
+		KEY_9 = 30,
+		KEY_A = 31,
+		KEY_B = 32,
+		KEY_C = 33,
+		KEY_D = 34,
+		KEY_E = 35,
+		KEY_F = 36,
+		KEY_G = 37,
+		KEY_H = 38,
+		KEY_I = 39,
+		KEY_J = 40,
+		KEY_K = 41,
+		KEY_L = 42,
+		KEY_M = 43,
+		KEY_N = 44,
+		KEY_O = 45,
+		KEY_P = 46,
+		KEY_Q = 47,
+		KEY_R = 48,
+		KEY_S = 49,
+		KEY_T = 50,
+		KEY_U = 51,
+		KEY_V = 52,
+		KEY_W = 53,
+		KEY_X = 54,
+		KEY_Y = 55,
+		KEY_Z = 56,
+		Meta = 57,
+		ContextMenu = 58,
+		F1 = 59,
+		F2 = 60,
+		F3 = 61,
+		F4 = 62,
+		F5 = 63,
+		F6 = 64,
+		F7 = 65,
+		F8 = 66,
+		F9 = 67,
+		F10 = 68,
+		F11 = 69,
+		F12 = 70,
+		F13 = 71,
+		F14 = 72,
+		F15 = 73,
+		F16 = 74,
+		F17 = 75,
+		F18 = 76,
+		F19 = 77,
+		NumLock = 78,
+		ScrollLock = 79,
+		/**
+		 * Used for miscellaneous characters; it can vary by keyboard.
+		 * For the US standard keyboard, the ';:' key
+		 */
+		US_SEMICOLON = 80,
+		/**
+		 * For any country/region, the '+' key
+		 * For the US standard keyboard, the '=+' key
+		 */
+		US_EQUAL = 81,
+		/**
+		 * For any country/region, the ',' key
+		 * For the US standard keyboard, the ',<' key
+		 */
+		US_COMMA = 82,
+		/**
+		 * For any country/region, the '-' key
+		 * For the US standard keyboard, the '-_' key
+		 */
+		US_MINUS = 83,
+		/**
+		 * For any country/region, the '.' key
+		 * For the US standard keyboard, the '.>' key
+		 */
+		US_DOT = 84,
+		/**
+		 * Used for miscellaneous characters; it can vary by keyboard.
+		 * For the US standard keyboard, the '/?' key
+		 */
+		US_SLASH = 85,
+		/**
+		 * Used for miscellaneous characters; it can vary by keyboard.
+		 * For the US standard keyboard, the '`~' key
+		 */
+		US_BACKTICK = 86,
+		/**
+		 * Used for miscellaneous characters; it can vary by keyboard.
+		 * For the US standard keyboard, the '[{' key
+		 */
+		US_OPEN_SQUARE_BRACKET = 87,
+		/**
+		 * Used for miscellaneous characters; it can vary by keyboard.
+		 * For the US standard keyboard, the '\|' key
+		 */
+		US_BACKSLASH = 88,
+		/**
+		 * Used for miscellaneous characters; it can vary by keyboard.
+		 * For the US standard keyboard, the ']}' key
+		 */
+		US_CLOSE_SQUARE_BRACKET = 89,
+		/**
+		 * Used for miscellaneous characters; it can vary by keyboard.
+		 * For the US standard keyboard, the ''"' key
+		 */
+		US_QUOTE = 90,
+		/**
+		 * Used for miscellaneous characters; it can vary by keyboard.
+		 */
+		OEM_8 = 91,
+		/**
+		 * Either the angle bracket key or the backslash key on the RT 102-key keyboard.
+		 */
+		OEM_102 = 92,
+		NUMPAD_0 = 93,
+		NUMPAD_1 = 94,
+		NUMPAD_2 = 95,
+		NUMPAD_3 = 96,
+		NUMPAD_4 = 97,
+		NUMPAD_5 = 98,
+		NUMPAD_6 = 99,
+		NUMPAD_7 = 100,
+		NUMPAD_8 = 101,
+		NUMPAD_9 = 102,
+		NUMPAD_MULTIPLY = 103,
+		NUMPAD_ADD = 104,
+		NUMPAD_SEPARATOR = 105,
+		NUMPAD_SUBTRACT = 106,
+		NUMPAD_DECIMAL = 107,
+		NUMPAD_DIVIDE = 108,
+		/**
+		 * Cover all key codes when IME is processing input.
+		 */
+		KEY_IN_COMPOSITION = 109,
+		ABNT_C1 = 110,
+		ABNT_C2 = 111,
+		/**
+		 * Placed last to cover the length of the enum.
+		 * Please do not depend on this value!
+		 */
+		MAX_VALUE = 112
 	}
 	export class KeyMod {
 		static readonly CtrlCmd: number;
@@ -605,7 +786,7 @@ declare namespace monaco {
 	/**
 	 * The direction of a selection.
 	 */
-	export const enum SelectionDirection {
+	export enum SelectionDirection {
 		/**
 		 * The selection starts above where it ends.
 		 */
@@ -986,7 +1167,7 @@ declare namespace monaco.editor {
 		mimeType?: string;
 	}
 
-	export const enum ScrollbarVisibility {
+	export enum ScrollbarVisibility {
 		Auto = 1,
 		Hidden = 2,
 		Visible = 3
@@ -1149,7 +1330,7 @@ declare namespace monaco.editor {
 	/**
 	 * End of line character preference.
 	 */
-	export const enum EndOfLinePreference {
+	export enum EndOfLinePreference {
 		/**
 		 * Use the end of line character identified in the text buffer.
 		 */
@@ -1167,7 +1348,7 @@ declare namespace monaco.editor {
 	/**
 	 * The default end of line to use when instantiating models.
 	 */
-	export const enum DefaultEndOfLine {
+	export enum DefaultEndOfLine {
 		/**
 		 * Use line feed (\n) as the end of line character.
 		 */
@@ -1181,7 +1362,7 @@ declare namespace monaco.editor {
 	/**
 	 * End of line character preference.
 	 */
-	export const enum EndOfLineSequence {
+	export enum EndOfLineSequence {
 		/**
 		 * Use line feed (\n) as the end of line character.
 		 */
@@ -1279,7 +1460,7 @@ declare namespace monaco.editor {
 	 * Describes the behavior of decorations when typing/editing near their edges.
 	 * Note: Please do not edit the values, as they very carefully match `DecorationRangeBehavior`
 	 */
-	export const enum TrackedRangeStickiness {
+	export enum TrackedRangeStickiness {
 		AlwaysGrowsWhenTypingAtEdges = 0,
 		NeverGrowsWhenTypingAtEdges = 1,
 		GrowsOnlyWhenTypingBefore = 2,
@@ -1817,7 +1998,7 @@ declare namespace monaco.editor {
 	 */
 	export type IEditorViewState = ICodeEditorViewState | IDiffEditorViewState;
 
-	export const enum ScrollType {
+	export enum ScrollType {
 		Smooth = 0,
 		Immediate = 1
 	}
@@ -2121,7 +2302,7 @@ declare namespace monaco.editor {
 	/**
 	 * Describes the reason the cursor has changed its position.
 	 */
-	export const enum CursorChangeReason {
+	export enum CursorChangeReason {
 		/**
 		 * Unknown or not set.
 		 */
@@ -2876,7 +3057,7 @@ declare namespace monaco.editor {
 		originalEditable?: boolean;
 	}
 
-	export const enum RenderMinimap {
+	export enum RenderMinimap {
 		None = 0,
 		Small = 1,
 		Large = 2,
@@ -2887,7 +3068,7 @@ declare namespace monaco.editor {
 	/**
 	 * Describes how to indent wrapped lines.
 	 */
-	export const enum WrappingIndent {
+	export enum WrappingIndent {
 		/**
 		 * No indentation => wrapped lines begin at column 1.
 		 */
@@ -2909,7 +3090,7 @@ declare namespace monaco.editor {
 	/**
 	 * The kind of animation in which the editor's cursor should be rendered.
 	 */
-	export const enum TextEditorCursorBlinkingStyle {
+	export enum TextEditorCursorBlinkingStyle {
 		/**
 		 * Hidden
 		 */
@@ -3024,7 +3205,7 @@ declare namespace monaco.editor {
 		readonly wordWrapBreakObtrusiveCharacters: string;
 	}
 
-	export const enum RenderLineNumbersType {
+	export enum RenderLineNumbersType {
 		Off = 0,
 		On = 1,
 		Relative = 2,
@@ -3355,7 +3536,7 @@ declare namespace monaco.editor {
 	/**
 	 * A positioning preference for rendering content widgets.
 	 */
-	export const enum ContentWidgetPositionPreference {
+	export enum ContentWidgetPositionPreference {
 		/**
 		 * Place the content widget exactly at a position
 		 */
@@ -3417,7 +3598,7 @@ declare namespace monaco.editor {
 	/**
 	 * A positioning preference for rendering overlay widgets.
 	 */
-	export const enum OverlayWidgetPositionPreference {
+	export enum OverlayWidgetPositionPreference {
 		/**
 		 * Position the overlay widget in the top right corner
 		 */
@@ -3464,7 +3645,7 @@ declare namespace monaco.editor {
 	/**
 	 * Type of hit element with the mouse in the editor.
 	 */
-	export const enum MouseTargetType {
+	export enum MouseTargetType {
 		/**
 		 * Mouse is on top of an unknown element.
 		 */
@@ -4489,7 +4670,7 @@ declare namespace monaco.languages {
 		provideHover(model: editor.ITextModel, position: Position, token: CancellationToken): ProviderResult<Hover>;
 	}
 
-	export const enum CompletionItemKind {
+	export enum CompletionItemKind {
 		Method = 0,
 		Function = 1,
 		Constructor = 2,
@@ -4518,7 +4699,7 @@ declare namespace monaco.languages {
 		Snippet = 25
 	}
 
-	export const enum CompletionItemInsertTextRule {
+	export enum CompletionItemInsertTextRule {
 		/**
 		 * Adjust whitespace/indentation of multiline insert texts to
 		 * match the current line indentation.
@@ -4621,7 +4802,7 @@ declare namespace monaco.languages {
 	/**
 	 * How a suggest provider was triggered.
 	 */
-	export const enum CompletionTriggerKind {
+	export enum CompletionTriggerKind {
 		Invoke = 0,
 		TriggerCharacter = 1,
 		TriggerForIncompleteCompletions = 2
@@ -4895,7 +5076,7 @@ declare namespace monaco.languages {
 	/**
 	 * A symbol kind.
 	 */
-	export const enum SymbolKind {
+	export enum SymbolKind {
 		File = 0,
 		Module = 1,
 		Namespace = 2,
