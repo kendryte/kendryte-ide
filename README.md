@@ -25,6 +25,7 @@ wqy-zenhei-fonts wqy-unibit-fonts wqy-bitmap-fonts # locale font
  `curl`
  `tar`
  `xz`
+ `which`
 
 *In theory, any bash env with these packages is ok, but not tested*
 

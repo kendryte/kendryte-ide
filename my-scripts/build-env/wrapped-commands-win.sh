@@ -11,12 +11,12 @@ function pushP(){
 path_foreach "${ORIGINAL_PATH}" pushP
 unset pushP
 
-CMD_GIT=$(PATH="${WinPath}" which git.exe) || die "required command git.exe not installed on windows."
+CMD_GIT=$(PATH="${WinPath}" /usr/bin/which git.exe) || die "required command git.exe not installed on windows."
 function git() {
 	HOME="$USERPROFILE" TEMP="${NATIVE_TEMP}" TMP="${NATIVE_TEMP}" "${CMD_GIT}" "$@"
 }
 
-CMD_PY=$(PATH="${WinPath}" which python.exe) || die "required command python.exe not installed on windows, run my-scripts/prepare-release.sh."
+CMD_PY=$(PATH="${WinPath}" /usr/bin/which python.exe) || die "required command python.exe not installed on windows, run my-scripts/prepare-release.sh."
 function python() {
 	TEMP="${NATIVE_TEMP}" TMP="${NATIVE_TEMP}" "${CMD_PY}" "$@"
 }
