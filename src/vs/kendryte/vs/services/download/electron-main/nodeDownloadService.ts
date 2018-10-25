@@ -5,7 +5,7 @@ import { DownloadID, IDownloadTargetInfo, INodeDownloadService } from 'vs/kendry
 import { TPromise } from 'vs/base/common/winjs.base';
 import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
 import { DownloadTask, loadIdFromResumeFile } from 'vs/kendryte/vs/services/download/electron-main/downloadTask';
-import { extname } from 'vs/base/common/paths';
+import { doubleExtname } from 'vs/kendryte/vs/base/common/doubleExtname';
 import { hash } from 'vs/base/common/hash';
 import { ILogService } from 'vs/platform/log/common/log';
 import { defaultConsoleLogger } from 'vs/kendryte/vs/platform/log/node/consoleLogger';
@@ -151,7 +151,7 @@ export class NodeDownloadService implements INodeDownloadService {
 	}
 
 	public downloadTemp(url: string, start = true, logger?: ILogService): TPromise<DownloadID> {
-		return this.download(url, osTempDir(`download/${hash(url)}${extname(url)}`), start, logger);
+		return this.download(url, osTempDir(`download/file${hash(url)}${doubleExtname(url)}`), start, logger);
 	}
 }
 

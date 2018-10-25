@@ -1,19 +1,28 @@
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { resolve as resolveNative } from 'path';
-import { createReadStream } from 'fs';
 import { CancellationToken } from 'vs/base/common/cancellation';
-import { extract as extractTar } from 'tar-fs';
 import { extract as extractZip } from 'vs/platform/node/zip';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { lstat, mkdirp, readdir, rimraf, unlink } from 'vs/base/node/pfs';
+import { lstat, mkdirp, readdir, rename, rimraf } from 'vs/base/node/pfs';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { hash } from 'vs/base/common/hash';
 import { ILogService } from 'vs/platform/log/common/log';
 import { basename } from 'vs/base/common/paths';
-import gunzip = require('gunzip-maybe');
+import decompress = require('decompress');
+import decompressTar = require('decompress-tar');
+import decompressTarbz2 = require('decompress-tarbz2');
+import decompressTargz = require('decompress-targz');
+import decompressTarxz = require('decompress-tarxz');
 
 export const IFileCompressService = createDecorator<IFileCompressService>('fileCompressService');
+
+const plugins = [
+	decompressTar(),
+	decompressTarbz2(),
+	decompressTargz(),
+	decompressTarxz(),
+];
 
 export interface IFileCompressService {
 	_serviceBrand: any;
@@ -39,13 +48,8 @@ export class FileCompressService implements IFileCompressService {
 	}
 
 	private unTar(file: string, target: string, logger: ILogService): TPromise<void> {
-		return new TPromise((resolve, reject) => {
-			const stream = createReadStream(file)
-				.pipe(gunzip())
-				.pipe(extractTar(target));
-
-			stream.on('finish', _ => resolve(void 0));
-			stream.on('error', e => reject(e));
+		return decompress(file, target, { plugins }).then(() => {
+			return void 0;
 		});
 	}
 
@@ -59,25 +63,32 @@ export class FileCompressService implements IFileCompressService {
 		await rimraf(unzipTarget);
 		await mkdirp(unzipTarget);
 
+		let method = 'unknown';
 		try {
 			if (/\.zip$/.test(zipFile)) {
+				method = 'zip';
 				logger.info('[%s]  -> call ZIP.', debugName);
 				await this.unZip(zipFile, unzipTarget, logger);
 			} else if (/\.msi$/.test(zipFile)) {
+				method = 'msi';
 				logger.info('[%s]  -> call MSI.', debugName);
 				await this.MicrosoftInstall(zipFile, unzipTarget, logger);
-			} else {
+			} else if (/\.tar\.[^.]+$/.test(zipFile)) {
+				method = 'tar';
 				logger.info('[%s]  -> call TAR.', debugName);
 				await this.unTar(zipFile, unzipTarget, logger);
+			} else {
+				return Promise.reject(new Error('unknown file type: ' + zipFile));
 			}
 			logger.info('[%s] Extracted complete.', debugName);
 		} catch (e) {
+			const rnd = (Math.random() * 1000000).toFixed(0);
 			logger.error('[%s] decompress throw:\n%s', debugName, e.stack.replace(/^/g, '  '));
-			logger.warn('rmdir(%s)', unzipTarget);
-			await rimraf(unzipTarget);
+			logger.warn('[%s] remove broken result folder', unzipTarget);
+			await rename(unzipTarget, unzipTarget + '.broken.' + rnd);
 			logger.warn('[%s] remove broken zip file.', debugName);
-			await unlink(zipFile);
-			throw new Error('Cannot decompress file: ' + zipFile + ' \nError:' + e);
+			await rename(zipFile, zipFile + '.broken.' + rnd);
+			throw new Error('Cannot decompress file (' + method + '): ' + zipFile + ' \nError:' + e);
 		}
 
 		const contents = await readdir(unzipTarget);

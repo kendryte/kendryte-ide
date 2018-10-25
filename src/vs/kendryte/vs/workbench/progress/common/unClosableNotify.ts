@@ -35,6 +35,7 @@ export function unClosableNotify(notificationService: INotificationService, init
 		}
 
 		const d = handle.onDidClose(() => {
+			console.log(' ** tell to close! closed=%s', closed);
 			if (!closed) {
 				start();
 			}
