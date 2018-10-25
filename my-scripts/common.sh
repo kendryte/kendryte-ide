@@ -52,71 +52,19 @@ if [ -n "${ORIGINAL_PATH}" ]; then
 	export ORIGINAL_PATH="$PATH"
 fi
 
-if [ "$SYSTEM" = "mac" ]; then
-	MAC_LOCAL='/usr/local/bin:' # brew default
-fi
-
 export TMP="${RELEASE_ROOT}/tmp"
 export TEMP="${TMP}"
 
-mkdir -p "${RELEASE_ROOT}/bin"
-
-export PATH="${RELEASE_ROOT}/bin:./node_modules/.bin:${TOOLCHAIN_BIN}:${NODEJS_BIN}:${MAC_LOCAL}/bin:/usr/bin:/usr/sbin"
-if [ "$SYSTEM" = "windows" ]; then
-	WinPath=''
-	function pushP(){
-		if echo "$1" | grep -qE '^/cygdrive/' ; then
-			WinPath+="$1:"
-		fi
-	}
-	path_foreach "${ORIGINAL_PATH}" pushP
-
-	PATH="$PATH:$(cygpath -W):$(cygpath -S):$(cygpath -S)/Wbem:$(cygpath -S)/WindowsPowerShell/v1.0/"
-	
-	export NATIVE_TEMP=$(native_path "$TEMP")
-	
-	function wrapCommand() {
-		local CMD="$1"
-		local ERR_MSG="$2"
-		local EX="$3"
-		local WIN_CMD=$(PATH="$WinPath" command -v "$CMD") || die "required command $CMD not installed on windows\n$ERR_MSG\n"
-		echo "#!/bin/sh
-export TEMP='${NATIVE_TEMP}'
-export TMP='${NATIVE_TEMP}'
-$EX
-export PATH=\"\$(echo \$PATH | sed 's|${RELEASE_ROOT}/bin:||g')\"
-exec '$WIN_CMD' \"\$@\"
-" > "${RELEASE_ROOT}/bin/$CMD"
-		chmod a+x "${RELEASE_ROOT}/bin/$CMD"
-	}
-
-	wrapCommand git "HOME='$REAL_HOME'" "install it from git-scm"
-	wrapCommand python "" "'windows-build-tools' is required"
+export PATH="/bin:/usr/bin"
+if [ "${SYSTEM}" = "windows" ]; then
+	PATH+=":$(cygpath -W):$(cygpath -S):$(cygpath -S)/Wbem:$(cygpath -S)/WindowsPowerShell/v1.0"
+	source build-env/wrapped-commands-win.sh
+elif [ "$SYSTEM" = "mac" ]; then
+	PATH="/usr/local/bin:${PATH}" # brew default
 else
-	function wrapCommand() {
-		local CMD="$1"
-		local ERR_MSG="$2"
-		local EX="$3"
-		local ABS_CMD=$(command -v "$CMD") || die "required command $CMD not installed\n$ERR_MSG\n"
-		echo "#!/bin/sh
-$EX
-export PATH=\"\$(echo \$PATH | sed 's|${RELEASE_ROOT}/bin:||g')\"
-exec '$ABS_CMD' \"\$@\"
-" > "${RELEASE_ROOT}/bin/$CMD"
-		chmod a+x "${RELEASE_ROOT}/bin/$CMD"
-	}
-	
-	wrapCommand git "HOME='$REAL_HOME'" ""
-	wrapCommand python "" ""
+	source build-env/wrapped-commands-nix.sh
 fi
-
-export TMP="$(native_path "${RELEASE_ROOT}/tmp")"
-export TEMP="${TMP}"
-
-CMD_GIT=$(command -v git)
-function git() {
-	TMP="$NATIVE_TEMP" TEMP="$NATIVE_TEMP" "$CMD_GIT" "$@"
-}
+export PATH="./node_modules/.bin:${TOOLCHAIN_BIN}:${NODEJS_BIN}:${PATH}"
 
 printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =
 echo -e "\e[1;38;5;9m\$BASH_SOURCE\e[0m=\e[2m${BASH_SOURCE[@]}\e[0m"

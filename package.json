@@ -1,8 +1,8 @@
 {
   "name": "code-oss-dev",
-  "version": "1.29.0",
+  "version": "1.29.0001",
   "distro": "eceef408e99ace55c0a17a2a90b88e46a8c9090a",
-  "patchVersion": 20181024.222328,
+  "patchVersion": 20181025.225359,
   "author": {
     "name": "Microsoft Corporation"
   },
