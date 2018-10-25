@@ -36,6 +36,8 @@ gulp.task('default', () => {
 	           .pipe(filter(['**', '!**/package-lock.json']))
 	           .pipe(createAsar(path.join(root, 'node_modules'), [
 		           '**/*.node',
+		           '**/*.dll',
+		           '**/*.exe',
 		           '**/vscode-ripgrep/bin/*',
 		           '**/node-pty/build/Release/*',
 	           ], 'node_modules.asar'))

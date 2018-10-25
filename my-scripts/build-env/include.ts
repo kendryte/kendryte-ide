@@ -1,5 +1,7 @@
 import { resolve } from 'path';
 import { existsSync, mkdirSync } from 'fs';
+import { platform } from 'os';
+import { execSync } from 'child_process';
 
 export function nativePath(p) {
 	return p.replace(/^\/cygdrive\/([a-z])/i, (m0, drv) => {
@@ -32,4 +34,20 @@ export function requireEnvPath(name: string): string {
 		throw new Error('Env ' + name + ' not set');
 	}
 	return nativePath(process.env[name]);
+}
+
+export function winSize() {
+	try {
+		if (platform() === 'win32' && !process.env.SHELL) {
+			const cmd = 'powershell (Get-Host).UI.RawUI.WindowSize.width';
+			const code = execSync(cmd).toString().trim();
+			return parseInt(code);
+		} else {
+			const cmd = 'tput cols';
+			const code = execSync(cmd).toString().trim();
+			return parseInt(code);
+		}
+	} catch (e) {
+	}
+	return NaN;
 }
