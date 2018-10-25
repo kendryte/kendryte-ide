@@ -5,7 +5,6 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { normalizeArray } from 'vs/kendryte/vs/base/common/normalizeArray';
-import { isWindows } from 'vs/base/common/platform';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { CONFIG_KEY_BUILD_VERBOSE } from 'vs/kendryte/vs/base/common/configKeys';
 
@@ -115,16 +114,7 @@ export class CMakeListsCreator {
 		content.push(readed.fix9985);
 
 		content.push('##### Main Section #####');
-		if (isWindows) {
-			content.push(`
-if("\${CMAKE_MAKE_PROGRAM}" STREQUAL "mingw32-make.exe")
-	set(CMAKE_MAKE_PROGRAM "\${TOOLCHAIN}/\${CMAKE_MAKE_PROGRAM}" CACHE FILEPATH "make" FORCE)
-endif()
-project(\${PROJECT_NAME})
-`);
-		} else {
-			content.push('project(${PROJECT_NAME})');
-		}
+		content.push('project(${PROJECT_NAME})');
 
 		content.push('## add source from config json');
 		if (config.source && config.source.length > 0) {
@@ -151,7 +141,7 @@ project(\${PROJECT_NAME})
 			content.push(
 				'set_property(GLOBAL PROPERTY JOB_POOLS single_debug=1)',
 				'set_property(TARGET ${PROJECT_NAME} PROPERTY JOB_POOL_COMPILE single_debug)',
-				'set_property(TARGET ${PROJECT_NAME} PROPERTY JOB_POOL_LINK single_debug)'
+				'set_property(TARGET ${PROJECT_NAME} PROPERTY JOB_POOL_LINK single_debug)',
 			);
 		}
 
