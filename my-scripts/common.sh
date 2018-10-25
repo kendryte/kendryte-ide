@@ -97,7 +97,7 @@ else
 		local CMD="$1"
 		local ERR_MSG="$2"
 		local EX="$3"
-		local ABS_CMD=$(PATH="$WinPath" command -v "$CMD") || die "required command $CMD not installed\n$ERR_MSG\n"
+		local ABS_CMD=$(command -v "$CMD") || die "required command $CMD not installed\n$ERR_MSG\n"
 		echo "#!/bin/sh
 $EX
 export PATH=\"\$(echo \$PATH | sed 's|${RELEASE_ROOT}/bin:||g')\"
