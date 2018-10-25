@@ -66,8 +66,11 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 
 			const win = this._showNotify();
 			const logg = (message: string, ...args: any[]) => {
-				const msg = format(message, ...args);
+				let msg = format(message, ...args);
 				console.log(msg);
+				if (!msg) {
+					msg = ' ';
+				}
 				win.webContents.executeJavaScript(`doLog(${JSON.stringify(msg)})`).catch();
 			};
 
@@ -84,8 +87,7 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 			this.handleQuit(data, logg).catch((e) => {
 				console.error(e);
 				logg('Failed with ' + e.message);
-				alert('Error while moving files: ' + e.message);
-			}).then(finish);
+			}).then(finish, finish);
 		});
 
 		this.lifecycleService.quit().then(() => {
@@ -196,6 +198,7 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 
 	private async handleQuit(data: UpdateListFulfilled, logger: (msg: string, ...args: any[]) => void) {
 		for (const { name, version, downloaded } of data) {
+			logger('--------------------------');
 			logger('update package:', name);
 
 			const thisPackageLoc = this.nodePathService.getPackagesPath(name);
@@ -208,6 +211,12 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 			this.bundledVersions[name] = version;
 			logger('  writeFile(%s) -> %s = %s', this.packageBundleFile, name, version);
 			await writeFile(this.packageBundleFile, JSON.stringify(this.bundledVersions, null, 2));
+
+			logger('  rimraf(%s)', downloaded);
+			await rimraf(downloaded);
+			logger('--------------------------');
+			logger('');
+			logger('');
 		}
 	}
 

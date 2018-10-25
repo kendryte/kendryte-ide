@@ -13,6 +13,7 @@ export function getEnvKey(upperKey: string) {
 	}
 	return upperKey;
 }
+
 export function hideEnv(env: any, watchKey: string) {
 	const k = getEnvKey(watchKey);
 	if (process.env.hasOwnProperty(k)) {
@@ -39,7 +40,7 @@ export function getEnvironment(nodePathService: INodePathService) {
 		];
 
 		// windows: user may or may not know whats happen, only use very limit set of path
-		env.Path = myPath.map(normalize).concat(dynamic).join(PathListSep);
+		env.PATH = env.Path = myPath.map(normalize).concat(dynamic).join(PathListSep);
 	} else {
 		// linux: user know what he do, just passing all
 		env.PATH = myPath.join(PathListSep) + PathListSep + process.env.PATH;

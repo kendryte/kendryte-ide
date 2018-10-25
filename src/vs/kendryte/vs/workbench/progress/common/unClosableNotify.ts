@@ -14,6 +14,8 @@ export function unClosableNotify(notificationService: INotificationService, init
 	let handle: INotificationHandle;
 	let progress: INotificationProgress;
 
+	init.sticky = true;
+
 	let closed = false;
 	let total: number = NaN;
 	let last = 0;
@@ -35,7 +37,7 @@ export function unClosableNotify(notificationService: INotificationService, init
 		}
 
 		const d = handle.onDidClose(() => {
-			console.log(' ** tell to close! closed=%s', closed);
+			// console.log(' ** tell to close! closed=%s', closed, init.message);
 			if (!closed) {
 				start();
 			}
@@ -74,7 +76,6 @@ export function unClosableNotify(notificationService: INotificationService, init
 				handle.progress.worked(value);
 			},
 			done() {
-				closed = true;
 				lastDone = true;
 				lastProgressInfinite = false;
 				handle.progress.done();
@@ -107,9 +108,11 @@ export function unClosableNotify(notificationService: INotificationService, init
 			return handle.close();
 		},
 		revoke() {
+			// console.log(' ** revoke:close = true %O', (new Error), init.message);
 			closed = true;
 		},
 		dispose() {
+			// console.log(' ** dispose:close = true %O', (new Error), init.message);
 			closed = true;
 			handle.close();
 		},

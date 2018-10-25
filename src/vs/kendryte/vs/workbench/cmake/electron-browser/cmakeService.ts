@@ -606,9 +606,10 @@ ${JSON.stringify(payload)}
 		dbg.command(exe.command, exe.args);
 		dbg.writeBack(this.nodePathService.workspaceFilePath(), 'cmake-build');
 
-		const ret = await process.start(({ line }: LineData) => {
-			this.logger.info(line);
-			processors.parseLine(line);
+		const ret = await process.start((data: LineData) => {
+			// console.info(data);
+			this.logger.info(data.line);
+			processors.parseLine(data.line);
 		});
 
 		processors.finalize();
