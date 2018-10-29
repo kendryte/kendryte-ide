@@ -3,8 +3,8 @@
 ############# prepare
 set -e
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-source fn.sh
-source common.sh "$@"
+source build-env/fn.sh
+source build-env/common.sh "$@"
 cd ..
 
 echo 8000000 > /proc/sys/fs/file-max

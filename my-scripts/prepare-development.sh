@@ -10,12 +10,12 @@ if [ "$SYSTEM" = "windows" ]; then
 	cd ..
 	exec bash my-scripts/pack-windows.sh
 else
-	source fn.sh
+	source build-env/fn.sh
 	set_path_when_developing
-	source common.sh
-	
+	source build-env/common.sh
+
 	cd ..
-	
+
 	detect_install_nodejs
-	yarn install --prefer-offline --cache-folder "${YARN_CACHE_FOLDER}"
+	yarn install
 fi

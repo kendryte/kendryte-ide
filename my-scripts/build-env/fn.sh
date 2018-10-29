@@ -111,12 +111,13 @@ function hash_files_check_changed() { # change return 0 ( test success )
 	local HASH="${RELEASE_ROOT}/current_hash.md5"
 	if [ -e "${HASH}" ]; then
 		pushd "${VSCODE_ROOT}" &>/dev/null
-		if git archive "${VERSION}" | md5sum --status -c "${HASH}" ; then
+		local CURRENT=$(git archive "${VERSION}" | md5sum | awk '{print $1}')
+		if [ "$CURRENT" = "$(< "${HASH}")" ] ; then
 			RET=1
-			echo "source code not changed: $(< "${HASH}")"
+			echo "source code not changed: $CURRENT == $(< "${HASH}")"
 		else
 			RET=0
-			echo "source code has changed: $(< "${HASH}")"
+			echo "source code has changed: $CURRENT != $(< "${HASH}")"
 		fi
 		popd &>/dev/null
 	else
@@ -130,7 +131,9 @@ function hash_files_save() {
 	local VERSION="$1"
 	local HASH="${RELEASE_ROOT}/current_hash.md5"
 	pushd "${VSCODE_ROOT}" &>/dev/null
-	git archive "${VERSION}" | md5sum > "${HASH}"
+	local CURRENT=$(git archive "${VERSION}" | md5sum | awk '{print $1}')
+	echo "Saving current source code hash: ${CURRENT}"
+	echo -n "${CURRENT}" > "${HASH}"
 	popd &>/dev/null
 }
 
@@ -188,6 +191,18 @@ function native_path() {
 	fi
 }
 
+function find_command() {
+	if [ "${SYSTEM}" = "windows" ]; then
+		echo "which $1" >&2
+		/usr/bin/which $1 >&2
+		/usr/bin/which "$1" 2>/dev/null
+	else
+		echo "command -v $1" >&2
+		command -v "$1" 2>/dev/null
+	fi
+}
+
+
 function reset_asar() {
 	if [ -e "node_modules" ] ; then
 		if [ -L "node_modules" ] ; then
@@ -207,13 +222,13 @@ function reset_asar() {
 }
 
 function detect_install_nodejs() {
-	pushd "${VSCODE_ROOT}"
+	pushd "${VSCODE_ROOT}" &>/dev/null
 
 	if [ -e "${NODEJS}" ]; then
 		bash "./my-scripts/prepare-release.sh" || die "不能安装node和其他依赖，查看上方日志"
 	else
 		bash "./my-scripts/prepare-release.sh" || die "不能安装node和其他依赖，查看上方日志"
-		cd my-scripts
+		cd my-scripts/build-env
 		source common.sh
 	fi
 
@@ -232,6 +247,7 @@ function ensure_node_modules_in_current_dir() {
 		fi
 	fi
 }
+
 function path_foreach() {
 	local IFS=":"
 	local P="$1"
@@ -243,15 +259,45 @@ function path_foreach() {
 }
 
 function detect_system() {
-	unameOut="$(uname -s)"
+	unameOut="$(/usr/bin/uname -s)"
 	case "${unameOut}" in
 	    Linux*)     export SYSTEM='linux';;
 	    Darwin*)    export SYSTEM='mac';;
-	    CYGWIN*)    export SYSTEM='windows';;
+	    CYGWIN*|MINGW*)    export SYSTEM='windows';;
 	    *)
 	        die "not supported platform: ${unameOut}"
 	esac
 	if [ "${SYSTEM}" = "windows" ]; then
-		export FOUND_CYGWIN=$(find /bin -name 'cygpath.exe')
+		export FOUND_CYGWIN=$(find /bin -name 'cygwin*.dll')
+	else
+		export FOUND_CYGWIN=
+	fi
+}
+
+function ensure_download_file() { # url saveTo
+	local URL="$1"
+	local SAVE="$2"
+
+	if [ ! -e "${SAVE}" ]; then
+		wget --show-progress --progress=bar:force -c -O "${SAVE}.downloading" "${URL}"
+		mv "${SAVE}.downloading" "${SAVE}"
+	fi
+}
+
+function yarnGlobalDir(){
+	local YARN_FOLDER="${RELEASE_ROOT}/$1"
+	if [ "$SYSTEM" = "windows" ]; then
+		local YARN_FOLDER="$(cygpath -m "${YARN_FOLDER}")"
+	fi
+	echo "${YARN_FOLDER}"
+}
+
+function npm-ensure-global-binary(){
+	local binFile="$1"
+	local packageName="$2"
+	local BIN_FILE=$(nodeBinPath "${binFile}")
+	if ! [ -e "${BIN_FILE}" ] &>/dev/null ; then
+		echo "install $binFile to $BIN_FILE..."
+		"$(nodeBinPath npm)" -g install "$packageName"
 	fi
 }

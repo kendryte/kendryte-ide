@@ -3,9 +3,9 @@
 set -e
 
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-source fn.sh
+source build-env/fn.sh
 set_path_when_developing
-source common.sh
+source build-env/common.sh
 cd ..
 
 detect_install_nodejs
@@ -14,7 +14,7 @@ ensure_node_modules_in_current_dir
 
 node build/lib/electron.js || ./node_modules/.bin/gulp electron
 
-if command -v stty &>/dev/null ; then
+if find_command stty &>/dev/null ; then
 	function _term() {
 		stty ${ORIG}
 		trap - EXIT INT TERM

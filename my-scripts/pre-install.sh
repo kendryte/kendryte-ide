@@ -2,10 +2,8 @@
 
 set -e
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-source fn.sh
-clear_environment
-set_path_when_developing
-source common.sh
+source build-env/fn.sh
+source build-env/common.sh
 cd ..
 
 ### start

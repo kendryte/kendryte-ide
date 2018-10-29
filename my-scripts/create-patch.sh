@@ -2,8 +2,8 @@
 
 set -e
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-source fn.sh
-source common.sh "$@"
+source build-env/fn.sh
+source build-env/common.sh "$@"
 cd ..
 
 WANT_RESULT="${RELEASE_ROOT}/${PRODUCT_NAME}"

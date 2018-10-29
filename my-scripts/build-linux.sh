@@ -3,9 +3,9 @@
 ############# prepare
 set -e
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-source fn.sh
+source build-env/fn.sh
 clear_environment
-source common.sh "$@"
+source build-env/common.sh "$@"
 
 export BUILDING=TRUE
 

@@ -20,7 +20,7 @@ if grep -q Microsoft /proc/version; then
 		"$ELECTRON" "$@"
 		exit $?
 	fi
-elif [ -x "$(command -v cygpath)" ]; then
+elif [ -x "$(find_command cygpath)" ]; then
 	CLI=$(cygpath -m "$VSCODE_PATH/resources/app/out/cli.js")
 else
 	CLI="$VSCODE_PATH/resources/app/out/cli.js"

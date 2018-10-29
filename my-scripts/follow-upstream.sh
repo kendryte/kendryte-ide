@@ -3,9 +3,9 @@
 set -e
 
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-source fn.sh
+source build-env/fn.sh
 set_path_when_developing
-source common.sh
+source build-env/common.sh
 cd ..
 
 function echoStat() {
@@ -57,19 +57,19 @@ if ! [ -d "${MICROSOFT_VSCODE_ROOT}" ]; then
 	echoStat "cloning Microsoft/vscode to ${MICROSOFT_VSCODE_ROOT}"
 	git clone -b master --single-branch https://github.com/Microsoft/vscode.git "${MICROSOFT_VSCODE_ROOT}"
 	cd "${MICROSOFT_VSCODE_ROOT}"
-	
+
 	echoStat "resetting everything at Microsoft/vscode..."
 	git checkout master
 	git reset --hard
 	git clean -q -f -d -x
 else
 	cd "${MICROSOFT_VSCODE_ROOT}"
-	
+
 	echoStat "resetting everything at ${MICROSOFT_VSCODE_ROOT}..."
 	git checkout master
 	git reset --hard
 	git clean -q -f -d -x
-	
+
 	echoStat "detect any changes..."
 	git pull
 fi
