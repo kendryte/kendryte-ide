@@ -2,7 +2,6 @@
 
 export ARCH="x64"
 
-export npm_config_arch="$ARCH"
 export PRODUCT_NAME="KendryteIDE"
 
 ANY_CHANGE=
@@ -73,7 +72,18 @@ if [ -z "${SYSTEM_ORIGINAL_PATH}" ]; then
 	else
 		source "${MYSELF_DIR}/wrapped-commands-nix.sh"
 	fi
-	export PATH="${RELEASE_ROOT}/wrapping-bins:./node_modules/.bin:${PLATFORM_PREPEND_PATH}:/bin:/usr/bin:${NODEJS_BIN}:${PLATFORM_APPEND_PATH}"
+
+	export PATH=""
+
+	# prependPath "${RELEASE_ROOT}/wrapping-bins"
+	if [ -n "${PLATFORM_PREPEND_PATH}" ] ; then
+		appendPath "${PLATFORM_PREPEND_PATH}"
+	fi
+	appendPath "/bin:/usr/bin:${NODEJS_BIN}"
+	if [ -n "${PLATFORM_APPEND_PATH}" ] ; then
+		appendPath "${PLATFORM_APPEND_PATH}"
+	fi
+
 	unset PLATFORM_PREPEND_PATH
 	unset PLATFORM_APPEND_PATH
 fi
@@ -81,6 +91,16 @@ fi
 export TMP="${RELEASE_ROOT}/tmp"
 export TEMP="${TMP}"
 [ ! -e "$TMP" ] || mkdir -p "$TMP"
+
+if [ "${npm_config_runtime}" != electron ]; then
+	pushd "${VSCODE_ROOT}" &>/dev/null
+	export npm_config_arch="$ARCH"
+	export npm_config_disturl=https://atom.io/download/electron
+	export npm_config_target=$(node -p "require('./build/lib/electron').getElectronVersion();")
+	export npm_config_runtime=electron
+	export npm_config_cache="$TMP/npm-cache"
+	popd &>/dev/null
+fi
 
 if [ -n "${ANY_CHANGE}" ]; then
 	printf '%*s\n' "${COLUMNS:-$(tput cols)}" '' | tr ' ' =

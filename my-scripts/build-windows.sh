@@ -11,10 +11,6 @@ export BUILDING=TRUE
 
 detect_install_nodejs
 
-pushd .. &>/dev/null
-source scripts/env.sh
-popd &>/dev/null
-
 source build-env/build-common-source.sh
 
 export HOME="$(cygpath -m "$HOME")"

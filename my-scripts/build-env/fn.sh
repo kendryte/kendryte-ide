@@ -170,19 +170,6 @@ function clear_environment(){
 	unset NODEJS
 }
 
-function set_path_when_developing() {
-	local SCRIPTS_PATH="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-	if [ -n "${REAL_HOME}" ] && [ -z "${TMUX}" ] && [ -z "${BUILDING}" ] ; then
-		echo "Error: REAL_HOME is set by something."
-		echo "${BASH_SOURCE[*]}"
-		exit 1
-	fi
-	clear_environment
-	export REAL_HOME="${HOME}"
-	export HOME=$(realpath "${SCRIPTS_PATH}/../../FAKE_HOME")
-	export RELATIVE_HOME_TO_SOURCE="../FAKE_HOME"
-}
-
 function native_path() {
 	if [ "${SYSTEM}" = "windows" ]; then
 		cygpath -m "$@"
@@ -202,6 +189,27 @@ function find_command() {
 	fi
 }
 
+function appendPath() {
+	if [ -z "${*}" ]; then
+		return
+	fi
+	if [ -z "${PATH}" ]; then
+		export PATH="$*"
+	else
+		export PATH+=":$*"
+	fi
+}
+
+function prependPath() {
+	if [ -z "${*}" ]; then
+		return
+	fi
+	if [ -z "${PATH}" ]; then
+		export PATH="$*"
+	else
+		export PATH="$*:${PATH}"
+	fi
+}
 
 function reset_asar() {
 	if [ -e "node_modules" ] ; then

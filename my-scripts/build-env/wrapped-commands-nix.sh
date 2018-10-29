@@ -17,10 +17,6 @@ fi
 
 ### YARN
 echo "#!/bin/sh
-if echo \"\$*\" | grep -q global ; then
-	NB='--no-bin-links'
-fi
-
 exec '${NODE_BIN}/yarn' \
 	\"\$@\"
 	--prefer-offline \

@@ -14,7 +14,6 @@ echo 8000000 | sudo tee /proc/sys/fs/file-max >/dev/null
 detect_install_nodejs
 
 cd ..
-source ./scripts/env.sh
 
 source ./my-scripts/build-env/build-common-source.sh
 

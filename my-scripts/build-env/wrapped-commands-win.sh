@@ -37,7 +37,9 @@ call \"${CMD_GIT}\" %*
 NODE_NATIVE=$(native_path "${NODEJS_BIN}")
 
 ### YARN
-YARN_ARGS="--prefer-offline "
+YARN_ARGS=""
+YARN_ARGS+="--prefer-offline --no-default-rc "
+YARN_ARGS+="--use-yarnrc \"$(native_path "${VSCODE_ROOT}/.yarnrc")\" "
 YARN_ARGS+="--cache-folder \"${YARN_CACHE_FOLDER}\" "
 YARN_ARGS+="--global-folder \"$(yarnGlobalDir yarn/global)\" "
 YARN_ARGS+="--link-folder \"$(yarnGlobalDir yarn/link)\" "
@@ -48,12 +50,7 @@ chcp 65001 > nul
 set HOME=$(native_path "${HOME}")
 set TEMP=${NATIVE_TEMP}
 set TMP=${NATIVE_TEMP}
-FOR %%a IN (%*) DO (
-  IF \"%%a\"==\"global\" (
-    set NB=--no-bin-links
-  )
-)
-echo Call \"${NODE_NATIVE}/yarn.cmd\" %* %NB% ${YARN_ARGS} 1>&2
+REM echo Call \"${NODE_NATIVE}/yarn.cmd\" %* %NB% ${YARN_ARGS} 1>&2
 call \"${NODE_NATIVE}/yarn.cmd\" %* %NB% ${YARN_ARGS}
 "> "${RELEASE_ROOT}/wrapping-bins/yarn.bat"
 echo "exec cmd /c \"yarn.bat\" \"\$@\""> "${RELEASE_ROOT}/wrapping-bins/yarn"

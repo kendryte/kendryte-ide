@@ -50,22 +50,17 @@ if [ ! -e "${NODEJS}" ]; then
 	chmod a+x "${NODEJS_BIN}"/*
 fi
 
-### install yarn (local install)
-YARN=$(nodeBinPath yarn)
-if ! [ -e "${YARN}" ] &>/dev/null ; then
-	echo "install yarn to $YARN..."
-	"$(nodeBinPath npm)" -g install yarn
-fi
-unset YARN
+### install yarn
+npm-ensure-global-binary yarn yarn
 
 ### install deps --
 npm-ensure-global-binary node-gyp node-gyp
-npm-ensure-global-binary node-pre-gyp node-pre-gyp
+#npm-ensure-global-binary node-pre-gyp node-pre-gyp
 
 if [ "$SYSTEM" = "windows" ]; then
 	pushd "${TEMP-${TMP}}" &>/dev/null || die "Cannot get temp folder by env var: TMP, TEMP"
-	if ! cat "$(cygpath -u "$(yarn global dir)/package.json")" | grep -q windows-build-tools &&
-	   ! cat "$(cygpath -u "$("$(nodeBinPath yarn)" global dir)/package.json")" | grep -q windows-build-tools ; then
+	if ! cat "$(cygpath -u "$(yarn global dir)/package.json")" | grep -q windows-build-tools &>/dev/null &&
+	   ! cat "$(cygpath -u "$("$(nodeBinPath yarn)" global dir)/package.json")" | grep -q windows-build-tools &>/dev/null ; then
 		echo -e "===========================\n\n\tPlease Wait for install windows-build-tools\n : You will need \"Press any key to continue\" in That window .\n\n==========================="
 
 		YARN=$(native_path "${RELEASE_ROOT}/wrapping-bins/yarn.bat")

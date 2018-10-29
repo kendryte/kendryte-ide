@@ -11,8 +11,6 @@ export BUILDING=TRUE
 
 detect_install_nodejs
 
-source ../scripts/env.sh
-
 source build-env/build-common-source.sh
 
 ############# define const to create filenames

@@ -11,7 +11,6 @@ if [ "$SYSTEM" = "windows" ]; then
 	exec bash my-scripts/pack-windows.sh
 else
 	source build-env/fn.sh
-	set_path_when_developing
 	source build-env/common.sh
 
 	cd ..
