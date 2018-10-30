@@ -90,7 +90,7 @@ fi
 
 export TMP="${RELEASE_ROOT}/tmp"
 export TEMP="${TMP}"
-[ ! -e "$TMP" ] || mkdir -p "$TMP"
+[ -e "$TMP" ] || mkdir -p "$TMP"
 
 if [ "${npm_config_runtime}" != electron ]; then
 	pushd "${VSCODE_ROOT}" &>/dev/null

@@ -172,7 +172,7 @@ function clear_environment(){
 
 function native_path() {
 	if [ "${SYSTEM}" = "windows" ]; then
-		cygpath -m "$@"
+		cygpath -w "$@"
 	else
 		echo "$@"
 	fi
