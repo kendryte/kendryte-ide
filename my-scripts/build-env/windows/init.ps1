@@ -75,7 +75,15 @@ if (!(Get-Command python -errorAction SilentlyContinue)) {
 	echo "  You need press Enter to continue"
 	echo "================================================="
 	Start-Process powershell.exe "$NODEJS_BIN/yarn-install-build-tools.ps1" -Verb RunAs -Wait
-	if (!$?){
+	if (!$?) {
 		throw "windows-build-tools cannot install"
 	}
+}
+
+$YarnGlobal = (yarn global list)
+
+if (!(echo "$YarnGlobal" | findstr -i node-gyp)) {
+	yarn global add node-gyp
+}else{
+	echo "gyp exists"
 }

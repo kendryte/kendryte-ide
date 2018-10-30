@@ -1,8 +1,7 @@
 {
 	"compilerOptions": {
 		"declaration": false,
-		"sourceMap": true,
-		"inlineSourceMap": false,
+		"inlineSourceMap": true,
 		"inlineSources": false,
 		"module": "commonjs",
 		"target": "esnext",

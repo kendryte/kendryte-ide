@@ -3,6 +3,8 @@ import { existsSync, mkdirSync } from 'fs';
 import { platform } from 'os';
 import { execSync } from 'child_process';
 
+export const isWin = platform() === 'win32';
+
 export function nativePath(p) {
 	return p.replace(/^\/cygdrive\/([a-z])/i, (m0, drv) => {
 		return drv.toUpperCase() + ':';
@@ -50,4 +52,11 @@ export function winSize() {
 	} catch (e) {
 	}
 	return NaN;
+}
+
+export function runMain(main: () => Promise<void>) {
+	main().catch((e) => {
+		console.error('Command ' + e.message);
+		process.exit(1);
+	});
 }
