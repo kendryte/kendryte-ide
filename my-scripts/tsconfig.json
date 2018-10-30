@@ -1,5 +1,4 @@
 {
-	"extends": "../src/tsconfig.base.json",
 	"compilerOptions": {
 		"declaration": false,
 		"sourceMap": true,
@@ -17,7 +16,13 @@
 		"checkJs": false,
 		"outDir": ".",
 		"noEmitOnError": false,
-		"typeRoots": []
+		"types": [
+			"node"
+		],
+		"typeRoots": [
+			"../node_modules/@types",
+			"./node_modules/@types"
+		]
 	},
 	"exclude": [],
 	"include": [

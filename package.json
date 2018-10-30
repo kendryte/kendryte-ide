@@ -10,8 +10,8 @@
   "private": true,
   "scripts": {
     "test": "mocha",
-    "preinstall": "bash my-scripts/pre-install.sh && node build/npm/preinstall.js",
-    "postinstall": "node build/npm/postinstall.js ; bash my-scripts/post-install.sh",
+    "preinstall": "node my-scripts/npm/preinstall.js && node build/npm/preinstall.js",
+    "postinstall": "node build/npm/postinstall.js",
     "compile": "gulp compile --max_old_space_size=4095",
     "watch": "gulp watch --max_old_space_size=4095",
     "watch-client": "gulp watch-client --max_old_space_size=4095",

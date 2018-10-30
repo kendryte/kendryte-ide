@@ -98,7 +98,7 @@ if [ "${npm_config_runtime}" != electron ]; then
 	export npm_config_disturl=https://atom.io/download/electron
 	export npm_config_target=$(node -p "require('./build/lib/electron').getElectronVersion();")
 	export npm_config_runtime=electron
-	export npm_config_cache="$TMP/npm-cache"
+	export npm_config_cache="$(native_path "$TMP")/npm-cache"
 	popd &>/dev/null
 fi
 
