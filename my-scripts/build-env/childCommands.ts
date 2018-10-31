@@ -10,16 +10,21 @@ function ThrowStatusCodeError(status: number, signal: string): never | void {
 	return;
 }
 
+export function chdir(d: string) {
+	process.chdir(d);
+	console.log(' > %s', process.cwd());
+}
+
 function StatusCodeError(status: number, signal: string): Error {
 	if (status === 0 && !signal) {
 		return null;
 	}
-	new Error(
+	return new Error(
 		signal ? `Program exit by signal "${signal}"` : `Program exit with code "${status}"`,
 	);
 }
 
-function parseCommand(cmd: string, args: string[]) {
+function parseCommand(cmd: string, args: string[]): [string, string[]] {
 	if (isWin) {
 		return ['powershell.exe', ['-Command', cmd, ...args]];
 	} else {
@@ -27,25 +32,35 @@ function parseCommand(cmd: string, args: string[]) {
 	}
 }
 
-export function execCommand(cmd: string, ...args: string[]): void {
-	console.log(' + %s %s', cmd, args.join(' '));
-	[cmd, args] = parseCommand(cmd, args);
+function shellSync(stdio: string | string[], cmd: string, args: string[]) {
 	const r = spawnSync(cmd, args, {
-		stdio: 'inherit',
+		stdio,
 		encoding: 'utf8',
 	});
 	if (r.error) {
 		throw r.error;
 	}
 	ThrowStatusCodeError(r.status, r.signal);
+	return r;
 }
 
-export async function simpleOutput(cmd: string): Promise<string> {
-	const [_cmd, args] = parseCommand(cmd, []);
-	return spawn(_cmd, args, {
-		stdio: ['inherit','pipe',''],
-		encoding: 'utf8',
-	});
+export function shellExec(cmd: string, ...args: string[]): void {
+	[cmd, args] = parseCommand(cmd, args);
+	console.log(' + %s %s | pipe-output', cmd, args.join(' '));
+	shellSync('inherit', cmd, args);
+}
+
+export function shellMute(cmd: string, ...args: string[]) {
+	[cmd, args] = parseCommand(cmd, args);
+	console.log(' + %s %s | mute-output', cmd, args.join(' '));
+	shellSync(['ignore', 'ignore', 'inherit'], cmd, args);
+}
+
+export function shellOutput(cmd: string, ...args: string[]): string {
+	[cmd, args] = parseCommand(cmd, args);
+	console.log(' + %s %s | read-output', cmd, args.join(' '));
+	const r = shellSync(['ignore', 'pipe', 'inherit'], cmd, args);
+	return r.stdout;
 }
 
 interface ProcessHandler {
@@ -53,12 +68,14 @@ interface ProcessHandler {
 	wait(): Promise<void>;
 }
 
-export function outputCommand(exec: string, ...args: string[]): ProcessHandler {
+export function outputCommand(cmd: string, ...args: string[]): ProcessHandler {
+	[cmd, args] = parseCommand(cmd, args);
+	console.log(' + %s %s | stream-output', cmd, args.join(' '));
 	const output = new Duplex();
 	return {
 		output,
 		wait() {
-			const cp = spawn(exec, args, {
+			const cp = spawn(cmd, args, {
 				stdio: ['ignore', output, output],
 			});
 

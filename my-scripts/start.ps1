@@ -1,5 +1,7 @@
 cd $PSScriptRoot
 
+[Console]::OutputEncoding = [Text.UTF8Encoding]::UTF8
+
 . build-env\windows\fn.ps1
 
 if (!$AlreadyInited) {
@@ -43,6 +45,16 @@ Set-Item -Path function:global:fork -Value {
 help "fork" "Open new window like this."
 
 echo ""
+
+function prompt() {
+	$host.ui.rawui.WindowTitle = "Kendryte IDE Source Code :: $pwd"
+	$Loc = $pwd.Path.Replace($VSCODE_ROOT, '')
+	if ($Loc -eq $pwd) {
+		return "PS $pwd> "
+	} else {
+		return "KendryteIDE$Loc> "
+	}
+}
 
 cd $VSCODE_ROOT # required last item
 Write-Host " > The anwser is 42 <" -ForegroundColor Green

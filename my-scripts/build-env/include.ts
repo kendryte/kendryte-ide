@@ -39,6 +39,9 @@ export function requireEnvPath(name: string): string {
 }
 
 export function winSize() {
+	if (process.stderr.columns) {
+		return process.stderr.columns;
+	}
 	try {
 		if (platform() === 'win32' && !process.env.SHELL) {
 			const cmd = 'powershell (Get-Host).UI.RawUI.WindowSize.width';
@@ -56,7 +59,14 @@ export function winSize() {
 
 export function runMain(main: () => Promise<void>) {
 	main().catch((e) => {
-		console.error('Command ' + e.message);
+		console.error('Command Failed:\n\t' + e.message);
 		process.exit(1);
 	});
+}
+
+export function thisIsABuildScript() {
+	if (!process.env.RELEASE_ROOT) {
+		console.error('Command Failed:\n\tPlease run start.ps1 first.');
+		process.exit(1);
+	}
 }

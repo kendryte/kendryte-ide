@@ -48,22 +48,42 @@ echo @"
 `$env:VSCODE_ROOT='$VSCODE_ROOT'
 `$env:YARN_FOLDER='$YARN_FOLDER'
 `$env:YARN_CACHE_FOLDER='$YARN_CACHE_FOLDER'
-& '$NODEJS' ``
-	'$NODEJS_INSTALL\yarn-v1.10.1\bin\yarn.js' ``
-	`$args ``
-		--prefer-offline --no-default-rc ``
-		--use-yarnrc '$VSCODE_ROOT/.yarnrc' ``
-		--cache-folder '$YARN_CACHE_FOLDER' ``
-		--global-folder '$YARN_FOLDER/global' ``
-		--link-folder '$YARN_FOLDER/link' ``
-		--temp-folder '$YARN_FOLDER/temp'
+if( `$args[0] -eq 'run' ) {
+	`$args = `$args[1 .. (`$args.count-1)]
+	& '$NODEJS' ``
+		'$NODEJS_INSTALL\yarn-v1.10.1\bin\yarn.js' ``
+			--prefer-offline --no-default-rc ``
+			--use-yarnrc '$VSCODE_ROOT/.yarnrc' ``
+			--cache-folder '$YARN_CACHE_FOLDER' ``
+			--global-folder '$YARN_FOLDER/global' ``
+			--link-folder '$YARN_FOLDER/link' ``
+			--temp-folder '$YARN_FOLDER/temp' ``
+		`$args
+} else {
+	& '$NODEJS' ``
+		'$NODEJS_INSTALL\yarn-v1.10.1\bin\yarn.js' ``
+		`$args ``
+			--prefer-offline --no-default-rc ``
+			--use-yarnrc '$VSCODE_ROOT/.yarnrc' ``
+			--cache-folder '$YARN_CACHE_FOLDER' ``
+			--global-folder '$YARN_FOLDER/global' ``
+			--link-folder '$YARN_FOLDER/link' ``
+			--temp-folder '$YARN_FOLDER/temp'
+}
 "@ > "$NODEJS_BIN/yarn.ps1"
 
 echo @"
 [console]::WindowWidth=120
 [console]::WindowHeight=24
 [console]::BufferWidth=[console]::WindowWidth
-. $NODEJS_BIN/yarn.ps1 global add --no-bin-links windows-build-tools --vs2015
+
+`$env:PATH='$PATH'
+`$env:YARN_CACHE_FOLDER='$YARN_CACHE_FOLDER'
+& '$NODEJS' ``
+	'$NODEJS_INSTALL\yarn-v1.10.1\bin\yarn.js' ``
+	global add windows-build-tools --vs2015 ``
+		--prefer-offline --no-default-rc --no-bin-links ``
+		--cache-folder '$YARN_CACHE_FOLDER' ``
 pause
 "@  > "$NODEJS_BIN/yarn-install-build-tools.ps1"
 
@@ -74,16 +94,12 @@ if (!(Get-Command python -errorAction SilentlyContinue)) {
 	echo "  "
 	echo "  You need press Enter to continue"
 	echo "================================================="
-	Start-Process powershell.exe "$NODEJS_BIN/yarn-install-build-tools.ps1" -Verb RunAs -Wait
+	Start-Process -UseNewEnvironment powershell.exe "$NODEJS_BIN/yarn-install-build-tools.ps1" -Verb RunAs -Wait
 	if (!$?) {
 		throw "windows-build-tools cannot install"
 	}
 }
-
-$YarnGlobal = (yarn global list)
-
-if (!(echo "$YarnGlobal" | findstr -i node-gyp)) {
-	yarn global add node-gyp
-}else{
-	echo "gyp exists"
+if (!(Get-Command python -errorAction SilentlyContinue)) {
+	$PythonPath = (resolvePath $env:USERPROFILE .windows-build-tools\python27)
+	throw "python cannot not install at $PythonPath, please install windows-build-tools and try again."
 }

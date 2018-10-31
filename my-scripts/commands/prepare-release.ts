@@ -1,9 +1,10 @@
-import { execCommand } from '../build-env/childCommands';
-import { runMain } from '../build-env/include';
+import { chdir, shellExec, shellMute } from '../build-env/childCommands';
+import { runMain, thisIsABuildScript } from '../build-env/include';
+
+thisIsABuildScript();
 
 runMain(async () => {
-	process.chdir(process.env.VSCODE_ROOT + '/my-scripts');
-	console.log(process.cwd());
-	await execCommand('yarn', 'install');
-	await execCommand('tsc', '-p', '.');
+	chdir(process.env.VSCODE_ROOT + '/my-scripts');
+	shellMute('yarn', 'install');
+	shellExec('tsc', '-p', '.');
 });

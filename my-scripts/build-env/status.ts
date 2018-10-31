@@ -1,75 +1,116 @@
 import { winSize } from './include';
+import { Readable } from 'stream';
+import { stringWidth } from '../build-env/stringWidth';
 
-process.stdin.on('end', (f) => {
-	console.log('# end');
-	process.stderr.end(f, () => {
-		process.exit(0);
-	});
-});
+let currentLine = '';
+let currentLineWidth = 0;
+let CurrentColumn: number;
 
-const MAX_LINE = 1024;
-let CurrentColumn = winSize() || 42;
-let cursor = 0;
+const outputStream = process.stderr;
 
-let lineBuffer: Buffer = Buffer.alloc(MAX_LINE, ' ');
-let currentDataPos = 0;
-
-function resizeHandler(why: string) {
+function resizeHandler() {
 	CurrentColumn = winSize() || 42;
-	console.log('# ' + why + ' -> ', CurrentColumn);
-	clearLine();
-	print(lineBuffer);
-}
-
-function appendCurrentLine(data: Buffer) {
-	if (currentDataPos >= MAX_LINE) {
-		return;
-	}
-	cursor += data.copy(lineBuffer, currentDataPos);
-	print(data);
-}
-
-function print(data: Buffer) {
-	const newCursor = cursor + data.length;
-	if (newCursor >= CurrentColumn - 4) {
-		process.stderr.write(data.slice(0, CurrentColumn - 4 - cursor));
-		process.stderr.write('...');
-		cursor = CurrentColumn;
-	} else {
-		process.stderr.write(data);
-		cursor = newCursor;
-	}
+	schedulePrint();
 }
 
 function clearLine() {
-	cursor = 0;
-	process.stderr.write('\r\x1BK');
+	outputStream.write('\r\x1BK');
 }
 
-function flushLine() {
-	lineBuffer.fill(' ');
-	currentDataPos = 0;
+let timePrint: NodeJS.Timer;
+
+function schedulePrint() {
+	if (!timePrint) {
+		timePrint = setTimeout(() => {
+			timePrint = null;
+			print();
+		}, 50);
+	}
+}
+
+export async function cutStringWidth(original: string, to: number) {
+	console.log('original = %s (%s)', original, stringWidth(original));
+	let str = original;
+	while (true) {
+		const delta = stringWidth(str) - to;
+		console.log('# delta = ', delta);
+		if (delta === 0) {
+			return str;
+		}
+		if (delta > 0) {
+			console.log('# slice < %s => %s', delta, str.length - delta);
+			str = original.slice(0, str.length - delta);
+		} else if (delta < 0) {
+			if (delta === -1) {
+				const tmp = original.slice(0, str.length + 1);
+				if (stringWidth(tmp) === to) {
+					return tmp;
+				} else {
+					return str;
+				}
+			}
+			console.log('# push  > %s => %s', Math.round(delta / 2), str.length - Math.round(delta / 2));
+			str = original.slice(0, str.length - Math.round(delta / 2));
+		}
+
+		await new Promise((resolve, reject) => {
+			setTimeout(resolve, 500);
+		});
+	}
+}
+
+function print() {
+	// print some data to let displayCursor equals MIN( dataWidth, CurrentColumn )
+	outputStream.write('\r\x1BK');
+
+	if (currentLineWidth > CurrentColumn) {
+		outputStream.write(cutStringWidth(currentLine, CurrentColumn - 3));
+		outputStream.write('...');
+	} else {
+		outputStream.write(currentLine);
+	}
+	outputStream.write('\r');
+}
+
+let listening = false;
+
+function stopListeners() {
 	clearLine();
+	process.removeListener('exit', clearLine);
+	process.removeListener('SIGWINCH', resizeHandler);
+	process.stderr.removeListener('resize', resizeHandler);
+	process.stdout.removeListener('resize', resizeHandler);
+}
+
+function startListeners() {
+	if (listening) {
+		throw new Error('not support multiple progress');
+	}
+	listening = true;
+	resizeHandler();
+	process.on('SIGWINCH', resizeHandler);
+	process.stderr.on('resize', resizeHandler);
+	process.stdout.on('resize', resizeHandler);
+	process.on('exit', clearLine);
 }
 
 const nl = Buffer.from('\n');
-process.stdin.on('data', (data: Buffer) => {
-	process.stderr.write(data);
-	const lastLine = data.lastIndexOf(nl);
-	if (lastLine === -1) {
-		return appendCurrentLine(data);
-	} else {
-		flushLine();
-		return appendCurrentLine(data);
-	}
-});
 
-console.log('# size -> ', CurrentColumn);
+export function handleStream(stream: Readable) {
+	startListeners();
 
-process.on('SIGWINCH', () => resizeHandler('SIGWINCH'));
-process.stderr.on('resize', () => resizeHandler('stderr.resize'));
-process.stdout.on('resize', () => resizeHandler('stdout.resize'));
+	stream.on('end', () => {
+		stopListeners();
+	});
 
-process.stdin.pipe(process.stdout);
-
-process.on('exit', clearLine);
+	stream.on('data', (data: Buffer) => {
+		const lastLine = data.lastIndexOf(nl);
+		if (lastLine === -1) {
+			currentLine += data.toString('utf8');
+		} else {
+			currentLine = data.slice(lastLine).toString('utf8');
+		}
+		currentLineWidth = stringWidth(currentLine);
+		schedulePrint();
+	});
+}

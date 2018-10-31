@@ -22,7 +22,8 @@ setSystemVar 'PRIVATE_BINS' (resolvePath $RELEASE_ROOT wrapping-bins)
 $CommonPaths = "C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0"
 $PythonPath = (resolvePath $env:USERPROFILE .windows-build-tools\python27)
 $LocalNodePath = (resolvePath $VSCODE_ROOT node_modules\.bin)
-setSystemVar 'PATH' "$PRIVATE_BINS;$PythonPath;$NODEJS_BIN;$LocalNodePath;$CommonPaths"
+$BuildingNodePath = (resolvePath $VSCODE_ROOT my-scripts\node_modules\.bin)
+setSystemVar 'PATH' "$PRIVATE_BINS;$PythonPath;$NODEJS_BIN;$BuildingNodePath;$LocalNodePath;$CommonPaths"
 
 if ($env:HTTP_PROXY) {
 	setSystemVar 'HTTPS_PROXY' "$env:HTTP_PROXY"
