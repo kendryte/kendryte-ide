@@ -9,7 +9,14 @@ if (!(Test-Path -Path $NODEJS)) {
 	downloadFile "https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/3rd-party/7zip/7za.dll" (resolvePath $PRIVATE_BINS '7za.dll')
 	downloadFile "https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/3rd-party/7zip/7zxa.dll" (resolvePath $PRIVATE_BINS '7zxa.dll')
 
-	$tempDir = "$TMP/nodejs-install"
+	echo "Coping node.exe from $TMP/node.exe to $NODEJS_INSTALL"
+	RimDir $NODEJS_INSTALL
+	MkDir $NODEJS_INSTALL
+	Copy-Item "$TMP/node.exe" "$NODEJS" -Force
+}
+
+if (!(Test-Path -Path "$NODEJS_BIN/yarn.ps1")) {
+	$tempDir = "$TMP/yarn-install"
 	MkDir $tempDir
 
 	downloadFile "https://nodejs.org/dist/v8.11.2/win-x64/node.exe" "$TMP/node.exe"
@@ -28,13 +35,15 @@ if (!(Test-Path -Path $NODEJS)) {
 	}
 	RimDir "$TMP/yarn.tar"
 
-	Copy-item "$TMP/node.exe" "$tempDir/node.exe"
-
-	echo "Moving content from $tempDir to $NODEJS_INSTALL"
-	RimDir $NODEJS_INSTALL
-	Move-Item $tempDir $NODEJS_INSTALL -Force
+	cd $tempDir
+	(Get-ChildItem -Directory | Select-Object -Index 0).Name | cd
+	& "$NODEJS" ".\bin\yarn.js" `
+		--prefer-offline --no-default-rc --bin-links `
+		--cache-folder "$YARN_CACHE_FOLDER" `
+		--global-folder "$NODEJS_INSTALL" `
+		--link-folder "$YARN_FOLDER" `
+	global add yarn
 }
-
 
 echo "Detect Node.js: $( & $NODEJS --version )"
 setSystemVar 'npm_config_target' $( cd $VSCODE_ROOT; node -p "require('./build/lib/electron').getElectronVersion();" )
@@ -48,29 +57,23 @@ echo @"
 `$env:VSCODE_ROOT='$VSCODE_ROOT'
 `$env:YARN_FOLDER='$YARN_FOLDER'
 `$env:YARN_CACHE_FOLDER='$YARN_CACHE_FOLDER'
-if( `$args[0] -eq 'run' ) {
-	`$args = `$args[1 .. (`$args.count-1)]
-	& '$NODEJS' ``
-		'$NODEJS_INSTALL\yarn-v1.10.1\bin\yarn.js' ``
-			--prefer-offline --no-default-rc ``
-			--use-yarnrc '$VSCODE_ROOT/.yarnrc' ``
-			--cache-folder '$YARN_CACHE_FOLDER' ``
-			--global-folder '$YARN_FOLDER/global' ``
-			--link-folder '$YARN_FOLDER/link' ``
-			--temp-folder '$YARN_FOLDER/temp' ``
-		`$args
-} else {
-	& '$NODEJS' ``
-		'$NODEJS_INSTALL\yarn-v1.10.1\bin\yarn.js' ``
-		`$args ``
-			--prefer-offline --no-default-rc ``
-			--use-yarnrc '$VSCODE_ROOT/.yarnrc' ``
-			--cache-folder '$YARN_CACHE_FOLDER' ``
-			--global-folder '$YARN_FOLDER/global' ``
-			--link-folder '$YARN_FOLDER/link' ``
-			--temp-folder '$YARN_FOLDER/temp'
+if( `$args.Count -eq 0 ) {
+	`$args += ('install')
 }
+& '$NODEJS' ``
+	'$NODEJS_INSTALL\node_modules\yarn\bin\yarn.js' ``
+		--prefer-offline --no-default-rc --bin-links ``
+		--use-yarnrc '$VSCODE_ROOT/.yarnrc' ``
+		--cache-folder '$YARN_CACHE_FOLDER' ``
+		--global-folder '$NODEJS_INSTALL' ``
+		--link-folder '$NODEJS_BIN' ``
+	`$args
 "@ > "$NODEJS_BIN/yarn.ps1"
+
+echo @"
+@echo off
+powershell.exe `"$NODEJS_BIN/yarn.ps1`" %*
+"@ | Out-File -Encoding "ascii" "$NODEJS_BIN/yarn.cmd"
 
 echo @"
 [console]::WindowWidth=120
