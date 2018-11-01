@@ -1,31 +1,36 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const fs_1 = require("fs");
 const childCommands_1 = require("../build-env/childCommands");
 const include_1 = require("../build-env/include");
-const stringWidth_1 = require("../build-env/stringWidth");
-// import './prepare-release';
+const output_1 = require("../build-env/output");
+const packWindows_1 = require("../build-env/packWindows");
+// import './prepare-release'; // <---
 include_1.thisIsABuildScript();
-function unicodeEscape(str) {
-    return str.replace(/[\s\S]/g, function (escape) {
-        return '\\u' + ('0000' + escape.charCodeAt().toString(16)).slice(-4);
-    });
-}
 include_1.runMain(async () => {
-    childCommands_1.chdir(process.env.VSCODE_ROOT);
-    /*
-        const stream = new Transform({
-            transform(this: Transform, chunk: string | Buffer, encoding: string, callback: Function) {
-                this.push(chunk, encoding);
-                callback();
-            },
-        });
-        setInterval(() => {
-            stream.write(`${new Date} ~ ${Math.random()}`);
-        }, 1000);
-
-        handleStream(stream);
-        */
-    const r = stringWidth_1.codePointWidth('👍🏽😂啊aaaa');
-    console.log(unicodeEscape(r.data), r);
+    const output = output_1.usePretty();
+    if (include_1.isWin) {
+        await reset_asar(output);
+        await packWindows_1.packWindows(output);
+    }
+    else {
+        await output_1.installDependency(output, process.env.VSCODE_ROOT);
+    }
 });
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicHJlcGFyZS1kZXZlbG9wbWVudC5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbInByZXBhcmUtZGV2ZWxvcG1lbnQudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7QUFBQSw4REFBbUQ7QUFDbkQsa0RBQW1FO0FBQ25FLDBEQUEwRDtBQUMxRCw4QkFBOEI7QUFFOUIsNEJBQWtCLEVBQUUsQ0FBQztBQUVyQixTQUFTLGFBQWEsQ0FBQyxHQUFXO0lBQ2pDLE9BQU8sR0FBRyxDQUFDLE9BQU8sQ0FBQyxTQUFTLEVBQUUsVUFBVSxNQUFNO1FBQzdDLE9BQU8sS0FBSyxHQUFHLENBQUMsTUFBTSxHQUFHLE1BQU0sQ0FBQyxVQUFVLEVBQUUsQ0FBQyxRQUFRLENBQUMsRUFBRSxDQUFDLENBQUMsQ0FBQyxLQUFLLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQztJQUN0RSxDQUFDLENBQUMsQ0FBQztBQUNKLENBQUM7QUFFRCxpQkFBTyxDQUFDLEtBQUssSUFBSSxFQUFFO0lBQ2xCLHFCQUFLLENBQUMsT0FBTyxDQUFDLEdBQUcsQ0FBQyxXQUFXLENBQUMsQ0FBQztJQUMvQjs7Ozs7Ozs7Ozs7O1VBWUc7SUFFSCxNQUFNLENBQUMsR0FBRyw0QkFBYyxDQUFDLGFBQWEsQ0FBQyxDQUFDO0lBQ3hDLE9BQU8sQ0FBQyxHQUFHLENBQUMsYUFBYSxDQUFDLENBQUMsQ0FBQyxJQUFJLENBQUMsRUFBRSxDQUFDLENBQUMsQ0FBQztBQUN2QyxDQUFDLENBQUMsQ0FBQyJ9
+async function reset_asar(output) {
+    childCommands_1.chdir(process.env.VSCODE_ROOT);
+    if (await include_1.isLink('./node_modules')) {
+        fs_1.unlinkSync('./node_modules');
+    }
+    if (await include_1.isExists('./node_modules')) {
+        throw new Error('node_modules exists, must remove.');
+    }
+    if (await include_1.isExists('./node_modules.asar')) {
+        fs_1.unlinkSync('./node_modules.asar');
+    }
+    if (await include_1.isExists('./node_modules.asar.unpacked')) {
+        await output_1.removeDirecotry('./node_modules.asar.unpacked', output);
+    }
+    output.success('cleanup ASAR files.').continue();
+}
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicHJlcGFyZS1kZXZlbG9wbWVudC5qcyIsInNvdXJjZVJvb3QiOiIuLyIsInNvdXJjZXMiOlsiY29tbWFuZHMvcHJlcGFyZS1kZXZlbG9wbWVudC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOztBQUNBLDJCQUFnQztBQUNoQyw4REFBbUQ7QUFDbkQsa0RBQTRGO0FBQzVGLGdEQUFvRjtBQUNwRiwwREFBdUQ7QUFDdkQsc0NBQXNDO0FBRXRDLDRCQUFrQixFQUFFLENBQUM7QUFFckIsaUJBQU8sQ0FBQyxLQUFLLElBQUksRUFBRTtJQUNsQixNQUFNLE1BQU0sR0FBRyxrQkFBUyxFQUFFLENBQUM7SUFDM0IsSUFBSSxlQUFLLEVBQUU7UUFDVixNQUFNLFVBQVUsQ0FBQyxNQUFNLENBQUMsQ0FBQztRQUN6QixNQUFNLHlCQUFXLENBQUMsTUFBTSxDQUFDLENBQUM7S0FDMUI7U0FBTTtRQUNOLE1BQU0sMEJBQWlCLENBQUMsTUFBTSxFQUFFLE9BQU8sQ0FBQyxHQUFHLENBQUMsV0FBVyxDQUFDLENBQUM7S0FDekQ7QUFDRixDQUFDLENBQUMsQ0FBQztBQUVILEtBQUssVUFBVSxVQUFVLENBQUMsTUFBcUI7SUFDOUMscUJBQUssQ0FBQyxPQUFPLENBQUMsR0FBRyxDQUFDLFdBQVcsQ0FBQyxDQUFDO0lBQy9CLElBQUksTUFBTSxnQkFBTSxDQUFDLGdCQUFnQixDQUFDLEVBQUU7UUFDbkMsZUFBVSxDQUFDLGdCQUFnQixDQUFDLENBQUM7S0FDN0I7SUFDRCxJQUFJLE1BQU0sa0JBQVEsQ0FBQyxnQkFBZ0IsQ0FBQyxFQUFFO1FBQ3JDLE1BQU0sSUFBSSxLQUFLLENBQUMsbUNBQW1DLENBQUMsQ0FBQztLQUNyRDtJQUVELElBQUksTUFBTSxrQkFBUSxDQUFDLHFCQUFxQixDQUFDLEVBQUU7UUFDMUMsZUFBVSxDQUFDLHFCQUFxQixDQUFDLENBQUM7S0FDbEM7SUFDRCxJQUFJLE1BQU0sa0JBQVEsQ0FBQyw4QkFBOEIsQ0FBQyxFQUFFO1FBQ25ELE1BQU0sd0JBQWUsQ0FBQyw4QkFBOEIsRUFBRSxNQUFNLENBQUMsQ0FBQztLQUM5RDtJQUNELE1BQU0sQ0FBQyxPQUFPLENBQUMscUJBQXFCLENBQUMsQ0FBQyxRQUFRLEVBQUUsQ0FBQztBQUNsRCxDQUFDIn0=

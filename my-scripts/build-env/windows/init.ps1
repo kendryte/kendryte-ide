@@ -5,10 +5,8 @@ MkDir $TMP
 
 if (!(Test-Path -Path $NODEJS)) {
 	echo "Install Node.js"
-	downloadFile "https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/3rd-party/7zip/7za.exe" (resolvePath $PRIVATE_BINS '7za.exe')
-	downloadFile "https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/3rd-party/7zip/7za.dll" (resolvePath $PRIVATE_BINS '7za.dll')
-	downloadFile "https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/3rd-party/7zip/7zxa.dll" (resolvePath $PRIVATE_BINS '7zxa.dll')
-
+	downloadFile "https://nodejs.org/dist/v8.11.2/win-x64/node.exe" "$TMP/node.exe"
+	
 	echo "Coping node.exe from $TMP/node.exe to $NODEJS_INSTALL"
 	RimDir $NODEJS_INSTALL
 	MkDir $NODEJS_INSTALL
@@ -18,8 +16,10 @@ if (!(Test-Path -Path $NODEJS)) {
 if (!(Test-Path -Path "$NODEJS_BIN/yarn.ps1")) {
 	$tempDir = "$TMP/yarn-install"
 	MkDir $tempDir
-
-	downloadFile "https://nodejs.org/dist/v8.11.2/win-x64/node.exe" "$TMP/node.exe"
+	
+	downloadFile "https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/3rd-party/7zip/7za.exe" (resolvePath $PRIVATE_BINS '7za.exe')
+	downloadFile "https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/3rd-party/7zip/7za.dll" (resolvePath $PRIVATE_BINS '7za.dll')
+	downloadFile "https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/3rd-party/7zip/7zxa.dll" (resolvePath $PRIVATE_BINS '7zxa.dll')
 	downloadFile "https://yarnpkg.com/latest.tar.gz" "$TMP/yarn.tgz"
 
 	echo "Extracting yarn..."
@@ -38,11 +38,13 @@ if (!(Test-Path -Path "$NODEJS_BIN/yarn.ps1")) {
 	cd $tempDir
 	(Get-ChildItem -Directory | Select-Object -Index 0).Name | cd
 	& "$NODEJS" ".\bin\yarn.js" `
-		--prefer-offline --no-default-rc --bin-links `
+		--prefer-offline --no-default-rc --no-bin-links `
 		--cache-folder "$YARN_CACHE_FOLDER" `
 		--global-folder "$NODEJS_INSTALL" `
 		--link-folder "$YARN_FOLDER" `
 	global add yarn
+	cd $RELEASE_ROOT
+	RimDir $tempDir
 }
 
 echo "Detect Node.js: $( & $NODEJS --version )"
@@ -60,13 +62,21 @@ echo @"
 if( `$args.Count -eq 0 ) {
 	`$args += ('install')
 }
+
+`$BL=""
+if ( `$args[0] -eq "global" ) {
+	`$BL="--no-bin-links"
+} else {
+	`$BL="--bin-links"
+}
+
 & '$NODEJS' ``
 	'$NODEJS_INSTALL\node_modules\yarn\bin\yarn.js' ``
-		--prefer-offline --no-default-rc --bin-links ``
+		--prefer-offline --no-default-rc `$BL ``
 		--use-yarnrc '$VSCODE_ROOT/.yarnrc' ``
 		--cache-folder '$YARN_CACHE_FOLDER' ``
 		--global-folder '$NODEJS_INSTALL' ``
-		--link-folder '$NODEJS_BIN' ``
+		--link-folder '$NODEJS_INSTALL\node_modules' ``
 	`$args
 "@ > "$NODEJS_BIN/yarn.ps1"
 

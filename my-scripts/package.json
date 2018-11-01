@@ -2,15 +2,12 @@
   "private": true,
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^8.10.34",
-    "typescript": "^3.1.1"
-  },
-  "dependencies": {
-    "@types/ansi-regex": "^3.0.0",
-    "@types/emoji-regex": "^7.0.0",
-    "ansi-regex": "^3.0.0",
-    "emoji-regex": "^7.0.1",
-    "is-fullwidth-code-point": "^2.0.0",
-    "node-gyp": "^3.8.0"
+    "@gongt/stillalive": "^1.0.4",
+    "@types/node": "^10.12.1",
+    "@types/rimraf": "^2.0.2",
+    "lnk": "^1.1.0",
+    "node-gyp": "^3.8.0",
+    "rimraf": "^2.6.2",
+    "typescript": "^3.1.5"
   }
 }

@@ -1,7 +1,9 @@
-import { resolve } from 'path';
-import { existsSync, mkdirSync } from 'fs';
-import { platform } from 'os';
+///<reference types="node"/>
+
 import { execSync } from 'child_process';
+import { existsSync, lstatSync, mkdirSync } from 'fs';
+import { platform } from 'os';
+import { resolve } from 'path';
 
 export const isWin = platform() === 'win32';
 
@@ -57,9 +59,29 @@ export function winSize() {
 	return NaN;
 }
 
+export interface DisposeFunction {
+	(e?: Error): void;
+}
+
+const disposeList: DisposeFunction[] = [];
+
+export function mainDispose(dispose: DisposeFunction) {
+	disposeList.push(dispose);
+}
+
 export function runMain(main: () => Promise<void>) {
-	main().catch((e) => {
-		console.error('Command Failed:\n\t' + e.message);
+	main().then(() => {
+		disposeList.forEach((cb) => {
+			cb();
+		});
+	}, (e) => {
+		console.error('\x1B[38;5;9mCommand Failed:\n\t%s\x1B[0m', e.message);
+		disposeList.forEach((cb) => {
+			cb(e);
+		});
+	}).then(() => {
+		process.exit(0);
+	}, () => {
 		process.exit(1);
 	});
 }
@@ -68,5 +90,21 @@ export function thisIsABuildScript() {
 	if (!process.env.RELEASE_ROOT) {
 		console.error('Command Failed:\n\tPlease run start.ps1 first.');
 		process.exit(1);
+	}
+}
+
+export function isLink(path: string) {
+	try {
+		return lstatSync(path).isSymbolicLink();
+	} catch (e) {
+	}
+}
+
+export function isExists(path: string): boolean {
+	try {
+		lstatSync(path);
+		return true;
+	} catch (e) {
+		return false;
 	}
 }

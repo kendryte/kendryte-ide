@@ -1,32 +1,37 @@
+import { DuplexControl } from '@gongt/stillalive';
+import { unlinkSync } from 'fs';
 import { chdir } from '../build-env/childCommands';
-import { runMain, thisIsABuildScript } from '../build-env/include';
-import { codePointWidth } from '../build-env/stringWidth';
-// import './prepare-release';
+import { isExists, isLink, isWin, runMain, thisIsABuildScript } from '../build-env/include';
+import { installDependency, removeDirecotry, usePretty } from '../build-env/output';
+import { packWindows } from '../build-env/packWindows';
+// import './prepare-release'; // <---
 
 thisIsABuildScript();
 
-function unicodeEscape(str: string) {
-	return str.replace(/[\s\S]/g, function (escape) {
-		return '\\u' + ('0000' + escape.charCodeAt().toString(16)).slice(-4);
-	});
-}
-
 runMain(async () => {
-	chdir(process.env.VSCODE_ROOT);
-	/*
-		const stream = new Transform({
-			transform(this: Transform, chunk: string | Buffer, encoding: string, callback: Function) {
-				this.push(chunk, encoding);
-				callback();
-			},
-		});
-		setInterval(() => {
-			stream.write(`${new Date} ~ ${Math.random()}`);
-		}, 1000);
-
-		handleStream(stream);
-		*/
-
-	const r = codePointWidth('👍🏽😂啊aaaa');
-	console.log(unicodeEscape(r.data), r);
+	const output = usePretty();
+	if (isWin) {
+		await reset_asar(output);
+		await packWindows(output);
+	} else {
+		await installDependency(output, process.env.VSCODE_ROOT);
+	}
 });
+
+async function reset_asar(output: DuplexControl) {
+	chdir(process.env.VSCODE_ROOT);
+	if (await isLink('./node_modules')) {
+		unlinkSync('./node_modules');
+	}
+	if (await isExists('./node_modules')) {
+		throw new Error('node_modules exists, must remove.');
+	}
+	
+	if (await isExists('./node_modules.asar')) {
+		unlinkSync('./node_modules.asar');
+	}
+	if (await isExists('./node_modules.asar.unpacked')) {
+		await removeDirecotry('./node_modules.asar.unpacked', output);
+	}
+	output.success('cleanup ASAR files.').continue();
+}

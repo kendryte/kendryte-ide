@@ -15,15 +15,17 @@
 		"checkJs": false,
 		"outDir": ".",
 		"noEmitOnError": false,
+		"sourceRoot": ".",
 		"types": [
 			"node"
 		],
 		"typeRoots": [
-			"../node_modules/@types",
-			"./node_modules/@types"
+			"node_modules/@types"
 		]
 	},
-	"exclude": [],
+	"exclude": [
+		"node_modules/**"
+	],
 	"include": [
 		"./**/*.ts"
 	]

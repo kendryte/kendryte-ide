@@ -1,8 +1,8 @@
-import { spawn, spawnSync } from 'child_process';
-import { Duplex, Readable } from 'stream';
+import { ChildProcess, spawn, spawnSync, StdioOptions } from 'child_process';
+import { Readable, Transform, Writable } from 'stream';
 import { isWin } from './include';
 
-function ThrowStatusCodeError(status: number, signal: string): never | void {
+function ThrowStatusCodeError(status: number, signal: string): never|void {
 	const e = StatusCodeError(status, signal);
 	if (e) {
 		throw e;
@@ -20,7 +20,7 @@ function StatusCodeError(status: number, signal: string): Error {
 		return null;
 	}
 	return new Error(
-		signal ? `Program exit by signal "${signal}"` : `Program exit with code "${status}"`,
+		signal? `Program exit by signal "${signal}"` : `Program exit with code "${status}"`,
 	);
 }
 
@@ -32,7 +32,7 @@ function parseCommand(cmd: string, args: string[]): [string, string[]] {
 	}
 }
 
-function shellSync(stdio: string | string[], cmd: string, args: string[]) {
+function shellSync(stdio: StdioOptions, cmd: string, args: string[]) {
 	const r = spawnSync(cmd, args, {
 		stdio,
 		encoding: 'utf8',
@@ -68,28 +68,48 @@ interface ProcessHandler {
 	wait(): Promise<void>;
 }
 
+export async function pipeCommandOut(pipe: Writable, cmd: string, ...args: string[]): Promise<void> {
+	[cmd, args] = parseCommand(cmd, args);
+	console.log(' + %s %s | line-output', cmd, args.join(' '));
+	const cp = spawn(cmd, args, {
+		stdio: ['ignore', 'pipe', 'inherit'],
+	});
+	cp.stdout.pipe(pipe, {end: false});
+	await promiseProcess(cp);
+}
+
+class PassThru extends Transform {
+	public _transform(chunk: any, encoding: string, callback: Function): void {
+		this.push(chunk, encoding);
+		callback();
+	}
+}
+
 export function outputCommand(cmd: string, ...args: string[]): ProcessHandler {
 	[cmd, args] = parseCommand(cmd, args);
 	console.log(' + %s %s | stream-output', cmd, args.join(' '));
-	const output = new Duplex();
+	const output = new PassThru();
 	return {
 		output,
 		wait() {
 			const cp = spawn(cmd, args, {
 				stdio: ['ignore', output, output],
 			});
-
-			return new Promise((resolve, reject) => {
-				cp.once('error', reject);
-				cp.once('exit', (code: number, signal: string) => {
-					const e = StatusCodeError(code, signal);
-					if (e) {
-						reject(e);
-					} else {
-						resolve();
-					}
-				});
-			});
+			return promiseProcess(cp);
 		},
 	};
+}
+
+function promiseProcess(cp: ChildProcess) {
+	return new Promise<void>((resolve, reject) => {
+		cp.once('error', reject);
+		cp.once('exit', (code: number, signal: string) => {
+			const e = StatusCodeError(code, signal);
+			if (e) {
+				reject(e);
+			} else {
+				resolve();
+			}
+		});
+	});
 }
