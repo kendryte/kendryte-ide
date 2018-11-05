@@ -28,18 +28,17 @@ runMain(async () => {
 		skipped = true;
 	}
 	
-	let streamToDisplay = getCleanableStdout();
-	if (process.stderr.isTTY) {
-		const outputParser = new TypescriptCompileOutputStream();
-		outputParser.pipe(streamToDisplay);
-		
-		streamToDisplay = outputParser;
+	let streamToDisplay = process.stdout;
+	if (process.stdout.isTTY) {
+		streamToDisplay = new TypescriptCompileOutputStream();
+		streamToDisplay.pipe(getCleanableStdout());
+		cleanScreen();
 	}
 	
-	cleanScreen();
 	if (skipped) {
 		console.error('\x1B[38;5;14mExtensions Recompile Skipped, add \'--slow\' to force do it!\x1B[0m');
 	}
+	
 	console.error('starting: gulp watch-client');
 	await pipeCommandOut(streamToDisplay, 'node', '--max-old-space-size=4096', './node_modules/gulp/bin/gulp.js', '--', 'watch-client');
 });

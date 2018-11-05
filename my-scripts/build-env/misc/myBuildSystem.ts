@@ -1,7 +1,7 @@
 /* No use any node_modules deps */
 
 import { DuplexControl, startWorking } from '@gongt/stillalive';
-import { createWriteStream, ftruncateSync, openSync, WriteStream } from 'fs';
+import { closeSync, createReadStream, createWriteStream, ftruncateSync, openSync, ReadStream, WriteStream } from 'fs';
 
 export interface DisposeFunction {
 	(e?: Error): void;
@@ -56,12 +56,23 @@ export function usePretty(): DuplexControl {
 	return stream;
 }
 
-export function openFile(file): WriteStream {
+export function writeFileStream(file): WriteStream {
 	const fd = openSync(file, 'w');
 	ftruncateSync(fd);
 	const stream = createWriteStream(file, {encoding: 'utf8', fd});
 	mainDispose((error: Error) => {
 		stream.end();
+		closeSync(fd);
+	});
+	return stream;
+}
+
+export function readFileStream(file): ReadStream {
+	const fd = openSync(file, 'r+');
+	const stream = createReadStream(file, {encoding: 'utf8', fd});
+	mainDispose((error: Error) => {
+		stream.close();
+		closeSync(fd);
 	});
 	return stream;
 }

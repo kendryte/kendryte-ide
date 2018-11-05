@@ -9,6 +9,7 @@ if (!process.env.RELEASE_ROOT) {
 export const VSCODE_ROOT = requireEnvPath('VSCODE_ROOT');
 export const RELEASE_ROOT = requireEnvPath('RELEASE_ROOT');
 export const isWin = platform() === 'win32';
+export const isMac = platform() === 'darwin';
 
 export function nativePath(p: string) {
 	return p.replace(/^\/cygdrive\/([a-z])/i, (m0, drv) => {

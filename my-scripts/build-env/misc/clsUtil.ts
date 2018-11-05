@@ -5,9 +5,9 @@ import { isWin } from './constants';
 export function cleanScreen() {
 	if (isWin) {
 		shellExec('[System.Console]::Clear()');
-		process.stderr.write('\x1Bc\r');
+		process.stdout.write('\x1Bc\r');
 	} else {
-		process.stderr.write('\x1Bc\r');
+		process.stdout.write('\x1Bc\r');
 	}
 }
 
@@ -17,7 +17,7 @@ class ClearScreenStream extends Writable {
 	_write(data: Buffer, encoding: string, callback: (e?: Error) => void) {
 		const hasClear = data.indexOf(clearSequence);
 		if (hasClear === -1) {
-			process.stderr.write(data as any, encoding, callback);
+			process.stdout.write(data as any, encoding, callback);
 		} else {
 			shellExecAsync('[System.Console]::Clear()').catch().then(() => {
 				process.stderr.write(data.slice(hasClear) as any, encoding, callback);
@@ -27,9 +27,9 @@ class ClearScreenStream extends Writable {
 }
 
 export function getCleanableStdout(): Writable {
-	if (isWin && process.stderr.isTTY) {
+	if (isWin && process.stdout.isTTY) {
 		return new ClearScreenStream();
 	} else {
-		return process.stderr;
+		return process.stdout;
 	}
 }

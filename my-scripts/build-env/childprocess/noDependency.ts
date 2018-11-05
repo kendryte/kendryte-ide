@@ -4,7 +4,7 @@ import { parseCommand } from './handlers';
 
 /* No use any node_modules deps */
 
-function shellSync(stdio: StdioOptions, cmd: string, args: string[]) {
+function _shellSync(stdio: StdioOptions, cmd: string, args: string[]) {
 	const r = spawnSync(cmd, args, {
 		stdio,
 		encoding: 'utf8',
@@ -19,7 +19,7 @@ function shellSync(stdio: StdioOptions, cmd: string, args: string[]) {
 export function shellExec(cmd: string, ...args: string[]): void {
 	[cmd, args] = parseCommand(cmd, args);
 	console.log(' + %s %s | pipe-output', cmd, args.join(' '));
-	shellSync('inherit', cmd, args);
+	_shellSync('inherit', cmd, args);
 }
 
 export function shellExecAsync(cmd: string, ...args: string[]): Promise<void> {
@@ -30,7 +30,7 @@ export function shellExecAsync(cmd: string, ...args: string[]): Promise<void> {
 	});
 	return new Promise((resolve, reject) => {
 		const wrappedCallback = (err, data) => err? reject(err) : resolve(data);
-		
+
 		r.on('error', (e) => {
 			reject(e);
 		});
@@ -48,6 +48,6 @@ export function shellExecAsync(cmd: string, ...args: string[]): Promise<void> {
 export function shellOutput(cmd: string, ...args: string[]): string {
 	[cmd, args] = parseCommand(cmd, args);
 	console.log(' + %s %s | read-output', cmd, args.join(' '));
-	const r = shellSync(['ignore', 'pipe', 'ignore'], cmd, args);
+	const r = _shellSync(['ignore', 'pipe', 'ignore'], cmd, args);
 	return r.stdout;
 }

@@ -6,10 +6,10 @@ const constants_1 = require("./constants");
 function cleanScreen() {
     if (constants_1.isWin) {
         noDependency_1.shellExec('[System.Console]::Clear()');
-        process.stderr.write('\x1Bc\r');
+        process.stdout.write('\x1Bc\r');
     }
     else {
-        process.stderr.write('\x1Bc\r');
+        process.stdout.write('\x1Bc\r');
     }
 }
 exports.cleanScreen = cleanScreen;
@@ -18,7 +18,7 @@ class ClearScreenStream extends stream_1.Writable {
     _write(data, encoding, callback) {
         const hasClear = data.indexOf(clearSequence);
         if (hasClear === -1) {
-            process.stderr.write(data, encoding, callback);
+            process.stdout.write(data, encoding, callback);
         }
         else {
             noDependency_1.shellExecAsync('[System.Console]::Clear()').catch().then(() => {
@@ -28,11 +28,11 @@ class ClearScreenStream extends stream_1.Writable {
     }
 }
 function getCleanableStdout() {
-    if (constants_1.isWin && process.stderr.isTTY) {
+    if (constants_1.isWin && process.stdout.isTTY) {
         return new ClearScreenStream();
     }
     else {
-        return process.stderr;
+        return process.stdout;
     }
 }
 exports.getCleanableStdout = getCleanableStdout;
