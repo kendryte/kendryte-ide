@@ -29,7 +29,7 @@ Get-ChildItem -Path my-scripts\commands -File -Filter '*.js' -Name | Foreach-Obj
 			Set-Location $VSCODE_ROOT
 			node "my-scripts\commands\${command}.js" @args
 			if (!$?) {
-				throw "Command failed with code ${$LastExitCode}"
+				throw "Command failed with code ${LastExitCode}"
 			}
 		} finally {
 			Pop-Location

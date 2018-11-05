@@ -12,7 +12,7 @@ function ThrowStatusCodeError(status: number, signal: string): never|void {
 
 export function chdir(d: string) {
 	process.chdir(d);
-	console.log(' > %s', process.cwd());
+	console.log('\n > %s', process.cwd());
 }
 
 function StatusCodeError(status: number, signal: string): Error {

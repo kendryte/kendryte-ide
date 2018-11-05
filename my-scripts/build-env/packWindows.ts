@@ -3,7 +3,7 @@ import { readFileSync, rename, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { chdir, pipeCommandOut } from './childCommands';
 import { cdNewDir, yarnPackageDir } from './include';
-import { installDependency } from './output';
+import { installDependency, timing } from './output';
 
 export async function packWindows(output: DuplexControl) {
 	function log(s: string) {
@@ -50,21 +50,24 @@ export async function packWindows(output: DuplexControl) {
 	output.success('basic files write complete.').continue();
 	
 	/* start install */
+	const timeOutDev = timing();
 	await installDependency(output, devDepsDir);
-	output.success('development dependencies installed.').continue();
+	output.success('development dependencies installed.' + timeOutDev()).continue();
 	
 	const devDepsStore = resolve(devDepsDir, 'node_modules');
 	log(`create link from ${devDepsStore} to ${root}`);
 	const lnk = require('lnk');
 	await lnk([devDepsStore], root);
 	
+	const timeOutProd = timing();
 	await installDependency(output, prodDepsDir);
-	output.success('production dependencies installed.').continue();
+	output.success('production dependencies installed.' + timeOutProd()).continue();
 	
 	log('create ASAR package');
 	chdir(root);
-	await pipeCommandOut(output, process.argv0, resolve(devDepsStore, '.bin/gulp'), '--gulpfile', 'my-scripts/gulpfile/pack-win.js');
-	output.success('ASAR created.').continue();
+	const timeOutZip = timing();
+	await pipeCommandOut(output, process.argv0, resolve(devDepsStore, 'gulp/bin/gulp.js'), '--gulpfile', 'my-scripts/gulpfile/pack-win.js');
+	output.success('ASAR created.' + timeOutProd()).continue();
 	
 	log('move ASAR package to source root');
 	chdir(root);

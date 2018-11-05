@@ -25,8 +25,8 @@ export function mkdirpSync(p) {
 
 export function cdNewDir(p) {
 	mkdirpSync(p);
-	console.error('    chdir(%s)', p);
 	process.chdir(p);
+	console.log('\n > %s', process.cwd());
 }
 
 export function yarnPackageDir(what) {
@@ -69,8 +69,16 @@ export function mainDispose(dispose: DisposeFunction) {
 	disposeList.push(dispose);
 }
 
+let finalPromise: Promise<void> = new Promise((resolve, reject) => {
+	setImmediate(resolve);
+});
+
 export function runMain(main: () => Promise<void>) {
-	main().then(() => {
+	const p = finalPromise = finalPromise.then(main);
+	p.then(() => {
+		if (finalPromise !== p) {
+			return;
+		}
 		disposeList.forEach((cb) => {
 			cb();
 		});
@@ -80,6 +88,9 @@ export function runMain(main: () => Promise<void>) {
 			cb(e);
 		});
 	}).then(() => {
+		if (finalPromise !== p) {
+			return;
+		}
 		process.exit(0);
 	}, () => {
 		process.exit(1);

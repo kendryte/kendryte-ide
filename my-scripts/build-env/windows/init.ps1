@@ -42,7 +42,7 @@ if (!(Test-Path -Path "$NODEJS_BIN/yarn.ps1")) {
 		--cache-folder "$YARN_CACHE_FOLDER" `
 		--global-folder "$NODEJS_INSTALL" `
 		--link-folder "$YARN_FOLDER" `
-	global add yarn
+	global add yarn@1.10.1
 	cd $RELEASE_ROOT
 	RimDir $tempDir
 }
@@ -93,7 +93,7 @@ echo @"
 `$env:PATH='$PATH'
 `$env:YARN_CACHE_FOLDER='$YARN_CACHE_FOLDER'
 & '$NODEJS' ``
-	'$NODEJS_INSTALL\yarn-v1.10.1\bin\yarn.js' ``
+	'$NODEJS_INSTALL\node_modules\yarn\bin\yarn.js' ``
 	global add windows-build-tools --vs2015 ``
 		--prefer-offline --no-default-rc --no-bin-links ``
 		--cache-folder '$YARN_CACHE_FOLDER' ``

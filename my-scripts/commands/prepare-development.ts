@@ -4,7 +4,7 @@ import { chdir } from '../build-env/childCommands';
 import { isExists, isLink, isWin, runMain, thisIsABuildScript } from '../build-env/include';
 import { installDependency, removeDirecotry, usePretty } from '../build-env/output';
 import { packWindows } from '../build-env/packWindows';
-// import './prepare-release'; // <---
+import './prepare-release';
 
 thisIsABuildScript();
 

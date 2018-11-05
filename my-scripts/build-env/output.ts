@@ -1,5 +1,5 @@
 import { DuplexControl, startWorking } from '@gongt/stillalive';
-import { createWriteStream, rmdir, unlink } from 'fs';
+import { createWriteStream, existsSync, rmdir, unlink, unlinkSync } from 'fs';
 import * as rimraf from 'rimraf';
 import { PassThrough, Writable } from 'stream';
 import { chdir, pipeCommandOut } from './childCommands';
@@ -21,17 +21,24 @@ export async function installDependency(output: Writable, dir?: string): Promise
 		chdir(dir);
 	}
 	
-	const date = new Date;
 	const tee = new PassThrough();
 	tee.pipe(output, {end: false});
 	tee.pipe(createWriteStream('yarn-install.log'));
 	
-	// shellExec('yarn', 'install');
+	if (existsSync('yarn-error.log')) {
+		unlinkSync('yarn-error.log');
+	}
+	tee.write(`Pwd: ${process.cwd()}\nCommand: yarn install --verbose\n`);
 	await pipeCommandOut(tee, 'yarn', 'install', '--verbose');
+}
+
+export function timing() {
+	const date = new Date;
 	
-	console.log(date.toISOString(), ' -> ', (new Date).toISOString());
-	console.log((Date.now() - date.getTime()) / 1000);
-	process.exit(123);
+	return function () {
+		const t = (Date.now() - date.getTime()) / 1000;
+		return ` (in ${t.toFixed(2)} sec)`;
+	};
 }
 
 function wrapFs<T extends Function>(of: T, output: Writable): T {
