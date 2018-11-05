@@ -1,19 +1,20 @@
 ///<reference types="node"/>
 
 import { execSync } from 'child_process';
-import { existsSync, lstatSync, mkdirSync } from 'fs';
+import { existsSync, lstat as lstatAsync, lstatSync, mkdirSync, Stats } from 'fs';
 import { platform } from 'os';
-import { resolve } from 'path';
+import { normalize, resolve } from 'path';
 
+export const VSCODE_ROOT = process.env.VSCODE_ROOT;
 export const isWin = platform() === 'win32';
 
-export function nativePath(p) {
+export function nativePath(p: string) {
 	return p.replace(/^\/cygdrive\/([a-z])/i, (m0, drv) => {
 		return drv.toUpperCase() + ':';
 	});
 }
 
-export function mkdirpSync(p) {
+export function mkdirpSync(p: string) {
 	if (!p) {
 		throw new Error('path must not empty string');
 	}
@@ -23,13 +24,14 @@ export function mkdirpSync(p) {
 	}
 }
 
-export function cdNewDir(p) {
+export function cdNewDir(p: string) {
+	p = normalize(p);
 	mkdirpSync(p);
 	process.chdir(p);
 	console.log('\n > %s', process.cwd());
 }
 
-export function yarnPackageDir(what) {
+export function yarnPackageDir(what: string) {
 	return resolve(requireEnvPath('RELEASE_ROOT'), 'yarn-dir', what);
 }
 
@@ -118,4 +120,15 @@ export function isExists(path: string): boolean {
 	} catch (e) {
 		return false;
 	}
+}
+
+export function lstat(p: string): Promise<Stats> {
+	return new Promise((resolve, reject) => {
+		lstatAsync(p, (err, stats) => {
+			if (err && err.code !== 'ENOENT') {
+				return reject(err);
+			}
+			return resolve(stats);
+		});
+	});
 }

@@ -1,4 +1,5 @@
 import { ChildProcess, spawn, spawnSync, StdioOptions } from 'child_process';
+import { normalize } from 'path';
 import { Readable, Transform, Writable } from 'stream';
 import { isWin } from './include';
 
@@ -11,6 +12,7 @@ function ThrowStatusCodeError(status: number, signal: string): never|void {
 }
 
 export function chdir(d: string) {
+	d = normalize(d);
 	process.chdir(d);
 	console.log('\n > %s', process.cwd());
 }

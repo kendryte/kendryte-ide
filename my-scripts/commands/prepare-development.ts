@@ -1,9 +1,6 @@
-import { DuplexControl } from '@gongt/stillalive';
-import { unlinkSync } from 'fs';
-import { chdir } from '../build-env/childCommands';
-import { isExists, isLink, isWin, runMain, thisIsABuildScript } from '../build-env/include';
-import { installDependency, removeDirecotry, usePretty } from '../build-env/output';
-import { packWindows } from '../build-env/packWindows';
+import { isWin, lstat, runMain, thisIsABuildScript, VSCODE_ROOT } from '../build-env/include';
+import { installDependency, usePretty } from '../build-env/output';
+import { packWindows, reset_asar } from '../build-env/packWindows';
 import './prepare-release';
 
 thisIsABuildScript();
@@ -11,27 +8,13 @@ thisIsABuildScript();
 runMain(async () => {
 	const output = usePretty();
 	if (isWin) {
+		const stat = await lstat('./node_modules');
+		if (stat && stat.isDirectory()) {
+			throw new Error('node_modules exists, must remove.');
+		}
 		await reset_asar(output);
 		await packWindows(output);
 	} else {
-		await installDependency(output, process.env.VSCODE_ROOT);
+		await installDependency(output, VSCODE_ROOT);
 	}
 });
-
-async function reset_asar(output: DuplexControl) {
-	chdir(process.env.VSCODE_ROOT);
-	if (await isLink('./node_modules')) {
-		unlinkSync('./node_modules');
-	}
-	if (await isExists('./node_modules')) {
-		throw new Error('node_modules exists, must remove.');
-	}
-	
-	if (await isExists('./node_modules.asar')) {
-		unlinkSync('./node_modules.asar');
-	}
-	if (await isExists('./node_modules.asar.unpacked')) {
-		await removeDirecotry('./node_modules.asar.unpacked', output);
-	}
-	output.success('cleanup ASAR files.').continue();
-}
