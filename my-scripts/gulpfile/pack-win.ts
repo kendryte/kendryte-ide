@@ -1,4 +1,4 @@
-import { yarnPackageDir } from '../build-env/include';
+import { yarnPackageDir } from '../build-env/misc/pathUtil';
 
 const gulp = require('gulp');
 const path = require('path');

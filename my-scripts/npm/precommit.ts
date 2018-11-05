@@ -1,11 +1,9 @@
-import { readFile as readFileAsync, writeFile as writeFileAsync } from 'fs';
 import { resolve } from 'path';
-import { promisify } from 'util';
-import { chdir } from '../build-env/childCommands';
-import { runMain, VSCODE_ROOT } from '../build-env/include';
-
-const readFile = promisify(readFileAsync);
-const writeFile = promisify(writeFileAsync);
+import { shellExec } from '../build-env/childprocess/noDependency';
+import { VSCODE_ROOT } from '../build-env/misc/constants';
+import { readFile, writeFile } from '../build-env/misc/fsUtil';
+import { runMain } from '../build-env/misc/myBuildSystem';
+import { chdir } from '../build-env/misc/pathUtil';
 
 runMain(async () => {
 	chdir(VSCODE_ROOT);
@@ -26,6 +24,8 @@ runMain(async () => {
 	
 	console.log('writing version [%s] to package.json: %s', pkg.patchVersion, packageFile);
 	await writeFile(packageFile, content, 'utf8');
+	
+	shellExec('git', 'add', 'package.json');
 });
 
 function pad(num: number) {

@@ -1,6 +1,5 @@
-import { runMain } from '../build-env/include';
-import { usePretty } from '../build-env/output';
-import { reset_asar } from '../build-env/packWindows';
+import { reset_asar } from '../build-env/codeblocks/packWindows';
+import { runMain, usePretty } from '../build-env/misc/myBuildSystem';
 
 runMain(async () => {
 	const output = usePretty();

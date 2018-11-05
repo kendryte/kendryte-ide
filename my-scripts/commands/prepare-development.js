@@ -1,14 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const include_1 = require("../build-env/include");
-const output_1 = require("../build-env/output");
-const packWindows_1 = require("../build-env/packWindows");
+const yarn_1 = require("../build-env/childprocess/yarn");
+const packWindows_1 = require("../build-env/codeblocks/packWindows");
+const constants_1 = require("../build-env/misc/constants");
+const fsUtil_1 = require("../build-env/misc/fsUtil");
+const myBuildSystem_1 = require("../build-env/misc/myBuildSystem");
 require("./prepare-release");
-include_1.thisIsABuildScript();
-include_1.runMain(async () => {
-    const output = output_1.usePretty();
-    if (include_1.isWin) {
-        const stat = await include_1.lstat('./node_modules');
+myBuildSystem_1.runMain(async () => {
+    const output = myBuildSystem_1.usePretty();
+    if (constants_1.isWin) {
+        const stat = await fsUtil_1.lstat('./node_modules');
         if (stat && stat.isDirectory()) {
             throw new Error('node_modules exists, must remove.');
         }
@@ -16,7 +17,7 @@ include_1.runMain(async () => {
         await packWindows_1.packWindows(output);
     }
     else {
-        await output_1.installDependency(output, include_1.VSCODE_ROOT);
+        await yarn_1.installDependency(output, constants_1.VSCODE_ROOT);
     }
 });
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicHJlcGFyZS1kZXZlbG9wbWVudC5qcyIsInNvdXJjZVJvb3QiOiIuLyIsInNvdXJjZXMiOlsiY29tbWFuZHMvcHJlcGFyZS1kZXZlbG9wbWVudC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOztBQUFBLGtEQUE4RjtBQUM5RixnREFBbUU7QUFDbkUsMERBQW1FO0FBQ25FLDZCQUEyQjtBQUUzQiw0QkFBa0IsRUFBRSxDQUFDO0FBRXJCLGlCQUFPLENBQUMsS0FBSyxJQUFJLEVBQUU7SUFDbEIsTUFBTSxNQUFNLEdBQUcsa0JBQVMsRUFBRSxDQUFDO0lBQzNCLElBQUksZUFBSyxFQUFFO1FBQ1YsTUFBTSxJQUFJLEdBQUcsTUFBTSxlQUFLLENBQUMsZ0JBQWdCLENBQUMsQ0FBQztRQUMzQyxJQUFJLElBQUksSUFBSSxJQUFJLENBQUMsV0FBVyxFQUFFLEVBQUU7WUFDL0IsTUFBTSxJQUFJLEtBQUssQ0FBQyxtQ0FBbUMsQ0FBQyxDQUFDO1NBQ3JEO1FBQ0QsTUFBTSx3QkFBVSxDQUFDLE1BQU0sQ0FBQyxDQUFDO1FBQ3pCLE1BQU0seUJBQVcsQ0FBQyxNQUFNLENBQUMsQ0FBQztLQUMxQjtTQUFNO1FBQ04sTUFBTSwwQkFBaUIsQ0FBQyxNQUFNLEVBQUUscUJBQVcsQ0FBQyxDQUFDO0tBQzdDO0FBQ0YsQ0FBQyxDQUFDLENBQUMifQ==
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoicHJlcGFyZS1kZXZlbG9wbWVudC5qcyIsInNvdXJjZVJvb3QiOiIuLyIsInNvdXJjZXMiOlsiY29tbWFuZHMvcHJlcGFyZS1kZXZlbG9wbWVudC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOztBQUFBLHlEQUFtRTtBQUNuRSxxRUFBOEU7QUFDOUUsMkRBQWlFO0FBQ2pFLHFEQUFpRDtBQUNqRCxtRUFBcUU7QUFDckUsNkJBQTJCO0FBRTNCLHVCQUFPLENBQUMsS0FBSyxJQUFJLEVBQUU7SUFDbEIsTUFBTSxNQUFNLEdBQUcseUJBQVMsRUFBRSxDQUFDO0lBQzNCLElBQUksaUJBQUssRUFBRTtRQUNWLE1BQU0sSUFBSSxHQUFHLE1BQU0sY0FBSyxDQUFDLGdCQUFnQixDQUFDLENBQUM7UUFDM0MsSUFBSSxJQUFJLElBQUksSUFBSSxDQUFDLFdBQVcsRUFBRSxFQUFFO1lBQy9CLE1BQU0sSUFBSSxLQUFLLENBQUMsbUNBQW1DLENBQUMsQ0FBQztTQUNyRDtRQUNELE1BQU0sd0JBQVUsQ0FBQyxNQUFNLENBQUMsQ0FBQztRQUN6QixNQUFNLHlCQUFXLENBQUMsTUFBTSxDQUFDLENBQUM7S0FDMUI7U0FBTTtRQUNOLE1BQU0sd0JBQWlCLENBQUMsTUFBTSxFQUFFLHVCQUFXLENBQUMsQ0FBQztLQUM3QztBQUNGLENBQUMsQ0FBQyxDQUFDIn0=

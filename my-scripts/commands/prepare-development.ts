@@ -1,9 +1,9 @@
-import { isWin, lstat, runMain, thisIsABuildScript, VSCODE_ROOT } from '../build-env/include';
-import { installDependency, usePretty } from '../build-env/output';
-import { packWindows, reset_asar } from '../build-env/packWindows';
+import { installDependency } from '../build-env/childprocess/yarn';
+import { packWindows, reset_asar } from '../build-env/codeblocks/packWindows';
+import { isWin, VSCODE_ROOT } from '../build-env/misc/constants';
+import { lstat } from '../build-env/misc/fsUtil';
+import { runMain, usePretty } from '../build-env/misc/myBuildSystem';
 import './prepare-release';
-
-thisIsABuildScript();
 
 runMain(async () => {
 	const output = usePretty();

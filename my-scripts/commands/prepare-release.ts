@@ -1,14 +1,13 @@
 import { writeFile as writeFileAsync } from 'fs';
 import { resolve } from 'path';
 import { promisify } from 'util';
-import { chdir, shellExec, shellOutput } from '../build-env/childCommands';
-import { lstat, mkdirpSync, runMain, thisIsABuildScript, VSCODE_ROOT } from '../build-env/include';
-import rimrafAsync = require('rimraf');
+import { shellExec, shellOutput } from '../build-env/childprocess/noDependency';
+import { VSCODE_ROOT } from '../build-env/misc/constants';
+import { lstat, mkdirpSync, removeDirecotry } from '../build-env/misc/fsUtil';
+import { runMain } from '../build-env/misc/myBuildSystem';
+import { chdir } from '../build-env/misc/pathUtil';
 
-const rimraf = promisify(rimrafAsync);
 const writeFile = promisify(writeFileAsync);
-
-thisIsABuildScript();
 
 runMain(async () => {
 	await removeYarnGlobalDir(process.env.USERPROFILE, '.yarn/bin');
@@ -31,7 +30,7 @@ async function removeYarnGlobalDir(binDir: string, resolveTo?: string) {
 	const stat = await lstat(binDir);
 	if (stat) {
 		if (stat.isDirectory()) {
-			await rimraf(binDir);
+			await removeDirecotry(binDir, process.stderr);
 		}
 	} else {
 		mkdirpSync(resolve(binDir, '..'));
