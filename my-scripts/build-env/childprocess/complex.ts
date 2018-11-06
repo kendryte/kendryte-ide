@@ -1,18 +1,34 @@
 import { spawn } from 'child_process';
-import { PassThrough, Readable, Writable } from 'stream';
+import { PassThrough } from 'stream';
 import { BlackHoleStream, CollectingStream } from '../misc/streamUtil';
-import { parseCommand, promiseProcess } from './handlers';
+import { parseCommand, processPromise } from './handlers';
 
 interface ProcessHandler {
-	output: Readable;
+	output: NodeJS.ReadableStream;
 	wait(): Promise<void>;
+}
+
+export async function pipeCommandBoth(
+	stdout: NodeJS.WritableStream,
+	stderr: NodeJS.WritableStream,
+	cmd: string,
+	...args: string[]
+): Promise<void> {
+	const cp = spawn(cmd, args, {
+		stdio: ['ignore', 'pipe', 'pipe'],
+	});
+	
+	cp.stdout.pipe(stdout, {end: true});
+	cp.stderr.pipe(stderr, {end: false});
+	
+	return processPromise(cp);
 }
 
 export async function muteCommandOut(cmd: string, ...args: string[]): Promise<void> {
 	return pipeCommandOut(new BlackHoleStream(), cmd, ...args);
 }
 
-export async function pipeCommandOut(pipe: Writable, cmd: string, ...args: string[]): Promise<void> {
+export async function pipeCommandOut(pipe: NodeJS.WritableStream, cmd: string, ...args: string[]): Promise<void> {
 	[cmd, args] = parseCommand(cmd, args);
 	// console.log(' + %s %s | line-output', cmd, args.join(' '));
 	const stream = _spawnCommand(cmd, args);
@@ -27,7 +43,7 @@ export async function getOutputCommand(cmd: string, ...args: string[]): Promise<
 	const collector = new CollectingStream();
 	stream.output.pipe(collector);
 	await stream.wait();
-	return collector.getOutput();
+	return collector.getOutput().trim();
 }
 
 function _spawnCommand(cmd: string, args: string[]): ProcessHandler {
@@ -46,7 +62,7 @@ function _spawnCommand(cmd: string, args: string[]): ProcessHandler {
 				output.end();
 			});
 			
-			return promiseProcess(cp);
+			return processPromise(cp);
 		},
 	};
 }

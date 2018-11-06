@@ -17,7 +17,7 @@ async function reset_asar(output) {
         fs_1.unlinkSync('./node_modules.asar');
     }
     if (await fsUtil_1.isExistsSync('./node_modules.asar.unpacked')) {
-        await fsUtil_1.removeDirecotry('./node_modules.asar.unpacked', output);
+        await fsUtil_1.removeDirectory('./node_modules.asar.unpacked', output);
     }
     output.success('cleanup ASAR files.').continue();
 }

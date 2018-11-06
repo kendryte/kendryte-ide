@@ -26,7 +26,7 @@ myBuildSystem_1.runMain(async () => {
     findAnyDirToDelete(yarnCache, leafs);
     for (const dir of leafs) {
         if (!fs_1.existsSync(path_1.resolve(dir, '.yarn-metadata.json'))) {
-            await fsUtil_1.removeDirecotry(dir, logger);
+            await fsUtil_1.removeDirectory(dir, logger);
         }
     }
 });

@@ -8,8 +8,8 @@ import { chdir } from '../build-env/misc/pathUtil';
 runMain(async () => {
 	chdir(VSCODE_ROOT);
 	const packageFile = resolve(VSCODE_ROOT, 'package.json');
-	const pkg = JSON.parse(await readFile(packageFile, 'utf8'));
-	
+	const pkg = JSON.parse(await readFile(packageFile));
+
 	const d = new Date;
 	pkg.patchVersion = d.getFullYear().toFixed(0)
 	                   + pad(d.getMonth() + 1)
@@ -18,13 +18,13 @@ runMain(async () => {
 	                   + pad(d.getHours())
 	                   + pad(d.getMinutes())
 	                   + pad(d.getSeconds());
-	
+
 	let content = JSON.stringify(pkg, null, 2) + '\n';
 	content = content.replace('"' + pkg.patchVersion + '"', pkg.patchVersion);
-	
+
 	console.log('writing version [%s] to package.json: %s', pkg.patchVersion, packageFile);
-	await writeFile(packageFile, content, 'utf8');
-	
+	await writeFile(packageFile, content);
+
 	shellExec('git', 'add', 'package.json');
 });
 

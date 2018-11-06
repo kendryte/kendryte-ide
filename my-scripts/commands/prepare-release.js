@@ -27,7 +27,7 @@ async function removeYarnGlobalDir(binDir, resolveTo) {
     const stat = await fsUtil_1.lstat(binDir);
     if (stat) {
         if (stat.isDirectory()) {
-            await fsUtil_1.removeDirecotry(binDir, process.stderr);
+            await fsUtil_1.removeDirectory(binDir, process.stderr);
         }
     }
     else {

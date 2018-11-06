@@ -5,6 +5,7 @@ import {
 	mkdirSync,
 	open as openAsync,
 	readFile as readFileAsync,
+	rename as renameAsync,
 	rmdir as rmdirAsync,
 	Stats,
 	unlink as unlinkAsync,
@@ -14,6 +15,8 @@ import { resolve } from 'path';
 import * as rimraf from 'rimraf';
 import { Writable } from 'stream';
 import { promisify } from 'util';
+import { isWin, VSCODE_ROOT } from './constants';
+import { timeout } from './timeUtil';
 
 /* No use any node_modules deps */
 
@@ -58,11 +61,34 @@ export function lstat(p: string): Promise<Stats> {
 	});
 }
 
-export const readFile = promisify(readFileAsync);
-export const writeFile = promisify(writeFileAsync);
+export function readFile(path: string): Promise<string> {
+	return new Promise((resolve, reject) => {
+		readFileAsync(path, 'utf8', (err, data) => {
+			if (err) {
+				reject(err);
+			} else {
+				resolve(data);
+			}
+		});
+	});
+}
+
+export function writeFile(path: string, data: Buffer|string): Promise<void> {
+	return new Promise((resolve, reject) => {
+		writeFileAsync(path, 'utf8', (err) => {
+			if (err) {
+				reject(err);
+			} else {
+				resolve();
+			}
+		});
+	});
+}
+
 export const unlink = promisify(unlinkAsync);
 export const rmdir = promisify(rmdirAsync);
 export const open = promisify(openAsync);
+export const rename = promisify(renameAsync);
 
 function wrapFs(of: Function, output: Writable): Function {
 	return ((...args) => {
@@ -71,8 +97,9 @@ function wrapFs(of: Function, output: Writable): Function {
 	}) as any;
 }
 
-export function removeDirecotry(path: string, output: Writable) {
-	return new Promise<void>((resolve, reject) => {
+export function removeDirectory(path: string, output: Writable) {
+	output.write(`removing direcotry: ${path}...\n`);
+	const p = new Promise<void>((resolve, reject) => {
 		const wrappedCallback = (err) => err? reject(err) : resolve();
 		
 		rimraf(path, {
@@ -83,4 +110,36 @@ export function removeDirecotry(path: string, output: Writable) {
 			rmdir: wrapFs(rmdirAsync, output) as typeof rmdirAsync,
 		}, wrappedCallback);
 	});
+	
+	if (isWin) {
+		return p.then(() => timeout(5000));
+	} else {
+		return p.then(() => timeout(500));
+	}
+}
+
+let productData: any;
+
+export async function getProductData() {
+	try {
+		const productFile = resolve(VSCODE_ROOT, 'product.json');
+		const jsonData = await readFile(productFile);
+		productData = JSON.parse(jsonData);
+		return productData;
+	} catch (e) {
+		throw new Error(`Failed to load product.json: ${e.message}`);
+	}
+}
+
+let packageData: any;
+
+export async function getPackageData() {
+	try {
+		const packageFile = resolve(VSCODE_ROOT, 'package.json');
+		const jsonData = await readFile(packageFile);
+		packageData = JSON.parse(jsonData);
+		return packageData;
+	} catch (e) {
+		throw new Error(`Failed to load package.json: ${e.message}`);
+	}
 }

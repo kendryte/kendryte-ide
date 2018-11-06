@@ -12,7 +12,7 @@ export function parseCommand(cmd: string, args: string[]): [string, string[]] {
 	}
 }
 
-export function promiseProcess(cp: ChildProcess) {
+export function processPromise(cp: ChildProcess) {
 	return new Promise<void>((resolve, reject) => {
 		cp.once('error', reject);
 		cp.once('exit', (code: number, signal: string) => {

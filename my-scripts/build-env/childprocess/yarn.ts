@@ -4,7 +4,7 @@ import { chdir } from '../misc/pathUtil';
 import { pipeCommandOut } from './complex';
 
 export async function installDependency(output: Writable, dir?: string): Promise<void> {
-	if (dir) {
+	if (dir && process.cwd() !== dir) {
 		chdir(dir);
 	}
 	

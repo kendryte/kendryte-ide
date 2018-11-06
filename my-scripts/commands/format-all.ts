@@ -17,8 +17,6 @@ const isTs = /\.ts$/i;
 const isCss = /\.css$/i;
 
 runMain(async () => {
-	process.env.LANG = 'C';
-
 	process.stderr.write('\x1Bc\r');
 	chdir(VSCODE_ROOT);
 

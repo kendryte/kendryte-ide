@@ -3,12 +3,19 @@
   "license": "MIT",
   "devDependencies": {
     "@gongt/stillalive": "^1.0.5",
+    "@types/fs-extra": "^5.0.4",
     "@types/node": "^10.12.1",
     "@types/rimraf": "^2.0.2",
+    "@types/tar-fs": "^1.16.1",
+    "fs-extra": "^7.0.0",
     "lnk": "^1.1.0",
     "node-gyp": "^3.8.0",
     "rimraf": "^2.6.2",
     "split2": "^3.0.0",
+    "tar-fs": "^1.16.3",
     "typescript": "^3.1.5"
+  },
+  "dependencies": {
+    "7zip": "^0.0.6"
   }
 }
