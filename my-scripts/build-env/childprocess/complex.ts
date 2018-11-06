@@ -14,12 +14,13 @@ export async function pipeCommandBoth(
 	cmd: string,
 	...args: string[]
 ): Promise<void> {
+	[cmd, args] = parseCommand(cmd, args);
 	const cp = spawn(cmd, args, {
 		stdio: ['ignore', 'pipe', 'pipe'],
 	});
 	
 	cp.stdout.pipe(stdout, {end: true});
-	cp.stderr.pipe(stderr, {end: false});
+	cp.stderr.pipe(stderr, endArg(stderr));
 	
 	return processPromise(cp);
 }
@@ -28,11 +29,19 @@ export async function muteCommandOut(cmd: string, ...args: string[]): Promise<vo
 	return pipeCommandOut(new BlackHoleStream(), cmd, ...args);
 }
 
+function endArg(stream: NodeJS.WritableStream) {
+	if (stream.hasOwnProperty('noEnd') || stream === process.stdout || stream === process.stderr) {
+		return {end: false};
+	} else {
+		return {end: true};
+	}
+}
+
 export async function pipeCommandOut(pipe: NodeJS.WritableStream, cmd: string, ...args: string[]): Promise<void> {
 	[cmd, args] = parseCommand(cmd, args);
 	// console.log(' + %s %s | line-output', cmd, args.join(' '));
 	const stream = _spawnCommand(cmd, args);
-	stream.output.pipe(pipe);
+	stream.output.pipe(pipe, endArg(pipe));
 	await stream.wait();
 }
 

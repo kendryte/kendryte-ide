@@ -2,7 +2,7 @@
   "private": true,
   "license": "MIT",
   "devDependencies": {
-    "@gongt/stillalive": "^1.0.5",
+    "@gongt/stillalive": "^1.0.7",
     "@types/fs-extra": "^5.0.4",
     "@types/node": "^10.12.1",
     "@types/rimraf": "^2.0.2",

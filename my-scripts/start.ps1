@@ -1,51 +1,22 @@
 [Console]::OutputEncoding = [Text.UTF8Encoding]::UTF8
+chcp 65001 | Out-Null
+#$ErrorActionPreference = "Stop"
 
 cd $PSScriptRoot
-$ErrorActionPreference = "Stop"
-
 . build-env\windows\fn.ps1
+cd $PSScriptRoot
 . build-env\windows\env.ps1
+cd $PSScriptRoot
+. build-env\windows\listcommands.ps1
 
 if (!$env:AlreadyInited) {
+	cd $PSScriptRoot
 	. build-env\windows\init.ps1
 	
 	setSystemVar 'AlreadyInited' $true
 }
 
-function help($command, $desc) {
-	Write-Host " * " -NoNewline -BackgroundColor Black
-	Write-Host $command -NoNewline -ForegroundColor DarkCyan -BackgroundColor Black
-	Write-Host " - " -NoNewline -BackgroundColor Black
-	Write-Host $desc -BackgroundColor Black
-}
-
 cd $VSCODE_ROOT
-echo ""
-Get-ChildItem -Path my-scripts\commands -File -Filter '*.js' -Name | Foreach-Object {
-	$command = $_.Replace('.js', '')
-	help $command ""
-	Set-Item -Path function:global:$command -Value {
-		try {
-			Push-Location
-			Set-Location $VSCODE_ROOT
-			node "my-scripts\commands\${command}.js" @args
-			if (!$?) {
-				throw "Command failed with code ${LastExitCode}"
-			}
-		} finally {
-			Pop-Location
-		}
-		
-	}.GetNewClosure()
-}
-
-$current = $MyInvocation.MyCommand.Source
-Set-Item -Path function:global:fork -Value {
-	Start-Process powershell.exe "-NoExit -Command . $current"
-}.GetNewClosure()
-help "fork" "Open new window like this."
-
-echo ""
 
 function prompt() {
 	$host.ui.rawui.WindowTitle = "Kendryte IDE Source Code :: $pwd"
@@ -57,5 +28,12 @@ function prompt() {
 	}
 }
 
-cd $VSCODE_ROOT # required last item
+Write-Host $env:helpStrings
+
 Write-Host " > The anwser is 42 <" -ForegroundColor Green
+
+[console]::WindowWidth = 100
+[console]::WindowHeight = 24
+[console]::BufferWidth = [console]::WindowWidth
+
+cd $VSCODE_ROOT # required last item

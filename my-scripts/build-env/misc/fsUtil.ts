@@ -13,7 +13,6 @@ import {
 } from 'fs';
 import { resolve } from 'path';
 import * as rimraf from 'rimraf';
-import { Writable } from 'stream';
 import { promisify } from 'util';
 import { isWin, VSCODE_ROOT } from './constants';
 import { timeout } from './timeUtil';
@@ -75,7 +74,7 @@ export function readFile(path: string): Promise<string> {
 
 export function writeFile(path: string, data: Buffer|string): Promise<void> {
 	return new Promise((resolve, reject) => {
-		writeFileAsync(path, 'utf8', (err) => {
+		writeFileAsync(path, data, 'utf8', (err) => {
 			if (err) {
 				reject(err);
 			} else {
@@ -90,14 +89,14 @@ export const rmdir = promisify(rmdirAsync);
 export const open = promisify(openAsync);
 export const rename = promisify(renameAsync);
 
-function wrapFs(of: Function, output: Writable): Function {
+function wrapFs(of: Function, output: NodeJS.WritableStream): Function {
 	return ((...args) => {
 		output.write(`${of.name}: ${args[0]}\n`);
 		return of.apply(undefined, args);
 	}) as any;
 }
 
-export function removeDirectory(path: string, output: Writable) {
+export function removeDirectory(path: string, output: NodeJS.WritableStream) {
 	output.write(`removing direcotry: ${path}...\n`);
 	const p = new Promise<void>((resolve, reject) => {
 		const wrappedCallback = (err) => err? reject(err) : resolve();

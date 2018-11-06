@@ -1,7 +1,8 @@
 /* No use any node_modules deps */
 
-import { DuplexControl, MyOptions, startWorking } from '@gongt/stillalive';
+import { MyOptions, OutputStreamControl, startWorking } from '@gongt/stillalive';
 import { closeSync, createReadStream, createWriteStream, ftruncateSync, openSync, ReadStream, WriteStream } from 'fs';
+import { basename } from 'path';
 
 export interface DisposeFunction {
 	(e?: Error): void;
@@ -17,7 +18,24 @@ let finalPromise: Promise<void> = new Promise((resolve, reject) => {
 	setImmediate(resolve);
 });
 
+function wit() {
+	return process.argv.includes('--what-is-this');
+}
+
+export function helpTip(cmd: string, msg: string) {
+	console.log('\x1B[48;5;0;1m * \x1B[38;5;14m%s\x1B[0;48;5;0m - %s.', cmd, msg);
+}
+
+export function whatIsThis(self: string, title: string) {
+	if (wit()) {
+		helpTip(basename(self, '.js'), title);
+	}
+}
+
 export function runMain(main: () => Promise<void>) {
+	if (wit()) {
+		return;
+	}
 	const p = finalPromise = finalPromise.then(main);
 	p.then(() => {
 		if (finalPromise !== p) {
@@ -45,8 +63,9 @@ export function runMain(main: () => Promise<void>) {
 	});
 }
 
-export function usePretty(opts?: MyOptions): DuplexControl {
+export function usePretty(opts?: MyOptions): OutputStreamControl {
 	const stream = startWorking();
+	Object.assign(stream, {noEnd: true});
 	mainDispose((error: Error) => {
 		if (error) {
 			stream.fail(error.message);

@@ -1,4 +1,4 @@
-import { DuplexControl } from '@gongt/stillalive';
+import { OutputStreamControl } from '@gongt/stillalive';
 import { readFileSync, rename, unlinkSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { pipeCommandOut } from '../childprocess/complex';
@@ -8,7 +8,7 @@ import { isExistsSync, isLinkSync, removeDirectory } from '../misc/fsUtil';
 import { chdir, ensureChdir, yarnPackageDir } from '../misc/pathUtil';
 import { timing } from '../misc/timeUtil';
 
-export async function reset_asar(output: DuplexControl) {
+export async function reset_asar(output: OutputStreamControl) {
 	chdir(VSCODE_ROOT);
 	if (await isLinkSync('./node_modules')) {
 		unlinkSync('./node_modules');
@@ -22,7 +22,7 @@ export async function reset_asar(output: DuplexControl) {
 	output.success('cleanup ASAR files.').continue();
 }
 
-export async function packWindows(output: DuplexControl) {
+export async function packWindows(output: OutputStreamControl) {
 	function log(s: string) {
 		output.write(s + '\n');
 	}

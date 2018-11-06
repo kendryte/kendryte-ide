@@ -26,7 +26,7 @@ class ClearScreenStream extends Writable {
 	}
 }
 
-export function getCleanableStdout(): Writable {
+export function getCleanableStdout(): NodeJS.WritableStream {
 	if (isWin && process.stdout.isTTY) {
 		return new ClearScreenStream();
 	} else {

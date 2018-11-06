@@ -1,11 +1,11 @@
-import { DuplexControl } from '@gongt/stillalive';
+import { OutputStreamControl } from '@gongt/stillalive';
 import { copy } from 'fs-extra';
 import { resolve } from 'path';
 import { pipeCommandOut } from '../childprocess/complex';
 import { RELEASE_ROOT, VSCODE_ROOT } from '../misc/constants';
 import { chdir } from '../misc/pathUtil';
 
-export async function linuxBuild(output: DuplexControl) {
+export async function linuxBuild(output: OutputStreamControl) {
 	chdir(VSCODE_ROOT);
 	const result = resolve(RELEASE_ROOT, 'VSCode-win32-x64');
 

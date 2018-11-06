@@ -2,8 +2,10 @@ import { installDependency } from '../build-env/childprocess/yarn';
 import { packWindows, reset_asar } from '../build-env/codeblocks/packWindows';
 import { isWin, VSCODE_ROOT } from '../build-env/misc/constants';
 import { lstat } from '../build-env/misc/fsUtil';
-import { runMain, usePretty } from '../build-env/misc/myBuildSystem';
+import { runMain, usePretty, whatIsThis } from '../build-env/misc/myBuildSystem';
 import './prepare-release';
+
+whatIsThis(__filename, 'install required thing for development (includes prepare-release).');
 
 runMain(async () => {
 	const output = usePretty();

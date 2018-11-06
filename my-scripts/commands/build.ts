@@ -1,23 +1,24 @@
-import { DuplexControl } from '@gongt/stillalive';
+import { OutputStreamControl } from '@gongt/stillalive';
 import { resolve } from 'path';
 import { pipeCommandOut } from '../build-env/childprocess/complex';
 import { installDependency } from '../build-env/childprocess/yarn';
 import { extractSourceCodeIfNeed } from '../build-env/codeblocks/buildExtractSource';
 import { createPosixSfx, createWindowsSfx, createWindowsZip } from '../build-env/codeblocks/zip';
-import { isMac, isWin, RELEASE_ROOT, VSCODE_ROOT } from '../build-env/misc/constants';
+import { ARCH_RELEASE_ROOT, isMac, isWin, RELEASE_ROOT, VSCODE_ROOT } from '../build-env/misc/constants';
 import { getPackageData, getProductData, isExists, mkdirpSync, removeDirectory, rename } from '../build-env/misc/fsUtil';
-import { runMain, usePretty, useWriteFileStream } from '../build-env/misc/myBuildSystem';
+import { runMain, usePretty, useWriteFileStream, whatIsThis } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 import { timing } from '../build-env/misc/timeUtil';
 import { linuxBuild } from '../build-env/posix/build-linux';
 import { macBuild } from '../build-env/posix/mac/build-mac';
 import { windowsBuild } from '../build-env/windows/build-windows';
 
-let output: DuplexControl;
+whatIsThis(__filename, 'build complete release.');
+
+let output: OutputStreamControl;
 runMain(async () => {
-	output = usePretty({
-		pipeTo: useWriteFileStream(resolve(RELEASE_ROOT, 'build.log')),
-	});
+	output = usePretty();
+	output.pipe(useWriteFileStream(resolve(RELEASE_ROOT, 'build.log')));
 	output.write('starting build...\n');
 	
 	chdir(VSCODE_ROOT);
@@ -97,7 +98,7 @@ async function cleanupZipFiles(dir: string) {
 async function yarnInstall() {
 	chdir(VSCODE_ROOT);
 	const timeInstall = timing();
-	await installDependency(output, VSCODE_ROOT);
+	await installDependency(output, ARCH_RELEASE_ROOT);
 	output.success('dependencies installed.' + timeInstall()).continue();
 }
 

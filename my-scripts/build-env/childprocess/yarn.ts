@@ -1,9 +1,10 @@
 import { createWriteStream, existsSync, unlinkSync } from 'fs';
-import { PassThrough, Writable } from 'stream';
+import { PassThrough } from 'stream';
 import { chdir } from '../misc/pathUtil';
 import { pipeCommandOut } from './complex';
+import WritableStream = NodeJS.WritableStream;
 
-export async function installDependency(output: Writable, dir?: string): Promise<void> {
+export async function installDependency(output: WritableStream, dir?: string): Promise<void> {
 	if (dir && process.cwd() !== dir) {
 		chdir(dir);
 	}

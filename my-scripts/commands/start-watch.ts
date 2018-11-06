@@ -5,9 +5,11 @@ import { switchQuitKey } from '../build-env/codeblocks/switchQuitKey';
 import { cleanScreen, getCleanableStdout } from '../build-env/misc/clsUtil';
 import { VSCODE_ROOT } from '../build-env/misc/constants';
 import { isExists } from '../build-env/misc/fsUtil';
-import { runMain } from '../build-env/misc/myBuildSystem';
+import { runMain, whatIsThis } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 import { TypescriptCompileOutputStream } from '../build-env/misc/streamUtil';
+
+whatIsThis(__filename, 'start local debug IDE, require prepare-development first.');
 
 runMain(async () => {
 	await getElectronIfNot();

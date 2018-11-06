@@ -11,6 +11,10 @@ function RimDir($d) {
 	}
 }
 
+function setGlobalConst($Name, $Value) {
+	Set-Variable -Option AllScope,Constant -Force -Scope Global -Name $Name -Value $Value
+}
+
 function setSystemVar($Name, $Value) {
 	try {
 		Set-Variable -Option AllScope, ReadOnly -Force -Scope Global -Name $Name -Value $Value

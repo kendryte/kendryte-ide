@@ -86,8 +86,8 @@ powershell.exe `"$NODEJS_BIN/yarn.ps1`" %*
 "@ | Out-File -Encoding "ascii" "$NODEJS_BIN/yarn.cmd"
 
 echo @"
-[console]::WindowWidth=100
-[console]::WindowHeight=18
+[console]::WindowWidth=150
+[console]::WindowHeight=24
 [console]::BufferWidth=[console]::WindowWidth
 
 `$env:PATH='$PATH'
@@ -119,7 +119,7 @@ if (!(Get-Command python -errorAction SilentlyContinue)) {
 
 echo @"
 @echo off
-set PATH="$ORIGINAL_PATH"
+set PATH=$ORIGINAL_PATH
 C:\Windows\System32\where.exe git
 "@ | Out-File -Encoding "ascii" "$TMP/finding-git.cmd"
 $GitLocation = (cmd.exe /c "$TMP/finding-git.cmd")
@@ -127,9 +127,13 @@ if (!$GitLocation) {
 	throw "You need to install <github desktop>( https://desktop.github.com/ )."
 }
 
+
 echo @"
 @echo off
-set HOME="${ORIGINAL_HOME}"
-set Path="${ORIGINAL_PATH}"
+set HOME=${ORIGINAL_HOME}
+set Path=${ORIGINAL_PATH}
 "$GitLocation" %*
 "@ | Out-File -Encoding "ascii" "$NODEJS_BIN/git.cmd"
+
+$helpStrings = (node "my-scripts\build-env\help.js") | Out-String
+setSystemVar 'helpStrings' $helpStrings

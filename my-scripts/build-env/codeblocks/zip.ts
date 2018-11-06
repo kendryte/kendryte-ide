@@ -1,4 +1,4 @@
-import { DuplexControl } from '@gongt/stillalive';
+import { OutputStreamControl } from '@gongt/stillalive';
 import { chmod } from 'fs-extra';
 import { pipeCommandOut } from '../childprocess/complex';
 import { getPackageData, getProductData } from '../misc/fsUtil';
@@ -27,24 +27,24 @@ const zipArgs = [
 	'-mx6', // more compress
 ];
 
-export async function createPosixSfx(output: DuplexControl) {
+export async function createPosixSfx(output: OutputStreamControl) {
 	const [zip, dir] = await createArgList('7z.bin');
 	await pipeCommandOut(output, _7z, ...normalArgs, '--', zip, dir);
 	await chmod(zip, '777');
 }
 
-export async function createWindowsSfx(output: DuplexControl) {
+export async function createWindowsSfx(output: OutputStreamControl) {
 	return pipeCommandOut(output, _7z, ...normalArgs, '--', ...await createArgList('exe'));
 }
 
-export async function createWindowsZip(output: DuplexControl) {
+export async function createWindowsZip(output: OutputStreamControl) {
 	return pipeCommandOut(output, _7z, ...zipArgs, '--', ...await createArgList('exe'));
 }
 
 async function createArgList(type: string): Promise<string[]> {
 	const product = await getProductData();
 	const packageJson = await getPackageData();
-	
+
 	const pv = ('' + packageJson.patchVersion).replace(/\./g, '');
 	return [
 		`release-files/${product.applicationName}.v${packageJson.version}-${product.quality}.${pv}.${type}`,

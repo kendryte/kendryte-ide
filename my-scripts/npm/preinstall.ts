@@ -1,3 +1,7 @@
+if (process.env.BUILDING) {
+	process.exit(0);
+}
+
 import { reset_asar } from '../build-env/codeblocks/packWindows';
 import { runMain, usePretty } from '../build-env/misc/myBuildSystem';
 
