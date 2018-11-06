@@ -44,10 +44,10 @@ export async function createWindowsZip(output: DuplexControl) {
 async function createArgList(type: string): Promise<string[]> {
 	const product = await getProductData();
 	const packageJson = await getPackageData();
-
+	
 	const pv = ('' + packageJson.patchVersion).replace(/\./g, '');
 	return [
-		`${product.PRODUCT_NAME}.v${packageJson.version}-${product.quality}.${pv}.${type}`,
-		product.PRODUCT_NAME,
+		`release-files/${product.applicationName}.v${packageJson.version}-${product.quality}.${pv}.${type}`,
+		product.nameShort,
 	];
 }

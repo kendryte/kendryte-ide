@@ -1,7 +1,9 @@
-$ErrorActionPreference = "Stop"
-
-setSystemVar 'ORIGINAL_HOME' $HOME
-setSystemVar 'ORIGINAL_PATH' $env:PATH
+if (!$env:ORIGINAL_HOME) {
+	setSystemVar 'ORIGINAL_HOME' $HOME
+}
+if (!$env:ORIGINAL_PATH) {
+	setSystemVar 'ORIGINAL_PATH' $env:PATH
+}
 
 setSystemVar 'VSCODE_ROOT' (resolvePath $PSScriptRoot ..\..\..)
 setSystemVar 'RELEASE_ROOT' (resolvePath $VSCODE_ROOT .release)
@@ -15,7 +17,6 @@ setSystemVar 'NODEJS' (resolvePath $NODEJS_BIN node.exe)
 
 setSystemVar 'YARN_FOLDER' (resolvePath $RELEASE_ROOT yarn)
 setSystemVar 'YARN_CACHE_FOLDER' (resolvePath $YARN_FOLDER cache)
-
 
 setSystemVar 'PRIVATE_BINS' (resolvePath $RELEASE_ROOT wrapping-bins)
 

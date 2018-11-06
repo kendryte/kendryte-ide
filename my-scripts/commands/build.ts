@@ -5,8 +5,8 @@ import { installDependency } from '../build-env/childprocess/yarn';
 import { extractSourceCodeIfNeed } from '../build-env/codeblocks/buildExtractSource';
 import { createPosixSfx, createWindowsSfx, createWindowsZip } from '../build-env/codeblocks/zip';
 import { isMac, isWin, RELEASE_ROOT, VSCODE_ROOT } from '../build-env/misc/constants';
-import { getProductData, isExists, mkdirpSync, removeDirectory, rename } from '../build-env/misc/fsUtil';
-import { runMain, usePretty } from '../build-env/misc/myBuildSystem';
+import { getPackageData, getProductData, isExists, mkdirpSync, removeDirectory, rename } from '../build-env/misc/fsUtil';
+import { runMain, usePretty, useWriteFileStream } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 import { timing } from '../build-env/misc/timeUtil';
 import { linuxBuild } from '../build-env/posix/build-linux';
@@ -15,14 +15,28 @@ import { windowsBuild } from '../build-env/windows/build-windows';
 
 let output: DuplexControl;
 runMain(async () => {
-	const output = usePretty();
+	output = usePretty({
+		pipeTo: useWriteFileStream(resolve(RELEASE_ROOT, 'build.log')),
+	});
 	output.write('starting build...\n');
 	
 	chdir(VSCODE_ROOT);
 	process.env.BUILDING = 'yes';
 	
 	const product = await getProductData();
-	const distFolder = resolve(RELEASE_ROOT, product.PRODUCT_NAME);
+	await getPackageData();
+	
+	const distFolder = resolve(RELEASE_ROOT, product.nameShort);
+	const resultDir = resolve(RELEASE_ROOT, 'release-files');
+	
+	output.write(`Starting build
+	Release Root=${RELEASE_ROOT}
+	Product Name=${product.applicationName}
+	App Title=${product.nameShort}
+	Platform=${isWin? 'windows' : isMac? 'mac os' : 'linux'}
+	Storage=${resultDir}
+
+`);
 	
 	await cleanupBuildResult(distFolder);
 	await extractSourceCodeIfNeed(output);
@@ -45,7 +59,6 @@ runMain(async () => {
 	await rename(outputFolder, distFolder);
 	
 	chdir(RELEASE_ROOT);
-	const resultDir = resolve(RELEASE_ROOT, 'release');
 	await cleanupZipFiles(resultDir);
 	
 	output.write('creating zip...');

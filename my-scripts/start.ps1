@@ -1,13 +1,14 @@
-cd $PSScriptRoot
-
 [Console]::OutputEncoding = [Text.UTF8Encoding]::UTF8
 
+cd $PSScriptRoot
+$ErrorActionPreference = "Stop"
+
 . build-env\windows\fn.ps1
+. build-env\windows\env.ps1
 
-if (!$AlreadyInited) {
-	. build-env\windows\env.ps1
+if (!$env:AlreadyInited) {
 	. build-env\windows\init.ps1
-
+	
 	setSystemVar 'AlreadyInited' $true
 }
 
@@ -34,7 +35,7 @@ Get-ChildItem -Path my-scripts\commands -File -Filter '*.js' -Name | Foreach-Obj
 		} finally {
 			Pop-Location
 		}
-
+		
 	}.GetNewClosure()
 }
 

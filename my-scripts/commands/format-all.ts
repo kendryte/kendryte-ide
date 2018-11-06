@@ -3,7 +3,7 @@ import { PassThrough } from 'stream';
 import { getOutputCommand, pipeCommandOut } from '../build-env/childprocess/complex';
 import { ProgramError } from '../build-env/childprocess/error';
 import { RELEASE_ROOT, VSCODE_ROOT } from '../build-env/misc/constants';
-import { writeFileStream, runMain, usePretty } from '../build-env/misc/myBuildSystem';
+import { useWriteFileStream, runMain, usePretty } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 import { CollectingStream } from '../build-env/misc/streamUtil';
 import { timeout } from '../build-env/misc/timeUtil';
@@ -44,7 +44,7 @@ runMain(async () => {
 	multiplex.pipe(processor);
 	multiplex.pipe(collector);
 	multiplex.pipe(output, {end: false});
-	multiplex.pipe(writeFileStream(resolve(RELEASE_ROOT, 'hygiene.log')));
+	multiplex.pipe(useWriteFileStream(resolve(RELEASE_ROOT, 'hygiene.log')));
 
 	await await pipeCommandOut(multiplex, 'yarn', 'run', 'gulp', 'hygiene').then(() => {
 		output.success('gulp hygiene exit successful').continue();

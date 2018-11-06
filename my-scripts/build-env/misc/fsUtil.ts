@@ -120,7 +120,18 @@ export function removeDirectory(path: string, output: Writable) {
 
 let productData: any;
 
-export async function getProductData() {
+export interface IProduction {
+	nameShort: string;
+	applicationName: string;
+	quality: string;
+}
+
+export interface IPackage {
+	version: string;
+	patchVersion: string;
+}
+
+export async function getProductData(): Promise<IProduction> {
 	try {
 		const productFile = resolve(VSCODE_ROOT, 'product.json');
 		const jsonData = await readFile(productFile);
@@ -133,7 +144,7 @@ export async function getProductData() {
 
 let packageData: any;
 
-export async function getPackageData() {
+export async function getPackageData(): Promise<IPackage> {
 	try {
 		const packageFile = resolve(VSCODE_ROOT, 'package.json');
 		const jsonData = await readFile(packageFile);
