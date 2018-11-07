@@ -32,10 +32,10 @@ if ($env:HTTP_PROXY) {
 	setSystemVar 'ALL_PROXY' "$env:HTTP_PROXY"
 }
 
-setSystemVar 'TMP' "${RELEASE_ROOT}/tmp"
+setSystemVar 'TMP' (resolvePath $RELEASE_ROOT tmp)
 setSystemVar 'TEMP' "${TMP}"
 
 setSystemVar 'npm_config_arch' "x64"
 setSystemVar 'npm_config_disturl' "https://atom.io/download/electron"
 setSystemVar 'npm_config_runtime' "electron"
-setSystemVar 'npm_config_cache' "$TMP/npm-cache"
+setSystemVar 'npm_config_cache' (resolvePath $TMP npm-cache)

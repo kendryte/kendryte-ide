@@ -1,4 +1,5 @@
 function MkDir($d) {
+	# need rename to MakeNewDir
 	if (!(Test-Path -Path $d)) {
 		echo "Create Missing Directory: $d"
 		New-Item -ItemType directory -Path (Split-Path -Path $d -Parent) -Name (Split-Path -Path $d -Leaf) -Force | Out-Null
@@ -48,7 +49,11 @@ function downloadFile() {
 		echo "Downloading file From: $Uri, To: $resultDownload"
 		$tempDownload = "${resultDownload}.partial"
 		[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-		Invoke-WebRequest -Uri $Uri -OutFile $tempDownload -Proxy $proxy
+		if ($proxy) {
+			Invoke-WebRequest -Uri $Uri -OutFile $tempDownload -Proxy $proxy
+		} else {
+			Invoke-WebRequest -Uri $Uri -OutFile $tempDownload
+		}
 		Rename-Item -Path $tempDownload -NewName $resultDownload -Force
 	} else {
 		echo "Downloaded file: $resultDownload"

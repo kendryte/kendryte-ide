@@ -32,7 +32,10 @@ export function spawnWithLog(command: string, args?: ReadonlyArray<string>, opti
 	processPromise(r, [command, args], options).then(() => {
 		globalLog('Command %s success.', command);
 	}, (e: ProgramError) => {
-		globalLog('Command %s failed with error: code = %s, signal = %s\n%s', e.status, e.signal, e.stack);
+		globalLog(
+			'Command [%s] [%s]\n  Failed with error: code = %s, signal = %s\n%s',
+			command, args.join('] ['),
+			e.status, e.signal, e.stack);
 	});
 	
 	return r;

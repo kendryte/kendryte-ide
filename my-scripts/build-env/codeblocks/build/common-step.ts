@@ -16,7 +16,7 @@ export async function cleanupBuildResult(output: OutputStreamControl, dir: strin
 			await removeDirectory(backupDir, output, false);
 		}
 		output.write(`remove last build result.\n`);
-
+		
 		await rename(dir, backupDir).catch((e) => {
 			output.fail(`Cannot rename folder "${dir}", did you open any file in it?`).continue();
 			throw e;
@@ -24,7 +24,7 @@ export async function cleanupBuildResult(output: OutputStreamControl, dir: strin
 	}
 }
 
-export async function cleanupZipFiles(output: OutputStreamControl, dir: string) {
+export async function cleanupZipFiles(output: NodeJS.WritableStream, dir: string) {
 	if (await isExists(dir)) {
 		await removeDirectory(dir, output);
 	}
@@ -33,7 +33,7 @@ export async function cleanupZipFiles(output: OutputStreamControl, dir: string) 
 
 export async function yarnInstall(output: OutputStreamControl) {
 	const timeInstall = timing();
-
+	
 	const integrityFile = resolve(ARCH_RELEASE_ROOT, 'node_modules/.yarn-integrity');
 	if (await isExists(integrityFile)) {
 		await unlink(integrityFile);

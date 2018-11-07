@@ -1,5 +1,6 @@
 import { readdirSync } from 'fs';
 import { resolve } from 'path';
+import { isWin } from './misc/constants';
 import { helpTip } from './misc/myBuildSystem';
 
 process.argv.push('--what-is-this');
@@ -10,4 +11,6 @@ readdirSync(base).forEach((file) => {
 		require(resolve(base, file));
 	}
 });
-helpTip('fork', 'Open new window like this');
+if (isWin) {
+	helpTip('fork', 'Open new window like this');
+}

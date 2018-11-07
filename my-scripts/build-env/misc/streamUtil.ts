@@ -84,3 +84,11 @@ export function streamPromise(stream: Stream) {
 		});
 	}
 }
+
+export function endArg(stream: NodeJS.WritableStream) {
+	if (stream.hasOwnProperty('noEnd') || stream === process.stdout || stream === process.stderr) {
+		return {end: false};
+	} else {
+		return {end: true};
+	}
+}

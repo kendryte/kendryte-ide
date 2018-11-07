@@ -11,7 +11,7 @@ import {
 	downloadElectron,
 	yarnInstall,
 } from '../build-env/codeblocks/build/common-step';
-import { createPosixSfx, createWindowsSfx, createWindowsZip } from '../build-env/codeblocks/zip';
+import { creatingZip } from '../build-env/codeblocks/zip';
 import { cleanScreen } from '../build-env/misc/clsUtil';
 import { ARCH_RELEASE_ROOT, isMac, isWin, RELEASE_ROOT, VSCODE_ROOT } from '../build-env/misc/constants';
 import { calcCompileFolderName, getPackageData, getProductData, rename } from '../build-env/misc/fsUtil';
@@ -72,16 +72,7 @@ runMain(async () => {
 	
 	await rename(compileResultFolder, wantDirPath);
 	
-	chdir(RELEASE_ROOT);
-	await cleanupZipFiles(output, zipStoreDir);
-	
-	output.write('creating zip...');
-	if (isWin) {
-		await createWindowsSfx(output, wantDirName);
-		await createWindowsZip(output, wantDirName);
-	} else {
-		await createPosixSfx(output, wantDirName);
-	}
+	await creatingZip(output);
 	
 	output.success('complete.');
 });

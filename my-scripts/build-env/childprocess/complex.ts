@@ -1,7 +1,7 @@
 import { OutputStreamControl } from '@gongt/stillalive';
 import { PassThrough } from 'stream';
 import { spawnWithLog } from '../misc/globalOutput';
-import { BlackHoleStream, CollectingStream } from '../misc/streamUtil';
+import { BlackHoleStream, CollectingStream, endArg } from '../misc/streamUtil';
 import { mergeEnv } from './env';
 import { parseCommand, processPromise } from './handlers';
 
@@ -30,14 +30,6 @@ export async function pipeCommandBoth(
 
 export async function muteCommandOut(cmd: string, ...args: string[]): Promise<void> {
 	return pipeCommandOut(new BlackHoleStream(), cmd, ...args);
-}
-
-function endArg(stream: NodeJS.WritableStream) {
-	if (stream.hasOwnProperty('noEnd') || stream === process.stdout || stream === process.stderr) {
-		return {end: false};
-	} else {
-		return {end: true};
-	}
 }
 
 export async function pipeCommandOut(pipe: NodeJS.WritableStream, cmd: string, ...args: string[]): Promise<void> {

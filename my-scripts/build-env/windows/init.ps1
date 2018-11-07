@@ -60,7 +60,7 @@ writeScriptFile yarn-install-build-tools @"
 	[console]::WindowWidth=150
 	[console]::WindowHeight=24
 	[console]::BufferWidth=[console]::WindowWidth
-	wrapping-bins
+	
 	`$env:PATH='$PATH'
 	`$env:YARN_CACHE_FOLDER='$YARN_CACHE_FOLDER'
 	& '$NODEJS' ``
