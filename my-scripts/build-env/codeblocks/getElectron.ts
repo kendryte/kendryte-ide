@@ -16,7 +16,7 @@ export function getElectronIfNot() {
 		console.error('                           or https://npm.taobao.org/mirrors/electron/');
 		console.error('     4. place them at %s', resolve(requireEnvPath('TEMP'), 'gulp-electron-cache/atom/electron/'));
 		console.error('');
-		return pipeCommandOut(process.stderr, ...gulpCommands(), 'electron');
+		return pipeCommandOut(process.stderr, 'node', ...gulpCommands(), 'electron');
 	}).then(() => {
 		console.log('Electron has installed.');
 	}, (e) => {

@@ -3,11 +3,13 @@ import { packWindows, reset_asar } from '../build-env/codeblocks/packWindows';
 import { isWin, VSCODE_ROOT } from '../build-env/misc/constants';
 import { lstat } from '../build-env/misc/fsUtil';
 import { runMain, usePretty, whatIsThis } from '../build-env/misc/myBuildSystem';
+import { chdir } from '../build-env/misc/pathUtil';
 import './prepare-release';
 
 whatIsThis(__filename, 'install required thing for development (includes prepare-release).');
 
 runMain(async () => {
+	chdir(VSCODE_ROOT);
 	const output = usePretty();
 	if (isWin) {
 		const stat = await lstat('./node_modules');
