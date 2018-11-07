@@ -3,6 +3,7 @@
 import { MyOptions, OutputStreamControl, startWorking } from '@gongt/stillalive';
 import { closeSync, createReadStream, createWriteStream, ftruncateSync, openSync, ReadStream, WriteStream } from 'fs';
 import { basename } from 'path';
+import { useThisStream } from './globalOutput';
 
 export interface DisposeFunction {
 	(e?: Error): void;
@@ -50,7 +51,7 @@ export function runMain(main: () => Promise<void>) {
 				'\n\n\x1B[38;5;9mCommand Failed:\n\t%s\x1B[0m\n  Working Directory: %s\n  Program is:\n%s',
 				e.message,
 				e.__cwd,
-				e.__program.replace(/^/g, '    '),
+				e.__program.replace(/^/mg, '    '),
 			);
 		} else {
 			console.error('\n\n\x1B[38;5;9mCommand Failed:\n\t%s\x1B[0m', e.stack);
@@ -68,10 +69,14 @@ export function runMain(main: () => Promise<void>) {
 	});
 }
 
+useThisStream(process.stderr);
+
 export function usePretty(opts?: MyOptions): OutputStreamControl {
 	const stream = startWorking();
+	useThisStream(stream);
 	Object.assign(stream, {noEnd: true});
 	mainDispose((error: Error) => {
+		useThisStream(process.stderr);
 		if (error) {
 			stream.fail(error.message);
 		}

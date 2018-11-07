@@ -72,3 +72,12 @@ function writeCmdFile() {
 	
 	echo $Script.Replace("`n", "`r`n") | Out-File -FilePath "$PRIVATE_BINS\$Name.bat" -Encoding "ascii"
 }
+
+function writeShFile() {
+	param (
+		[parameter(Mandatory = $true)] [String] $Name,
+		[parameter(Mandatory = $true)] [String] $Script
+	)
+	
+	echo $Script | Out-File -FilePath "$PRIVATE_BINS\$Name"
+}

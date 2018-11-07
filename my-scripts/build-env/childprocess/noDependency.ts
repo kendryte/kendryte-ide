@@ -5,7 +5,7 @@ import { parseCommand, processPromise } from './handlers';
 
 /* No use any node_modules deps */
 
-function _shellSync(stdio: StdioOptions, cmd: string, args: string[]) {
+function _shellSync(stdio: StdioOptions, cmd: string, args: ReadonlyArray<string>) {
 	const r = spawnSync(cmd, args, {
 		stdio,
 		encoding: 'utf8',
@@ -19,24 +19,24 @@ function _shellSync(stdio: StdioOptions, cmd: string, args: string[]) {
 }
 
 export function shellExec(cmd: string, ...args: string[]): void {
-	[cmd, args] = parseCommand(cmd, args);
-	console.log(' + %s %s | pipe-output', cmd, args.join(' '));
-	_shellSync('inherit', cmd, args);
+	const [command, argumentList] = parseCommand(cmd, args);
+	console.log(' + %s %s | pipe-output', command, argumentList.join(' '));
+	_shellSync('inherit', command, argumentList);
 }
 
 export function shellExecAsync(cmd: string, ...args: string[]): Promise<void> {
-	[cmd, args] = parseCommand(cmd, args);
-	console.log(' + %s %s | pipe-output', cmd, args.join(' '));
-	const r = spawn(cmd, args, {
+	const [command, argumentList] = parseCommand(cmd, args);
+	console.log(' + %s %s | pipe-output', command, argumentList.join(' '));
+	const r = spawn(command, argumentList, {
 		stdio: 'inherit',
 		...mergeEnv(),
 	});
-	return processPromise(r, [cmd, args]);
+	return processPromise(r, [command, argumentList]);
 }
 
 export function shellOutput(cmd: string, ...args: string[]): string {
-	[cmd, args] = parseCommand(cmd, args);
-	console.log(' + %s %s | read-output', cmd, args.join(' '));
-	const r = _shellSync(['ignore', 'pipe', 'ignore'], cmd, args);
+	const [command, argumentList] = parseCommand(cmd, args);
+	console.log(' + %s %s | read-output', command, argumentList.join(' '));
+	const r = _shellSync(['ignore', 'pipe', 'ignore'], command, argumentList);
 	return r.stdout;
 }

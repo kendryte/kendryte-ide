@@ -6,6 +6,7 @@ import { getPackageData, getProductData } from '../misc/fsUtil';
 const _7z = require('7zip')['7z'];
 
 const commonArgs = [
+	'a',
 	'-y', // --yes
 	'-r', // recurse subdirectories
 	'-ssc', // sensitive case mode
@@ -17,7 +18,7 @@ const normalArgs = [
 	'-sfx7zCon.sfx', // self extraction
 	'-mx8', // more compress
 	'-m0=lzma2', // use LZMA2
-	'-d=256m', // dictionary size
+	'-md=256m', // dictionary size
 	'-mfb=64', // word size
 ];
 
@@ -29,16 +30,16 @@ const zipArgs = [
 
 export async function createPosixSfx(output: OutputStreamControl, whatToZip: string) {
 	const zipFileName = await distFilePath('7z.bin');
-	await pipeCommandOut(output, _7z, ...normalArgs, '--', zipFileName, whatToZip);
+	await pipeCommandOut(output, _7z, ...normalArgs, '--', zipFileName, whatToZip + '/*');
 	await chmod(zipFileName, '777');
 }
 
 export async function createWindowsSfx(output: OutputStreamControl, whatToZip: string) {
-	return pipeCommandOut(output, _7z, ...normalArgs, '--', await distFilePath('exe'), whatToZip);
+	return pipeCommandOut(output, _7z, ...normalArgs, '--', await distFilePath('exe'), whatToZip + '/*');
 }
 
 export async function createWindowsZip(output: OutputStreamControl, whatToZip: string) {
-	return pipeCommandOut(output, _7z, ...zipArgs, '--', await distFilePath('zip'), whatToZip);
+	return pipeCommandOut(output, _7z, ...zipArgs, '--', await distFilePath('zip'), whatToZip + '/*');
 }
 
 async function distFilePath(type: string): Promise<string> {

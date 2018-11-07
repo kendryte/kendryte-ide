@@ -26,27 +26,24 @@ const passingPathEnvironments = [
 	'PREFIX',
 	'YARN_CACHE_FOLDER',
 	'PRIVATE_BINS',
-	'PATH',
 	'TMP',
 	'TEMP',
 	'npm_config_cache',
 ].map(isWin? exportCrossPlatformEnvironment : exportSimpleEnvironment);
-
-function exportSimpleEnvironment(envName: string) {
-	return `export ${envName}=${JSON.stringify(process.env[envName])}`;
-}
-
-function exportCrossPlatformEnvironment(envName: string) {
-	const paths = process.env[envName].split(';').map((path) => {
-		path = normalize(path);
-		path = path.replace(/^([a-z]):\\/i, (m0, drive) => {
-			return '/' + drive.toLowerCase() + '/';
-		});
-		path = path.replace(/\\/g, '/');
-		return path;
-	});
-	
-	return `export ${envName}=${JSON.stringify(paths.join(':'))}`;
+let passingPath: string[];
+if (isWin) {
+	const mergingPath = process.env.Path;
+	const npmContent = `#!/bin/sh
+"$NODEJS" "$VSCODE_ROOT/my-scripts/build-env/mock-npm.js"
+`.trim();
+	passingPath = [
+		'unset path',
+		'unset Path',
+		'echo -e ' + JSON.stringify(npmContent) + ' \\"\\$@\\" > "${PRIVATE_BINS}/npm"',
+		'export PATH=' + JSON.stringify(parsePathVariable(mergingPath) + ':$PATH'),
+	];
+} else {
+	passingPath = [exportSimpleEnvironment('PATH')];
 }
 
 const hooksDir = resolve(VSCODE_ROOT, '.git', 'hooks');
@@ -72,8 +69,30 @@ readdirSync(hooksDir).forEach((item: string) => {
 		installedMark,
 		...passingSimpleEnvironments,
 		...passingPathEnvironments,
+		...passingPath,
 		installedMarkEnd,
 	);
 	
 	writeFileSync(item, lines.join('\n'), 'utf8');
 });
+
+function exportSimpleEnvironment(envName: string) {
+	return `export ${envName}=${JSON.stringify(process.env[envName])}`;
+}
+
+function exportCrossPlatformEnvironment(envName: string) {
+	const paths = parsePathVariable(process.env[envName]);
+	
+	return `export ${envName}=${JSON.stringify(paths)}`;
+}
+
+function parsePathVariable(value: string) {
+	return value.split(';').filter(e => e.length > 0).map((path) => {
+		path = normalize(path);
+		path = path.replace(/^([a-z]):\\/i, (m0, drive) => {
+			return '/' + drive.toLowerCase() + '/';
+		});
+		path = path.replace(/\\/g, '/');
+		return path;
+	}).join(':');
+}

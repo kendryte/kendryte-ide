@@ -75,7 +75,7 @@ writeScriptFile yarn-install-build-tools @"
 ### npm
 writeCmdFile npm @"
 	@echo off
-	set YARN_PS=$PRIVATE_BINS/yarn.ps1
+	set PRIVATE_BINS=$PRIVATE_BINS
 	"$NODEJS" "$VSCODE_ROOT\my-scripts\build-env\mock-npm.js" %*
 "@
 ### npm

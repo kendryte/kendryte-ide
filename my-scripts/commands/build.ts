@@ -48,7 +48,8 @@ runMain(async () => {
 	
 	chdir(RELEASE_ROOT);
 	const wantDirName = await calcCompileFolderName();
-	await cleanupBuildResult(output, resolve(RELEASE_ROOT, wantDirName));
+	const wantDirPath = resolve(RELEASE_ROOT, wantDirName);
+	await cleanupBuildResult(output, wantDirPath);
 	
 	await extractSourceCodeIfNeed(output);
 	await yarnInstall(output);
@@ -69,7 +70,7 @@ runMain(async () => {
 	}
 	output.success('Package Created.' + timeBuild()).continue();
 	
-	await rename(compileResultFolder, wantDirName);
+	await rename(compileResultFolder, wantDirPath);
 	
 	chdir(RELEASE_ROOT);
 	await cleanupZipFiles(output, zipStoreDir);
