@@ -1,10 +1,11 @@
 import { OutputStreamControl } from '@gongt/stillalive';
 import { readFileSync, rename, unlinkSync, writeFileSync } from 'fs';
+import { copy, mkdir, readdir } from 'fs-extra';
 import { resolve } from 'path';
 import { pipeCommandOut } from '../childprocess/complex';
 import { installDependency } from '../childprocess/yarn';
 import { VSCODE_ROOT } from '../misc/constants';
-import { isExistsSync, isLinkSync, removeDirectory } from '../misc/fsUtil';
+import { isExists, isExistsSync, isLinkSync, removeDirectory, writeFile } from '../misc/fsUtil';
 import { chdir, ensureChdir, yarnPackageDir } from '../misc/pathUtil';
 import { timing } from '../misc/timeUtil';
 import { gulpCommands } from './gulp';
@@ -55,6 +56,11 @@ export async function packWindows(output: OutputStreamControl) {
 		originalPkg.devDependencies[item] = originalPkg.dependencies[item];
 	});
 	
+	/// dependencies - install
+	const timeOutProd = timing();
+	await installDependency(output, prodDepsDir);
+	output.success('production dependencies installed.' + timeOutProd()).continue();
+	
 	//// devDependencies
 	log('  create devDependencies');
 	ensureChdir(devDepsDir);
@@ -67,20 +73,31 @@ export async function packWindows(output: OutputStreamControl) {
 	writeFileSync('yarn.lock', originalLock);
 	output.success('basic files write complete.').continue();
 	
-	/* start install */
+	//// devDependencies - husky
+	if (!await isExists('.git')) {
+		await pipeCommandOut(output, 'git', 'init', '.');
+		await writeFile('.gitignore', '*');
+		output.success('dummy git repo created.').continue();
+	}
+	const huskyHooks = resolve(devDepsDir, '.git', 'hooks');
+	await removeDirectory(huskyHooks, output);
+	await mkdir(huskyHooks);
+	
+	/// devDependencies - install
 	const timeOutDev = timing();
 	await installDependency(output, devDepsDir);
 	output.success('development dependencies installed.' + timeOutDev()).continue();
 	
+	//// devDependencies - husky (ensure)
+	await pipeCommandOut(output, 'node', 'node_modules/husky/bin/install.js');
+	
+	/// devDependencies - link to working tree
 	const devDepsStore = resolve(devDepsDir, 'node_modules');
 	log(`create link from ${devDepsStore} to ${root}`);
 	const lnk = require('lnk');
 	await lnk([devDepsStore], root);
 	
-	const timeOutProd = timing();
-	await installDependency(output, prodDepsDir);
-	output.success('production dependencies installed.' + timeOutProd()).continue();
-	
+	/// ASAR
 	log('create ASAR package');
 	chdir(root);
 	const timeOutZip = timing();
@@ -105,9 +122,12 @@ export async function packWindows(output: OutputStreamControl) {
 	});
 	output.success('ASAR moved to root.').continue();
 	
+	/// install child node_modules by default script
 	log('run post-install script');
 	chdir(root);
 	await pipeCommandOut(output, 'yarn', 'run', 'postinstall');
+	
+	await copy(huskyHooks, resolve(VSCODE_ROOT, '.git', 'hooks'));
 	
 	output.success('Everything complete.').continue();
 }

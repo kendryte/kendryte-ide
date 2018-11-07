@@ -11,7 +11,7 @@ setSystemVar 'ARCH_RELEASE_ROOT' (resolvePath $RELEASE_ROOT kendryte-ide-release
 setSystemVar 'FAKE_HOME' (resolvePath $RELEASE_ROOT FAKE_HOME)
 setSystemVar 'HOME' $FAKE_HOME
 
-setSystemVar 'NODEJS_INSTALL' (resolvePath $HOME nodejs)
+setSystemVar 'NODEJS_INSTALL' (resolvePath $RELEASE_ROOT nodejs)
 setSystemVar 'NODEJS_BIN' $NODEJS_INSTALL
 setSystemVar 'NODEJS' (resolvePath $NODEJS_BIN node.exe)
 

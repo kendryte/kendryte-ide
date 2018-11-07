@@ -28,14 +28,6 @@ export async function extractSourceCodeIfNeed(output: OutputStreamControl) {
 		await saveHash('source-code', hash, output);
 		output.success('complete action on create source:' + timeOut()).continue();
 	}
-	
-	const dummyGit = resolve(RELEASE_ROOT, '.git');
-	if (!await isExists(dummyGit)) {
-		chdir(RELEASE_ROOT);
-		await pipeCommandOut(output, 'git', 'init', '.');
-		await writeFile(dummyGit + 'ignore', '*');
-		output.success('dummy git repo created.').continue();
-	}
 }
 
 async function createSourceSnapshot(output: OutputStreamControl) {

@@ -12,7 +12,7 @@ function RimDir($d) {
 }
 
 function setGlobalConst($Name, $Value) {
-	Set-Variable -Option AllScope,Constant -Force -Scope Global -Name $Name -Value $Value
+	Set-Variable -Option AllScope, Constant -Force -Scope Global -Name $Name -Value $Value
 }
 
 function setSystemVar($Name, $Value) {
@@ -29,12 +29,12 @@ function resolvePath() {
 		[parameter(Mandatory = $true)] [String[]] $Parent,
 		[parameter(Mandatory = $true, ValueFromRemainingArguments = $true)] [String[]] $childrens
 	)
-
+	
 	$current = $Parent
 	foreach ($element in $childrens) {
 		$current = (Join-Path $current $element)
 	}
-
+	
 	return ([IO.Path]::GetFullPath($current))
 }
 
@@ -43,7 +43,7 @@ function downloadFile() {
 		[parameter(Mandatory = $true)] [String] $Uri,
 		[parameter(Mandatory = $true)] [String] $resultDownload
 	)
-
+	
 	if (!(Test-Path -Path $resultDownload)) {
 		echo "Downloading file From: $Uri, To: $resultDownload"
 		$tempDownload = "${resultDownload}.partial"
@@ -53,4 +53,22 @@ function downloadFile() {
 	} else {
 		echo "Downloaded file: $resultDownload"
 	}
+}
+
+function writeScriptFile() {
+	param (
+		[parameter(Mandatory = $true)] [String] $Name,
+		[parameter(Mandatory = $true)] [String] $Script
+	)
+	
+	echo $Script | Out-File -FilePath "$PRIVATE_BINS\$Name.ps1"
+}
+
+function writeCmdFile() {
+	param (
+		[parameter(Mandatory = $true)] [String] $Name,
+		[parameter(Mandatory = $true)] [String] $Script
+	)
+	
+	echo $Script.Replace("`n", "`r`n") | Out-File -FilePath "$PRIVATE_BINS\$Name.bat" -Encoding "ascii"
 }

@@ -13,7 +13,7 @@ if (!(Test-Path -Path $NODEJS)) {
 	Copy-Item "$TMP/node.exe" "$NODEJS" -Force
 }
 
-if (!(Test-Path -Path "$NODEJS_BIN/yarn.ps1")) {
+if (!(Test-Path -Path "$PRIVATE_BINS/yarn.ps1")) {
 	$tempDir = "$TMP/yarn-install"
 	MkDir $tempDir
 	
@@ -50,55 +50,75 @@ if (!(Test-Path -Path "$NODEJS_BIN/yarn.ps1")) {
 echo "Detect Node.js: $( & $NODEJS --version )"
 setSystemVar 'npm_config_target' $( cd $VSCODE_ROOT; node -p "require('./build/lib/electron').getElectronVersion();" )
 
-echo @"
-`$env:npm_config_arch='$npm_config_arch'
-`$env:npm_config_disturl='$npm_config_disturl'
-`$env:npm_config_runtime='$npm_config_runtime'
-`$env:npm_config_cache='$npm_config_cache'
-`$env:npm_config_target='$npm_config_target'
-`$env:VSCODE_ROOT='$VSCODE_ROOT'
-`$env:YARN_FOLDER='$YARN_FOLDER'
-`$env:YARN_CACHE_FOLDER='$YARN_CACHE_FOLDER'
-if( `$args.Count -eq 0 ) {
-	`$args += ('install')
+& $NODEJS "$VSCODE_ROOT/my-scripts/build-env/windows/pathinfo.js"
+if (!$?) {
+	throw "Network location ($VSCODE_ROOT) is not supported."
 }
 
-`$BL=""
-if ( `$args[0] -eq "global" ) {
-	`$BL="--no-bin-links"
-} else {
-	`$BL="--bin-links"
-}
+### yarn-install-build-tools
+writeScriptFile yarn-install-build-tools @"
+	[console]::WindowWidth=150
+	[console]::WindowHeight=24
+	[console]::BufferWidth=[console]::WindowWidth
+	wrapping-bins
+	`$env:PATH='$PATH'
+	`$env:YARN_CACHE_FOLDER='$YARN_CACHE_FOLDER'
+	& '$NODEJS' ``
+		'$NODEJS_INSTALL\node_modules\yarn\bin\yarn.js' ``
+		global add windows-build-tools --vs2015 ``
+			--prefer-offline --no-default-rc --no-bin-links ``
+			--cache-folder '$YARN_CACHE_FOLDER' ``
+	pause
+"@
+### yarn-install-build-tools
 
-& '$NODEJS' ``
-	'$NODEJS_INSTALL\node_modules\yarn\bin\yarn.js' ``
-		--prefer-offline --no-default-rc `$BL ``
-		--use-yarnrc '$VSCODE_ROOT/.yarnrc' ``
-		--cache-folder '$YARN_CACHE_FOLDER' ``
-		--global-folder '$NODEJS_INSTALL' ``
-		--link-folder '$NODEJS_INSTALL\node_modules' ``
-	`$args
-"@ > "$NODEJS_BIN/yarn.ps1"
+### npm
+writeCmdFile npm @"
+	@echo off
+	set YARN_PS=$PRIVATE_BINS/yarn.ps1
+	"$NODEJS" "$VSCODE_ROOT\my-scripts\build-env\mock-npm.js" %*
+"@
+### npm
 
-echo @"
-@echo off
-powershell.exe `"$NODEJS_BIN/yarn.ps1`" %*
-"@ | Out-File -Encoding "ascii" "$NODEJS_BIN/yarn.cmd"
+### yarn
+writeCmdFile yarn @"
+	@echo off
+	powershell.exe `"$PRIVATE_BINS/yarn.ps1`" %*
+"@
+### yarn
 
-echo @"
-[console]::WindowWidth=150
-[console]::WindowHeight=24
-[console]::BufferWidth=[console]::WindowWidth
-
-`$env:PATH='$PATH'
-`$env:YARN_CACHE_FOLDER='$YARN_CACHE_FOLDER'
-& '$NODEJS' ``
-	'$NODEJS_INSTALL\node_modules\yarn\bin\yarn.js' ``
-	global add windows-build-tools --vs2015 ``
-		--prefer-offline --no-default-rc --no-bin-links ``
-		--cache-folder '$YARN_CACHE_FOLDER' ``
-pause
-"@  > "$NODEJS_BIN/yarn-install-build-tools.ps1"
+### yarn.ps
+writeScriptFile yarn @"
+	`$env:npm_config_arch='$npm_config_arch'
+	`$env:npm_config_disturl='$npm_config_disturl'
+	`$env:npm_config_runtime='$npm_config_runtime'
+	`$env:npm_config_cache='$npm_config_cache'
+	`$env:npm_config_target='$npm_config_target'
+	`$env:VSCODE_ROOT='$VSCODE_ROOT'
+	`$env:YARN_FOLDER='$YARN_FOLDER'
+	`$env:YARN_CACHE_FOLDER='$YARN_CACHE_FOLDER'
+	`$env:PREFIX='$YARN_FOLDER'
+	if( `$args.Count -eq 0 ) {
+		`$args += ('install')
+	}
+	
+	`$BL=""
+	if ( `$args[0] -eq "global" ) {
+		`$BL="--no-bin-links"
+	} else {
+		`$BL="--bin-links"
+	}
+	
+	& '$NODEJS' ``
+		'$NODEJS_INSTALL\node_modules\yarn\bin\yarn.js' ``
+			--prefer-offline --no-default-rc `$BL ``
+			--use-yarnrc '$VSCODE_ROOT/.yarnrc' ``
+			--cache-folder '$YARN_CACHE_FOLDER' ``
+			--global-folder '$NODEJS_INSTALL' ``
+			--link-folder '$NODEJS_INSTALL\node_modules' ``
+		`$args
+"@
+### yarn.ps
 
 if (!(Get-Command python -errorAction SilentlyContinue)) {
 	echo "================================================="
@@ -117,23 +137,31 @@ if (!(Get-Command python -errorAction SilentlyContinue)) {
 	throw "python cannot not install at $PythonPath, please install windows-build-tools and try again."
 }
 
-echo @"
-@echo off
-set PATH=$ORIGINAL_PATH
-C:\Windows\System32\where.exe git
-"@ | Out-File -Encoding "ascii" "$TMP/finding-git.cmd"
-$GitLocation = (cmd.exe /c "$TMP/finding-git.cmd")
-if (!$GitLocation) {
-	throw "You need to install <github desktop>( https://desktop.github.com/ )."
+if (!(Test-Path -Path "$PRIVATE_BINS/git.bat")) {
+	writeCmdFile finding-git @"
+		@echo off
+		set PATH=$ORIGINAL_PATH
+		C:\Windows\System32\where.exe git
+"@
+	$GitLocation = (cmd.exe /c "finding-git")
+	if (!$GitLocation) {
+		throw "You need to install <github desktop>( https://desktop.github.com/ )."
+	}
+	
+	cd $RELEASE_ROOT
+	if (!(Test-Path -Path '.git')) {
+		git init .
+		echo '*' | Out-File .gitignore
+	}
+	
+	writeCmdFile git @"
+		@echo off
+		set HOME=${ORIGINAL_HOME}
+		set Path=${ORIGINAL_PATH}
+	"$GitLocation" %*
+"@
 }
 
-
-echo @"
-@echo off
-set HOME=${ORIGINAL_HOME}
-set Path=${ORIGINAL_PATH}
-"$GitLocation" %*
-"@ | Out-File -Encoding "ascii" "$NODEJS_BIN/git.cmd"
-
+cd $VSCODE_ROOT
 $helpStrings = (node "my-scripts\build-env\help.js") | Out-String
 setSystemVar 'helpStrings' $helpStrings
