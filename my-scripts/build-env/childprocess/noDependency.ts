@@ -1,6 +1,7 @@
 import { spawn, spawnSync, StdioOptions } from 'child_process';
-import { StatusCodeError, ThrowStatusCodeError } from './error';
-import { parseCommand } from './handlers';
+import { mergeEnv } from './env';
+import { ThrowStatusCodeError } from './error';
+import { parseCommand, processPromise } from './handlers';
 
 /* No use any node_modules deps */
 
@@ -8,11 +9,12 @@ function _shellSync(stdio: StdioOptions, cmd: string, args: string[]) {
 	const r = spawnSync(cmd, args, {
 		stdio,
 		encoding: 'utf8',
+		...mergeEnv(),
 	});
 	if (r.error) {
 		throw r.error;
 	}
-	ThrowStatusCodeError(r.status, r.signal);
+	ThrowStatusCodeError(r.status, r.signal, [cmd, args, process.cwd()]);
 	return r;
 }
 
@@ -27,22 +29,9 @@ export function shellExecAsync(cmd: string, ...args: string[]): Promise<void> {
 	console.log(' + %s %s | pipe-output', cmd, args.join(' '));
 	const r = spawn(cmd, args, {
 		stdio: 'inherit',
+		...mergeEnv(),
 	});
-	return new Promise((resolve, reject) => {
-		const wrappedCallback = (err, data) => err? reject(err) : resolve(data);
-
-		r.on('error', (e) => {
-			reject(e);
-		});
-		r.on('exit', (status: number, signal: string) => {
-			const e = StatusCodeError(status, signal);
-			if (e) {
-				reject(e);
-			} else {
-				resolve();
-			}
-		});
-	});
+	return processPromise(r, [cmd, args]);
 }
 
 export function shellOutput(cmd: string, ...args: string[]): string {

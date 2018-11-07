@@ -46,9 +46,14 @@ export function runMain(main: () => Promise<void>) {
 		});
 	}, (e) => {
 		if (e.__programError) {
-			console.error('\x1B[38;5;9mCommand Failed:\n\t%s\x1B[0m', e.message);
+			console.error(
+				'\n\n\x1B[38;5;9mCommand Failed:\n\t%s\x1B[0m\n  Working Directory: %s\n  Program is:\n%s',
+				e.message,
+				e.__cwd,
+				e.__program.replace(/^/g, '    '),
+			);
 		} else {
-			console.error('\x1B[38;5;9mCommand Failed:\n\t%s\x1B[0m', e.stack);
+			console.error('\n\n\x1B[38;5;9mCommand Failed:\n\t%s\x1B[0m', e.stack);
 		}
 		disposeList.forEach((cb) => {
 			cb(e);

@@ -14,7 +14,7 @@ import {
 import { resolve } from 'path';
 import * as rimraf from 'rimraf';
 import { promisify } from 'util';
-import { isWin, VSCODE_ROOT } from './constants';
+import { isMac, isWin, VSCODE_ROOT } from './constants';
 import { timeout } from './timeUtil';
 
 /* No use any node_modules deps */
@@ -96,25 +96,35 @@ function wrapFs(of: Function, output: NodeJS.WritableStream): Function {
 	}) as any;
 }
 
-export function removeDirectory(path: string, output: NodeJS.WritableStream) {
-	output.write(`removing direcotry: ${path}...\n`);
-	const p = new Promise<void>((resolve, reject) => {
+export function removeDirectory(path: string, output: NodeJS.WritableStream, verbose = true) {
+	output.write(`removing directory: ${path}...\n`);
+	let p = new Promise<void>((resolve, reject) => {
 		const wrappedCallback = (err) => err? reject(err) : resolve();
 		
 		rimraf(path, {
 			maxBusyTries: 5,
 			emfileWait: true,
 			disableGlob: true,
-			unlink: wrapFs(unlinkAsync, output) as typeof unlinkAsync,
-			rmdir: wrapFs(rmdirAsync, output) as typeof rmdirAsync,
+			unlink: verbose? wrapFs(unlinkAsync, output) as typeof unlinkAsync : unlinkAsync,
+			rmdir: verbose? wrapFs(rmdirAsync, output) as typeof rmdirAsync : rmdirAsync,
 		}, wrappedCallback);
 	});
 	
+	p = p.then(() => {
+		output.write(`remove complete. delay for OS.\n`);
+	});
+	
 	if (isWin) {
-		return p.then(() => timeout(5000));
+		p = p.then(() => timeout(5000));
 	} else {
-		return p.then(() => timeout(500));
+		p = p.then(() => timeout(500));
 	}
+	
+	p = p.then(() => {
+		output.write(`remove directory finish.\n`);
+	});
+	
+	return p;
 }
 
 let productData: any;
@@ -128,6 +138,11 @@ export interface IProduction {
 export interface IPackage {
 	version: string;
 	patchVersion: string;
+}
+
+export async function calcCompileFolderName() {
+	const product = await getProductData();
+	return product.nameShort + (isMac? '.app' : '');
 }
 
 export async function getProductData(): Promise<IProduction> {

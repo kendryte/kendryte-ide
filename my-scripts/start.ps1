@@ -1,6 +1,6 @@
 [Console]::OutputEncoding = [Text.UTF8Encoding]::UTF8
 chcp 65001 | Out-Null
-#$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Stop"
 
 cd $PSScriptRoot
 . build-env\windows\fn.ps1

@@ -7,6 +7,7 @@ import { VSCODE_ROOT } from '../misc/constants';
 import { isExistsSync, isLinkSync, removeDirectory } from '../misc/fsUtil';
 import { chdir, ensureChdir, yarnPackageDir } from '../misc/pathUtil';
 import { timing } from '../misc/timeUtil';
+import { gulpCommands } from './gulp';
 
 export async function reset_asar(output: OutputStreamControl) {
 	chdir(VSCODE_ROOT);
@@ -26,18 +27,18 @@ export async function packWindows(output: OutputStreamControl) {
 	function log(s: string) {
 		output.write(s + '\n');
 	}
-
+	
 	const devDepsDir = yarnPackageDir('devDependencies');
 	const prodDepsDir = yarnPackageDir('dependencies');
-
+	
 	chdir(VSCODE_ROOT);
 	const root = process.cwd();
 	log('  sourceRoot = ' + root);
 	log('  packageRoot = ' + yarnPackageDir('.'));
-
+	
 	const originalPkg = require(resolve(root, 'package.json'));
 	const originalLock = readFileSync(resolve(root, 'yarn.lock'));
-
+	
 	//// dependencies
 	log('  create dependencies');
 	ensureChdir(prodDepsDir);
@@ -48,12 +49,12 @@ export async function packWindows(output: OutputStreamControl) {
 		},
 	}));
 	writeFileSync('yarn.lock', originalLock);
-
+	
 	const bothDependencies = ['applicationinsights', 'source-map-support'];
 	bothDependencies.forEach((item) => {
 		originalPkg.devDependencies[item] = originalPkg.dependencies[item];
 	});
-
+	
 	//// devDependencies
 	log('  create devDependencies');
 	ensureChdir(devDepsDir);
@@ -65,27 +66,27 @@ export async function packWindows(output: OutputStreamControl) {
 	}));
 	writeFileSync('yarn.lock', originalLock);
 	output.success('basic files write complete.').continue();
-
+	
 	/* start install */
 	const timeOutDev = timing();
 	await installDependency(output, devDepsDir);
 	output.success('development dependencies installed.' + timeOutDev()).continue();
-
+	
 	const devDepsStore = resolve(devDepsDir, 'node_modules');
 	log(`create link from ${devDepsStore} to ${root}`);
 	const lnk = require('lnk');
 	await lnk([devDepsStore], root);
-
+	
 	const timeOutProd = timing();
 	await installDependency(output, prodDepsDir);
 	output.success('production dependencies installed.' + timeOutProd()).continue();
-
+	
 	log('create ASAR package');
 	chdir(root);
 	const timeOutZip = timing();
-	await pipeCommandOut(output, process.argv0, resolve(devDepsStore, 'gulp/bin/gulp.js'), '--gulpfile', 'my-scripts/gulpfile/pack-win.js');
+	await pipeCommandOut(output, 'node', ...gulpCommands(), '--gulpfile', 'my-scripts/gulpfile/pack-win.js');
 	output.success('ASAR created.' + timeOutProd()).continue();
-
+	
 	log('move ASAR package to source root');
 	chdir(root);
 	await new Promise((_resolve, reject) => {
@@ -103,10 +104,10 @@ export async function packWindows(output: OutputStreamControl) {
 			wrappedCallback);
 	});
 	output.success('ASAR moved to root.').continue();
-
+	
 	log('run post-install script');
 	chdir(root);
 	await pipeCommandOut(output, 'yarn', 'run', 'postinstall');
-
+	
 	output.success('Everything complete.').continue();
 }

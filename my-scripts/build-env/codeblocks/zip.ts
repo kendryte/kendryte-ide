@@ -27,27 +27,24 @@ const zipArgs = [
 	'-mx6', // more compress
 ];
 
-export async function createPosixSfx(output: OutputStreamControl) {
-	const [zip, dir] = await createArgList('7z.bin');
-	await pipeCommandOut(output, _7z, ...normalArgs, '--', zip, dir);
-	await chmod(zip, '777');
+export async function createPosixSfx(output: OutputStreamControl, whatToZip: string) {
+	const zipFileName = await distFilePath('7z.bin');
+	await pipeCommandOut(output, _7z, ...normalArgs, '--', zipFileName, whatToZip);
+	await chmod(zipFileName, '777');
 }
 
-export async function createWindowsSfx(output: OutputStreamControl) {
-	return pipeCommandOut(output, _7z, ...normalArgs, '--', ...await createArgList('exe'));
+export async function createWindowsSfx(output: OutputStreamControl, whatToZip: string) {
+	return pipeCommandOut(output, _7z, ...normalArgs, '--', await distFilePath('exe'), whatToZip);
 }
 
-export async function createWindowsZip(output: OutputStreamControl) {
-	return pipeCommandOut(output, _7z, ...zipArgs, '--', ...await createArgList('exe'));
+export async function createWindowsZip(output: OutputStreamControl, whatToZip: string) {
+	return pipeCommandOut(output, _7z, ...zipArgs, '--', await distFilePath('zip'), whatToZip);
 }
 
-async function createArgList(type: string): Promise<string[]> {
+async function distFilePath(type: string): Promise<string> {
 	const product = await getProductData();
 	const packageJson = await getPackageData();
-
+	
 	const pv = ('' + packageJson.patchVersion).replace(/\./g, '');
-	return [
-		`release-files/${product.applicationName}.v${packageJson.version}-${product.quality}.${pv}.${type}`,
-		product.nameShort,
-	];
+	return `release-files/${product.applicationName}.v${packageJson.version}-${product.quality}.${pv}.${type}`;
 }

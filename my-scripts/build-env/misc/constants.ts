@@ -1,6 +1,4 @@
-import { readFileSync } from 'fs';
 import { platform } from 'os';
-import { resolve } from "path";
 /* No use any node_modules deps */
 
 if (!process.env.RELEASE_ROOT) {

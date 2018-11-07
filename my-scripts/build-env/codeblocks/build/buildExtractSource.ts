@@ -4,13 +4,13 @@ import { createWriteStream } from 'fs';
 import { resolve } from 'path';
 import { PassThrough } from 'stream';
 import { extract } from 'tar-fs';
-import { getOutputCommand, muteCommandOut, pipeCommandBoth, pipeCommandOut } from '../childprocess/complex';
-import { ARCH_RELEASE_ROOT, RELEASE_ROOT, VSCODE_ROOT } from '../misc/constants';
-import { isExists, removeDirectory, rename, writeFile } from '../misc/fsUtil';
-import { chdir } from '../misc/pathUtil';
-import { streamPromise } from '../misc/streamUtil';
-import { timing } from '../misc/timeUtil';
-import { compareHash, saveHash } from './statusHash';
+import { getOutputCommand, muteCommandOut, pipeCommandBoth, pipeCommandOut } from '../../childprocess/complex';
+import { ARCH_RELEASE_ROOT, RELEASE_ROOT, VSCODE_ROOT } from '../../misc/constants';
+import { isExists, removeDirectory, rename, writeFile } from '../../misc/fsUtil';
+import { chdir } from '../../misc/pathUtil';
+import { streamPromise } from '../../misc/streamUtil';
+import { timing } from '../../misc/timeUtil';
+import { compareHash, saveHash } from '../statusHash';
 
 export async function extractSourceCodeIfNeed(output: OutputStreamControl) {
 	chdir(VSCODE_ROOT);
@@ -72,7 +72,7 @@ async function recreateSourceCodes(output: OutputStreamControl) {
 			await rename(node_modules, temp_node_modules);
 		}
 		output.writeln('remove old source code...');
-		await removeDirectory(ARCH_RELEASE_ROOT, output).catch((e) => {
+		await removeDirectory(ARCH_RELEASE_ROOT, output, false).catch((e) => {
 			output.fail(e.message);
 			console.error('Did you opened any file in %s?', ARCH_RELEASE_ROOT);
 			output.continue();

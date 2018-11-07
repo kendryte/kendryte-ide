@@ -1,7 +1,7 @@
 import { writeFile as writeFileAsync } from 'fs';
 import { resolve } from 'path';
 import { promisify } from 'util';
-import { shellExec, shellOutput } from '../build-env/childprocess/noDependency';
+import { shellExec } from '../build-env/childprocess/noDependency';
 import { VSCODE_ROOT } from '../build-env/misc/constants';
 import { lstat, mkdirpSync, removeDirectory } from '../build-env/misc/fsUtil';
 import { runMain, whatIsThis } from '../build-env/misc/myBuildSystem';
@@ -12,10 +12,6 @@ whatIsThis(__filename, 'install required thing for create release.');
 const writeFile = promisify(writeFileAsync);
 
 runMain(async () => {
-	await removeYarnGlobalDir(process.env.USERPROFILE, '.yarn/bin');
-	await removeYarnGlobalDir(process.env.LOCALAPPDATA, 'Yarn/bin');
-	await removeYarnGlobalDir((await shellOutput('yarn', 'global', 'bin')).trim());
-
 	chdir(VSCODE_ROOT + '/my-scripts');
 	shellExec('yarn', 'install');
 	shellExec('tsc', '-p', '.');

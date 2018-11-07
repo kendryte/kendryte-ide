@@ -1,6 +1,7 @@
 import { spawn } from 'child_process';
 import { PassThrough } from 'stream';
 import { BlackHoleStream, CollectingStream } from '../misc/streamUtil';
+import { mergeEnv } from './env';
 import { parseCommand, processPromise } from './handlers';
 
 interface ProcessHandler {
@@ -17,12 +18,13 @@ export async function pipeCommandBoth(
 	[cmd, args] = parseCommand(cmd, args);
 	const cp = spawn(cmd, args, {
 		stdio: ['ignore', 'pipe', 'pipe'],
+		...mergeEnv(),
 	});
-	
+
 	cp.stdout.pipe(stdout, {end: true});
 	cp.stderr.pipe(stderr, endArg(stderr));
-	
-	return processPromise(cp);
+
+	return processPromise(cp, [cmd, args]);
 }
 
 export async function muteCommandOut(cmd: string, ...args: string[]): Promise<void> {
@@ -62,16 +64,17 @@ function _spawnCommand(cmd: string, args: string[]): ProcessHandler {
 		wait() {
 			const cp = spawn(cmd, args, {
 				stdio: ['ignore', 'pipe', 'pipe'],
+				...mergeEnv(),
 			});
-			
+
 			cp.stdout.pipe(output, {end: false});
 			cp.stderr.pipe(output, {end: false});
-			
+
 			cp.on('exit', () => {
 				output.end();
 			});
-			
-			return processPromise(cp);
+
+			return processPromise(cp, [cmd, args]);
 		},
 	};
 }

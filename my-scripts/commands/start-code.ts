@@ -1,5 +1,4 @@
 import { spawnSync } from 'child_process';
-import { shellExec } from '../build-env/childprocess/noDependency';
 import { getElectronIfNot } from '../build-env/codeblocks/getElectron';
 import { cleanScreen } from '../build-env/misc/clsUtil';
 import { isWin, VSCODE_ROOT } from '../build-env/misc/constants';
@@ -11,13 +10,13 @@ whatIsThis(__filename, 'start local debug IDE, you must run this after start-wat
 
 runMain(async () => {
 	await getElectronIfNot();
-	
+
 	delete process.env.VSCODE_PORTABLE;
-	
+
 	chdir(VSCODE_ROOT);
-	
+
 	mkdirpSync('data');
-	
+
 	const passArgs = process.argv.slice(2);
 	if (isWin) {
 		cleanScreen();

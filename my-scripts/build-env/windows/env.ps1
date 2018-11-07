@@ -16,6 +16,7 @@ setSystemVar 'NODEJS_BIN' $NODEJS_INSTALL
 setSystemVar 'NODEJS' (resolvePath $NODEJS_BIN node.exe)
 
 setSystemVar 'YARN_FOLDER' (resolvePath $RELEASE_ROOT yarn)
+setSystemVar 'PREFIX' $YARN_FOLDER
 setSystemVar 'YARN_CACHE_FOLDER' (resolvePath $YARN_FOLDER cache)
 
 setSystemVar 'PRIVATE_BINS' (resolvePath $RELEASE_ROOT wrapping-bins)
