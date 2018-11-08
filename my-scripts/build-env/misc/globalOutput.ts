@@ -1,9 +1,8 @@
-import { MyOptions, OutputStreamControl, startWorking } from '@gongt/stillalive';
+import { OutputStreamControl } from '@gongt/stillalive';
 import { spawn, SpawnOptions } from 'child_process';
 import { format } from 'util';
 import { ProgramError } from '../childprocess/error';
 import { parseCommand, processPromise } from '../childprocess/handlers';
-import { mainDispose } from './myBuildSystem';
 /* No use any node_modules deps */
 
 let globalLogTarget: NodeJS.WritableStream = process.stderr;
@@ -14,6 +13,23 @@ export function useThisStream(stream: NodeJS.WritableStream) {
 
 export function globalLog(msg: any, ...args: any[]) {
 	globalLogTarget.write(format(msg + '\n', ...args));
+}
+
+export function globalSuccessMessage(msg: any, ...args: any[]) {
+	if (globalLogTarget.hasOwnProperty('success')) {
+		(globalLogTarget as OutputStreamControl).success(format(msg, ...args));
+	} else {
+		globalLogTarget.write(format('Success: ' + msg + '\n', ...args));
+	}
+}
+
+export function globalSplitLog(msg: any, ...args: any[]) {
+	if (globalLogTarget.hasOwnProperty('nextLine')) {
+		(globalLogTarget as OutputStreamControl).writeln('');
+		(globalLogTarget as OutputStreamControl).nextLine();
+	} else {
+		globalLogTarget.write('\n');
+	}
 }
 
 export function globalInterruptLog(msg: any, ...args: any[]) {
@@ -44,17 +60,3 @@ export function spawnWithLog(command: string, args?: ReadonlyArray<string>, opti
 }
 
 useThisStream(process.stderr);
-
-export function usePretty(opts?: MyOptions): OutputStreamControl {
-	const stream = startWorking();
-	useThisStream(stream);
-	Object.assign(stream, {noEnd: true});
-	mainDispose((error: Error) => {
-		useThisStream(process.stderr);
-		if (error) {
-			stream.fail(error.message);
-		}
-		stream.end();
-	});
-	return stream;
-}

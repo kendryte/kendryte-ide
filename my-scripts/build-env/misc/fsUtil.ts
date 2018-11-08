@@ -15,6 +15,7 @@ import { resolve } from 'path';
 import * as rimraf from 'rimraf';
 import { promisify } from 'util';
 import { isMac, isWin, VSCODE_ROOT } from './constants';
+import { globalSuccessMessage } from './globalOutput';
 import { timeout } from './timeUtil';
 
 /* No use any node_modules deps */
@@ -121,7 +122,7 @@ export function removeDirectory(path: string, output: NodeJS.WritableStream, ver
 	}
 	
 	p = p.then(() => {
-		output.write(`remove directory finish.\n`);
+		globalSuccessMessage(`remove directory finish.`);
 	});
 	
 	return p;

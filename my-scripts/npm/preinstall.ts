@@ -4,8 +4,8 @@ if (process.env.BUILDING) {
 }
 
 import { reset_asar } from '../build-env/codeblocks/resetAsar';
-import { usePretty } from '../build-env/misc/globalOutput';
 import { runMain } from '../build-env/misc/myBuildSystem';
+import { usePretty } from '../build-env/misc/usePretty';
 
 runMain(async () => {
 	const output = usePretty();

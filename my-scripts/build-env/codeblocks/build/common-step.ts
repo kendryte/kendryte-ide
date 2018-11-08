@@ -1,4 +1,5 @@
 import { OutputStreamControl } from '@gongt/stillalive';
+import { readdir } from 'fs-extra';
 import { resolve } from 'path';
 import { pipeCommandOut } from '../../childprocess/complex';
 import { installDependency } from '../../childprocess/yarn';
@@ -6,6 +7,7 @@ import { ARCH_RELEASE_ROOT } from '../../misc/constants';
 import { isExists, mkdirpSync, removeDirectory, rename, unlink } from '../../misc/fsUtil';
 import { chdir } from '../../misc/pathUtil';
 import { timing } from '../../misc/timeUtil';
+import { showElectronNoticeInChina } from '../getElectron';
 import { gulpCommands } from '../gulp';
 
 export async function cleanupBuildResult(output: OutputStreamControl, dir: string) {
@@ -45,6 +47,8 @@ export async function yarnInstall(output: OutputStreamControl) {
 export async function downloadElectron(output: OutputStreamControl) {
 	chdir(ARCH_RELEASE_ROOT);
 	output.write(`installing electron...\n`);
+	showElectronNoticeInChina();
+	
 	await pipeCommandOut(output, 'node', ...gulpCommands(), 'electron-x64');
 	output.success('electron installed.').continue();
 }
@@ -54,4 +58,21 @@ export async function downloadBuiltinExtensions(output: OutputStreamControl) {
 	output.write(`installing builtin extension...\n`);
 	await pipeCommandOut(output, 'node', 'build/lib/builtInExtensions.js');
 	output.success('builtin extension installed.').continue();
+}
+
+export async function deleteCompileCaches(output: OutputStreamControl) {
+	chdir(process.env.TMP);
+	for (const folder of await readdir(process.env.TMP)) {
+		if (folder.startsWith('v8-compile-cache')) {
+			await removeDirectory(resolve(process.env.TMP, folder), output);
+		}
+	}
+	
+	chdir(process.env.HOME);
+	await removeDirectory(resolve(process.env.HOME, '.node-gyp'), output);
+	for (const folder of await readdir(process.env.HOME)) {
+		if (folder.startsWith('.v8flags')) {
+			await removeDirectory(resolve(process.env.TMP, folder), output);
+		}
+	}
 }

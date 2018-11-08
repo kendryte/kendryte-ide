@@ -4,16 +4,22 @@ import { linuxBuild } from '../build-env/codeblocks/build/build-linux';
 import { macBuild } from '../build-env/codeblocks/build/build-mac';
 import { windowsBuild } from '../build-env/codeblocks/build/build-windows';
 import { extractSourceCodeIfNeed } from '../build-env/codeblocks/build/buildExtractSource';
-import { cleanupBuildResult, downloadBuiltinExtensions, downloadElectron, yarnInstall, } from '../build-env/codeblocks/build/common-step';
+import {
+	cleanupBuildResult,
+	deleteCompileCaches,
+	downloadBuiltinExtensions,
+	downloadElectron,
+	yarnInstall,
+} from '../build-env/codeblocks/build/common-step';
 import { creatingZip } from '../build-env/codeblocks/zip';
 import { cleanScreen } from '../build-env/misc/clsUtil';
 import { ARCH_RELEASE_ROOT, isMac, isWin, RELEASE_ROOT, VSCODE_ROOT } from '../build-env/misc/constants';
 import { calcCompileFolderName, getPackageData, getProductData, rename } from '../build-env/misc/fsUtil';
-import { usePretty } from '../build-env/misc/globalOutput';
 import { whatIsThis } from '../build-env/misc/help';
 import { runMain, useWriteFileStream } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 import { timing } from '../build-env/misc/timeUtil';
+import { usePretty } from '../build-env/misc/usePretty';
 
 whatIsThis(__filename, 'build complete release.');
 
@@ -27,6 +33,7 @@ runMain(async () => {
 	output.write('starting build...\n');
 	
 	process.env.BUILDING = 'yes';
+	await deleteCompileCaches(output);
 	
 	const product = await getProductData();
 	await getPackageData();

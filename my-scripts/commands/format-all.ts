@@ -4,12 +4,12 @@ import { getOutputCommand, pipeCommandOut } from '../build-env/childprocess/comp
 import { ProgramError } from '../build-env/childprocess/error';
 import { gulpCommands } from '../build-env/codeblocks/gulp';
 import { RELEASE_ROOT, VSCODE_ROOT } from '../build-env/misc/constants';
-import { usePretty } from '../build-env/misc/globalOutput';
 import { whatIsThis } from '../build-env/misc/help';
 import { runMain, useWriteFileStream } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 import { CollectingStream } from '../build-env/misc/streamUtil';
 import { timeout } from '../build-env/misc/timeUtil';
+import { usePretty } from '../build-env/misc/usePretty';
 
 whatIsThis(__filename, 'format all source code and check any errors.');
 
