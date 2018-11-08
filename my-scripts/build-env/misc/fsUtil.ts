@@ -91,6 +91,9 @@ export const open = promisify(openAsync);
 export const rename = promisify(renameAsync);
 
 function wrapFs(of: Function, output: NodeJS.WritableStream): Function {
+	if (output.hasOwnProperty('screen')) {
+		output = (output as any).screen;
+	}
 	return ((...args) => {
 		output.write(`${of.name}: ${args[0]}\n`);
 		return of.apply(undefined, args);
@@ -106,8 +109,8 @@ export function removeDirectory(path: string, output: NodeJS.WritableStream, ver
 			maxBusyTries: 5,
 			emfileWait: true,
 			disableGlob: true,
-			unlink: verbose? wrapFs(unlinkAsync, output) as typeof unlinkAsync : unlinkAsync,
-			rmdir: verbose? wrapFs(rmdirAsync, output) as typeof rmdirAsync : rmdirAsync,
+			unlink: wrapFs(unlinkAsync, output) as typeof unlinkAsync,
+			rmdir: wrapFs(rmdirAsync, output) as typeof rmdirAsync,
 		}, wrappedCallback);
 	});
 	
@@ -146,9 +149,9 @@ export async function calcCompileFolderName() {
 	return product.nameShort + (isMac? '.app' : '');
 }
 
-export async function getProductData(): Promise<IProduction> {
+export async function getProductData(alterRoot: string = VSCODE_ROOT): Promise<IProduction> {
 	try {
-		const productFile = resolve(VSCODE_ROOT, 'product.json');
+		const productFile = resolve(alterRoot, 'product.json');
 		const jsonData = await readFile(productFile);
 		productData = JSON.parse(jsonData);
 		return productData;
@@ -159,9 +162,9 @@ export async function getProductData(): Promise<IProduction> {
 
 let packageData: any;
 
-export async function getPackageData(): Promise<IPackage> {
+export async function getPackageData(alterRoot: string = VSCODE_ROOT): Promise<IPackage> {
 	try {
-		const packageFile = resolve(VSCODE_ROOT, 'package.json');
+		const packageFile = resolve(alterRoot, 'package.json');
 		const jsonData = await readFile(packageFile);
 		packageData = JSON.parse(jsonData);
 		return packageData;

@@ -1,6 +1,7 @@
 import { MyOptions, OutputStreamControl, startWorking } from '@gongt/stillalive';
 import { useThisStream } from './globalOutput';
 import { mainDispose, useWriteFileStream } from './myBuildSystem';
+import { streamPromise } from './streamUtil';
 
 export function usePretty(save?: string, opts?: MyOptions): OutputStreamControl {
 	const stream = startWorking();
@@ -12,6 +13,7 @@ export function usePretty(save?: string, opts?: MyOptions): OutputStreamControl 
 			stream.fail(error.message);
 		}
 		stream.end();
+		return streamPromise(stream);
 	});
 	
 	if (save) {

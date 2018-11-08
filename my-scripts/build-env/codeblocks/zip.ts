@@ -1,4 +1,4 @@
-import { chmod } from 'fs-extra';
+import { chmod, mkdirp } from 'fs-extra';
 import { resolve } from 'path';
 import { Transform, TransformCallback } from 'stream';
 import { pipeCommandOut } from '../childprocess/complex';
@@ -52,6 +52,20 @@ export async function createWindowsSfx(output: NodeJS.WritableStream, whatToZip:
 
 export async function createWindowsZip(output: NodeJS.WritableStream, whatToZip: string) {
 	return pipeCommandOut(output, _7z, ...zipArgs, '--', await distFilePath('zip'), whatToZip + '/*');
+}
+
+export async function calcZipFileName() {
+	if (isWin) {
+		return [await distFilePath('exe'), await  distFilePath('zip')];
+	} else {
+		return [await distFilePath('7z.bin')];
+	}
+}
+
+export async function un7zip(output: NodeJS.WritableStream, from: string, to: string) {
+	await mkdirp(to);
+	chdir(to);
+	return pipeCommandOut(output, _7z, 'x', '-y', '-r', from);
 }
 
 async function distFilePath(type: string): Promise<string> {

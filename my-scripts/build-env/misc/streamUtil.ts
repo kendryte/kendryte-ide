@@ -1,10 +1,11 @@
 import { resolve } from 'path';
-import { Stream, Transform, Writable } from 'stream';
+import { Transform, Writable } from 'stream';
 import { VSCODE_ROOT } from './constants';
 import { yarnPackageDir } from './pathUtil';
 
 export class CollectingStream extends Writable {
 	private buffer = '';
+	private _promise: Promise<string>;
 	
 	_write(chunk: Buffer, encoding: string, callback: (error?: Error|null) => void): void {
 		if (!encoding) {
@@ -18,6 +19,10 @@ export class CollectingStream extends Writable {
 	
 	getOutput() {
 		return this.buffer;
+	}
+	
+	promise(): Promise<string> {
+		return streamPromise(this).then(() => this.buffer);
 	}
 }
 
@@ -69,18 +74,20 @@ export class TypescriptCompileOutputStream extends Transform {
 	}
 }
 
-export function streamHasEnd(S: Stream) {
+export function streamHasEnd(S: NodeJS.ReadableStream|NodeJS.WritableStream) {
 	const stream = S as any;
 	return (stream._writableState && stream._writableState.ended) || (stream._readableState && stream._readableState.ended);
 }
 
-export function streamPromise(stream: Stream) {
+export function streamPromise(stream: NodeJS.ReadableStream|NodeJS.WritableStream): Promise<void> {
 	if (streamHasEnd(stream)) {
 		return Promise.resolve();
 	} else {
 		return new Promise((resolve, reject) => {
-			stream.on('close', () => resolve());
-			stream.on('error', reject);
+			stream.once('end', () => resolve());
+			stream.once('finish', () => resolve());
+			stream.once('close', () => resolve());
+			stream.once('error', reject);
 		});
 	}
 }

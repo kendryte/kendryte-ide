@@ -1,10 +1,12 @@
 /* No use any node_modules deps */
 
-import { closeSync, createReadStream, createWriteStream, ftruncateSync, openSync, ReadStream, WriteStream } from 'fs';
+import { createReadStream, createWriteStream, ftruncateSync, openSync, ReadStream, WriteStream } from 'fs';
 import { resolve } from 'path';
 import { RELEASE_ROOT } from './constants';
 import { mkdirpSync } from './fsUtil';
 import { WIT } from './help';
+import { streamPromise } from './streamUtil';
+import { timeout } from './timeUtil';
 
 export interface DisposeFunction {
 	(e?: Error): void;
@@ -25,14 +27,15 @@ export function runMain(main: () => Promise<void>) {
 		return;
 	}
 	const p = finalPromise = finalPromise.then(main);
-	p.then(() => {
+	p.then(async () => {
 		if (finalPromise !== p) {
 			return;
 		}
-		disposeList.forEach((cb) => {
-			cb();
-		});
-	}, (e) => {
+		while (disposeList.length) {
+			await disposeList.shift()();
+			await timeout(50); // give time to finish
+		}
+	}, async (e) => {
 		if (e.__programError) {
 			console.error(
 				'\n\n\x1B[38;5;9mCommand Failed:\n\t%s\x1B[0m\n  Working Directory: %s\n  Program is:\n%s',
@@ -43,15 +46,17 @@ export function runMain(main: () => Promise<void>) {
 		} else {
 			console.error('\n\n\x1B[38;5;9mCommand Failed:\n\t%s\x1B[0m', e.stack);
 		}
-		disposeList.forEach((cb) => {
-			cb(e);
-		});
-	}).then(() => {
+		while (disposeList.length) {
+			await disposeList.shift()();
+			await timeout(50); // give time to finish
+		}
+	}).then((quit) => {
 		if (finalPromise !== p) {
 			return;
 		}
 		process.exit(0);
-	}, () => {
+	}, (e) => {
+		console.log(e);
 		process.exit(1);
 	});
 }
@@ -64,7 +69,7 @@ export function useWriteFileStream(file: string): WriteStream {
 	const stream = createWriteStream(file, {encoding: 'utf8', fd});
 	mainDispose((error: Error) => {
 		stream.end();
-		closeSync(fd);
+		return streamPromise(stream);
 	});
 	return stream;
 }
@@ -74,7 +79,7 @@ export function readFileStream(file): ReadStream {
 	const stream = createReadStream(file, {encoding: 'utf8', fd});
 	mainDispose((error: Error) => {
 		stream.close();
-		closeSync(fd);
+		return streamPromise(stream);
 	});
 	return stream;
 }
