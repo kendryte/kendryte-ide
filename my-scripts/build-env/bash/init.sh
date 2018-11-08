@@ -95,25 +95,23 @@ function tryPy(){
 		ln -s "$(findCommand "$1")" "$PRIVATE_BINS/python"
 	fi
 }
+function dieInstall() {
+	die "\e[38;5;14;1mpython 2.x\e[38;5;9m is not installed on your system, install it first."
+}
 if [ "$SYSTEM" = "linux" ]; then
-	tryPy python2 || tryPy python || die "python 2 is not installed on your system, install it first."
+	tryPy python2 || tryPy python || die "python 2.x is not installed on your system, install it first."
 else
-	tryPy python || die "python 2 is not installed on your system, install it first."
+	tryPy python || die "python 2.x is not installed on your system, install it first."
 fi
 
-	cd $RELEASE_ROOT
-	if (!(Test-Path -Path '.git')) {
-		git init .
-		echo '*' | Out-File .gitignore
-	}
-
+if ! findCommand "git" ; then
+	die "git is not installed on your system, install it first."
+fi
 writeShFile git "
 	@echo off
-	set HOME=${ORIGINAL_HOME}
-	set Path=${ORIGINAL_PATH}
-	'$(findCommand "$1")' %*
+	set HOME='${ORIGINAL_HOME}'
+	set Path='${ORIGINAL_PATH}'
+	'$(findCommand "git")' %*
 "
 
 cd $VSCODE_ROOT
-$helpStrings = (node "my-scripts\build-env\help.js") | Out-String
-setSystemVar 'helpStrings' $helpStrings
