@@ -1,8 +1,8 @@
 import { MyOptions, OutputStreamControl, startWorking } from '@gongt/stillalive';
 import { useThisStream } from './globalOutput';
-import { mainDispose } from './myBuildSystem';
+import { mainDispose, useWriteFileStream } from './myBuildSystem';
 
-export function usePretty(opts?: MyOptions): OutputStreamControl {
+export function usePretty(save?: string, opts?: MyOptions): OutputStreamControl {
 	const stream = startWorking();
 	useThisStream(stream);
 	Object.assign(stream, {noEnd: true});
@@ -13,5 +13,10 @@ export function usePretty(opts?: MyOptions): OutputStreamControl {
 		}
 		stream.end();
 	});
+	
+	if (save) {
+		stream.pipe(useWriteFileStream(`logs/${save}.log`), {end: true});
+	}
+	
 	return stream;
 }

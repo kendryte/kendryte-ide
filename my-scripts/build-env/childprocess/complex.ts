@@ -33,12 +33,12 @@ export async function muteCommandOut(cmd: string, ...args: string[]): Promise<vo
 }
 
 export async function pipeCommandOut(pipe: NodeJS.WritableStream, cmd: string, ...args: string[]): Promise<void> {
-	if ((pipe as any).nextLine) {
-		const stream = pipe as OutputStreamControl;
-		stream.write('\nRun command');
-	}
 	// console.log(' + %s %s | line-output', command, argumentList.join(' '));
 	const stream = _spawnCommand(cmd, args);
+	if ((pipe as any).nextLine) {
+		(pipe as OutputStreamControl).writeln(`Running command: ${cmd} ${args.join(' ')}`);
+		(pipe as OutputStreamControl).nextLine();
+	}
 	stream.output.pipe(pipe, endArg(pipe));
 	await stream.wait();
 }

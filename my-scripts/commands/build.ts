@@ -28,8 +28,7 @@ runMain(async () => {
 	cleanScreen();
 	chdir(VSCODE_ROOT);
 	
-	output = usePretty();
-	output.pipe(useWriteFileStream(resolve(RELEASE_ROOT, 'build.log')));
+	output = usePretty('build');
 	output.write('starting build...\n');
 	
 	process.env.BUILDING = 'yes';

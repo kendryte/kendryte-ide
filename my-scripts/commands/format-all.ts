@@ -25,7 +25,7 @@ runMain(async () => {
 	process.stderr.write('\x1Bc\r');
 	chdir(VSCODE_ROOT);
 	
-	const output = usePretty();
+	const output = usePretty('format-all');
 	
 	output.success('running reformat on ALL source files, this will use about 1min. please wait.').continue();
 	output.write('waiting for \'yarn gulp hygiene\'');

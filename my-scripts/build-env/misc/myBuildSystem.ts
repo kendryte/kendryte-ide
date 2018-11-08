@@ -1,8 +1,9 @@
 /* No use any node_modules deps */
 
 import { closeSync, createReadStream, createWriteStream, ftruncateSync, openSync, ReadStream, WriteStream } from 'fs';
-import { basename } from 'path';
-import { useThisStream } from './globalOutput';
+import { resolve } from 'path';
+import { RELEASE_ROOT } from './constants';
+import { mkdirpSync } from './fsUtil';
 import { WIT } from './help';
 
 export interface DisposeFunction {
@@ -56,6 +57,8 @@ export function runMain(main: () => Promise<void>) {
 }
 
 export function useWriteFileStream(file: string): WriteStream {
+	file = resolve(RELEASE_ROOT, file);
+	mkdirpSync(resolve(file, '..'));
 	const fd = openSync(file, 'w');
 	ftruncateSync(fd);
 	const stream = createWriteStream(file, {encoding: 'utf8', fd});

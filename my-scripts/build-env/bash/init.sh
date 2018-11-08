@@ -131,4 +131,12 @@ writeShFile git "
 "
 "$PRIVATE_BINS/git" --version
 
+
+if ! findCommand "7z" &>/dev/null ; then
+	die "p7zip is not installed on your system, install it first."
+fi
+writeShFile 7z "
+	'$(findCommand "7z")' $_PASSARG
+"
+
 cd $VSCODE_ROOT

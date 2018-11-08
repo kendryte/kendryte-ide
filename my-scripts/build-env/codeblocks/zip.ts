@@ -8,7 +8,7 @@ import { chdir } from '../misc/pathUtil';
 import { endArg } from '../misc/streamUtil';
 import { cleanupZipFiles } from './build/common-step';
 
-const _7z = require('7zip')['7z'];
+const _7z = isWin? require('7zip')['7z'] : '7z';
 
 const commonArgs = [
 	'a',
@@ -16,16 +16,23 @@ const commonArgs = [
 	'-r', // recurse subdirectories
 	'-ssc', // sensitive case mode
 ];
+if (!isWin) {
+	commonArgs.push('-mmt3'); // use 3 threads
+}
 const normalArgs = [
 	...commonArgs,
 	'-t7z', // compress to xxx.7z
 	'-ms=on', // solid
-	'"-sfx7zCon.sfx"', // self extraction
 	'-mx8', // more compress
 	'-m0=lzma2', // use LZMA2
 	'-md=256m', // dictionary size
 	'-mfb=64', // word size
 ];
+if (isWin) {
+	commonArgs.push('"-sfx7zCon.sfx"'); // self extraction
+} else {
+	commonArgs.push('-sfx7zCon.sfx'); // self extraction
+}
 
 const zipArgs = [
 	...commonArgs,

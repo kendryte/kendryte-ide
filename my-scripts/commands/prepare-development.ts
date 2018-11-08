@@ -14,8 +14,7 @@ whatIsThis(__filename, 'install required thing for development (require prepare-
 
 runMain(async () => {
 	chdir(VSCODE_ROOT);
-	const output = usePretty();
-	output.pipe(useWriteFileStream(resolve(RELEASE_ROOT, 'prepare-development.log')));
+	const output = usePretty('prepare-development');
 	if (isWin) {
 		const stat = await lstat('./node_modules');
 		if (stat && stat.isDirectory()) {
