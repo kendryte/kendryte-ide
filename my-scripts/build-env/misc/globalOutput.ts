@@ -1,7 +1,9 @@
+import { MyOptions, OutputStreamControl, startWorking } from '@gongt/stillalive';
 import { spawn, SpawnOptions } from 'child_process';
 import { format } from 'util';
 import { ProgramError } from '../childprocess/error';
 import { parseCommand, processPromise } from '../childprocess/handlers';
+import { mainDispose } from './myBuildSystem';
 /* No use any node_modules deps */
 
 let globalLogTarget: NodeJS.WritableStream = process.stderr;
@@ -41,8 +43,18 @@ export function spawnWithLog(command: string, args?: ReadonlyArray<string>, opti
 	return r;
 }
 
-export function indentArgs(args: ReadonlyArray<string>) {
-	return args.map((arg, index) => {
-		return `  Argument[${index}] = ${arg}`;
-	}).join('\n');
+useThisStream(process.stderr);
+
+export function usePretty(opts?: MyOptions): OutputStreamControl {
+	const stream = startWorking();
+	useThisStream(stream);
+	Object.assign(stream, {noEnd: true});
+	mainDispose((error: Error) => {
+		useThisStream(process.stderr);
+		if (error) {
+			stream.fail(error.message);
+		}
+		stream.end();
+	});
+	return stream;
 }

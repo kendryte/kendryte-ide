@@ -1,8 +1,23 @@
 #!/usr/bin/env bash
-MakeNewDir $RELEASE_ROOT
-MakeNewDir $HOME
-MakeNewDir $PRIVATE_BINS
-MakeNewDir $TMP
+_PASSARG='"$@"'
+
+function dieInstall() {
+	die "\e[38;5;14;1mpython 2.x\e[38;5;9m is not installed on your system, install it first."
+}
+function diePermission() {
+	die "You [$(whoami)]($(id -u)) do not have write permission to this dir: \n  $(ls -dlh "${1}")\nNeed run \e[38;5;14msudo chown -R $(whoami) '$VSCODE_ROOT'\e[0m"
+}
+
+touch "$VSCODE_ROOT" || diePermission "$VSCODE_ROOT"
+
+MakeNewDir "$RELEASE_ROOT" || diePermission "$(dirname "$RELEASE_ROOT")"
+MakeNewDir "$HOME" || diePermission "$(dirname "$HOME")"
+MakeNewDir "$PRIVATE_BINS" || diePermission "$(dirname "$PRIVATE_BINS")"
+MakeNewDir "$TMP" || diePermission "$(dirname "$TMP")"
+
+touch "$RELEASE_ROOT" || die "You [$(whoami)]($(id -u)) do not have write permission to this dir: \n  $(ls -dlh "${RELEASE_ROOT}")\nNeed to chown to you."
+
+export HISTFILE="$HOME/.bash_history"
 
 if [ ! -e "$NODEJS" ]; then
 	echo "Install Node.js"
@@ -18,7 +33,8 @@ if [ ! -e "$NODEJS" ]; then
 
 	tar xf "$TMP/node.tar.xz" --strip-components 1 -C "$NODEJS_INSTALL"
 	RimDir "$NODEJS_INSTALL/lib"
-	MakeNewDir "$NODEJS_INSTALL/lib"
+	RimDir "$NODEJS_INSTALL/bin/npm"
+	RimDir "$NODEJS_INSTALL/bin/npx"
 fi
 
 if [ ! -e "$PRIVATE_BINS/yarn" ]; then
@@ -46,7 +62,7 @@ export npm_config_target=$(cd "$VSCODE_ROOT" ; node -p "require('./build/lib/ele
 ### npm
 writeShFile npm "
 	export PRIVATE_BINS='$PRIVATE_BINS'
-	exec '$NODEJS' '$VSCODE_ROOT/my-scripts/build-env/mock-npm.js' %*
+	exec '$NODEJS' '$VSCODE_ROOT/my-scripts/build-env/mock-npm.js' $_PASSARG
 "
 ### npm
 
@@ -61,20 +77,20 @@ writeShFile yarn "
 	export YARN_FOLDER='$YARN_FOLDER'
 	export YARN_CACHE_FOLDER='$YARN_CACHE_FOLDER'
 	export PREFIX='$YARN_FOLDER'
-	\$ARGS=(\"\$@\")
-	if( \${ARGS[#]} -eq 0 ) {
-		\$ARGS += ('install')
-	}
+	ARGS=($_PASSARG)
+	if [ \${#ARGS[@]} -eq 0 ]; then
+		ARGS+=('install')
+	fi
 
 	BL=''
-	if [ \${ARGS[0]} -eq 'global' ]; then
+	if [ \${ARGS[0]} = 'global' ]; then
 		BL='--no-bin-links'
 	else
 		BL='--bin-links'
 	fi
 
 	exec '$NODEJS' \\
-		'$NODEJS_INSTALL\node_modules\yarn\bin\yarn.js' \\
+		'$NODEJS_INSTALL/node_modules/yarn/bin/yarn.js' \\
 			--prefer-offline --no-default-rc \$BL \\
 			--use-yarnrc '$VSCODE_ROOT/.yarnrc' \\
 			--cache-folder '$YARN_CACHE_FOLDER' \\
@@ -88,15 +104,15 @@ function findCommand() {
 	local PATH="${ORIGINAL_PATH}"
 	command -v "$1"
 }
+
+echo -n "Detect Python: "
 function tryPy(){
 	local PATH="${ORIGINAL_PATH}"
-	if "$1" -V | grep -q ' 2.' 2>/dev/null ; then
+	if "$1" -V 2>&1 | grep -q ' 2.' 2>/dev/null ; then
 		[ -e "$PRIVATE_BINS/python" ] && unlink "$PRIVATE_BINS/python"
 		ln -s "$(findCommand "$1")" "$PRIVATE_BINS/python"
+		"$PRIVATE_BINS/python" -V
 	fi
-}
-function dieInstall() {
-	die "\e[38;5;14;1mpython 2.x\e[38;5;9m is not installed on your system, install it first."
 }
 if [ "$SYSTEM" = "linux" ]; then
 	tryPy python2 || tryPy python || die "python 2.x is not installed on your system, install it first."
@@ -104,14 +120,15 @@ else
 	tryPy python || die "python 2.x is not installed on your system, install it first."
 fi
 
-if ! findCommand "git" ; then
+echo -n "Detect Git: "
+if ! findCommand "git" &>/dev/null ; then
 	die "git is not installed on your system, install it first."
 fi
 writeShFile git "
-	@echo off
-	set HOME='${ORIGINAL_HOME}'
-	set Path='${ORIGINAL_PATH}'
-	'$(findCommand "git")' %*
+	export HOME='${ORIGINAL_HOME}'
+	export Path='${ORIGINAL_PATH}'
+	'$(findCommand "git")' $_PASSARG
 "
+"$PRIVATE_BINS/git" --version
 
 cd $VSCODE_ROOT

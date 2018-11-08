@@ -4,7 +4,7 @@ Get-ChildItem -Path "$VSCODE_ROOT\my-scripts\commands" -File -Filter '*.ts' -Nam
 		try {
 			Push-Location
 			Set-Location $VSCODE_ROOT
-			node "my-scripts\commands\${command}.js" @args
+			node "my-scripts\build-env\load-command.js" "${command}" @args
 			if (!$?) {
 				throw "Command failed with code ${LastExitCode}"
 			}
@@ -20,7 +20,7 @@ function Fork {
 		[parameter(Mandatory = $false, ValueFromRemainingArguments = $true)] [String[]] $list
 	)
 	if ($Action) {
-		$argList = @("node", "$VSCODE_ROOT\my-scripts\commands\${Action}.js" )
+		$argList = @("node", "$VSCODE_ROOT\my-scripts\build-env\load-command.js", $Action )
 		if ($list) {
 			$argList += $list
 		}

@@ -5,7 +5,8 @@ import { gulpCommands } from '../build-env/codeblocks/gulp';
 import { switchQuitKey } from '../build-env/codeblocks/switchQuitKey';
 import { cleanScreen, getCleanableStdout } from '../build-env/misc/clsUtil';
 import { isExists } from '../build-env/misc/fsUtil';
-import { runMain, whatIsThis } from '../build-env/misc/myBuildSystem';
+import { whatIsThis } from '../build-env/misc/help';
+import { runMain } from '../build-env/misc/myBuildSystem';
 import { TypescriptCompileOutputStream } from '../build-env/misc/streamUtil';
 
 whatIsThis(__filename, 'start local debug IDE, require prepare-development first.');

@@ -10,20 +10,12 @@ if [ "$(id -u)" -eq 0 ]; then
 	exit 1
 fi
 
-export MY_SCRIPT_ROOT="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-
-cd "$MY_SCRIPT_ROOT"
-. build-env/bash/fn.sh
-cd "$MY_SCRIPT_ROOT"
-. build-env/bash/env.sh
-cd "$MY_SCRIPT_ROOT"
-. build-env/bash/listcommands.sh
-
-if [ -z "${AlreadyInited}" ]; then
-	cd "$MY_SCRIPT_ROOT"
-	. build-env/bash/init.sh
-
-	export AlreadyInited=yes
-fi
-
-exec bash --noprofile --rcfile "${SCRIPT_LIB_ROOT}/rc.sh"
+bash --rcfile "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/build-env/bash/rc.sh" || {
+	RET=$?
+	if [ $RET -eq 0 ]; then
+		exit 0
+	fi
+	
+	echo -e "\n  \e[38;5;9mCommand failed with error $RET.\e[0m" >&2
+	exit $RET
+}

@@ -1,20 +1,18 @@
 #!/usr/bin/env bash
 
-echo '#!/bin/bash' > "$RELEASE_ROOT/commands.sh"
-
 cd "$VSCODE_ROOT/my-scripts/commands"
-LSDIR=($(ls | grep -vE "\.ts$"))
+LSDIR=($(ls | grep -E "\.ts$"))
 for i in "${LSDIR[@]}" ; do
 	Command="${i%.ts}"
 
-	writeShFile "$Command" "#!/bin/bash
+	writeShFile "$Command" "
 		$(declare -pf die)
 		cd \"\$VSCODE_ROOT\"
-		node 'my-scripts/commands/${Command}.js' \"\$@\" || die \"Command failed with code \$?\"
+		node 'my-scripts/build-env/load-command.js' '${Command}' \"\$@\" || die \"Command failed with code \$?\"
 	"
 done
 
-writeShFile show-help "#!/bin/bash
+writeShFile show-help "
 	exec node 'my-scripts/build-env/help.js'
 "
 

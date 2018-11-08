@@ -4,7 +4,8 @@ import { promisify } from 'util';
 import { shellExec } from '../build-env/childprocess/noDependency';
 import { VSCODE_ROOT } from '../build-env/misc/constants';
 import { lstat, mkdirpSync, removeDirectory } from '../build-env/misc/fsUtil';
-import { runMain, whatIsThis } from '../build-env/misc/myBuildSystem';
+import { whatIsThis } from '../build-env/misc/help';
+import { runMain } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 
 whatIsThis(__filename, 'install required thing for create release.');
@@ -24,7 +25,7 @@ async function removeYarnGlobalDir(binDir: string, resolveTo?: string) {
 	if (resolveTo) {
 		binDir = resolve(binDir, resolveTo);
 	}
-
+	
 	const stat = await lstat(binDir);
 	if (stat) {
 		if (stat.isDirectory()) {

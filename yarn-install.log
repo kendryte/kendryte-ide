@@ -1,0 +1,249 @@
+Pwd: /data/DevelopmentRoot/canaan-creative/kendryte-ide
+Command: yarn install --verbose
+yarn install v1.10.1
+verbose 0.155 Checking for configuration file "/data/DevelopmentRoot/canaan-creative/kendryte-ide/.yarnrc".
+verbose 0.156 Found configuration file "/data/DevelopmentRoot/canaan-creative/kendryte-ide/.yarnrc".
+verbose 0.157 current time: 2018-11-08T09:40:39.637Z
+$ node my-scripts/npm/preinstall.js && node build/npm/preinstall.js
+output is not tty, progress will not show.
+Success: cleanup ASAR files.
+[1/4] Resolving packages...
+success Already up-to-date.
+$ node my-scripts/npm/postinstall.js && node build/npm/postinstall.js
+yarn install v1.10.1
+warning package.json: No license field
+warning vscode-extensions@0.0.1: No license field
+[1/4] Resolving packages...
+success Already up-to-date.
+$ node ./postinstall
+Done in 0.11s.
+yarn install v1.10.1
+warning package.json: No license field
+warning ../package.json: No license field
+warning configuration-editing@1.0.0: No license field
+[1/5] Validating package.json...
+warning configuration-editing@1.0.0: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+Done in 0.06s.
+yarn install v1.10.1
+warning package.json: No license field
+warning ../package.json: No license field
+warning css-language-features@1.0.0: No license field
+[1/5] Validating package.json...
+warning css-language-features@1.0.0: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+$ cd server && yarn install
+yarn install v1.10.1
+warning ../package.json: No license field
+warning ../../package.json: No license field
+[1/5] Validating package.json...
+[2/5] Resolving packages...
+success Already up-to-date.
+Done in 0.09s.
+Done in 0.31s.
+yarn install v1.10.1
+warning package.json: No license field
+warning ../package.json: No license field
+warning debug-auto-launch@1.0.0: No license field
+[1/5] Validating package.json...
+warning debug-auto-launch@1.0.0: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+Done in 0.06s.
+yarn install v1.10.1
+warning package.json: No license field
+warning ../package.json: No license field
+warning emmet@1.0.0: No license field
+[1/5] Validating package.json...
+warning emmet@1.0.0: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+[3/5] Fetching packages...
+[4/5] Linking dependencies...
+warning " > mocha-junit-reporter@1.17.0" has unmet peer dependency "mocha@>=2.2.5".
+[5/5] Building fresh packages...
+Done in 0.69s.
+yarn install v1.10.1
+warning package.json: No license field
+warning ../package.json: No license field
+warning extension-editing@1.0.0: No license field
+[1/5] Validating package.json...
+warning extension-editing@1.0.0: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+Done in 0.07s.
+yarn install v1.10.1
+warning package.json: No license field
+warning ../package.json: No license field
+warning git@1.0.0: No license field
+[1/5] Validating package.json...
+warning git@1.0.0: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+Done in 0.09s.
+yarn install v1.10.1
+warning package.json: No license field
+warning ../package.json: No license field
+warning grunt@1.0.0: No license field
+[1/5] Validating package.json...
+warning grunt@1.0.0: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+Done in 0.06s.
+yarn install v1.10.1
+warning package.json: No license field
+warning ../package.json: No license field
+warning gulp@1.0.0: No license field
+[1/5] Validating package.json...
+warning gulp@1.0.0: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+Done in 0.06s.
+yarn install v1.10.1
+warning package.json: No license field
+warning ../package.json: No license field
+warning html-language-features@1.0.0: No license field
+[1/5] Validating package.json...
+warning html-language-features@1.0.0: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+$ cd server && yarn install
+yarn install v1.10.1
+warning ../package.json: No license field
+warning ../../package.json: No license field
+[1/5] Validating package.json...
+[2/5] Resolving packages...
+success Already up-to-date.
+Done in 0.09s.
+Done in 0.29s.
+yarn install v1.10.1
+warning package.json: No license field
+warning ../package.json: No license field
+warning jake@1.0.0: No license field
+[1/5] Validating package.json...
+warning jake@1.0.0: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+Done in 0.06s.
+yarn install v1.10.1
+warning package.json: No license field
+warning ../package.json: No license field
+warning json-language-features@1.0.0: No license field
+[1/5] Validating package.json...
+warning json-language-features@1.0.0: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+$ cd server && yarn install
+yarn install v1.10.1
+warning ../package.json: No license field
+warning ../../package.json: No license field
+[1/5] Validating package.json...
+[2/5] Resolving packages...
+success Already up-to-date.
+Done in 0.07s.
+Done in 0.27s.
+yarn install v1.10.1
+warning package.json: No license field
+warning ../package.json: No license field
+warning markdown-language-features@1.0.0: No license field
+[1/5] Validating package.json...
+warning markdown-language-features@1.0.0: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+[3/5] Fetching packages...
+warning vscode-extension-telemetry@0.1.0: The engine "vscode" appears to be invalid.
+info fsevents@1.1.3: The platform "linux" is incompatible with this module.
+info "fsevents@1.1.3" is an optional dependency and failed compatibility check. Excluding it from installation.
+[4/5] Linking dependencies...
+warning " > mocha-junit-reporter@1.17.0" has unmet peer dependency "mocha@>=2.2.5".
+[5/5] Building fresh packages...
+Done in 1.92s.
+yarn install v1.10.1
+warning package.json: No license field
+warning ../package.json: No license field
+warning merge-conflict@1.0.0: No license field
+[1/5] Validating package.json...
+warning merge-conflict@1.0.0: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+Done in 0.06s.
+yarn install v1.10.1
+warning package.json: No license field
+warning ../package.json: No license field
+warning npm@1.0.1: No license field
+[1/5] Validating package.json...
+warning npm@1.0.1: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+Done in 0.07s.
+yarn install v1.10.1
+warning package.json: No license field
+warning ../package.json: No license field
+warning php-language-features@1.0.0: No license field
+[1/5] Validating package.json...
+warning php-language-features@1.0.0: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+Done in 0.06s.
+yarn install v1.10.1
+warning ../package.json: No license field
+[1/5] Validating package.json...
+warning typescript-language-features@1.0.0: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+Done in 0.20s.
+yarn install v1.10.1
+warning ../package.json: No license field
+[1/5] Validating package.json...
+warning vscode-api-tests@0.0.1: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+Done in 0.21s.
+yarn install v1.10.1
+warning ../package.json: No license field
+[1/5] Validating package.json...
+warning vscode-colorize-tests@0.0.1: The engine "vscode" appears to be invalid.
+[2/5] Resolving packages...
+success Already up-to-date.
+$ node ./node_modules/vscode/bin/install
+Detected VS Code engine version: *
+Fetching vscode.d.ts from: https://raw.githubusercontent.com/Microsoft/vscode/master/src/vs/vscode.d.ts
+vscode.d.ts successfully installed!
+
+Done in 5.86s.
+yarn install v1.10.1
+warning package.json: No license field
+warning code-oss-dev-build@1.0.0: No license field
+[1/4] Resolving packages...
+success Already up-to-date.
+$ npm run compile
+yarn run v1.10.1
+warning package.json: No license field
+$ tsc -p tsconfig.build.json
+Done in 3.59s.
+npm return with 0
+Done in 3.95s.
+yarn install v1.10.1
+warning package.json: No license field
+warning code-oss-dev-smoke-test@0.1.0: No license field
+[1/4] Resolving packages...
+success Already up-to-date.
+$ npm run compile
+yarn run v1.10.1
+warning package.json: No license field
+$ npm run copy-driver && npm run copy-driver-definition && tsc
+warning package.json: No license field
+$ cpx src/vscode/driver.js out/vscode
+npm return with 0
+warning package.json: No license field
+$ node tools/copy-driver-definition.js
+npm return with 0
+Done in 2.83s.
+npm return with 0
+Done in 3.23s.
+yarn install v1.10.1
+warning ../../package.json: No license field
+[1/4] Resolving packages...
+success Already up-to-date.
+Done in 0.17s.
+Done in 21.54s.

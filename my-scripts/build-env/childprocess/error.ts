@@ -1,6 +1,10 @@
 /* No use any node_modules deps */
 
-import { indentArgs } from '../misc/globalOutput';
+function indentArgs(args: ReadonlyArray<string>) {
+	return args.map((arg, index) => {
+		return `  Argument[${index}] = ${arg}`;
+	}).join('\n');
+}
 
 export interface ProgramError extends Error {
 	status: number;

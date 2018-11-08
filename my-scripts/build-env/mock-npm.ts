@@ -6,6 +6,7 @@ import { isWin } from './misc/constants';
 const args = process.argv.slice(2);
 
 if (!process.env.hasOwnProperty('GIT_PARAMS') && args[0] !== 'run') {
+	console.log('args=[%s]', args);
 	throw new Error('This is mocked npm, only used for husky git hooks, please use yarn instead.');
 }
 

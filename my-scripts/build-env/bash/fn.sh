@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 function die() {
-	echo -en "\e[38;5;9m"
-	echo -en "$*"
-	echo -e "\e[0m"
+	echo -en "\e[38;5;9m" >&2
+	echo -en "$*" >&2
+	echo -e "\e[0m" >&2
 	exit 1
 }
 function die_return() {
@@ -17,11 +17,11 @@ export -f die
 export -f die_return
 
 function resolvePath() {
-	realpath -m "$1" "$2"
+	realpath -m "$1/$2" || die "cannot resolve path $1 -> $2"
 }
 function MakeNewDir() {
 	local d="$1"
-	if [ -e "$d" ]; then
+	if [ ! -e "$d" ]; then
 		echo "Create Missing Directory: $d"
 		mkdir -p "$d"
 	fi
@@ -52,5 +52,7 @@ function writeShFile() {
 	local Name="$1"
 	local Script="$2"
 
-	echo "$Script" > "$PRIVATE_BINS/$Name"
+	echo "#!/bin/bash
+$Script" > "$PRIVATE_BINS/$Name"
+	chmod a+x "$PRIVATE_BINS/$Name"
 }

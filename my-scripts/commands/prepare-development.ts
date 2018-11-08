@@ -1,16 +1,20 @@
+import { resolve } from "path";
 import { installDependency } from '../build-env/childprocess/yarn';
 import { packWindows, reset_asar } from '../build-env/codeblocks/packWindows';
-import { isWin, VSCODE_ROOT } from '../build-env/misc/constants';
+import { isWin, RELEASE_ROOT, VSCODE_ROOT } from '../build-env/misc/constants';
 import { lstat } from '../build-env/misc/fsUtil';
-import { runMain, usePretty, whatIsThis } from '../build-env/misc/myBuildSystem';
+import { usePretty } from '../build-env/misc/globalOutput';
+import { whatIsThis } from '../build-env/misc/help';
+import { runMain, useWriteFileStream } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 import './prepare-release';
 
-whatIsThis(__filename, 'install required thing for development (includes prepare-release).');
+whatIsThis(__filename, 'install required thing for development (require prepare-release).');
 
 runMain(async () => {
 	chdir(VSCODE_ROOT);
 	const output = usePretty();
+	output.pipe(useWriteFileStream(resolve(RELEASE_ROOT, 'prepare-development.log')));
 	if (isWin) {
 		const stat = await lstat('./node_modules');
 		if (stat && stat.isDirectory()) {
@@ -21,4 +25,5 @@ runMain(async () => {
 	} else {
 		await installDependency(output, VSCODE_ROOT);
 	}
+	output.success('Done.')
 });

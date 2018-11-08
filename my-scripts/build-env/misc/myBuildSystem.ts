@@ -1,9 +1,9 @@
 /* No use any node_modules deps */
 
-import { MyOptions, OutputStreamControl, startWorking } from '@gongt/stillalive';
 import { closeSync, createReadStream, createWriteStream, ftruncateSync, openSync, ReadStream, WriteStream } from 'fs';
 import { basename } from 'path';
 import { useThisStream } from './globalOutput';
+import { WIT } from './help';
 
 export interface DisposeFunction {
 	(e?: Error): void;
@@ -19,22 +19,8 @@ let finalPromise: Promise<void> = new Promise((resolve, reject) => {
 	setImmediate(resolve);
 });
 
-function wit() {
-	return process.argv.includes('--what-is-this');
-}
-
-export function helpTip(cmd: string, msg: string) {
-	console.log('\x1B[48;5;0;1m * \x1B[38;5;14m%s\x1B[0;48;5;0m - %s.', cmd, msg);
-}
-
-export function whatIsThis(self: string, title: string) {
-	if (wit()) {
-		helpTip(basename(self, '.js'), title);
-	}
-}
-
 export function runMain(main: () => Promise<void>) {
-	if (wit()) {
+	if (WIT()) {
 		return;
 	}
 	const p = finalPromise = finalPromise.then(main);
@@ -67,22 +53,6 @@ export function runMain(main: () => Promise<void>) {
 	}, () => {
 		process.exit(1);
 	});
-}
-
-useThisStream(process.stderr);
-
-export function usePretty(opts?: MyOptions): OutputStreamControl {
-	const stream = startWorking();
-	useThisStream(stream);
-	Object.assign(stream, {noEnd: true});
-	mainDispose((error: Error) => {
-		useThisStream(process.stderr);
-		if (error) {
-			stream.fail(error.message);
-		}
-		stream.end();
-	});
-	return stream;
 }
 
 export function useWriteFileStream(file: string): WriteStream {
