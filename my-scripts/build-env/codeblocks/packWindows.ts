@@ -10,20 +10,6 @@ import { chdir, ensureChdir, yarnPackageDir } from '../misc/pathUtil';
 import { timing } from '../misc/timeUtil';
 import { gulpCommands } from './gulp';
 
-export async function reset_asar(output: OutputStreamControl) {
-	chdir(VSCODE_ROOT);
-	if (await isLinkSync('./node_modules')) {
-		unlinkSync('./node_modules');
-	}
-	if (await isExistsSync('./node_modules.asar')) {
-		unlinkSync('./node_modules.asar');
-	}
-	if (await isExistsSync('./node_modules.asar.unpacked')) {
-		await removeDirectory('./node_modules.asar.unpacked', output);
-	}
-	output.success('cleanup ASAR files.').continue();
-}
-
 export async function packWindows(output: OutputStreamControl) {
 	function log(s: string) {
 		output.write(s + '\n');

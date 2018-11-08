@@ -1,6 +1,7 @@
-import { resolve } from "path";
+import { resolve } from 'path';
 import { installDependency } from '../build-env/childprocess/yarn';
-import { packWindows, reset_asar } from '../build-env/codeblocks/packWindows';
+import { packWindows } from '../build-env/codeblocks/packWindows';
+import { reset_asar } from '../build-env/codeblocks/resetAsar';
 import { isWin, RELEASE_ROOT, VSCODE_ROOT } from '../build-env/misc/constants';
 import { lstat } from '../build-env/misc/fsUtil';
 import { usePretty } from '../build-env/misc/globalOutput';
@@ -25,5 +26,5 @@ runMain(async () => {
 	} else {
 		await installDependency(output, VSCODE_ROOT);
 	}
-	output.success('Done.')
+	output.success('Done.');
 });
