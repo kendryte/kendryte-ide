@@ -5,10 +5,11 @@ import { resolve } from 'path';
 import { pipeCommandOut } from '../childprocess/complex';
 import { installDependency } from '../childprocess/yarn';
 import { VSCODE_ROOT } from '../misc/constants';
-import { isExists, isExistsSync, isLinkSync, removeDirectory, writeFile } from '../misc/fsUtil';
+import { isExists, isExistsSync, isLinkSync, writeFile } from '../misc/fsUtil';
 import { chdir, ensureChdir, yarnPackageDir } from '../misc/pathUtil';
 import { timing } from '../misc/timeUtil';
 import { gulpCommands } from './gulp';
+import { removeDirectory } from './removeDir';
 
 export async function packWindows(output: OutputStreamControl) {
 	function log(s: string) {

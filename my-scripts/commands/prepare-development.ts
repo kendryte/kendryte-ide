@@ -1,14 +1,12 @@
-import { resolve } from 'path';
 import { installDependency } from '../build-env/childprocess/yarn';
 import { packWindows } from '../build-env/codeblocks/packWindows';
 import { reset_asar } from '../build-env/codeblocks/resetAsar';
-import { isWin, RELEASE_ROOT, VSCODE_ROOT } from '../build-env/misc/constants';
+import { isWin, VSCODE_ROOT } from '../build-env/misc/constants';
 import { lstat } from '../build-env/misc/fsUtil';
 import { whatIsThis } from '../build-env/misc/help';
-import { runMain, useWriteFileStream } from '../build-env/misc/myBuildSystem';
+import { runMain } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 import { usePretty } from '../build-env/misc/usePretty';
-import './prepare-release';
 
 whatIsThis(__filename, 'install required thing for development (require prepare-release).');
 

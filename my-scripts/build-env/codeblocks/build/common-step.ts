@@ -4,11 +4,12 @@ import { resolve } from 'path';
 import { pipeCommandOut } from '../../childprocess/complex';
 import { installDependency } from '../../childprocess/yarn';
 import { ARCH_RELEASE_ROOT } from '../../misc/constants';
-import { isExists, mkdirpSync, removeDirectory, rename, unlink } from '../../misc/fsUtil';
+import { isExists, mkdirpSync, rename, unlink } from '../../misc/fsUtil';
 import { chdir } from '../../misc/pathUtil';
 import { timing } from '../../misc/timeUtil';
 import { showElectronNoticeInChina } from '../getElectron';
 import { gulpCommands } from '../gulp';
+import { removeDirectory } from '../removeDir';
 
 export async function cleanupBuildResult(output: OutputStreamControl, dir: string) {
 	const backupDir = dir.replace(/(.app)$|$/, '.last$1');

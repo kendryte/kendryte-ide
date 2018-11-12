@@ -51,7 +51,7 @@ function nodeDown(output: OutputStreamControl, from: string, saveTo: NodeJS.Writ
 		//         remaining: 81.403       // The remaining seconds to finish (3 decimals)
 		//     }
 		// }
-		output.screen.writeln(
+		output.screen.log(
 			'downloading [%s%]: %s/%s MB - %sKB/s',
 			state.percent,
 			(state.size.transferred / 1024 / 1024).toFixed(2),

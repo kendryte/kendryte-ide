@@ -4,12 +4,13 @@ import { createWriteStream } from 'fs';
 import { resolve } from 'path';
 import { PassThrough } from 'stream';
 import { extract } from 'tar-fs';
-import { getOutputCommand, muteCommandOut, pipeCommandBoth, pipeCommandOut } from '../../childprocess/complex';
+import { getOutputCommand, muteCommandOut, pipeCommandBoth } from '../../childprocess/complex';
 import { ARCH_RELEASE_ROOT, RELEASE_ROOT, VSCODE_ROOT } from '../../misc/constants';
-import { isExists, removeDirectory, rename, writeFile } from '../../misc/fsUtil';
+import { isExists, rename } from '../../misc/fsUtil';
 import { chdir } from '../../misc/pathUtil';
 import { streamPromise } from '../../misc/streamUtil';
 import { timing } from '../../misc/timeUtil';
+import { removeDirectory } from '../removeDir';
 import { compareHash, saveHash } from '../statusHash';
 
 export async function extractSourceCodeIfNeed(output: OutputStreamControl) {

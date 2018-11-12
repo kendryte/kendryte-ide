@@ -12,7 +12,6 @@ import {
 	writeFile as writeFileAsync,
 } from 'fs';
 import { resolve } from 'path';
-import * as rimraf from 'rimraf';
 import { promisify } from 'util';
 import { isMac, isWin, VSCODE_ROOT } from './constants';
 import { globalSuccessMessage } from './globalOutput';
@@ -89,47 +88,6 @@ export const unlink = promisify(unlinkAsync);
 export const rmdir = promisify(rmdirAsync);
 export const open = promisify(openAsync);
 export const rename = promisify(renameAsync);
-
-function wrapFs(of: Function, output: NodeJS.WritableStream): Function {
-	if (output.hasOwnProperty('screen')) {
-		output = (output as any).screen;
-	}
-	return ((...args) => {
-		output.write(`${of.name}: ${args[0]}\n`);
-		return of.apply(undefined, args);
-	}) as any;
-}
-
-export function removeDirectory(path: string, output: NodeJS.WritableStream, verbose = true) {
-	output.write(`removing directory: ${path}...\n`);
-	let p = new Promise<void>((resolve, reject) => {
-		const wrappedCallback = (err) => err? reject(err) : resolve();
-		
-		rimraf(path, {
-			maxBusyTries: 5,
-			emfileWait: true,
-			disableGlob: true,
-			unlink: wrapFs(unlinkAsync, output) as typeof unlinkAsync,
-			rmdir: wrapFs(rmdirAsync, output) as typeof rmdirAsync,
-		}, wrappedCallback);
-	});
-	
-	p = p.then(() => {
-		output.write(`remove complete. delay for OS.\n`);
-	});
-	
-	if (isWin) {
-		p = p.then(() => timeout(5000));
-	} else {
-		p = p.then(() => timeout(500));
-	}
-	
-	p = p.then(() => {
-		globalSuccessMessage(`remove directory finish.`);
-	});
-	
-	return p;
-}
 
 let productData: any;
 

@@ -155,6 +155,8 @@ async function createPatch(output: OutputStreamControl, baseVer: string, newVer:
 	}).join('\n');
 	
 	// todo: create gzip
+	
+	return '';
 }
 
 function platformKey() {

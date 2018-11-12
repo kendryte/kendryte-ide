@@ -148,18 +148,18 @@ if (!(Test-Path -Path "$PRIVATE_BINS/git.bat")) {
 		throw "You need to install <github desktop>( https://desktop.github.com/ )."
 	}
 	
-	cd $RELEASE_ROOT
-	if (!(Test-Path -Path '.git')) {
-		git init .
-		echo '*' | Out-File .gitignore
-	}
-	
 	writeCmdFile git @"
 		@echo off
 		set HOME=${ORIGINAL_HOME}
 		set Path=${ORIGINAL_PATH}
 	"$GitLocation" %*
 "@
+	
+	cd $RELEASE_ROOT
+	if (!(Test-Path -Path '.git')) {
+		git init .
+		echo '*' | Out-File .gitignore
+	}
 }
 
 cd $VSCODE_ROOT

@@ -1,8 +1,8 @@
 import { createWriteStream, existsSync, lstatSync, readdirSync } from 'fs';
 import { resolve } from 'path';
 import { shellOutput } from '../build-env/childprocess/noDependency';
+import { removeDirectory } from '../build-env/codeblocks/removeDir';
 import { RELEASE_ROOT } from '../build-env/misc/constants';
-import { removeDirectory } from '../build-env/misc/fsUtil';
 import { mainDispose, runMain } from '../build-env/misc/myBuildSystem';
 
 runMain(async () => {

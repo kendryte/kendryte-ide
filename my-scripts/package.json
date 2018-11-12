@@ -3,7 +3,7 @@
   "license": "MIT",
   "devDependencies": {
     "7zip": "^0.0.6",
-    "@gongt/stillalive": "^1.1.0",
+    "@gongt/stillalive": "^1.1.1",
     "@types/aws-sdk": "^2.7.0",
     "@types/fs-extra": "^5.0.4",
     "@types/node": "^10.12.1",

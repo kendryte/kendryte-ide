@@ -16,7 +16,11 @@ try {
 	console.error('\x1B[2m%s\x1B[0m', parsedTrace);
 	
 	console.error('Failed to run %s.', command);
-	console.error('  Error when first event loop: %s.', e.message);
-	console.error('Did you run prepare-release?', e.message);
+	if (process.argv.join(' ').indexOf('prepare-release.js')) {
+		console.error('  Error when first event loop:\n  %s.', e.stack);
+	} else {
+		console.error('  Error when first event loop: %s.', e.message);
+		console.error('Did you run prepare-release?');
+	}
 	process.exit(1);
 }
