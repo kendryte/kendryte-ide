@@ -18,15 +18,15 @@ if (!$env:AlreadyInited) {
 
 cd $VSCODE_ROOT
 
-function prompt() {
+Set-Item -Path function:global:prompt -Value {
 	$host.ui.rawui.WindowTitle = "Kendryte IDE Source Code :: $pwd"
 	$Loc = $pwd.Path.Replace($VSCODE_ROOT, '')
 	if ($Loc -eq $pwd) {
-		return "PS $pwd> "
+		return "P.S $pwd> "
 	} else {
 		return "KendryteIDE$Loc> "
 	}
-}
+}.GetNewClosure()
 
 Write-Host $env:helpStrings
 

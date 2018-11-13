@@ -26,15 +26,23 @@ fi
 
 cd "${VSCODE_ROOT}"
 
+if [ "$SYSTEM" = "mac" ]; then
+	export _PROMPT_COLOR1=2
+	export _PROMPT_COLOR2=6
+else
+	export _PROMPT_COLOR1=10
+	export _PROMPT_COLOR2=14
+fi
+
 function prompt_path(){
 	local PW="$1"
 	local NL="${1#$VSCODE_ROOT}"
 	if [ "$NL" = "$PW" ]; then
-		echo -e "[\[\e[38;5;10m\]\u\[\e[0m\] $(basename "$1")]$ "
+		echo -e "[\[\e[38;5;${_PROMPT_COLOR1}m\]\u\[\e[0m\] $(basename "$1")]$ "
 	elif [ -n "$NL" ]; then
-		echo -e "[\[\e[38;5;14m\]KendryteIDE\[\e[0m\] ${NL#/}]$ "
+		echo -e "[\[\e[38;5;${_PROMPT_COLOR2}m\]KendryteIDE\[\e[0m\] ${NL#/}]$ "
 	else
-		echo -e "[\[\e[38;5;14m\]KendryteIDE\[\e[0m\]]$ "
+		echo -e "[\[\e[38;5;${_PROMPT_COLOR2}m\]KendryteIDE\[\e[0m\]]$ "
 	fi
 }
 function prompt() {
