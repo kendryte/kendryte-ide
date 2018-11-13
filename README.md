@@ -25,7 +25,7 @@ Based on a wonderful editor: [VS Code](https://code.visualstudio.com)
 		* 先确认系统版本较新
 		* 如果没有homebrew需要先安装
 		```bash
-		brew install coreutils findutils gnu-tar gnu-sed gawk gnutls gnu-indent gnu-getopt wget md5sha1sum gnutls --with-default-names
+		brew install coreutils p7zip findutils gnu-tar gnu-sed gawk gnutls gnu-indent gnu-getopt wget md5sha1sum gnutls --with-default-names
 		```
 		* 在 ~/.bashrc 中添加一行：
 		```bash

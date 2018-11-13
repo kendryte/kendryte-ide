@@ -100,15 +100,6 @@ writeShFile yarn "
 "
 ### yarn
 
-### x-www-browser
-writeShFile x-www-browser "
-echo -e \"\e[38;5;11mRequest to Start Browser: \$*\e[0m\"
-# MSG=\"\$(echo \"\$*\" | sed -e 's/\\/\\\\/g' -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')\"
-# zenity --info --title='Request to Start Browser' --text=\"\$MSG\" --width=800 --height=240 &
-"
-
-### x-www-browser
-
 function findCommand() {
 	local PATH="${ORIGINAL_PATH}"
 	command -v "$1"
@@ -147,5 +138,24 @@ fi
 writeShFile 7z "
 	'$(findCommand "7z")' $_PASSARG
 "
+### x-www-browser
+writeShFile x-www-browser "
+echo -e \"\e[38;5;11mRequest to Start Browser: \$*\e[0m\"
+# MSG=\"\$(echo \"\$*\" | sed -e 's/\\/\\\\/g' -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')\"
+# zenity --info --title='Request to Start Browser' --text=\"\$MSG\" --width=800 --height=240 &
+"
+### x-www-browser
+
+if [ "$SYSTEM" = "mac" ]; then
+	### mac gecho
+	ln -s "$(which gecho)" "$PRIVATE_BINS/echo"
+	### mac gecho
+
+	export MAC_ECHO_BIN="$(which gecho)"
+	function echo() {
+		"$MAC_ECHO_BIN" "$@"
+	}
+	export -f echo
+fi
 
 cd $VSCODE_ROOT
