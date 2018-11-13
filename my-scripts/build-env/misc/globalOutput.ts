@@ -1,5 +1,6 @@
 import { OutputStreamControl } from '@gongt/stillalive';
 import { spawn, SpawnOptions } from 'child_process';
+import { isAbsolute } from 'path';
 import { format } from 'util';
 import { ProgramError } from '../childprocess/error';
 import { parseCommand, processPromise } from '../childprocess/handlers';
@@ -32,6 +33,14 @@ export function globalSplitLog(msg: any, ...args: any[]) {
 	}
 }
 
+export function globalScreenLog(msg: any, ...args: any[]) {
+	if (globalLogTarget['nextLine']) {
+		(globalLogTarget as OutputStreamControl).screen.writeln(format(msg, ...args));
+	} else {
+		globalLogTarget.write(format(msg, ...args) + '\n');
+	}
+}
+
 export function globalInterruptLog(msg: any, ...args: any[]) {
 	if (globalLogTarget['nextLine']) {
 		globalLogTarget['empty'](format(msg, ...args));
@@ -41,7 +50,12 @@ export function globalInterruptLog(msg: any, ...args: any[]) {
 }
 
 export function spawnWithLog(command: string, args?: ReadonlyArray<string>, options?: SpawnOptions) {
+	if (!isAbsolute(command)) {
+		globalLog('PATH=%s', options.env.PATH || process.env.PATH);
+	}
+	globalLog(' > %s', options.cwd || process.cwd());
 	globalInterruptLog(' + %s %s', command, args.join(' '));
+	globalScreenLog('running...');
 	
 	[command, args] = parseCommand(command, args);
 	const r = spawn(command, args, options);

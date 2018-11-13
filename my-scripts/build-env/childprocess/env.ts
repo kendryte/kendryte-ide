@@ -6,15 +6,18 @@ const pathSp = isWin? ';' : ':';
 export function mergeEnv() {
 	const cwd = process.cwd();
 	const newEnv: NodeJS.ProcessEnv = {
-		PATH: resolve(cwd, 'node_modules/.bin'),
+		PATH: '',
 	};
 	Object.keys(process.env).forEach((k) => {
 		if (k.toLowerCase() === 'path') {
-			newEnv.PATH += pathSp + process.env[k];
+			newEnv.PATH += process.env[k] + pathSp;
 		} else {
 			newEnv[k] = process.env[k];
 		}
 	});
+	
+	newEnv.PATH += resolve(cwd, 'node_modules/.bin');
+	
 	return {
 		cwd,
 		env: newEnv,

@@ -11,7 +11,7 @@ import {
 	downloadElectron,
 	yarnInstall,
 } from '../build-env/codeblocks/build/common-step';
-import { creatingZip } from '../build-env/codeblocks/zip';
+import { creatingReleaseZip } from '../build-env/codeblocks/zip';
 import { cleanScreen } from '../build-env/misc/clsUtil';
 import { ARCH_RELEASE_ROOT, isMac, isWin, RELEASE_ROOT, VSCODE_ROOT } from '../build-env/misc/constants';
 import { calcCompileFolderName, getPackageData, getProductData, rename } from '../build-env/misc/fsUtil';
@@ -74,7 +74,7 @@ runMain(async () => {
 	
 	await rename(compileResultFolder, wantDirPath);
 	
-	await creatingZip(output);
+	await creatingReleaseZip(output);
 	
 	output.success('complete.');
 });

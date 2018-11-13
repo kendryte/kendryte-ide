@@ -7,12 +7,13 @@ for i in "${LSDIR[@]}" ; do
 
 	writeShFile "$Command" "
 		$(declare -pf die)
-		cd \"\$VSCODE_ROOT\"
+		cd '$VSCODE_ROOT'
 		node 'my-scripts/build-env/load-command.js' '${Command}' \"\$@\" || die \"Command failed with code \$?\"
 	"
 done
 
 writeShFile show-help "
+	cd '$VSCODE_ROOT'
 	exec node 'my-scripts/build-env/help.js'
 "
 

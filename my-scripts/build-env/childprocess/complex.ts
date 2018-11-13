@@ -1,4 +1,4 @@
-import { OutputStreamControl } from '@gongt/stillalive';
+import { isAbsolute } from 'path';
 import { PassThrough } from 'stream';
 import { spawnWithLog } from '../misc/globalOutput';
 import { BlackHoleStream, CollectingStream, endArg } from '../misc/streamUtil';
@@ -35,9 +35,6 @@ export async function muteCommandOut(cmd: string, ...args: string[]): Promise<vo
 export async function pipeCommandOut(pipe: NodeJS.WritableStream, cmd: string, ...args: string[]): Promise<void> {
 	// console.log(' + %s %s | line-output', command, argumentList.join(' '));
 	const stream = _spawnCommand(cmd, args);
-	if (pipe instanceof OutputStreamControl) {
-		(pipe as OutputStreamControl).empty(`Running command: ${cmd} ${args.join(' ')}`);
-	}
 	stream.output.pipe(pipe, endArg(pipe));
 	await stream.wait();
 }
