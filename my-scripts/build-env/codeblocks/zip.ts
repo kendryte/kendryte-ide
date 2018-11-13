@@ -1,4 +1,5 @@
 import { chmod, mkdirp } from 'fs-extra';
+import { platform } from 'os';
 import { resolve } from 'path';
 import { Transform, TransformCallback } from 'stream';
 import { pipeCommandOut } from '../childprocess/complex';
@@ -19,7 +20,7 @@ const commonArgs = [
 if (!isWin) {
 	commonArgs.push('-mmt3'); // use 3 threads
 }
-const normalArgs = [
+const zipLzma2Args = [
 	...commonArgs,
 	'-t7z', // compress to xxx.7z
 	'-ms=on', // solid
@@ -29,29 +30,32 @@ const normalArgs = [
 	'-mfb=64', // word size
 ];
 if (isWin) {
-	commonArgs.push('"-sfx7zCon.sfx"'); // self extraction
+	zipLzma2Args.push('"-sfx7z.sfx"'); // self extraction
 } else {
-	commonArgs.push('-sfx7zCon.sfx'); // self extraction
+	zipLzma2Args.push('-sfx7zCon.sfx'); // self extraction
 }
 
-const zipArgs = [
+const zipDeflateArgs = [
 	...commonArgs,
 	'-tzip', // compress to xxx.zip
 	'-mx6', // more compress
 ];
 
 export async function createPosixSfx(output: NodeJS.WritableStream, whatToZip: string) {
+	output.write('creating posix 7z sfx bin...\n');
 	const zipFileName = await distFilePath('7z.bin');
-	await pipeCommandOut(output, _7z, ...normalArgs, '--', zipFileName, whatToZip + '/*');
+	await pipeCommandOut(output, _7z, ...zipLzma2Args, '--', zipFileName, whatToZip + '/*');
 	await chmod(zipFileName, '777');
 }
 
 export async function createWindowsSfx(output: NodeJS.WritableStream, whatToZip: string) {
-	return pipeCommandOut(output, _7z, ...normalArgs, '--', await distFilePath('exe'), whatToZip + '/*');
+	output.write('creating windows 7z sfx exe...\n');
+	return pipeCommandOut(output, _7z, ...zipLzma2Args, '--', await distFilePath('exe'), whatToZip + '/*');
 }
 
 export async function createWindowsZip(output: NodeJS.WritableStream, whatToZip: string) {
-	return pipeCommandOut(output, _7z, ...zipArgs, '--', await distFilePath('zip'), whatToZip + '/*');
+	output.write('creating windows zip simple...\n');
+	return pipeCommandOut(output, _7z, ...zipDeflateArgs, '--', await distFilePath('zip'), whatToZip + '/*');
 }
 
 export async function calcZipFileName() {
@@ -73,7 +77,7 @@ async function distFilePath(type: string): Promise<string> {
 	const packageJson = await getPackageData();
 	
 	const pv = ('' + packageJson.patchVersion).replace(/\./g, '');
-	return `release-files/${product.applicationName}.v${packageJson.version}-${product.quality}.${pv}.${type}`;
+	return `release-files/${platform()}.${product.applicationName}.v${packageJson.version}-${product.quality}.${pv}.${type}`;
 }
 
 export async function creatingZip(output: NodeJS.WritableStream) {
@@ -84,7 +88,6 @@ export async function creatingZip(output: NodeJS.WritableStream) {
 	
 	const wantDirName = await calcCompileFolderName();
 	
-	output.write('creating zip...\n');
 	if (isWin) {
 		const convert = new class TransformEncode extends Transform {
 			public noEnd = true;
