@@ -25,7 +25,7 @@ Based on a wonderful editor: [VS Code](https://code.visualstudio.com)
 		* 先确认系统版本较新
 		* 如果没有homebrew需要先安装
 		```bash
-		brew install coreutils findutils gnu-tar gnu-sed gawk gnutls gnu-indent gnu-getopt wget md5sha1sum
+		brew install coreutils findutils gnu-tar gnu-sed gawk gnutls gnu-indent gnu-getopt wget md5sha1sum gnutls --with-default-names
 		```
 1. 启动一个终端（如果是windows，则启动powershell，而不是cmd）
 1. 下载源码，cd进去 `git clone git@github.com:kendryte/kendryte-ide.git && cd kendryte-ide`

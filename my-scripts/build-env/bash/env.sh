@@ -19,7 +19,7 @@ if uname -o &>/dev/null ; then
 	else
 		die "Sorry, we do not support your platform: $(uname -a 2>&1)"
 	fi
-elif [ "$(uname -o 2>/dev/null)" = "Darwin" ]; then
+elif [ "$(uname 2>/dev/null)" = "Darwin" ]; then
 	export SYSTEM=mac
 else
 	die "Sorry, we do not support your platform: $(uname -a 2>&1)"
@@ -48,7 +48,7 @@ export PRIVATE_BINS="$(resolvePath "${RELEASE_ROOT}" wrapping-bins)"
 
 CommonPaths="/bin:/usr/bin"
 if [ "$SYSTEM" = mac ]; then
-	CommonPaths+="/usr/local/bin"
+	CommonPaths="/usr/local/bin:${CommonPaths}"
 fi
 LocalNodePath="$(resolvePath "${VSCODE_ROOT}" node_modules/.bin)"
 BuildingNodePath="$(resolvePath "${VSCODE_ROOT}" my-scripts/node_modules/.bin)"
