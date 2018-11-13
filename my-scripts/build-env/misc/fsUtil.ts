@@ -10,12 +10,11 @@ import {
 	Stats,
 	unlink as unlinkAsync,
 	writeFile as writeFileAsync,
+	readlink as readlinkAsync
 } from 'fs';
 import { resolve } from 'path';
 import { promisify } from 'util';
-import { isMac, isWin, VSCODE_ROOT } from './constants';
-import { globalSuccessMessage } from './globalOutput';
-import { timeout } from './timeUtil';
+import { isMac, VSCODE_ROOT } from './constants';
 
 /* No use any node_modules deps */
 
@@ -88,6 +87,7 @@ export const unlink = promisify(unlinkAsync);
 export const rmdir = promisify(rmdirAsync);
 export const open = promisify(openAsync);
 export const rename = promisify(renameAsync);
+export const readlink = promisify(readlinkAsync);
 
 let productData: any;
 

@@ -1,11 +1,12 @@
 import { OutputStreamControl } from '@gongt/stillalive';
-import { readFileSync, rename, unlinkSync, writeFileSync } from 'fs';
-import { copy, mkdir, readdir } from 'fs-extra';
+import { readFileSync, rename, writeFileSync } from 'fs';
+import { copy, mkdir } from 'fs-extra';
 import { resolve } from 'path';
 import { pipeCommandOut } from '../childprocess/complex';
 import { installDependency } from '../childprocess/yarn';
 import { VSCODE_ROOT } from '../misc/constants';
-import { isExists, isExistsSync, isLinkSync, writeFile } from '../misc/fsUtil';
+import { isExists, writeFile } from '../misc/fsUtil';
+import { resolveGitDir } from '../misc/git';
 import { chdir, ensureChdir, yarnPackageDir } from '../misc/pathUtil';
 import { timing } from '../misc/timeUtil';
 import { gulpCommands } from './gulp';
@@ -24,6 +25,7 @@ export async function packWindows(output: OutputStreamControl) {
 	log('  sourceRoot = ' + root);
 	log('  packageRoot = ' + yarnPackageDir('.'));
 	
+	const gitDir = await resolveGitDir(resolve(root, '.git'));
 	const originalPkg = require(resolve(root, 'package.json'));
 	const originalLock = readFileSync(resolve(root, 'yarn.lock'));
 	
@@ -114,7 +116,7 @@ export async function packWindows(output: OutputStreamControl) {
 	chdir(root);
 	await pipeCommandOut(output, 'yarn', 'run', 'postinstall');
 	
-	await copy(huskyHooks, resolve(VSCODE_ROOT, '.git', 'hooks'));
+	await copy(huskyHooks, resolve(gitDir, 'hooks'));
 	
 	output.success('Everything complete.');
 }

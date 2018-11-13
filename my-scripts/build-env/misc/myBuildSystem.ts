@@ -27,14 +27,8 @@ export function runMain(main: () => Promise<void>) {
 		return;
 	}
 	const p = finalPromise = finalPromise.then(main);
-	p.then(async () => {
-		if (finalPromise !== p) {
-			return;
-		}
-		while (disposeList.length) {
-			await disposeList.shift()();
-			await timeout(50); // give time to finish
-		}
+	p.then(() => {
+		return 0;
 	}, async (e) => {
 		if (e.__programError) {
 			console.error(
@@ -46,17 +40,18 @@ export function runMain(main: () => Promise<void>) {
 		} else {
 			console.error('\n\n\x1B[38;5;9mCommand Failed:\n\t%s\x1B[0m', e.stack);
 		}
+		return 1;
+	}).then(async (quit) => {
+		if (finalPromise !== p) {
+			return;
+		}
 		while (disposeList.length) {
 			await disposeList.shift()();
 			await timeout(50); // give time to finish
 		}
-	}).then((quit) => {
-		if (finalPromise !== p) {
-			return;
-		}
-		process.exit(0);
-	}, (e) => {
-		console.log(e);
+		process.exit(quit);
+	}).catch((e) => {
+		console.error(e);
 		process.exit(1);
 	});
 }
