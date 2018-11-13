@@ -3,6 +3,7 @@ import { S3 } from 'aws-sdk';
 import { ClientConfiguration } from 'aws-sdk/clients/s3';
 import { createReadStream } from 'fs';
 import { copy } from 'fs-extra';
+import { platform } from 'os';
 import { basename, resolve } from 'path';
 import { resolve as resolveUrl } from 'url';
 import { format, promisify } from 'util';
@@ -18,6 +19,8 @@ import { CollectingStream } from '../build-env/misc/streamUtil';
 import { timeout } from '../build-env/misc/timeUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 import { IDEJson, IDEPatchJson } from '../publisher/release.json';
+
+const {compress} = require('targz');
 
 const {loadCredentialsFromEnv, loadCredentialsFromIniFile, loadRegionFromEnv, loadRegionFromIniFile} = require('awscred');
 require('awscred').credentialsCallChain = [loadCredentialsFromEnv, loadCredentialsFromIniFile];
@@ -151,12 +154,32 @@ async function createPatch(output: OutputStreamControl, baseVer: string, newVer:
 	await pipeCommandOut(output.screen, 'git', 'add', '.');
 	const fileList = await getOutputCommand('git', 'diff', '--name-only', 'HEAD');
 	const realFileList = fileList.split('\n').filter((e) => {
-		return !e.startsWith('node_modules');
-	}).join('\n');
+		return e && !e.startsWith('node_modules');
+	});
 	
-	// todo: create gzip
+	const packData = await getPackageData(baseVer);
 	
-	return '';
+	const patchFile = resolve(RELEASE_ROOT, 'release-files', `${packData.version}_${packData.patchVersion}_${platform()}.tar.gz`);
+	const config = {
+		src: baseVer,
+		dest: patchFile,
+		tar: {
+			entries: realFileList,
+			dmode: 493, // 0755
+			fmode: 420, // 0644
+			strict: false,
+		},
+		gz: {
+			level: 6,
+			memLevel: 6,
+		},
+	};
+	await new Promise((resolve, reject) => {
+		const wrappedCallback = (err) => err? reject(err) : resolve();
+		compress(config, wrappedCallback);
+	});
+	
+	return patchFile;
 }
 
 function platformKey() {
