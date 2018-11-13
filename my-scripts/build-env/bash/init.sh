@@ -148,6 +148,9 @@ echo -e \"\e[38;5;11mRequest to Start Browser: \$*\e[0m\"
 
 if [ "$SYSTEM" = "mac" ]; then
 	### mac gecho
+	if [ -e "$PRIVATE_BINS/echo" ]; then
+		unlink "$PRIVATE_BINS/echo"
+	fi
 	ln -s "$(which gecho)" "$PRIVATE_BINS/echo"
 	### mac gecho
 
