@@ -27,7 +27,7 @@ runMain(async () => {
 	
 	const output = usePretty('format-all');
 	
-	output.success('running reformat on ALL source files, this will use about 1min. please wait.').continue();
+	output.success('running reformat on ALL source files, this will use about 1min. please wait.');
 	output.write('waiting for \'yarn gulp hygiene\'');
 	
 	const notFormattedFiles: string[] = [];
@@ -52,15 +52,14 @@ runMain(async () => {
 	multiplex.pipe(useWriteFileStream(resolve(RELEASE_ROOT, 'hygiene.log')));
 	
 	await await pipeCommandOut(multiplex, 'node', ...gulpCommands(), 'hygiene').then(() => {
-		output.success('gulp hygiene exit successful').continue();
+		output.success('gulp hygiene exit successful');
 	}, (e: ProgramError) => {
 		output.fail(`gulp hygiene exit with failed status: ${e.status || ''}${e.signal || ''}`);
 		notValidFiles.unshift('hygiene failed. this list may not complete. run yarn gulp hygiene too see full.');
-		output.continue();
 	});
 	
 	if (notFormattedFiles.length) {
-		output.success(`fixing ${notFormattedFiles.length} error....\n`).continue();
+		output.success(`fixing ${notFormattedFiles.length} error....\n`);
 		
 		for (const file of notFormattedFiles) {
 			output.write(file + '\n');

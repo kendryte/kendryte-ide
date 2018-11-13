@@ -19,15 +19,15 @@ export async function extractSourceCodeIfNeed(output: OutputStreamControl) {
 	
 	output.writeln('creating source code snapshot...\n');
 	const hash = await createSourceSnapshot(output);
-	output.success('   code hash: ' + hash).continue();
+	output.success('   code hash: ' + hash);
 	
 	if (await compareHash('source-code', hash, output)) {
-		output.success('source code not changed.' + timeOut()).continue();
+		output.success('source code not changed.' + timeOut());
 	} else {
 		output.writeln('source code has changed, making new directory.\n');
 		await recreateSourceCodes(output);
 		await saveHash('source-code', hash, output);
-		output.success('complete action on create source:' + timeOut()).continue();
+		output.success('complete action on create source:' + timeOut());
 	}
 }
 
@@ -67,11 +67,10 @@ async function recreateSourceCodes(output: OutputStreamControl) {
 		output.writeln('remove old source code...');
 		await removeDirectory(ARCH_RELEASE_ROOT, output, false).catch((e) => {
 			output.fail(e.message);
-			console.error('Did you opened any file in %s?', ARCH_RELEASE_ROOT);
-			output.continue();
+			output.fail(`Did you opened any file in ${ARCH_RELEASE_ROOT}?`);
 			throw e;
 		});
-		output.success('dist directory clean.').continue();
+		output.success('dist directory clean.');
 	} else {
 		output.writeln('no old source code exists.');
 	}
@@ -79,7 +78,7 @@ async function recreateSourceCodes(output: OutputStreamControl) {
 	output.writeln('writing source code:');
 	const untar = extract(ARCH_RELEASE_ROOT);
 	await writeSourceCodeStream(untar, output);
-	output.success('source code directory created.').continue();
+	output.success('source code directory created.');
 	
 	if (await isExists(temp_node_modules)) {
 		output.writeln('move old node_modules back...');
@@ -116,7 +115,7 @@ async function getCurrentVersion(output: OutputStreamControl) {
 	} else {
 		currentVersion = await getOutputCommand('git', 'stash', 'create');
 	}
-	output.success(`Git Current Version: ${currentVersion}.`).continue();
+	output.success(`Git Current Version: ${currentVersion}.`);
 	return knownVersion = currentVersion;
 }
 

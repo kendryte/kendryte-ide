@@ -102,10 +102,10 @@ runMain(async () => {
 		const oldPackageLocal = resolve(RELEASE_ROOT, 'create-patch', 'old.7z');
 		output.writeln('download old version from: ' + oldPackageAt);
 		await downloadFile(output, oldPackageAt, oldPackageLocal);
-		output.success('downloaded old version.').continue();
+		output.success('downloaded old version.');
 		output.writeln('extract it');
 		await un7zip(output, oldPackageLocal, resolve(RELEASE_ROOT, 'create-patch', 'prev-version'));
-		output.success('extract complete.').continue();
+		output.success('extract complete.');
 		
 		for (const file of targetZipFiles) {
 			ideState[platformKey()] = await new Promise<string>((resolve, reject) => {
@@ -177,7 +177,7 @@ async function loadCred(output: OutputStreamControl, home: string): Promise<Part
 	process.env.HOME = saveHome;
 	return p.then((cfg) => {
 		if (cfg) {
-			output.success('success load config from ' + home).continue();
+			output.success('success load config from ' + home);
 		}
 		return cfg;
 	}, () => {

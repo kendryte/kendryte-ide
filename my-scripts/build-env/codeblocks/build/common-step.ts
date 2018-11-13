@@ -21,7 +21,7 @@ export async function cleanupBuildResult(output: OutputStreamControl, dir: strin
 		output.write(`remove last build result.\n`);
 		
 		await rename(dir, backupDir).catch((e) => {
-			output.fail(`Cannot rename folder "${dir}", did you open any file in it?`).continue();
+			output.fail(`Cannot rename folder "${dir}", did you open any file in it?`);
 			throw e;
 		});
 	}
@@ -41,8 +41,8 @@ export async function yarnInstall(output: OutputStreamControl) {
 	if (await isExists(integrityFile)) {
 		await unlink(integrityFile);
 	}
-	await installDependency(output, ARCH_RELEASE_ROOT, false);
-	output.success('dependencies installed.' + timeInstall()).continue();
+	await installDependency(output, ARCH_RELEASE_ROOT);
+	output.success('dependencies installed.' + timeInstall());
 }
 
 export async function downloadElectron(output: OutputStreamControl) {
@@ -51,14 +51,14 @@ export async function downloadElectron(output: OutputStreamControl) {
 	showElectronNoticeInChina();
 	
 	await pipeCommandOut(output, 'node', ...gulpCommands(), 'electron-x64');
-	output.success('electron installed.').continue();
+	output.success('electron installed.');
 }
 
 export async function downloadBuiltinExtensions(output: OutputStreamControl) {
 	chdir(ARCH_RELEASE_ROOT);
 	output.write(`installing builtin extension...\n`);
 	await pipeCommandOut(output, 'node', 'build/lib/builtInExtensions.js');
-	output.success('builtin extension installed.').continue();
+	output.success('builtin extension installed.');
 }
 
 export async function deleteCompileCaches(output: OutputStreamControl) {

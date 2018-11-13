@@ -59,7 +59,7 @@ runMain(async () => {
 	await downloadBuiltinExtensions(output);
 	
 	const timeBuild = timing();
-	output.success('Prepare complete. Start building package. This is really slow.').continue();
+	output.success('Prepare complete. Start building package. This is really slow.');
 	
 	let compileResultFolder: string;
 	chdir(ARCH_RELEASE_ROOT);
@@ -70,7 +70,7 @@ runMain(async () => {
 	} else {
 		compileResultFolder = await linuxBuild(output);
 	}
-	output.success('Package Created.' + timeBuild()).continue();
+	output.success('Package Created.' + timeBuild());
 	
 	await rename(compileResultFolder, wantDirPath);
 	

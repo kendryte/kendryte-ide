@@ -13,6 +13,7 @@ whatIsThis(__filename, 'install required thing for development (require prepare-
 runMain(async () => {
 	chdir(VSCODE_ROOT);
 	const output = usePretty('prepare-development');
+	await installDependency(output);
 	if (isWin) {
 		const stat = await lstat('./node_modules');
 		if (stat && stat.isDirectory()) {
@@ -21,7 +22,7 @@ runMain(async () => {
 		await reset_asar(output);
 		await packWindows(output);
 	} else {
-		await installDependency(output, VSCODE_ROOT);
+		// await installDependency(output, VSCODE_ROOT);
 	}
 	output.success('Done.');
 });

@@ -46,7 +46,7 @@ export async function packWindows(output: OutputStreamControl) {
 	/// dependencies - install
 	const timeOutProd = timing();
 	await installDependency(output, prodDepsDir);
-	output.success('production dependencies installed.' + timeOutProd()).continue();
+	output.success('production dependencies installed.' + timeOutProd());
 	
 	//// devDependencies
 	log('  create devDependencies');
@@ -58,13 +58,13 @@ export async function packWindows(output: OutputStreamControl) {
 		},
 	}));
 	writeFileSync('yarn.lock', originalLock);
-	output.success('basic files write complete.').continue();
+	output.success('basic files write complete.');
 	
 	//// devDependencies - husky
 	if (!await isExists('.git')) {
 		await pipeCommandOut(output, 'git', 'init', '.');
 		await writeFile('.gitignore', '*');
-		output.success('dummy git repo created.').continue();
+		output.success('dummy git repo created.');
 	}
 	const huskyHooks = resolve(devDepsDir, '.git', 'hooks');
 	await removeDirectory(huskyHooks, output);
@@ -73,7 +73,7 @@ export async function packWindows(output: OutputStreamControl) {
 	/// devDependencies - install
 	const timeOutDev = timing();
 	await installDependency(output, devDepsDir);
-	output.success('development dependencies installed.' + timeOutDev()).continue();
+	output.success('development dependencies installed.' + timeOutDev());
 	
 	//// devDependencies - husky (ensure)
 	await pipeCommandOut(output, 'node', 'node_modules/husky/bin/install.js');
@@ -89,7 +89,7 @@ export async function packWindows(output: OutputStreamControl) {
 	chdir(root);
 	const timeOutZip = timing();
 	await pipeCommandOut(output, 'node', ...gulpCommands(), '--gulpfile', 'my-scripts/gulpfile/pack-win.js');
-	output.success('ASAR created.' + timeOutProd()).continue();
+	output.success('ASAR created.' + timeOutProd());
 	
 	log('move ASAR package to source root');
 	chdir(root);
@@ -107,7 +107,7 @@ export async function packWindows(output: OutputStreamControl) {
 			resolve(root, 'node_modules.asar'),
 			wrappedCallback);
 	});
-	output.success('ASAR moved to root.').continue();
+	output.success('ASAR moved to root.');
 	
 	/// install child node_modules by default script
 	log('run post-install script');
@@ -116,5 +116,5 @@ export async function packWindows(output: OutputStreamControl) {
 	
 	await copy(huskyHooks, resolve(VSCODE_ROOT, '.git', 'hooks'));
 	
-	output.success('Everything complete.').continue();
+	output.success('Everything complete.');
 }

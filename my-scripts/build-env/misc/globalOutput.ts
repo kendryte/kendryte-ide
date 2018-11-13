@@ -34,10 +34,9 @@ export function globalSplitLog(msg: any, ...args: any[]) {
 
 export function globalInterruptLog(msg: any, ...args: any[]) {
 	if (globalLogTarget['nextLine']) {
-		globalLogTarget.write('\n' + format(msg + '\n', ...args));
-		globalLogTarget['nextLine']();
+		globalLogTarget['empty'](format(msg, ...args));
 	} else {
-		globalLogTarget.write(format(msg + '\n', ...args));
+		globalLogTarget.write('---------------\n' + format(msg + '\n', ...args));
 	}
 }
 
