@@ -100,6 +100,7 @@
     "express": "^4.13.1",
     "glob": "^5.0.13",
     "gulp": "^3.8.9",
+    "gulp-bom": "^2.0.0",
     "gulp-atom-electron": "^1.19.0",
     "gulp-azure-storage": "^0.7.0",
     "gulp-buffer": "0.0.2",

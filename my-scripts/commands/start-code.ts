@@ -17,6 +17,10 @@ runMain(async () => {
 	chdir(VSCODE_ROOT);
 
 	mkdirpSync('data');
+	
+	delete process.env.HTTP_PROXY;
+	delete process.env.HTTPS_PROXY;
+	delete process.env.ALL_PROXY;
 
 	const passArgs = process.argv.slice(2);
 	if (isWin) {

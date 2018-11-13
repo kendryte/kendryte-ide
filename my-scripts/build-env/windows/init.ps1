@@ -158,7 +158,7 @@ if (!(Test-Path -Path "$PRIVATE_BINS/git.bat")) {
 	cd $RELEASE_ROOT
 	if (!(Test-Path -Path '.git')) {
 		git init .
-		echo '*' | Out-File .gitignore
+		echo '*' | Out-File -FilePath .gitignore -Encoding "ascii"
 	}
 }
 

@@ -27,6 +27,10 @@ $LocalNodePath = (resolvePath $VSCODE_ROOT node_modules\.bin)
 $BuildingNodePath = (resolvePath $VSCODE_ROOT my-scripts\node_modules\.bin)
 setSystemVar 'PATH' "$PRIVATE_BINS;$PythonPath;$NODEJS_BIN;$BuildingNodePath;$LocalNodePath;$CommonPaths"
 
+if ($env:KENDRYTE_PROXY) {
+	setSystemVar 'HTTP_PROXY' "$env:KENDRYTE_PROXY"
+}
+
 if ($env:HTTP_PROXY) {
 	setSystemVar 'HTTPS_PROXY' "$env:HTTP_PROXY"
 	setSystemVar 'ALL_PROXY' "$env:HTTP_PROXY"
