@@ -48,7 +48,7 @@ export PRIVATE_BINS="$(resolvePath "${RELEASE_ROOT}" wrapping-bins)"
 
 CommonPaths="/bin:/usr/bin"
 if [ "$SYSTEM" = mac ]; then
-	CommonPaths="/usr/local/bin:${CommonPaths}"
+	CommonPaths="/usr/local/opt/coreutils/libexec/gnubin:/usr/local/bin:${CommonPaths}"
 fi
 LocalNodePath="$(resolvePath "${VSCODE_ROOT}" node_modules/.bin)"
 BuildingNodePath="$(resolvePath "${VSCODE_ROOT}" my-scripts/node_modules/.bin)"
