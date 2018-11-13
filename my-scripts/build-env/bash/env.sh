@@ -16,6 +16,8 @@ SCRIPT_LIB_ROOT=$(resolvePath "${BASH_SOURCE[0]}" ..)
 if uname -o &>/dev/null ; then
 	if [ "$(uname -o)" = "GNU/Linux" ]; then
 		export SYSTEM=linux
+	elif [ "$(uname -o)" = "Darwin" ]; then
+		export SYSTEM=mac
 	else
 		die "Sorry, we do not support your platform: $(uname -a 2>&1)"
 	fi
