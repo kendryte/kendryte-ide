@@ -1,5 +1,6 @@
 import { OutputStreamControl } from '@gongt/stillalive';
 import { resolve } from 'path';
+import { installDependency } from '../build-env/childprocess/yarn';
 import { linuxBuild } from '../build-env/codeblocks/build/build-linux';
 import { macBuild } from '../build-env/codeblocks/build/build-mac';
 import { windowsBuild } from '../build-env/codeblocks/build/build-windows';
@@ -16,7 +17,7 @@ import { cleanScreen } from '../build-env/misc/clsUtil';
 import { ARCH_RELEASE_ROOT, isMac, isWin, RELEASE_ROOT, VSCODE_ROOT } from '../build-env/misc/constants';
 import { calcCompileFolderName, getPackageData, getProductData, rename } from '../build-env/misc/fsUtil';
 import { whatIsThis } from '../build-env/misc/help';
-import { runMain, useWriteFileStream } from '../build-env/misc/myBuildSystem';
+import { runMain } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 import { timing } from '../build-env/misc/timeUtil';
 import { usePretty } from '../build-env/misc/usePretty';
@@ -54,6 +55,10 @@ runMain(async () => {
 	await cleanupBuildResult(output, wantDirPath);
 	
 	await extractSourceCodeIfNeed(output);
+	
+	chdir(resolve(ARCH_RELEASE_ROOT, 'my-scripts'));
+	await installDependency(output);
+	
 	await yarnInstall(output);
 	await downloadElectron(output);
 	await downloadBuiltinExtensions(output);
