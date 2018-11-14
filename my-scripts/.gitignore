@@ -1,5 +1,4 @@
 node_modules
-yarn.lock
 .idea/*
 !.idea/codeStyles
 !.idea/my-scripts.iml
