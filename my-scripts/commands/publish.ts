@@ -9,7 +9,8 @@ import { resolve as resolveUrl } from 'url';
 import { format, promisify } from 'util';
 import { getOutputCommand, pipeCommandOut } from '../build-env/childprocess/complex';
 import { downloadFile } from '../build-env/codeblocks/downloadFile';
-import { calcZipFileName, un7zip } from '../build-env/codeblocks/zip';
+import { un7zip } from '../build-env/codeblocks/zip';
+import { calcReleaseFileName } from '../build-env/codeblocks/zip.name';
 import { isMac, isWin, RELEASE_ROOT } from '../build-env/misc/constants';
 import { calcCompileFolderName, getPackageData, getProductData, isExists } from '../build-env/misc/fsUtil';
 import { globalInterruptLog } from '../build-env/misc/globalOutput';
@@ -35,7 +36,7 @@ runMain(async () => {
 	globalInterruptLog('HTTP_PROXY=%s', process.env.HTTP_PROXY);
 	
 	const compiledResult = resolve(RELEASE_ROOT, await calcCompileFolderName());
-	const targetZipFiles = (await calcZipFileName()).map(fn => resolve(RELEASE_ROOT, fn));
+	const targetZipFiles = (await calcReleaseFileName()).map(fn => resolve(RELEASE_ROOT, fn));
 	if (await isExists(compiledResult)) {
 		globalInterruptLog('read data from ' + compiledResult);
 	} else {

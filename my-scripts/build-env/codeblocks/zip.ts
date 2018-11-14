@@ -1,14 +1,14 @@
 import { OutputStreamControl } from '@gongt/stillalive';
 import { chmod, mkdirp } from 'fs-extra';
-import { platform } from 'os';
-import { join, normalize, resolve } from 'path';
+import { join, resolve } from 'path';
 import { Transform, TransformCallback } from 'stream';
 import { pipeCommandBoth, pipeCommandOut } from '../childprocess/complex';
 import { isWin, RELEASE_ROOT } from '../misc/constants';
-import { calcCompileFolderName, getPackageData, getProductData } from '../misc/fsUtil';
+import { calcCompileFolderName } from '../misc/fsUtil';
 import { chdir } from '../misc/pathUtil';
 import { endArg } from '../misc/streamUtil';
 import { cleanupZipFiles } from './build/common-step';
+import { nameReleaseFile } from './zip.name';
 
 const _7z = isWin? require('7zip')['7z'] : '7z';
 
@@ -82,26 +82,22 @@ async function createWindowsZip(
 	return pipeCommandBoth(output, stderr, _7z, ...zipDeflateArgs, ...zipArgs, '--', zipFileName, join(whatToZip, '*'));
 }
 
-export async function calcZipFileName() {
-	if (isWin) {
-		return [await distFileName('exe'), await  distFileName('zip')];
-	} else {
-		return [await distFileName('7z.bin')];
-	}
+async function createPosixZip(
+	output: NodeJS.WritableStream,
+	stderr: NodeJS.WritableStream,
+	whatToZip: string,
+	zipFileName: string,
+	...zipArgs: string[]
+) {
+	output.write('creating posix zip simple...\n');
+	zipFileName = resolve(releaseZipStorageFolder(), zipFileName);
+	return pipeCommandBoth(output, stderr, _7z, ...zipDeflateArgs, ...zipArgs, '--', zipFileName, join(whatToZip, '*'));
 }
 
 export async function un7zip(output: NodeJS.WritableStream, from: string, to: string) {
 	await mkdirp(to);
 	chdir(to);
 	return pipeCommandOut(output, _7z, 'x', '-y', '-r', from);
-}
-
-async function distFileName(type: string): Promise<string> {
-	const product = await getProductData();
-	const packageJson = await getPackageData();
-	
-	const pv = ('' + packageJson.patchVersion).replace(/\./g, '');
-	return normalize(`${platform()}.${product.applicationName}.v${packageJson.version}-${product.quality}.${pv}.${type}`);
 }
 
 export function releaseZipStorageFolder() {
@@ -129,7 +125,7 @@ class ProgressStream extends Transform {
 	}
 }
 
-export async function creatingUniversalZip(output: OutputStreamControl, sourceDir: string, namer: (type: string) => Promise<string>) {
+export async function creatingUniversalZip(output: OutputStreamControl, sourceDir: string, namer: (type: string) => string) {
 	const stderr = new ProgressStream;
 	stderr.pipe(output.screen, {end: false});
 	
@@ -143,6 +139,7 @@ export async function creatingUniversalZip(output: OutputStreamControl, sourceDi
 		convert.end();
 	} else {
 		await createPosixSfx(output, stderr, sourceDir, await namer('7z.bin'));
+		await createPosixZip(output, stderr, sourceDir, await namer('zip'));
 	}
 }
 
@@ -152,5 +149,5 @@ export async function creatingReleaseZip(output: OutputStreamControl) {
 	chdir(RELEASE_ROOT);
 	await cleanupZipFiles(output, zipStoreDir);
 	
-	return creatingUniversalZip(output, await calcCompileFolderName(), distFileName);
+	return creatingUniversalZip(output, await calcCompileFolderName(), nameReleaseFile);
 }

@@ -4,13 +4,15 @@ import {
 	lstatSync,
 	mkdirSync,
 	open as openAsync,
+	close as closeAsync,
 	readFile as readFileAsync,
+	readFileSync,
+	readlink as readlinkAsync,
 	rename as renameAsync,
 	rmdir as rmdirAsync,
 	Stats,
 	unlink as unlinkAsync,
 	writeFile as writeFileAsync,
-	readlink as readlinkAsync
 } from 'fs';
 import { resolve } from 'path';
 import { promisify } from 'util';
@@ -86,6 +88,7 @@ export function writeFile(path: string, data: Buffer|string): Promise<void> {
 export const unlink = promisify(unlinkAsync);
 export const rmdir = promisify(rmdirAsync);
 export const open = promisify(openAsync);
+export const close = promisify(closeAsync);
 export const rename = promisify(renameAsync);
 export const readlink = promisify(readlinkAsync);
 
@@ -107,12 +110,16 @@ export async function calcCompileFolderName() {
 	return product.nameShort + (isMac? '.app' : '');
 }
 
-export async function getProductData(alterRoot: string = VSCODE_ROOT): Promise<IProduction> {
+const cache: {[fn: string]: any} = {};
+
+export function getProductData(alterRoot: string = VSCODE_ROOT): IProduction {
+	const productFile = resolve(alterRoot, 'product.json');
+	if (cache[productFile]) {
+		return cache[productFile];
+	}
 	try {
-		const productFile = resolve(alterRoot, 'product.json');
-		const jsonData = await readFile(productFile);
-		productData = JSON.parse(jsonData);
-		return productData;
+		const jsonData = readFileSync(productFile, 'utf8');
+		return cache[productFile] = JSON.parse(jsonData);
 	} catch (e) {
 		throw new Error(`Failed to load product.json: ${e.message}`);
 	}
@@ -120,12 +127,14 @@ export async function getProductData(alterRoot: string = VSCODE_ROOT): Promise<I
 
 let packageData: any;
 
-export async function getPackageData(alterRoot: string = VSCODE_ROOT): Promise<IPackage> {
+export function getPackageData(alterRoot: string = VSCODE_ROOT): IPackage {
+	const packageFile = resolve(alterRoot, 'package.json');
+	if (cache[packageFile]) {
+		return cache[packageFile];
+	}
 	try {
-		const packageFile = resolve(alterRoot, 'package.json');
-		const jsonData = await readFile(packageFile);
-		packageData = JSON.parse(jsonData);
-		return packageData;
+		const jsonData = readFileSync(packageFile, 'utf8');
+		return cache[packageFile] = JSON.parse(jsonData);
 	} catch (e) {
 		throw new Error(`Failed to load package.json: ${e.message}`);
 	}

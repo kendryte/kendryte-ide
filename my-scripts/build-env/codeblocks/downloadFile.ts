@@ -10,25 +10,25 @@ import { streamPromise } from '../misc/streamUtil';
 const request = require('request');
 const progress = require('request-progress');
 
-export async function downloadFile(output: OutputStreamControl, oldPackageAt: string, oldPackageLocal: string) {
-	output.writeln(`downloading file: ${oldPackageLocal}\n  save to: ${oldPackageAt}`);
-	if (isExists(oldPackageLocal)) {
+export async function downloadFile(output: OutputStreamControl, localSave: string, url: string) {
+	output.writeln(`downloading file: ${url}\n  save to: ${localSave}`);
+	if (isExists(url)) {
 		output.writeln(`already exists...`);
 		return;
 	}
 	
-	await mkdirp(dirname(oldPackageLocal));
+	await mkdirp(dirname(url));
 	
 	const hasWget = await promiseToBool(muteCommandOut('wget', '--version'));
-	const saveTo = createWriteStream(oldPackageLocal + '.partial', {autoClose: true});
+	const saveTo = createWriteStream(url + '.partial', {autoClose: true});
 	if (hasWget) {
 		await pipeCommandBoth(saveTo, output.screen, 'wget', '-O', '-', '--progress=bar:force');
 		await streamPromise(saveTo);
 	} else {
-		await nodeDown(output, oldPackageAt, saveTo);
+		await nodeDown(output, localSave, saveTo);
 	}
 	
-	await rename(oldPackageLocal + '.partial', oldPackageLocal);
+	await rename(url + '.partial', url);
 }
 
 function nodeDown(output: OutputStreamControl, from: string, saveTo: NodeJS.WritableStream) {
