@@ -7,6 +7,8 @@ process.argv.push('--what-is-this');
 
 const extract = /\bwhatIsThis\(.+\);/;
 
+helpTip('show-help', 'print this');
+
 const base = resolve(__dirname, '../commands');
 readdirSync(base).forEach((file) => {
 	if (!file.endsWith('.ts')) {

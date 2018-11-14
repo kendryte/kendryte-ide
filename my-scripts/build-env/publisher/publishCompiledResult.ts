@@ -1,0 +1,35 @@
+import { OutputStreamControl } from '@gongt/stillalive';
+import { platform } from 'os';
+import { resolve } from 'path';
+import { extMime } from '../codeblocks/extMime';
+import { releaseZipStorageFolder } from '../codeblocks/zip';
+import { CURRENT_PLATFORM_TYPES, releaseFileName } from '../codeblocks/zip.name';
+import { calcReleaseFileAwsKey, s3UploadFile } from '../misc/awsUtil';
+import { getPackageData } from '../misc/fsUtil';
+import { IDEJson, saveRemoteState, storeRemoteVersion, SYS_NAME } from './release.json';
+
+export async function publishCompiledResult(output: OutputStreamControl, remote: IDEJson) {
+	const packageJson = getPackageData();
+	
+	remote.version = packageJson.version;
+	storeRemoteVersion(remote, 'main', packageJson.version);
+	
+	output.writeln('uploading to s3...');
+	
+	const plat = platform();
+	for (const type of CURRENT_PLATFORM_TYPES) {
+		const zipResult = resolve(releaseZipStorageFolder(), releaseFileName(plat, type));
+		const s3Key = calcReleaseFileAwsKey(plat, type);
+		
+		const result = await s3UploadFile(output, s3Key, {
+			stream: zipResult,
+			mime: extMime(zipResult),
+		});
+		
+		output.success(`uploaded ${type} to ${result}`);
+		remote[SYS_NAME] = result;
+	}
+	
+	output.writeln('saving IDE.json to AWS.');
+	await saveRemoteState(remote);
+}

@@ -1,8 +1,8 @@
 export function humanSize(n: string): string {
-	if (!n) {
+	let size = parseInt(n);
+	if (isNaN(size)) {
 		return 'Unknown';
 	}
-	let size = parseInt(n);
 	if (size < 1024) {
 		return size.toFixed(0) + 'B';
 	}

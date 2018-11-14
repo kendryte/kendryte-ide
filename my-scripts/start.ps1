@@ -28,6 +28,9 @@ Set-Item -Path function:global:prompt -Value {
 	}
 }.GetNewClosure()
 
+Set-Item -Path function:global:show-help -Value {
+	Write-Host $env:helpStrings
+}.GetNewClosure()
 Write-Host $env:helpStrings
 
 Write-Host " > The anwser is 42 <" -ForegroundColor Green

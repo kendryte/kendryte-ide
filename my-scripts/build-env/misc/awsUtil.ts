@@ -13,7 +13,7 @@ require('awscred').credentialsCallChain = [loadCredentialsFromEnv, loadCredentia
 require('awscred').regionCallChain = [loadRegionFromEnv, loadRegionFromIniFile];
 const loadCredentialsAndRegion = promisify(require('awscred').loadCredentialsAndRegion);
 
-export const OBJKEY_IDE_JSON = 'release/IDE.json';
+export const OBJKEY_IDE_JSON = 'release/IDE.' + getProductData().quality + '.json';
 export const OBJKEY_DOWNLOAD_INDEX = 'release/download/index.html';
 
 let s3: S3;
@@ -22,8 +22,18 @@ export function getDefaultBucket() {
 	return getProductData().applicationName;
 }
 
-export function bucketUrl(Key: string, Bucket: string = getDefaultBucket()) {
-	return `http://s3.${s3.config.region}.amazonaws.com.cn/${Bucket}/${Key}`;
+export function s3BucketUrl(Key: string, Bucket: string = getDefaultBucket()) {
+	Key = Key.replace(/^\//, '');
+	const {region} = s3.config;
+	const top = region.startsWith('cn-')? '.cn' : '';
+	return `http://s3.${s3.config.region}.amazonaws.com${top}/${Bucket}/${Key}`;
+}
+
+export function s3WebsiteUrl(Key: string, Bucket: string = getDefaultBucket()) {
+	Key = Key.replace(/^\//, '');
+	const {region} = s3.config;
+	const top = region.startsWith('cn-')? '.cn' : '';
+	return `http://${Bucket}.s3-website.${s3.config.region}.amazonaws.com${top}/${Key}`;
 }
 
 async function loadCred(output: OutputStreamControl, home: string): Promise<Partial<ClientConfiguration>> {
@@ -115,7 +125,7 @@ export async function s3UploadFile(
 		},
 		Key + '.md5',
 	);
-	await s3UploadStream(
+	return await s3UploadStream(
 		output,
 		{
 			stream: createReadStream(data.stream),
@@ -130,9 +140,9 @@ export async function s3UploadStream(
 	data: S3Upload<NodeJS.ReadableStream>,
 	Key: string,
 	Bucket: string = getDefaultBucket(),
-) {
+): Promise<string> {
 	globalLog('[S3] upload -> %s :: %s', Bucket, Key);
-	await new Promise<string>((resolve, reject) => {
+	return new Promise<string>((resolve, reject) => {
 		const mup = s3.upload(
 			{ACL: 'public-read', Bucket, Key, Body: data.stream, ContentType: data.mime},
 			{partSize: 10 * 1024 * 1024, queueSize: 4},
@@ -156,11 +166,19 @@ export function calcReleaseFileAwsKey(platform: string, type: string): string {
 	const product = getProductData();
 	const packageJson = getPackageData();
 	
-	const pv = ('' + packageJson.patchVersion).replace(/\./g, '');
+	const pv = parseFloat(packageJson.patchVersion).toFixed(6).replace(/\./g, '');
 	return `release/download/${product.quality}/v${packageJson.version}/${platform}.${pv}.${type}`;
 }
 
 export function calcPackageAwsKey(platform: string, type: string): string {
 	const product = getProductData();
-	return `release/download/${product.quality}/${platform}.offlinepackages.${type}`;
+	return `release/offlinepackages/${product.quality}/${platform}.${type}`;
+}
+
+export function calcPatchFileAwsKey(platform: string): string {
+	const product = getProductData();
+	const packageJson = getPackageData();
+	
+	const pv = parseFloat(packageJson.patchVersion).toFixed(6).replace(/\./g, '');
+	return `release/patches/${product.quality}/v${packageJson.version}/${pv}.${platform}.tar.gz`;
 }

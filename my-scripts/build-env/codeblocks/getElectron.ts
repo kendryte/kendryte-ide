@@ -5,6 +5,7 @@ import { chdir } from '../misc/pathUtil';
 import { gulpCommands } from './gulp';
 
 export function showElectronNoticeInChina() {
+	console.error('');
 	console.error('Electron not install. will install now. The download is single thread, and not able to resume.');
 	console.error('  So, if your download is toooooo slow:');
 	console.error('     1. see what is downloading below');

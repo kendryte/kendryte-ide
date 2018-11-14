@@ -1,17 +1,10 @@
 import { platform } from 'os';
-import { extname, resolve } from 'path';
+import { resolve } from 'path';
+import { extMime } from '../build-env/codeblocks/extMime';
 import { releaseZipStorageFolder } from '../build-env/codeblocks/zip';
-import {
-	packageFileName,
-	TYPE_LINUX_SFX,
-	TYPE_LINUX_ZIP,
-	TYPE_MAC_SFX,
-	TYPE_MAC_ZIP,
-	TYPE_WINDOWS_SFX,
-	TYPE_WINDOWS_ZIP,
-} from '../build-env/codeblocks/zip.name';
+import { CURRENT_PLATFORM_TYPES, packageFileName } from '../build-env/codeblocks/zip.name';
 import { calcPackageAwsKey, initS3, s3UploadFile } from '../build-env/misc/awsUtil';
-import { isMac, isWin, RELEASE_ROOT } from '../build-env/misc/constants';
+import { RELEASE_ROOT } from '../build-env/misc/constants';
 import { whatIsThis } from '../build-env/misc/help';
 import { runMain } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
@@ -26,16 +19,7 @@ runMain(async () => {
 	await initS3(output);
 	output.writeln('uploading to s3...');
 	
-	const types: string[] = [];
-	if (isWin) {
-		types.push(TYPE_WINDOWS_ZIP, TYPE_WINDOWS_SFX);
-	} else if (isMac) {
-		types.push(TYPE_MAC_ZIP, TYPE_MAC_SFX);
-	} else {
-		types.push(TYPE_LINUX_ZIP, TYPE_LINUX_SFX);
-	}
-	
-	for (const type of types) {
+	for (const type of CURRENT_PLATFORM_TYPES) {
 		const zipResult = resolve(releaseZipStorageFolder(), packageFileName(platform(), type));
 		const s3Key = calcPackageAwsKey(platform(), type);
 		
@@ -49,14 +33,3 @@ runMain(async () => {
 	
 	output.success('Done. you may run create-download-index now.');
 });
-
-function extMime(name) {
-	switch (extname(name)) {
-	case '.exe':
-		return 'application/vnd.microsoft.portable-executable.';
-	case '.bin':
-		return 'application/x-executable';
-	case '.zip':
-		return 'application/zip';
-	}
-}

@@ -1,7 +1,7 @@
 import { IncomingMessage } from 'http';
 import { extname } from 'path';
 import { humanSize } from '../../codeblocks/humanSize';
-import { bucketUrl, s3DownloadStream, s3LoadText, s3UploadBuffer } from '../../misc/awsUtil';
+import { s3BucketUrl, s3DownloadStream, s3LoadText, s3UploadBuffer } from '../../misc/awsUtil';
 import { globalLog } from '../../misc/globalOutput';
 import { hashStream } from '../../misc/hashUtil';
 import { request } from '../../misc/httpUtil';
@@ -33,7 +33,7 @@ async function createDownload(key: string, btnClass: string) {
 	const {md5, size} = await getFileInfo(key);
 	const sizeStr = humanSize(size);
 	
-	const url = bucketUrl(key);
+	const url = s3BucketUrl(key);
 	return `<tr>
 	<td>
 		<a class="en btn ${btnClass}" href="${url}">Download</a>
@@ -51,7 +51,7 @@ async function getFileInfo(key: string): Promise<{md5: string, size: string}> {
 	globalLog('Get hash-file of file: %s', key);
 	const md5FileKey = key + '.md5';
 	globalLog('Requesting file size: %s', key);
-	const size = await getContentSize(bucketUrl(key)).catch(() => {
+	const size = await getContentSize(s3BucketUrl(key)).catch(() => {
 		return '';
 	});
 	globalLog('    size: %s', size);

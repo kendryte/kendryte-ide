@@ -43,15 +43,15 @@ Based on a wonderful editor: [VS Code](https://code.visualstudio.com)
 
 ## 通过源码运行
 1. 需要开启至少2个终端窗口
-1. 首次调试时，执行 prepare-development，等它完成（可能会很久）
+1. 首次调试时，执行 install-dependency，等它完成（可能会很久）
 1. 其中一个终端窗口执行 start-watch
 1. 等待约1分钟，显示类似“compilation success”的消息后，继续下一步
 1. 在另外一个窗口执行 start-code
 
 ## 发布新版本
-1. 首次运行时，执行 prepare-release，等它完成
-1. build
+1. 执行 build
 1. 等待半小时左右，生成的文件保存在 `.release/release-files`
+1. 如果中途出错，日志在 `.release/logs/build.log`
 
 ### 说明：
 * 除了下面说明外，所有脚本都不需要管理员权限。程序中包含大量第三方代码，使用root或管理员权限导致问题概不负责。
@@ -61,7 +61,7 @@ Based on a wonderful editor: [VS Code](https://code.visualstudio.com)
 
 ### windows 上的特别说明：
 * 首次运行 start.ps1 的时候可能会请求管理员权限，以安装编译器（msbuild等）
-* 不要用 `yarn add`，直接修改 `package.json` 然后再次执行 prepare-development
+* 不要用 `yarn add`，直接修改 `package.json` 然后再次执行 install-dependency
 
 # License
 

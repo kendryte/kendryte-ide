@@ -1,34 +1,39 @@
 import { OutputStreamControl } from '@gongt/stillalive';
 import { createWriteStream } from 'fs';
 import { mkdirp } from 'fs-extra';
-import { dirname } from 'path';
+import { dirname, extname, resolve } from 'path';
 import { muteCommandOut, pipeCommandBoth } from '../childprocess/complex';
 import { promiseToBool } from '../misc/asyncUtil';
 import { isExists, rename } from '../misc/fsUtil';
 import { streamPromise } from '../misc/streamUtil';
+import { md5 } from './statusHash';
 
 const request = require('request');
 const progress = require('request-progress');
 
-export async function downloadFile(output: OutputStreamControl, localSave: string, url: string) {
+export function createTempPath(url: string) {
+	return resolve(process.env.TEMP, md5(url) + extname(url));
+}
+
+export async function downloadFile(output: OutputStreamControl, url: string, localSave: string) {
 	output.writeln(`downloading file: ${url}\n  save to: ${localSave}`);
-	if (isExists(url)) {
+	if (isExists(localSave)) {
 		output.writeln(`already exists...`);
 		return;
 	}
 	
-	await mkdirp(dirname(url));
+	await mkdirp(dirname(localSave));
 	
 	const hasWget = await promiseToBool(muteCommandOut('wget', '--version'));
-	const saveTo = createWriteStream(url + '.partial', {autoClose: true});
+	const saveTo = createWriteStream(localSave + '.partial', {autoClose: true});
 	if (hasWget) {
 		await pipeCommandBoth(saveTo, output.screen, 'wget', '-O', '-', '--progress=bar:force');
 		await streamPromise(saveTo);
 	} else {
-		await nodeDown(output, localSave, saveTo);
+		await nodeDown(output, url, saveTo);
 	}
 	
-	await rename(url + '.partial', url);
+	await rename(localSave + '.partial', localSave);
 }
 
 function nodeDown(output: OutputStreamControl, from: string, saveTo: NodeJS.WritableStream) {
