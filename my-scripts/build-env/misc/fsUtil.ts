@@ -1,10 +1,10 @@
 import {
+	close as closeAsync,
 	existsSync,
 	lstat as lstatAsync,
 	lstatSync,
 	mkdirSync,
 	open as openAsync,
-	close as closeAsync,
 	readFile as readFileAsync,
 	readFileSync,
 	readlink as readlinkAsync,
@@ -14,11 +14,10 @@ import {
 	unlink as unlinkAsync,
 	writeFile as writeFileAsync,
 } from 'fs';
+import { remove } from 'fs-extra';
 import { resolve } from 'path';
 import { promisify } from 'util';
 import { isMac, VSCODE_ROOT } from './constants';
-
-/* No use any node_modules deps */
 
 export function mkdirpSync(p: string) {
 	if (!p) {
@@ -137,5 +136,11 @@ export function getPackageData(alterRoot: string = VSCODE_ROOT): IPackage {
 		return cache[packageFile] = JSON.parse(jsonData);
 	} catch (e) {
 		throw new Error(`Failed to load package.json: ${e.message}`);
+	}
+}
+
+export async function removeIfExists(file: string) {
+	if (await isExists(file)) {
+		await remove(file);
 	}
 }

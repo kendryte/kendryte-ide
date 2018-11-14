@@ -2,8 +2,6 @@ import { normalize, resolve } from 'path';
 import { RELEASE_ROOT } from './constants';
 import { mkdirpSync } from './fsUtil';
 
-/* No use any node_modules deps */
-
 export function chdir(d: string) {
 	d = normalize(d);
 	if (process.cwd() !== d) {

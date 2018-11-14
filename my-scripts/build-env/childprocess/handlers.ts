@@ -2,8 +2,6 @@ import { ChildProcess, SpawnOptions } from 'child_process';
 import { isWin } from '../misc/constants';
 import { StatusCodeError } from './error';
 
-/* No use any node_modules deps */
-
 export type ProcessArgsInfo = [string, ReadonlyArray<string>];
 
 export function parseCommand(cmd: string, args: ReadonlyArray<string>): [string, ReadonlyArray<string>] {

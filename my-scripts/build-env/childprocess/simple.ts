@@ -3,8 +3,6 @@ import { mergeEnv } from './env';
 import { ThrowStatusCodeError } from './error';
 import { parseCommand, processPromise } from './handlers';
 
-/* No use any node_modules deps */
-
 function _shellSync(stdio: StdioOptions, cmd: string, args: ReadonlyArray<string>) {
 	const r = spawnSync(cmd, args, {
 		stdio,

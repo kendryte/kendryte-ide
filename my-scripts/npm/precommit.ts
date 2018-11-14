@@ -1,5 +1,5 @@
 import { resolve } from 'path';
-import { shellExec } from '../build-env/childprocess/noDependency';
+import { shellExec } from '../build-env/childprocess/simple';
 import { VSCODE_ROOT } from '../build-env/misc/constants';
 import { readFile, writeFile } from '../build-env/misc/fsUtil';
 import { runMain } from '../build-env/misc/myBuildSystem';

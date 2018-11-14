@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { PLATFORM_STR_LINUX, PLATFORM_STR_MAC, PLATFORM_STR_WINDOWS } from '../codeblocks/platform';
 import { TYPE_LINUX_SFX, TYPE_LINUX_ZIP, TYPE_MAC_SFX, TYPE_MAC_ZIP, TYPE_WINDOWS_SFX, TYPE_WINDOWS_ZIP } from '../codeblocks/zip.name';
-import { calcPackageAwsKey, calcReleaseFileAwsKey, initS3 } from '../misc/awsUtil';
+import { calcPackageAwsKey, calcReleaseFileAwsKey } from '../misc/awsUtil';
 import { getPackageData } from '../misc/fsUtil';
 import { createCard } from './components/card';
 import { createReleaseDownload, createUpdateDownload } from './components/createDownload';
@@ -57,22 +57,16 @@ export async function createIndexFileContent(output: OutputStreamControl): Promi
 	output.log('calculating files...');
 	pieces.push(
 		createCard('Windows', config.versionString,
-			wrapTable(
-				await createReleaseDownload(config.windows),
-				await createUpdateDownload(config.windowsPackage),
-			),
+			wrapTable('application', await createReleaseDownload(config.windows)),
+			wrapTable('packages', await createUpdateDownload(config.windowsPackage)),
 		),
 		createCard('Linux', config.versionString,
-			wrapTable(
-				await createReleaseDownload(config.linux),
-				await createUpdateDownload(config.linuxPackage),
-			),
+			wrapTable('application', await createReleaseDownload(config.linux)),
+			wrapTable('packages', await createUpdateDownload(config.linuxPackage)),
 		),
 		createCard('Mac', config.versionString,
-			wrapTable(
-				await createReleaseDownload(config.mac),
-				await createUpdateDownload(config.macPackage),
-			),
+			wrapTable('application', await createReleaseDownload(config.mac)),
+			wrapTable('packages', await createUpdateDownload(config.macPackage)),
 		),
 	);
 	

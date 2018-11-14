@@ -1,6 +1,7 @@
 import { IncomingMessage } from 'http';
 import { extname } from 'path';
-import { bucketUrl, s3DownloadStream, s3LoadText, s3UploadStream } from '../../misc/awsUtil';
+import { humanSize } from '../../codeblocks/humanSize';
+import { bucketUrl, s3DownloadStream, s3LoadText, s3UploadBuffer } from '../../misc/awsUtil';
 import { globalLog } from '../../misc/globalOutput';
 import { hashStream } from '../../misc/hashUtil';
 import { request } from '../../misc/httpUtil';
@@ -13,8 +14,8 @@ export async function createReleaseDownload({sfx, zip}: info) {
 		<span>Kendryte IDE</span>
 	</th>
 </tr>
-${await createDownload(sfx)}
-${await createDownload(zip)}`;
+${await createDownload(sfx, 'btn-outline-primary')}
+${await createDownload(zip, 'btn-light')}`;
 }
 
 export async function createUpdateDownload({sfx, zip}: info) {
@@ -24,33 +25,38 @@ export async function createUpdateDownload({sfx, zip}: info) {
 		<span class="cn">离线依赖包</span>
 	</th>
 </tr>
-${await createDownload(sfx)}
-${await createDownload(zip)}`;
+${await createDownload(sfx, 'btn-outline-primary')}
+${await createDownload(zip, 'btn-light')}`;
 }
 
-async function createDownload(url: string) {
-	const {md5, size} = await getFileInfo(url);
+async function createDownload(key: string, btnClass: string) {
+	const {md5, size} = await getFileInfo(key);
+	const sizeStr = humanSize(size);
+	
+	const url = bucketUrl(key);
 	return `<tr>
 	<td>
-		<a class="en" href="${url}">Download</a>
-		<a class="cn" href="${url}">下载</a>
+		<a class="en btn ${btnClass}" href="${url}">Download</a>
+		<a class="cn btn ${btnClass}" href="${url}">下载</a>
 	</td>
-	<td>${extname(url)}</td>
-	<td>${size}</td>
+	<td>${extname(key)}</td>
+	<td>${sizeStr}</td>
 </tr>
 <tr>
-	<td colspan="3">${md5}</td>
+	<td colspan="3"><span class="badge badge-info">MD5:</span>&nbsp;${md5}</td>
 </tr>`;
 }
 
-async function getFileInfo(url: string) {
-	globalLog('Get hash-file of file: %s', url);
-	const md5FileKey = url + '.md5';
-	globalLog('Requesting file size: %s', url);
-	const size = await getContentSize(bucketUrl(url)).catch(() => {
+async function getFileInfo(key: string): Promise<{md5: string, size: string}> {
+	globalLog('Get hash-file of file: %s', key);
+	const md5FileKey = key + '.md5';
+	globalLog('Requesting file size: %s', key);
+	const size = await getContentSize(bucketUrl(key)).catch(() => {
 		return '';
 	});
+	globalLog('    size: %s', size);
 	if (!size) {
+		globalLog('Temporary unavailable.');
 		return {
 			md5: 'Temporary unavailable.',
 			size: '???',
@@ -58,6 +64,7 @@ async function getFileInfo(url: string) {
 	}
 	
 	let md5 = await s3LoadText(md5FileKey).catch(e => '');
+	globalLog('    md5: %s', md5);
 	if (md5) {
 		return {
 			md5,
@@ -65,28 +72,30 @@ async function getFileInfo(url: string) {
 		};
 	}
 	
-	globalLog('Downloading file: %s', url);
-	const stream = s3DownloadStream(url);
+	globalLog('Downloading file: %s', key);
+	const stream = s3DownloadStream(key);
 	md5 = await hashStream(stream);
+	globalLog('    re-calc md5: %s', md5);
 	
-	globalLog('Upload md5-file: %s -> %s', md5, md5FileKey);
-	await s3UploadStream({
+	globalLog('Upload md5-file: %s', md5);
+	await s3UploadBuffer({
 		stream: Buffer.from(md5, 'utf8'),
 		mime: 'text/plain',
 	}, md5FileKey);
 	
 	return {
+		size,
 		md5,
 	};
 }
 
 function getContentSize(url: string) {
-	return new Promise((resolve, reject) => {
+	return new Promise<string>((resolve, reject) => {
 		request(url, {method: 'HEAD'}, (res: IncomingMessage) => {
 			if (res.statusCode !== 200) {
 				reject(new Error(res.statusMessage));
 			} else {
-				resolve(res.headers['content-length']);
+				resolve(res.headers['content-length'] as string);
 			}
 		}).end();
 	});

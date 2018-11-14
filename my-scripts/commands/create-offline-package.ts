@@ -1,3 +1,4 @@
+import { platform } from 'os';
 import { join } from 'path';
 import { creatingUniversalZip } from '../build-env/codeblocks/zip';
 import { packageFileName } from '../build-env/codeblocks/zip.name';
@@ -12,5 +13,9 @@ whatIsThis(__filename, 'zip files from ./data/packages to release dir.');
 runMain(async () => {
 	const output = usePretty('create-offline-package');
 	chdir(VSCODE_ROOT);
-	await creatingUniversalZip(output, join('data', 'packages'), packageFileName);
+	await creatingUniversalZip(output, join('data', 'packages'), (type) => {
+		return packageFileName(platform(), type);
+	});
+	
+	output.success('Done. you may run upload-offline-package now.');
 });

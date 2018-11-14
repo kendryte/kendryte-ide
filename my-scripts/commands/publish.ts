@@ -1,22 +1,21 @@
 import { OutputStreamControl } from '@gongt/stillalive';
-import { S3 } from 'aws-sdk';
 import { ClientConfiguration } from 'aws-sdk/clients/s3';
 import { createReadStream } from 'fs';
 import { copy } from 'fs-extra';
 import { platform } from 'os';
 import { basename, resolve } from 'path';
 import { resolve as resolveUrl } from 'url';
-import { format, promisify } from 'util';
+import { promisify } from 'util';
 import { getOutputCommand, pipeCommandOut } from '../build-env/childprocess/complex';
 import { downloadFile } from '../build-env/codeblocks/downloadFile';
 import { un7zip } from '../build-env/codeblocks/zip';
 import { calcReleaseFileName } from '../build-env/codeblocks/zip.name';
+import { initS3, s3LoadJson, s3UploadStream } from '../build-env/misc/awsUtil';
 import { isMac, isWin, RELEASE_ROOT } from '../build-env/misc/constants';
 import { calcCompileFolderName, getPackageData, getProductData, isExists } from '../build-env/misc/fsUtil';
 import { globalInterruptLog } from '../build-env/misc/globalOutput';
 import { runMain } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
-import { CollectingStream } from '../build-env/misc/streamUtil';
 import { timeout } from '../build-env/misc/timeUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 import { IDEJson, IDEPatchJson } from '../build-env/publisher/release.json';
@@ -34,6 +33,7 @@ runMain(async () => {
 	const output = usePretty('publish');
 	
 	globalInterruptLog('HTTP_PROXY=%s', process.env.HTTP_PROXY);
+	await initS3(output);
 	
 	const compiledResult = resolve(RELEASE_ROOT, await calcCompileFolderName());
 	const targetZipFiles = (await calcReleaseFileName()).map(fn => resolve(RELEASE_ROOT, fn));
@@ -47,30 +47,10 @@ runMain(async () => {
 	const prodData = await getProductData(resolve(compiledResult, 'resources/app'));
 	const packData = await getPackageData(resolve(compiledResult, 'resources/app'));
 	
-	const awsConfig = await loadCred(output, process.env.HOME) || await loadCred(output, process.env.ORIGINAL_HOME);
-	if (!awsConfig) {
-		throw new Error('Not able to load AWS config. see https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/setup-credentials.html');
-	}
-	const s3 = new S3({
-		...awsConfig,
-		
-		logger: {
-			write: output.write.bind(output),
-			log(...messages: any[]) {
-				output.writeln((format as any)(...messages));
-			},
-		},
-	});
-	
-	const Bucket = prodData.applicationName;
 	const patchVersionStr = packData.patchVersion.toString();
 	
 	output.writeln('loading IDE.json from AWS.');
-	const json = await s3.getObject({Bucket, Key: OBJKEY_IDE_JSON})
-	                     .createReadStream()
-	                     .pipe(new CollectingStream(), {end: true})
-	                     .promise();
-	const ideState: IDEJson = JSON.parse(json);
+	const ideState = await s3LoadJson<IDEJson>(OBJKEY_IDE_JSON);
 	if (!ideState.patches) {
 		ideState.patches = [];
 	}
@@ -123,6 +103,7 @@ runMain(async () => {
 		
 		const createdPatchTarball = await createPatch(output, resolve(RELEASE_ROOT, 'create-patch', 'prev-version'), compiledResult);
 		const patchUrl = await new Promise<string>((resolve, reject) => {
+			s3UploadStream()
 			s3.upload(
 				{ACL: 'public-read', Bucket, Key: 'release/patches/' + basename(createdPatchTarball)},
 				{partSize: 10 * 1024 * 1024, queueSize: 4},

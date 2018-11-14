@@ -8,7 +8,7 @@ import { runMain } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 
-whatIsThis(__filename, 'install required thing for development (require prepare-release).');
+whatIsThis(__filename, 'prepare required things for development.');
 
 runMain(async () => {
 	chdir(VSCODE_ROOT);

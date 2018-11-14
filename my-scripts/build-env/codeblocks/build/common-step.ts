@@ -27,13 +27,6 @@ export async function cleanupBuildResult(output: OutputStreamControl, dir: strin
 	}
 }
 
-export async function cleanupZipFiles(output: NodeJS.WritableStream, dir: string) {
-	if (await isExists(dir)) {
-		await removeDirectory(dir, output);
-	}
-	mkdirpSync(dir);
-}
-
 export async function yarnInstall(output: OutputStreamControl) {
 	const timeInstall = timing();
 	

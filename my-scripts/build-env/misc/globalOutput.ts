@@ -4,7 +4,6 @@ import { isAbsolute } from 'path';
 import { format } from 'util';
 import { ProgramError } from '../childprocess/error';
 import { parseCommand, processPromise } from '../childprocess/handlers';
-/* No use any node_modules deps */
 
 let globalLogTarget: NodeJS.WritableStream = process.stderr;
 

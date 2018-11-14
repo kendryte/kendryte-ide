@@ -1,5 +1,3 @@
-/* No use any node_modules deps */
-
 import { createReadStream, createWriteStream, ftruncateSync, openSync, ReadStream, WriteStream } from 'fs';
 import { resolve } from 'path';
 import { RELEASE_ROOT } from './constants';

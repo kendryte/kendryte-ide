@@ -21,7 +21,7 @@ export async function pipeCommandBoth(
 		...mergeEnv(),
 	});
 	
-	cp.stdout.pipe(stdout, {end: true});
+	cp.stdout.pipe(stdout, endArg(stdout));
 	cp.stderr.pipe(stderr, endArg(stderr));
 	
 	const [command, argumentList] = parseCommand(cmd, args);

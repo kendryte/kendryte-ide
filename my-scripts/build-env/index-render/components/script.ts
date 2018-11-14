@@ -20,4 +20,19 @@
 	current.classList.add('active', 'col-sm-5');
 	current.querySelector('.card').classList.add('border-primary');
 	current.querySelector('.card-title').classList.add('text-primary');
+	
+	const fastDown = document.getElementById('fastDown');
+	fastDown.classList.remove('d-hide');
+	
+	function getA(parent: ParentNode, select: string): HTMLAnchorElement {
+		return parent.querySelector(select);
+	}
+	
+	const am = getA(fastDown, 'a.main');
+	const ad = getA(current, '.application a');
+	am.href = ad.href;
+	am.innerText += current.querySelector('.card-title').innerText.trim();
+	
+	const ap = getA(fastDown, 'a.pkg');
+	ap.href = getA(current, '.packages a').href;
 })();

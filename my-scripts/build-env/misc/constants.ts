@@ -1,5 +1,4 @@
 import { platform } from 'os';
-/* No use any node_modules deps */
 
 if (!process.env.RELEASE_ROOT) {
 	console.error('Command Failed:\n\tPlease run start.ps1 first.');

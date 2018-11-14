@@ -1,6 +1,6 @@
 import { createWriteStream, existsSync, lstatSync, readdirSync } from 'fs';
 import { resolve } from 'path';
-import { shellOutput } from '../build-env/childprocess/noDependency';
+import { shellOutput } from '../build-env/childprocess/simple';
 import { removeDirectory } from '../build-env/codeblocks/removeDir';
 import { RELEASE_ROOT } from '../build-env/misc/constants';
 import { mainDispose, runMain } from '../build-env/misc/myBuildSystem';

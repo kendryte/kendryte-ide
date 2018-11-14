@@ -18,8 +18,8 @@ function distFileName(platform: string, type: string): string {
 	return normalize(`${platform}.${product.applicationName}.v${packageJson.version}-${product.quality}.${pv}.${type}`);
 }
 
-export function packageFileName(type: string) {
-	return `${platform()}.offlinepackages.${type}`;
+export function packageFileName(platform: string, type: string) {
+	return `${platform}.offlinepackages.${type}`;
 }
 
 export function calcReleaseFileName() {

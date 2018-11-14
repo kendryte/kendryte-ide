@@ -1,5 +1,5 @@
 import { createIndexFileContent } from '../build-env/index-render';
-import { initS3, OBJKEY_DOWNLOAD_INDEX, s3UploadStream } from '../build-env/misc/awsUtil';
+import { initS3, OBJKEY_DOWNLOAD_INDEX, s3UploadBuffer } from '../build-env/misc/awsUtil';
 import { globalLog } from '../build-env/misc/globalOutput';
 import { whatIsThis } from '../build-env/misc/help';
 import { runMain } from '../build-env/misc/myBuildSystem';
@@ -20,7 +20,7 @@ runMain(async () => {
 		stream: Buffer.from(indexData, 'utf8'),
 		mime: 'text/html; charset=utf8',
 	};
-	await s3UploadStream(upload, OBJKEY_DOWNLOAD_INDEX);
+	await s3UploadBuffer(upload, OBJKEY_DOWNLOAD_INDEX);
 	
 	output.success('Done.');
 });

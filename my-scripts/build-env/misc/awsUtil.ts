@@ -1,10 +1,11 @@
 import { OutputStreamControl } from '@gongt/stillalive';
 import { S3 } from 'aws-sdk';
 import { ClientConfiguration } from 'aws-sdk/clients/s3';
-import { normalize } from 'path';
+import { createReadStream } from 'fs';
 import { format, promisify } from 'util';
 import { getPackageData, getProductData } from './fsUtil';
 import { globalLog } from './globalOutput';
+import { hashStream } from './hashUtil';
 import { CollectingStream } from './streamUtil';
 
 const {loadCredentialsFromEnv, loadCredentialsFromIniFile, loadRegionFromEnv, loadRegionFromIniFile} = require('awscred');
@@ -67,29 +68,29 @@ export function getS3(): S3 {
 	return s3;
 }
 
-export function s3LoadText(key: string, Bucket: string = getDefaultBucket()): Promise<string> {
-	globalLog('[S3] getText -> %s :: %s', Bucket, key);
-	return s3.getObject({Bucket, Key: OBJKEY_IDE_JSON})
+export function s3LoadText(Key: string, Bucket: string = getDefaultBucket()): Promise<string> {
+	globalLog('[S3] getText -> %s :: %s', Bucket, Key);
+	return s3.getObject({Bucket, Key})
 	         .createReadStream()
 	         .pipe(new CollectingStream(), {end: true})
 	         .promise();
 }
 
-export async function s3LoadJson<T>(key: string, Bucket: string = getDefaultBucket()): Promise<T> {
-	globalLog('[S3] getJson -> %s :: %s', Bucket, key);
-	const json = await s3.getObject({Bucket, Key: OBJKEY_IDE_JSON})
+export async function s3LoadJson<T>(Key: string, Bucket: string = getDefaultBucket()): Promise<T> {
+	globalLog('[S3] getJson -> %s :: %s', Bucket, Key);
+	const json = await s3.getObject({Bucket, Key})
 	                     .createReadStream()
 	                     .pipe(new CollectingStream(), {end: true})
 	                     .promise();
 	return JSON.parse(json) as any;
 }
 
-export interface S3Upload {
-	stream: Buffer|NodeJS.ReadableStream;
+export interface S3Upload<T> {
+	stream: T;
 	mime: string;
 }
 
-export async function s3UploadStream(data: S3Upload, Key: string, Bucket: string = getDefaultBucket()) {
+export async function s3UploadBuffer(data: S3Upload<Buffer>, Key: string, Bucket: string = getDefaultBucket()) {
 	globalLog('[S3] upload -> %s :: %s', Bucket, Key);
 	await new Promise<string>((resolve, reject) => {
 		s3.upload(
@@ -97,6 +98,50 @@ export async function s3UploadStream(data: S3Upload, Key: string, Bucket: string
 			{partSize: 10 * 1024 * 1024, queueSize: 4},
 			(err, data) => err? reject(err) : resolve(data.Location),
 		);
+	});
+}
+
+export async function s3UploadFile(
+	output: OutputStreamControl,
+	Key: string,
+	data: S3Upload<string>,
+	Bucket: string = getDefaultBucket(),
+) {
+	const md5 = await hashStream(createReadStream(data.stream));
+	await s3UploadBuffer(
+		{
+			stream: Buffer.from(md5),
+			mime: 'text/plain',
+		},
+		Key + '.md5',
+	);
+	await s3UploadStream(
+		output,
+		{
+			stream: createReadStream(data.stream),
+			mime: data.mime,
+		},
+		Key,
+	);
+}
+
+export async function s3UploadStream(
+	output: OutputStreamControl,
+	data: S3Upload<NodeJS.ReadableStream>,
+	Key: string,
+	Bucket: string = getDefaultBucket(),
+) {
+	globalLog('[S3] upload -> %s :: %s', Bucket, Key);
+	await new Promise<string>((resolve, reject) => {
+		const mup = s3.upload(
+			{ACL: 'public-read', Bucket, Key, Body: data.stream, ContentType: data.mime},
+			{partSize: 10 * 1024 * 1024, queueSize: 4},
+			(err, data) => err? reject(err) : resolve(data.Location),
+		);
+		
+		mup.on('httpUploadProgress', ({loaded, total}) => {
+			output.screen.writeln(`${loaded} / ${total}`);
+		});
 	});
 }
 
@@ -112,10 +157,10 @@ export function calcReleaseFileAwsKey(platform: string, type: string): string {
 	const packageJson = getPackageData();
 	
 	const pv = ('' + packageJson.patchVersion).replace(/\./g, '');
-	return normalize(`release/download/${product.quality}/v${packageJson.version}/${platform}.${pv}.${type}`);
+	return `release/download/${product.quality}/v${packageJson.version}/${platform}.${pv}.${type}`;
 }
 
 export function calcPackageAwsKey(platform: string, type: string): string {
 	const product = getProductData();
-	return normalize(`release/download/${product.quality}/${platform}.offlinepackages.${type}`);
+	return `release/download/${product.quality}/${platform}.offlinepackages.${type}`;
 }

@@ -4,10 +4,9 @@ import { join, resolve } from 'path';
 import { Transform, TransformCallback } from 'stream';
 import { pipeCommandBoth, pipeCommandOut } from '../childprocess/complex';
 import { isWin, RELEASE_ROOT } from '../misc/constants';
-import { calcCompileFolderName } from '../misc/fsUtil';
+import { calcCompileFolderName, removeIfExists } from '../misc/fsUtil';
 import { chdir } from '../misc/pathUtil';
 import { endArg } from '../misc/streamUtil';
-import { cleanupZipFiles } from './build/common-step';
 import { nameReleaseFile } from './zip.name';
 
 const _7z = isWin? require('7zip')['7z'] : '7z';
@@ -67,6 +66,7 @@ async function createWindowsSfx(
 ) {
 	output.write('creating windows 7z sfx exe...\n');
 	zipFileName = resolve(releaseZipStorageFolder(), zipFileName);
+	await removeIfExists(zipFileName);
 	return pipeCommandBoth(output, stderr, _7z, ...zipLzma2Args, ...zipArgs, '--', zipFileName, join(whatToZip, '*'));
 }
 
@@ -79,6 +79,7 @@ async function createWindowsZip(
 ) {
 	output.write('creating windows zip simple...\n');
 	zipFileName = resolve(releaseZipStorageFolder(), zipFileName);
+	await removeIfExists(zipFileName);
 	return pipeCommandBoth(output, stderr, _7z, ...zipDeflateArgs, ...zipArgs, '--', zipFileName, join(whatToZip, '*'));
 }
 
@@ -91,6 +92,7 @@ async function createPosixZip(
 ) {
 	output.write('creating posix zip simple...\n');
 	zipFileName = resolve(releaseZipStorageFolder(), zipFileName);
+	await removeIfExists(zipFileName);
 	return pipeCommandBoth(output, stderr, _7z, ...zipDeflateArgs, ...zipArgs, '--', zipFileName, join(whatToZip, '*'));
 }
 
@@ -118,8 +120,7 @@ class ProgressStream extends Transform {
 	public noEnd = true;
 	
 	_transform(chunk: Buffer, encoding: string, callback: TransformCallback): void {
-		const str = chunk.toString('ascii').replace(/\x08+/g, '\n');
-		// console.log('\n', Buffer.from(str));
+		const str = chunk.toString('ascii').replace(/[\x08\x0d]+/g, '\n').replace(/^ +| +$/g, '');
 		this.push(str, 'utf8');
 		callback();
 	}
@@ -147,7 +148,6 @@ export async function creatingReleaseZip(output: OutputStreamControl) {
 	const zipStoreDir = releaseZipStorageFolder();
 	
 	chdir(RELEASE_ROOT);
-	await cleanupZipFiles(output, zipStoreDir);
 	
 	return creatingUniversalZip(output, await calcCompileFolderName(), nameReleaseFile);
 }

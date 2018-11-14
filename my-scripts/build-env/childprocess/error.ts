@@ -1,5 +1,3 @@
-/* No use any node_modules deps */
-
 function indentArgs(args: ReadonlyArray<string>) {
 	return args.map((arg, index) => {
 		return `  Argument[${index}] = ${arg}`;

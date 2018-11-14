@@ -1,4 +1,4 @@
-export function createCard(platform: string, version: string, table: string) {
+export function createCard(platform: string, version: string, ...tables: string[]) {
 	return `<div id="col${platform}" class="col-sm platform">
 	<div class="card">
 		<div class="card-header">
@@ -6,7 +6,7 @@ export function createCard(platform: string, version: string, table: string) {
 			<h6 class="card-subtitle mb-2 text-muted show-active">${version}</h6>
 		</div>
 		<div class="card-body">
-			${table}
+			${tables.join('\n')}
 		</div>
 	</div>
 </div>`;
