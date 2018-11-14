@@ -37,6 +37,9 @@ if [ ! -e "$NODEJS" ]; then
 	RimDir "$NODEJS_INSTALL/bin/npx"
 fi
 
+echo "Detect Node.js: $("$NODEJS" --version)"
+export npm_config_target=$(cd "$VSCODE_ROOT" ; node -p "require('./build/lib/electron').getElectronVersion();" )
+
 if [ ! -e "$PRIVATE_BINS/yarn" ]; then
 	tempDir="$TMP/yarn-install"
 	MakeNewDir "$tempDir"
@@ -55,9 +58,6 @@ if [ ! -e "$PRIVATE_BINS/yarn" ]; then
 	cd "$RELEASE_ROOT"
 	RimDir "$tempDir"
 fi
-
-echo "Detect Node.js: $("$NODEJS" --version)"
-export npm_config_target=$(cd "$VSCODE_ROOT" ; node -p "require('./build/lib/electron').getElectronVersion();" )
 
 ### npm
 writeShFile npm "
@@ -99,6 +99,13 @@ writeShFile yarn "
 		\"\${ARGS[@]}\"
 "
 ### yarn
+
+### install node_modules for my scripts
+if [ ! -e "$VSCODE_ROOT/my-scripts/node_modules" ]; then
+	cd "$VSCODE_ROOT/my-scripts"
+	yarn
+fi
+### install node_modules for my scripts
 
 function findCommand() {
 	local PATH="${ORIGINAL_PATH}"

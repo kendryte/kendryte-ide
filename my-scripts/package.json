@@ -1,6 +1,9 @@
 {
   "private": true,
   "license": "MIT",
+  "scripts": {
+    "postinstall": "node npm/my-postinstall.js"
+  },
   "devDependencies": {
     "7zip": "^0.0.6",
     "@gongt/stillalive": "^1.1.2",

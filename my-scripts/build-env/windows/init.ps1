@@ -13,6 +13,9 @@ if (!(Test-Path -Path $NODEJS)) {
 	Copy-Item "$TMP/node.exe" "$NODEJS" -Force
 }
 
+echo "Detect Node.js: $( & $NODEJS --version )"
+setSystemVar 'npm_config_target' $( cd $VSCODE_ROOT; node -p "require('./build/lib/electron').getElectronVersion();" )
+
 if (!(Test-Path -Path "$PRIVATE_BINS/yarn.ps1")) {
 	$tempDir = "$TMP/yarn-install"
 	MkDir $tempDir
@@ -46,9 +49,6 @@ if (!(Test-Path -Path "$PRIVATE_BINS/yarn.ps1")) {
 	cd $RELEASE_ROOT
 	RimDir $tempDir
 }
-
-echo "Detect Node.js: $( & $NODEJS --version )"
-setSystemVar 'npm_config_target' $( cd $VSCODE_ROOT; node -p "require('./build/lib/electron').getElectronVersion();" )
 
 & $NODEJS "$VSCODE_ROOT/my-scripts/build-env/windows/pathinfo.js"
 if (!$?) {
@@ -120,6 +120,13 @@ writeScriptFile yarn @"
 "@
 ### yarn.ps
 
+### install node_modules for my scripts
+if (!(Test-Path -Path "$VSCODE_ROOT\my-scripts\node_modules")){
+	cd $VSCODE_ROOT\my-scripts
+	yarn
+}
+### install node_modules for my scripts
+
 if (!(Get-Command python -errorAction SilentlyContinue)) {
 	echo "================================================="
 	echo "  Try install windows-build-tools"
@@ -137,7 +144,7 @@ if (!(Get-Command python -errorAction SilentlyContinue)) {
 	throw "python cannot not install at $PythonPath, please install windows-build-tools and try again."
 }
 
-if (!(Test-Path -Path "$PRIVATE_BINS/git.bat")) {
+if (!(Test-Path -Path "$PRIVATE_BINS\git.bat")) {
 	writeCmdFile finding-git @"
 		@echo off
 		set PATH=$ORIGINAL_PATH

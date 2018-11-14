@@ -19,7 +19,7 @@ import { chdir } from '../build-env/misc/pathUtil';
 import { CollectingStream } from '../build-env/misc/streamUtil';
 import { timeout } from '../build-env/misc/timeUtil';
 import { usePretty } from '../build-env/misc/usePretty';
-import { IDEJson, IDEPatchJson } from '../publisher/release.json';
+import { IDEJson, IDEPatchJson } from '../build-env/publisher/release.json';
 
 const {compress} = require('targz');
 
