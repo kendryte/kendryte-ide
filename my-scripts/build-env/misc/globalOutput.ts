@@ -12,7 +12,7 @@ export function useThisStream(stream: NodeJS.WritableStream) {
 }
 
 export function globalLog(msg: any, ...args: any[]) {
-	globalLogTarget.write(format(msg + '\n', ...args));
+	globalLogTarget.write(format(msg, ...args) + '\n');
 }
 
 export function globalSuccessMessage(msg: any, ...args: any[]) {

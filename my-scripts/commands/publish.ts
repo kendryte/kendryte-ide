@@ -1,7 +1,7 @@
 import { OutputStreamControl } from '@gongt/stillalive';
 import { platform } from 'os';
 import { extMime } from '../build-env/codeblocks/extMime';
-import { calcPatchFileAwsKey, initS3, OBJKEY_DOWNLOAD_INDEX, s3UploadFile, s3WebsiteUrl } from '../build-env/misc/awsUtil';
+import { calcPatchFileAwsKey, initS3, s3UploadFile } from '../build-env/misc/awsUtil';
 import { getPackageData } from '../build-env/misc/fsUtil';
 import { globalInterruptLog } from '../build-env/misc/globalOutput';
 import { runMain } from '../build-env/misc/myBuildSystem';
@@ -14,6 +14,7 @@ import {
 	getRemoteVersion,
 	IDEJson,
 	loadRemoteState,
+	makeNewRemote,
 	saveRemoteState,
 	storeRemoteVersion,
 	SYS_NAME,
@@ -30,23 +31,16 @@ runMain(async () => {
 	const packData = await getPackageData();
 	
 	output.writeln('loading IDE.json from AWS.');
-	let load = loadRemoteState();
-	if (process.argv.includes('-f')) {
-		output.writeln('    force argument detected. add try-catch to load.');
-		load = load.catch((e) => {
+	let remote = await loadRemoteState().catch((e) => {
+		if (process.argv.includes('-f')) {
 			output.fail('Not able to load state from aws. but --force is set, will create brand new release.');
-			return {
-				version: '0.0.0',
-				homepageUrl: s3WebsiteUrl(OBJKEY_DOWNLOAD_INDEX),
-				patches: [],
-			} as any as IDEJson;
-		});
-	} else {
-		load.then(() => {
-			output.success('loaded version data:');
-		});
-	}
-	const remote = await load;
+			return makeNewRemote();
+		} else {
+			throw e;
+		}
+	});
+	output.success('loaded version data:');
+	
 	output.log(
 		`  remote version=%s patch=%s\n  local  version=%s patch=%s`,
 		getRemoteVersion(remote, 'main') || 'Null',

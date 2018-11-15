@@ -43,10 +43,13 @@ async function loadCred(output: OutputStreamControl, home: string): Promise<Part
 	const p = loadCredentialsAndRegion();
 	process.env.HOME = saveHome;
 	return p.then((cfg) => {
-		if (cfg) {
+		if (cfg && cfg.credentials && Object.keys(cfg.credentials).length > 0) {
 			output.success('success load config from ' + home);
+			return cfg;
+		} else {
+			output.writeln('not able to load.');
+			return null;
 		}
-		return cfg;
 	}, () => {
 		output.writeln('not able to load.');
 		return null;
@@ -66,7 +69,7 @@ export async function initS3(output: OutputStreamControl) {
 		...awsConfig,
 		
 		logger: {
-			write: output.write.bind(output),
+			write: output.writeln.bind(output),
 			log(...messages: any[]) {
 				output.writeln((format as any)(...messages));
 			},
@@ -80,18 +83,16 @@ export function getS3(): S3 {
 
 export function s3LoadText(Key: string, Bucket: string = getDefaultBucket()): Promise<string> {
 	globalLog('[S3] getText -> %s :: %s', Bucket, Key);
-	return s3.getObject({Bucket, Key})
-	         .createReadStream()
-	         .pipe(new CollectingStream(), {end: true})
-	         .promise();
+	return new CollectingStream(
+		s3.getObject({Bucket, Key}).createReadStream(),
+	).promise();
 }
 
 export async function s3LoadJson<T>(Key: string, Bucket: string = getDefaultBucket()): Promise<T> {
 	globalLog('[S3] getJson -> %s :: %s', Bucket, Key);
-	const json = await s3.getObject({Bucket, Key})
-	                     .createReadStream()
-	                     .pipe(new CollectingStream(), {end: true})
-	                     .promise();
+	const json = await new CollectingStream(
+		s3.getObject({Bucket, Key}).createReadStream(),
+	).promise();
 	return JSON.parse(json) as any;
 }
 

@@ -1,11 +1,23 @@
 import { resolve } from 'path';
 import { Transform, Writable } from 'stream';
 import { VSCODE_ROOT } from './constants';
+import { globalInterruptLog, globalLog } from './globalOutput';
 import { yarnPackageDir } from './pathUtil';
 
 export class CollectingStream extends Writable {
 	private buffer = '';
 	private _promise: Promise<string>;
+	
+	constructor(sourceStream?: NodeJS.ReadableStream) {
+		super();
+		if (sourceStream) {
+			sourceStream.pipe(this);
+			sourceStream.on('error', (e) => {
+				globalLog('[CollectingStream]: error passthru: ' + e.message);
+				this.emit('error', e);
+			});
+		}
+	}
 	
 	_write(chunk: Buffer, encoding: string, callback: (error?: Error|null) => void): void {
 		if (!encoding) {

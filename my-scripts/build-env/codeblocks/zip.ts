@@ -149,5 +149,5 @@ export async function creatingReleaseZip(output: OutputStreamControl) {
 	
 	chdir(RELEASE_ROOT);
 	
-	return creatingUniversalZip(output, await calcCompileFolderName(), nameReleaseFile);
+	return creatingUniversalZip(output, await calcCompileFolderName(), nameReleaseFile());
 }

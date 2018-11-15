@@ -75,11 +75,14 @@ runMain(async () => {
 	} else {
 		compileResultFolder = await linuxBuild(output);
 	}
-	output.success('Package Created.' + timeBuild());
+	output.success('Build process complete.' + timeBuild());
 	
 	await rename(compileResultFolder, wantDirPath);
 	
+	const timeZip = timing();
+	output.log('Creating zip packages...');
 	await creatingReleaseZip(output);
+	output.success('Zip files created.' + timeZip());
 	
-	output.success('complete.');
+	output.success('Done.');
 });

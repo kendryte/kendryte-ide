@@ -1,4 +1,4 @@
-import { OBJKEY_IDE_JSON, s3LoadJson, s3UploadBuffer } from '../misc/awsUtil';
+import { OBJKEY_DOWNLOAD_INDEX, OBJKEY_IDE_JSON, s3LoadJson, s3UploadBuffer, s3WebsiteUrl } from '../misc/awsUtil';
 import { isMac, isWin } from '../misc/constants';
 
 export interface IDEJson {
@@ -27,6 +27,15 @@ export function storeRemoteVersion(remote: IDEJson, type: 'main'|'patch', ver: s
 		remote._autoUpdateVersions[SYS_NAME] = {} as any;
 	}
 	remote._autoUpdateVersions[SYS_NAME][type] = ver;
+}
+
+export function makeNewRemote(): IDEJson {
+	return {
+		version: '0.0.0',
+		homepageUrl: s3WebsiteUrl(OBJKEY_DOWNLOAD_INDEX),
+		patches: [],
+		_autoUpdateVersions: {},
+	} as any;
 }
 
 export function getRemoteVersion(remote: IDEJson, type: 'main'|'patch') {

@@ -1,7 +1,9 @@
 import { OutputStreamControl } from '@gongt/stillalive';
+import { platform } from 'os';
 import { resolve } from 'path';
 import { cmp } from 'semver';
-import { CURRENT_PLATFORM_TYPES } from '../codeblocks/zip.name';
+import { releaseZipStorageFolder } from '../codeblocks/zip';
+import { CURRENT_PLATFORM_TYPES, releaseFileName } from '../codeblocks/zip.name';
 import { RELEASE_ROOT } from '../misc/constants';
 import { calcCompileFolderName, getPackageData, getProductData, isExists } from '../misc/fsUtil';
 import { getRemoteVersion, IDEJson } from './release.json';
@@ -32,14 +34,15 @@ export async function checkPatchIsDifferent(remote: IDEJson) {
 }
 
 export async function ensureBuildComplete(output: OutputStreamControl) {
-	const zips = CURRENT_PLATFORM_TYPES.map(fn => resolve(RELEASE_ROOT, fn));
+	const zips = CURRENT_PLATFORM_TYPES.map(type => resolve(releaseZipStorageFolder(), releaseFileName(platform(), type)));
 	output.writeln('check build result zips exists:\n\t- %s' + zips.join('\n\t- '));
 	const exists = await Promise.all(zips.map(isExists));
 	if (exists.every(isTrue)) {
-		const compiledResult = resolve(RELEASE_ROOT, await calcCompileFolderName());
 		output.success('Build state is ok.');
 	} else {
 		output.writeln('no, something missing.');
+		
+		output.warn('these files must exists: \n\t- ' + zips.join('\n\t- '));
 		throw new Error('Not complete build process. please run `build` first.');
 	}
 }
