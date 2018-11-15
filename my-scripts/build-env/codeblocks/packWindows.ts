@@ -3,7 +3,7 @@ import { readFileSync, rename, writeFileSync } from 'fs';
 import { copy, mkdir } from 'fs-extra';
 import { resolve } from 'path';
 import { pipeCommandOut } from '../childprocess/complex';
-import { installDependency } from '../childprocess/yarn';
+import { installDependency, yarn } from '../childprocess/yarn';
 import { VSCODE_ROOT } from '../misc/constants';
 import { isExists, writeFile } from '../misc/fsUtil';
 import { resolveGitDir } from '../misc/git';
@@ -114,7 +114,8 @@ export async function packWindows(output: OutputStreamControl) {
 	/// install child node_modules by default script
 	log('run post-install script');
 	chdir(root);
-	await pipeCommandOut(output, 'yarn', 'run', 'postinstall');
+	
+	await yarn(output, output.screen, 'run', 'postinstall');
 	
 	await copy(huskyHooks, resolve(gitDir, 'hooks'));
 	
