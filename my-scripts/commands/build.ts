@@ -64,7 +64,7 @@ runMain(async () => {
 	await downloadBuiltinExtensions(output);
 	
 	const timeBuild = timing();
-	output.success('Prepare complete. Start building package. This is really slow.');
+	output.success('\x1B[38;5;10mPrepare complete.\x1B[0m Start building package. This is really slow.');
 	
 	let compileResultFolder: string;
 	chdir(ARCH_RELEASE_ROOT);

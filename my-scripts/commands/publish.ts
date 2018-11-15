@@ -39,7 +39,7 @@ runMain(async () => {
 			throw e;
 		}
 	});
-	output.success('loaded version data:');
+	output.success('loaded version data.');
 	
 	output.log(
 		`  remote version=%s patch=%s\n  local  version=%s patch=%s`,

@@ -5,13 +5,14 @@ import { extMime } from '../codeblocks/extMime';
 import { releaseZipStorageFolder } from '../codeblocks/zip';
 import { CURRENT_PLATFORM_TYPES, releaseFileName } from '../codeblocks/zip.name';
 import { calcReleaseFileAwsKey, s3UploadFile } from '../misc/awsUtil';
-import { getPackageData } from '../misc/fsUtil';
+import { getPackageData, getProductData } from '../misc/fsUtil';
 import { IDEJson, saveRemoteState, storeRemoteVersion, SYS_NAME } from './release.json';
 
 export async function publishCompiledResult(output: OutputStreamControl, remote: IDEJson) {
 	const packageJson = getPackageData();
+	const prodData = getProductData();
 	
-	remote.version = packageJson.version;
+	remote.version = `${packageJson.version}-${prodData.quality}`;
 	storeRemoteVersion(remote, 'main', packageJson.version);
 	
 	output.writeln('uploading to s3...');

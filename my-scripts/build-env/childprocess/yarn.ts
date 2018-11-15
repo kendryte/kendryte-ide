@@ -20,6 +20,7 @@ export async function installDependency(output: OutputStreamControl, dir?: strin
 	output.writeln(`Pwd: ${process.cwd()}\nCommand: yarn install --verbose\nLogfile: ${resolve(process.cwd(), 'yarn-install.log')}`);
 	await pipeCommandOut(tee, 'yarn', 'install', '--verbose');
 	if (existsSync('yarn-error.log')) {
+		output.fail('yarn-error.log is exists!');
 		output.writeln('Failed: yarn install failed, see yarn-install.log And yarn-error.log\n');
 		throw new Error(`yarn install failed, please see ${resolve(process.cwd(), 'yarn-error.log')}`);
 	}
