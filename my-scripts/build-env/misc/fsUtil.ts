@@ -95,6 +95,7 @@ let productData: any;
 
 export interface IProduction {
 	nameShort: string;
+	nameLong: string;
 	applicationName: string;
 	quality: string;
 }
