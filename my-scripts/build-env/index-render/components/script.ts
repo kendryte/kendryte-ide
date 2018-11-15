@@ -6,18 +6,26 @@
 	}
 })();
 (() => {
+	const container = document.getElementById('platformContainer');
 	let current;
 	if (navigator.platform === 'MacIntel') {
-		current = document.getElementById('colMac');
+		current = container.querySelector('#colMac');
 	} else if (navigator.platform.startsWith('Linux x86_64')) {
-		current = document.getElementById('colLinux');
+		current = container.querySelector('#colLinux');
 	} else if (navigator.platform.startsWith('Win') && navigator.userAgent.includes('x64')) {
-		current = document.getElementById('colWindows');
+		current = container.querySelector('#colWindows');
 	} else {
 		document.getElementById('notSupport').classList.remove('d-none');
 		return;
 	}
-	current.classList.add('active', 'col-sm-5');
+	current.classList.replace('col-md', 'active');
+	container.parentNode.insertBefore(current, container);
+	
+	document.querySelectorAll('.col-md').forEach((item) => {
+		item.classList.remove('col-md');
+		item.classList.add('col-md-6');
+	});
+	
 	current.querySelector('.card').classList.add('border-primary');
 	current.querySelector('.card-title').classList.add('text-primary');
 	

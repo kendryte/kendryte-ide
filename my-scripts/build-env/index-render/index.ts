@@ -52,7 +52,7 @@ export async function createIndexFileContent(output: OutputStreamControl): Promi
 	pieces.push(`<body class="en container">`);
 	pieces.push(readFileSync(resolve(__dirname, 'components/intro.html'), 'utf8'));
 	pieces.push(notSupportHtml());
-	pieces.push('<div class="row">');
+	pieces.push('<div id="platformContainer" class="row">');
 	
 	output.log('calculating files...');
 	pieces.push(

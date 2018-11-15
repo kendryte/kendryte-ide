@@ -1,5 +1,5 @@
 export function createCard(platform: string, version: string, ...tables: string[]) {
-	return `<div id="col${platform}" class="col-sm platform">
+	return `<div id="col${platform}" class="col-md platform">
 	<div class="card">
 		<div class="card-header">
 			<h5 class="card-title">${platform}</h5>
