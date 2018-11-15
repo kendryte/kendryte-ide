@@ -1,5 +1,10 @@
 import { resolve } from 'path';
 
+try {
+	require('source-map-support/register');
+} catch (e) {
+}
+
 Error.stackTraceLimit = Infinity;
 
 const command = process.argv.splice(2, 1)[0];
