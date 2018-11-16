@@ -64,12 +64,10 @@ async function createDiffWithGit(output: OutputStreamControl, remote: IDEJson) {
 	chdir(oldVersion);
 	await pipeCommandOut(output, 'git', 'init', '.');
 	await pipeCommandOut(output.screen, 'git', 'add', '.');
-	await pipeCommandOut(output.screen, 'git', 'commit', '-m', 'init');
+	await pipeCommandOut(output.screen, 'git', 'commit', '-m', 'old version at ' + oldVersion);
 	
 	output.writeln('move .git folder and clean old dir');
 	await move(resolve(oldVersion, '.git'), resolve(newVersion, '.git'));
-	chdir(newVersion);
-	await removeDirectory(oldVersion, output);
 	output.writeln('ok');
 	
 	chdir(newVersion);
@@ -77,12 +75,18 @@ async function createDiffWithGit(output: OutputStreamControl, remote: IDEJson) {
 	const fileList = await getOutputCommand('git', 'diff', '--name-only', 'HEAD');
 	
 	output.writeln('copy changed file to dist folder');
+	output.writeln(`  From: ${newVersion}`);
+	output.writeln(`  To  : ${patchingDir}`);
 	const lines = fileList.trim().split(/\n/g).map(e => e.trim()).filter(e => e);
+	if (lines.length === 0) {
+		throw new Error('Nothing changed.');
+	}
 	for (const file of lines) {
 		const source = resolve(newVersion, file);
 		const target = resolve(patchingDir, file);
 		mkdirpSync(dirname(target));
 		output.screen.log(`copy %s => %s`, source, target);
+		output.log(source);
 		await copy(source, target).catch((e) => {
 			if (e.code === ENOENT) { // missing file => deleted from git
 				output.log('ignore missing file: ', e.message);
@@ -94,6 +98,7 @@ async function createDiffWithGit(output: OutputStreamControl, remote: IDEJson) {
 	}
 	output.writeln('ok.');
 	
+	await removeDirectory(oldVersion, output);
 	await removeDirectory(newVersion, output);
 	
 	return patchingDir;

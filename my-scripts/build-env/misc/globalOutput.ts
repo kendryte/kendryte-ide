@@ -49,9 +49,6 @@ export function globalInterruptLog(msg: any, ...args: any[]) {
 }
 
 export function spawnWithLog(command: string, args?: ReadonlyArray<string>, options?: SpawnOptions) {
-	if (!isAbsolute(command)) {
-		globalLog('PATH=%s', options.env.PATH || process.env.PATH);
-	}
 	globalLog(' > %s', options.cwd || process.cwd());
 	globalInterruptLog(' + %s %s', command, args.join(' '));
 	globalScreenLog('running...');
@@ -62,6 +59,9 @@ export function spawnWithLog(command: string, args?: ReadonlyArray<string>, opti
 	processPromise(r, [command, args], options).then(() => {
 		globalLog('Command %s success.', command);
 	}, (e: ProgramError) => {
+		if (!isAbsolute(command)) {
+			globalLog('PATH=%s', options.env.PATH || process.env.PATH);
+		}
 		globalLog(
 			'Command [%s] [%s]\n  Failed with error: code = %s, signal = %s\n%s',
 			command, args.join('] ['),

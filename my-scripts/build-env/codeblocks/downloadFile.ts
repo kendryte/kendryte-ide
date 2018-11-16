@@ -28,7 +28,7 @@ export async function downloadFile(output: OutputStreamControl, url: string, loc
 	const saveTo = createWriteStream(localSave + '.partial', {autoClose: true});
 	if (hasWget) {
 		output.writeln('Download engine: native wget');
-		await pipeCommandBoth(saveTo, output.screen, 'wget', '-O', '-', '--progress=bar:force');
+		await pipeCommandBoth(saveTo, output.screen, 'wget', '-O', '-', '--progress=bar:force', '--', url);
 		await streamPromise(saveTo);
 	} else {
 		output.writeln('Download engine: node request');

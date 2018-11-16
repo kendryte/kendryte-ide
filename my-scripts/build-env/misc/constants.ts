@@ -1,7 +1,9 @@
 import { platform } from 'os';
 
+export const isWin = platform() === 'win32';
+
 if (!process.env.RELEASE_ROOT) {
-	console.error('Command Failed:\n\tPlease run start.ps1 first.');
+	console.error('Command Failed:\n\tPlease run start.%s first.', isWin? 'ps1' : 'sh');
 	process.exit(1);
 }
 
@@ -12,7 +14,6 @@ export const VSCODE_ROOT = requireEnvPath('VSCODE_ROOT');
 export const RELEASE_ROOT = requireEnvPath('RELEASE_ROOT');
 export const ARCH_RELEASE_ROOT = requireEnvPath('ARCH_RELEASE_ROOT');
 
-export const isWin = platform() === 'win32';
 export const isMac = platform() === 'darwin';
 
 export function nativePath(p: string) {

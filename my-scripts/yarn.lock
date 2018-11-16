@@ -7,10 +7,10 @@
   resolved "https://registry.yarnpkg.com/7zip/-/7zip-0.0.6.tgz#9cafb171af82329490353b4816f03347aa150a30"
   integrity sha1-nK+xca+CMpSQNTtIFvAzR6oVCjA=
 
-"@gongt/stillalive@^1.1.2":
-  version "1.1.2"
-  resolved "https://registry.yarnpkg.com/@gongt/stillalive/-/stillalive-1.1.2.tgz#f7cd7a49802dbbdfef1d0228ffbf22434b2331de"
-  integrity sha512-VYPIx8i2qlpco+0OhCYS5mMG6d8CTXfE/r5YKq1r+It0a0f0ryIvbmqeEazY1RYHYNdxRTCi4qu8gawabm05ng==
+"@gongt/stillalive@^1.1.3":
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/@gongt/stillalive/-/stillalive-1.1.3.tgz#c827edbe3297c9d39755fe0e91aa76d73f995aec"
+  integrity sha512-Ch/g1Cqx9+s1tvJKeCIyUhu1qZMZ0BhEhGagJCHcbFaNCzfyUGNkNDt8CW4lsTjdtIEE9744EO/b/4KfBxZxFg==
   dependencies:
     cjke-strings "^1.0.5"
     ora "^3.0.0"
