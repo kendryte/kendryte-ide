@@ -17,7 +17,7 @@ export function createTempPath(url: string) {
 
 export async function downloadFile(output: OutputStreamControl, url: string, localSave: string) {
 	output.writeln(`downloading file: ${url}\n  save to: ${localSave}`);
-	if (isExists(localSave)) {
+	if (await isExists(localSave)) {
 		output.writeln(`already exists...`);
 		return;
 	}
@@ -27,9 +27,11 @@ export async function downloadFile(output: OutputStreamControl, url: string, loc
 	const hasWget = await promiseToBool(muteCommandOut('wget', '--version'));
 	const saveTo = createWriteStream(localSave + '.partial', {autoClose: true});
 	if (hasWget) {
+		output.writeln('Download engine: native wget');
 		await pipeCommandBoth(saveTo, output.screen, 'wget', '-O', '-', '--progress=bar:force');
 		await streamPromise(saveTo);
 	} else {
+		output.writeln('Download engine: node request');
 		await nodeDown(output, url, saveTo);
 	}
 	

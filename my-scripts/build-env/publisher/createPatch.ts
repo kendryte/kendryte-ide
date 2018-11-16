@@ -9,7 +9,7 @@ import { removeDirectory } from '../codeblocks/removeDir';
 import { releaseZipStorageFolder, un7zip } from '../codeblocks/zip';
 import { CURRENT_PLATFORM_TYPES, releaseFileName } from '../codeblocks/zip.name';
 import { RELEASE_ROOT } from '../misc/constants';
-import { getPackageData, mkdirpSync } from '../misc/fsUtil';
+import { calcCompileFolderName, getPackageData, mkdirpSync } from '../misc/fsUtil';
 import { chdir } from '../misc/pathUtil';
 import { IDEJson, SYS_NAME } from './release.json';
 
@@ -27,13 +27,15 @@ async function extractVersion(output: OutputStreamControl, zip: string, type: st
 	await un7zip(output, zip, temp);
 	output.success('extract complete.');
 	
-	output.writeln('move resources/app');
-	await move(resolve(temp, 'resources/app'), result);
+	const ideDirName = calcCompileFolderName();
+	output.writeln(`move ${ideDirName}/resources/app`);
+	await move(resolve(temp, ideDirName, 'resources/app'), result);
 	output.writeln('ok.');
 	
+	chdir(process.env.TEMP);
 	await removeDirectory(temp, output);
 	
-	return temp;
+	return result;
 }
 
 async function downloadAndExtractOldVersion(output: OutputStreamControl, remote: IDEJson) {
@@ -50,7 +52,7 @@ async function downloadAndExtractOldVersion(output: OutputStreamControl, remote:
 	await downloadFile(output, oldZipUrl, cacheFileName);
 	output.success('downloaded old version.');
 	
-	return extractVersion(output, cacheFileName, 'old-version');
+	return await extractVersion(output, cacheFileName, 'old-version');
 }
 
 async function createDiffWithGit(output: OutputStreamControl, remote: IDEJson) {
@@ -65,7 +67,7 @@ async function createDiffWithGit(output: OutputStreamControl, remote: IDEJson) {
 	await pipeCommandOut(output.screen, 'git', 'commit', '-m', 'init');
 	
 	output.writeln('move .git folder and clean old dir');
-	await move(resolve(oldVersion, '.git'), newVersion);
+	await move(resolve(oldVersion, '.git'), resolve(newVersion, '.git'));
 	chdir(newVersion);
 	await removeDirectory(oldVersion, output);
 	output.writeln('ok');

@@ -1,8 +1,9 @@
 import { OutputStreamControl } from '@gongt/stillalive';
 import { chmod, mkdirp } from 'fs-extra';
+import { decodeStream } from 'iconv-lite';
 import { join, resolve } from 'path';
 import { Transform, TransformCallback } from 'stream';
-import { pipeCommandBoth, pipeCommandOut } from '../childprocess/complex';
+import { pipeCommandBoth } from '../childprocess/complex';
 import { isWin, RELEASE_ROOT } from '../misc/constants';
 import { calcCompileFolderName, removeIfExists } from '../misc/fsUtil';
 import { chdir } from '../misc/pathUtil';
@@ -96,24 +97,39 @@ async function createPosixZip(
 	return pipeCommandBoth(output, stderr, _7z, ...zipDeflateArgs, ...zipArgs, '--', zipFileName, join(whatToZip, '*'));
 }
 
-export async function un7zip(output: NodeJS.WritableStream, from: string, to: string) {
+export async function un7zip(output: OutputStreamControl, from: string, to: string) {
+	const stderr = new ProgressStream;
+	stderr.pipe(output.screen, {end: false});
+	
+	let stdout: NodeJS.WritableStream;
+	if (isWin) {
+		const convert = TransformEncode();
+		convert.pipe(output, endArg(output));
+		stdout = convert;
+	} else {
+		stdout = output;
+	}
+	
 	await mkdirp(to);
 	chdir(to);
-	return pipeCommandOut(output, _7z, 'x', '-y', '-r', from);
+	return pipeCommandBoth(
+		stdout, stderr,
+		_7z,
+		'x',
+		'-bso1',
+		'-bse1',
+		'-bsp2',
+		'-y',
+		from,
+	);
 }
 
 export function releaseZipStorageFolder() {
 	return resolve(RELEASE_ROOT, 'release-files');
 }
 
-class TransformEncode extends Transform {
-	public noEnd = true;
-	
-	_transform(chunk: Buffer, encoding: string, callback: TransformCallback): void {
-		const str = chunk.toString('ascii');
-		this.push(str, 'utf8');
-		callback();
-	}
+function TransformEncode() {
+	return decodeStream('936')
 }
 
 class ProgressStream extends Transform {
@@ -131,7 +147,7 @@ export async function creatingUniversalZip(output: OutputStreamControl, sourceDi
 	stderr.pipe(output.screen, {end: false});
 	
 	if (isWin) {
-		const convert = new TransformEncode;
+		const convert = TransformEncode();
 		convert.pipe(output, endArg(output));
 		
 		await createWindowsSfx(convert, stderr, sourceDir, await namer('exe'));

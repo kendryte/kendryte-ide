@@ -13,6 +13,8 @@
     "@types/rimraf": "^2.0.2",
     "@types/semver": "^5.5.0",
     "@types/tar-fs": "^1.16.1",
+    "@types/iconv-lite": "^0.0.1",
+    "iconv-lite": "^0.4.23",
     "aws-sdk": "^2.351.0",
     "awscred": "^1.4.1",
     "fs-extra": "^7.0.0",
