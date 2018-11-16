@@ -3,7 +3,8 @@ import { chmod, mkdirp } from 'fs-extra';
 import { decodeStream } from 'iconv-lite';
 import { join, resolve } from 'path';
 import { Transform, TransformCallback } from 'stream';
-import { pipeCommandBoth } from '../childprocess/complex';
+import { pipeCommandBoth, pipeCommandOut } from '../childprocess/complex';
+import { shellOutput } from '../childprocess/simple';
 import { isWin, RELEASE_ROOT } from '../misc/constants';
 import { calcCompileFolderName, removeIfExists } from '../misc/fsUtil';
 import { chdir } from '../misc/pathUtil';
@@ -13,16 +14,21 @@ import { nameReleaseFile } from './zip.name';
 const _7z = isWin? require('7zip')['7z'] : '7z';
 
 const commonArgs = [
-	'a',
 	'-y', // --yes
 	'-r', // recurse subdirectories
 	'-ssc', // sensitive case mode
+];
+const outputArgs = [
 	'-bso1', // standard output messages -> stdout
 	'-bse1', // error messages -> stdout
 	'-bsp2', // progress information -> stderr
 ];
+let invoke = normalOutput;
 if (!isWin) {
 	commonArgs.push('-mmt3'); // use 3 threads
+	if (/Incorrect command line/.test(shellOutput('7z', '-bso1', '-h'))) {
+		invoke = oldOutput;
+	}
 }
 const zipLzma2Args = [
 	...commonArgs,
@@ -45,19 +51,6 @@ const zipDeflateArgs = [
 	'-mx6', // more compress
 ];
 
-async function createPosixSfx(
-	output: NodeJS.WritableStream,
-	stderr: NodeJS.WritableStream,
-	whatToZip: string,
-	zipFileName: string,
-	...zipArgs: string[]
-) {
-	output.write('creating posix 7z sfx bin...\n');
-	zipFileName = resolve(releaseZipStorageFolder(), zipFileName);
-	await pipeCommandBoth(output, stderr, _7z, ...zipLzma2Args, ...zipArgs, '--', zipFileName, join(whatToZip, '*'));
-	await chmod(zipFileName, '777');
-}
-
 async function createWindowsSfx(
 	output: NodeJS.WritableStream,
 	stderr: NodeJS.WritableStream,
@@ -68,7 +61,7 @@ async function createWindowsSfx(
 	output.write('creating windows 7z sfx exe...\n');
 	zipFileName = resolve(releaseZipStorageFolder(), zipFileName);
 	await removeIfExists(zipFileName);
-	return pipeCommandBoth(output, stderr, _7z, ...zipLzma2Args, ...zipArgs, '--', zipFileName, join(whatToZip, '*'));
+	return invoke(output, stderr, 'a', ...zipLzma2Args, ...zipArgs, '--', zipFileName, join(whatToZip, '*'));
 }
 
 async function createWindowsZip(
@@ -81,7 +74,20 @@ async function createWindowsZip(
 	output.write('creating windows zip simple...\n');
 	zipFileName = resolve(releaseZipStorageFolder(), zipFileName);
 	await removeIfExists(zipFileName);
-	return pipeCommandBoth(output, stderr, _7z, ...zipDeflateArgs, ...zipArgs, '--', zipFileName, join(whatToZip, '*'));
+	return invoke(output, stderr, 'a', ...zipDeflateArgs, ...zipArgs, '--', zipFileName, join(whatToZip, '*'));
+}
+
+async function createPosixSfx(
+	output: NodeJS.WritableStream,
+	stderr: NodeJS.WritableStream,
+	whatToZip: string,
+	zipFileName: string,
+	...zipArgs: string[]
+) {
+	output.write('creating posix 7z sfx bin...\n');
+	zipFileName = resolve(releaseZipStorageFolder(), zipFileName);
+	await invoke(output, stderr, 'a', ...zipLzma2Args, ...zipArgs, '--', zipFileName, join(whatToZip, '*'));
+	await chmod(zipFileName, '777');
 }
 
 async function createPosixZip(
@@ -94,7 +100,7 @@ async function createPosixZip(
 	output.write('creating posix zip simple...\n');
 	zipFileName = resolve(releaseZipStorageFolder(), zipFileName);
 	await removeIfExists(zipFileName);
-	return pipeCommandBoth(output, stderr, _7z, ...zipDeflateArgs, ...zipArgs, '--', zipFileName, join(whatToZip, '*'));
+	return invoke(output, stderr, 'a', ...zipDeflateArgs, ...zipArgs, '--', zipFileName, join(whatToZip, '*'));
 }
 
 export async function un7zip(output: OutputStreamControl, from: string, to: string) {
@@ -112,13 +118,9 @@ export async function un7zip(output: OutputStreamControl, from: string, to: stri
 	
 	await mkdirp(to);
 	chdir(to);
-	return pipeCommandBoth(
+	return invoke(
 		stdout, stderr,
-		_7z,
 		'x',
-		'-bso1',
-		'-bse1',
-		'-bsp2',
 		'-y',
 		from,
 	);
@@ -129,7 +131,7 @@ export function releaseZipStorageFolder() {
 }
 
 function TransformEncode() {
-	return decodeStream('936')
+	return decodeStream('936');
 }
 
 class ProgressStream extends Transform {
@@ -166,4 +168,22 @@ export async function creatingReleaseZip(output: OutputStreamControl) {
 	chdir(RELEASE_ROOT);
 	
 	return creatingUniversalZip(output, await calcCompileFolderName(), nameReleaseFile());
+}
+
+function normalOutput(
+	output: NodeJS.WritableStream,
+	stderr: NodeJS.WritableStream,
+	cmd: 'a'|'x',
+	...args: string[]
+) {
+	return pipeCommandBoth(output, stderr, _7z, cmd, ...outputArgs, ...args);
+}
+
+function oldOutput(
+	output: NodeJS.WritableStream,
+	stderr: NodeJS.WritableStream,
+	cmd: 'a'|'x',
+	...args: string[]
+) {
+	return pipeCommandOut(stderr, _7z, cmd, ...args);
 }
