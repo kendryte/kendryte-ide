@@ -1,10 +1,11 @@
 import { OutputStreamControl } from '@gongt/stillalive';
+import { spawnSync } from 'child_process';
 import { chmod, mkdirp } from 'fs-extra';
 import { decodeStream } from 'iconv-lite';
 import { join, resolve } from 'path';
 import { Transform, TransformCallback } from 'stream';
 import { pipeCommandBoth, pipeCommandOut } from '../childprocess/complex';
-import { shellOutput } from '../childprocess/simple';
+import { mergeEnv } from '../childprocess/env';
 import { isWin, RELEASE_ROOT } from '../misc/constants';
 import { calcCompileFolderName, removeIfExists } from '../misc/fsUtil';
 import { chdir } from '../misc/pathUtil';
@@ -26,7 +27,12 @@ const outputArgs = [
 let invoke = normalOutput;
 if (!isWin) {
 	commonArgs.push('-mmt3'); // use 3 threads
-	if (/Incorrect command line/.test(shellOutput('7z', '-bso1', '-h'))) {
+	const r = spawnSync('7z', ['-bso1', '-h'], {
+		stdio: 'pipe',
+		encoding: 'utf8',
+		...mergeEnv(),
+	});
+	if (/Incorrect command line/.test(r.output.join('\n'))) {
 		invoke = oldOutput;
 	}
 }
