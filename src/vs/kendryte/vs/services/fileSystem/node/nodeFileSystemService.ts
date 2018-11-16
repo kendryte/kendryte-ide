@@ -98,9 +98,6 @@ class NodeFileSystemService implements INodeFileSystemService {
 	public async readJsonFile<T>(file: string): TPromise<[T, ExParseError[]]> {
 		const data = await readFile(file, 'utf8');
 		const [result, errors] = parseExtendedJson(data, file);
-		if (result) {
-			result.type = PackageTypes.Library;
-		}
 		return [result, errors];
 	}
 

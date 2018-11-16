@@ -24,18 +24,3 @@ commonlyUsedData.settings = [
 	'editor.cursorStyle',
 	'editor.cursorWidth',
 ];
-
-CategoryRegistry.addSettings('debugger', [
-	'debugger.target',
-	'debugger.targetIp',
-	'debugger.port.core0',
-	'debugger.port.core1',
-]);
-
-CategoryRegistry.addSettings('deployment', [
-	'serialport.device',
-	'serialport.reloadDevice',
-	'flash.baudrate',
-	'flash.weight',
-	'flash.weightPath',
-]);

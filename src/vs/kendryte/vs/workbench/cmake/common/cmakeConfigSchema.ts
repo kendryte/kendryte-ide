@@ -11,6 +11,7 @@ export interface ICompileOptions {
 	name: string;
 	version: string;
 	dependency: { [id: string]: string };
+	properties: {[id:string] : string};
 	include: string[];
 	source: string[];
 	extraList: string;
@@ -40,12 +41,19 @@ export const cmakeSchema: IJSONSchema = {
 		},
 		type: {
 			type: 'string',
-			enum: ['library', 'executable'],
+			enum: ['executable', 'library'],
 			default: 'executable',
 		},
 		dependency: {
 			type: 'object',
 			description: 'A memo of dependencies',
+			patternProperties: {
+				'.{1,}': { type: 'string' },
+			},
+		},
+		properties: {
+			type: 'object',
+			description: 'cmake project properties',
 			patternProperties: {
 				'.{1,}': { type: 'string' },
 			},

@@ -11,11 +11,14 @@ import { CONFIG_KEY_BUILD_VERBOSE } from 'vs/kendryte/vs/base/common/configKeys'
 export const CMAKE_LIST_GENERATED_WARNING = '# [NEVER REMOVE THIS LINE] WARNING: this file is generated, please edit ' + CMAKE_CONFIG_FILE_NAME + ' file instead.';
 
 interface KnownFiles {
+	reset: string;
 	fix9985: string;
 	macros: string;
-	prepend: string;
+	ideSettings: string;
+	toolchain: string;
 	dumpConfig: string;
 	flash: string;
+	afterProject: string;
 }
 
 let readed: KnownFiles;
@@ -65,27 +68,16 @@ export class CMakeListsCreator {
 	public getString() {
 		const { config } = this;
 
-		const content = [CMAKE_LIST_GENERATED_WARNING];
-
+		const content = [CMAKE_LIST_GENERATED_WARNING, readed.reset];
 		content.push(`set(PROJECT_NAME ${JSON.stringify(config.name)})`);
-
-		if (this.isDebugMode) {
-			content.push('set(CMAKE_VERBOSE_MAKEFILE TRUE)');
-		}
-
 		if (this.isRoot) {
-			content.push('##### dependencies #####');
-			for (const name of Object.keys(this.projectDependencies)) {
-				if (this.projectDependencies[name]) {
-					content.push(`add_subdirectory("${CMAKE_LIBRARY_FOLDER_NAME}/${name}" "${name}")`);
-				} else {
-					content.push(`message(FATAL "Did you installed dependency '${name}'?")`);
-				}
-			}
+			content.push(
+				'cmake_minimum_required(VERSION 3.0.0)',
+				readed.macros,
+				readed.ideSettings,
+				readed.toolchain,
+			);
 		}
-
-		content.push(readed.prepend, readed.macros);
-		content.push('##### flags from config json #####');
 
 		const add_compile_flags_map = [
 			['c_flags', 'C'],
@@ -93,6 +85,8 @@ export class CMakeListsCreator {
 			['c_cpp_flags', 'BOTH'],
 			['link_flags', 'LD'],
 		];
+		content.push('');
+		content.push('##### flags from config json #####');
 		for (const [from, to] of add_compile_flags_map) {
 			const arr = normalizeArray<string>(config[from]);
 			if (arr.length === 0) {
@@ -106,19 +100,29 @@ export class CMakeListsCreator {
 			content.push(`)`);
 		}
 
-		if (this.extraListContent) {
-			content.push('##### include(${path}) #####');
-			content.push(this.extraListContent);
+		if (this.isRoot) {
+			content.push(readed.fix9985);
+
+			content.push('##### Main Section #####');
+			content.push('message("======== PROJECT ========")');
+			content.push('project(${PROJECT_NAME})');
+			if (this.isDebugMode) {
+				content.push('set(CMAKE_VERBOSE_MAKEFILE TRUE)');
+			}
+
+			content.push('##### dependencies #####');
+			for (const name of Object.keys(this.projectDependencies)) {
+				if (this.projectDependencies[name]) {
+					content.push(`add_subdirectory("${CMAKE_LIBRARY_FOLDER_NAME}/${name}" "${name}")`);
+				} else {
+					content.push(`message(FATAL "Did you installed dependency '${name}'?")`);
+				}
+			}
 		}
-
-		content.push(readed.fix9985);
-
-		content.push('##### Main Section #####');
-		content.push('project(${PROJECT_NAME})');
 
 		content.push('## add source from config json');
 		if (config.source && config.source.length > 0) {
-			content.push(`file(GLOB_RECURSE SOURCE_FILES\n  ${this.spaceArrayCD(config.source)}\n)`);
+			content.push(`add_source_files(\n  ${this.spaceArrayCD(config.source)}\n)`);
 		}
 
 		if (this.isRoot) {
@@ -133,6 +137,11 @@ export class CMakeListsCreator {
 			}
 		}
 
+		if (this.extraListContent) {
+			content.push('##### include(${path}) #####');
+			content.push(this.extraListContent);
+		}
+
 		content.push('## final create executable');
 		const verbose = config.type === 'library' ? 'add_library' : 'add_executable';
 		content.push(verbose + '(${PROJECT_NAME} ${SOURCE_FILES})');
@@ -145,10 +154,26 @@ export class CMakeListsCreator {
 			);
 		}
 
-		content.push('target_link_libraries(${PROJECT_NAME} -Wl,--start-group');
-		content.push('    m ' + this.spaceArray(this.myDependency));
-		content.push('  -Wl,--end-group )');
+		if (config.properties) {
+			content.push('## set properties');
+			for (const [key, value] of Object.entries(config.properties)) {
+				content.push(`set_target_properties($\{PROJECT_NAME} PROPERTIES ${key.toUpperCase()} ${JSON.stringify(value)})`);
+			}
+		}
 
+		content.push('## dependencies link');
+		content.push('target_link_libraries(${PROJECT_NAME} gcc m c)');
+		if (this.myDependency.length) {
+			content.push('target_link_libraries(${PROJECT_NAME}');
+			content.push('  -Wl,--start-group');
+			this.myDependency.forEach((item: string) => {
+				content.push('    ' + JSON.stringify(item));
+			});
+			content.push('  -Wl,--end-group #');
+			content.push(')');
+		}
+
+		content.push(readed.afterProject);
 		content.push(readed.fix9985);
 
 		if (this.isRoot) {
@@ -156,6 +181,11 @@ export class CMakeListsCreator {
 				content.push(readed.flash);
 			}
 			content.push(readed.dumpConfig);
+		}
+
+		if (this.isDebugMode) {
+			content.push('message("")');
+			content.push('message("  ${PROJECT_NAME} :: SOURCE_FILES=${SOURCE_FILES}")');
 		}
 
 		return content.join('\n').trim() + '\n';
@@ -219,9 +249,12 @@ export class CMakeListsCreator {
 		await Promise.all([
 			read('fix9985'),
 			read('macros'),
-			read('prepend'),
+			read('ideSettings'),
 			read('dumpConfig'),
 			read('flash'),
+			read('reset'),
+			read('afterProject'),
+			read('toolchain'),
 		]);
 
 		return val;
