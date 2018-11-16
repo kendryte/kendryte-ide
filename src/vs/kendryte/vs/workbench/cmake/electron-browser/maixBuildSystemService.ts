@@ -2,8 +2,7 @@ import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation
 import { EnablementState, IExtensionEnablementService, IExtensionGalleryService, IExtensionManagementService } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { IProgressService2, IProgressStep, ProgressLocation } from 'vs/platform/progress/common/progress';
-import { IProgress } from 'vs/platform/progress/common/progress';
+import { IProgress, IProgressService2, IProgressStep, ProgressLocation } from 'vs/platform/progress/common/progress';
 
 // TODO: need change to action
 export function MaixBuildSystemPrepare(access: ServicesAccessor): TPromise<boolean> {

@@ -241,7 +241,7 @@ export class SerialLoader extends Disposable {
 	}
 
 	protected logGarbage({ content, source }: GarbageData) {
-		console.warn('[%s] Unexpected data: %O', source, content);
+		console.warn('[%s] Unexpected data: ', source, Buffer.from(content));
 		if (typeof content === 'object' && !Buffer.isBuffer(content)) {
 			this.logger.error('[%s] Unexpected data: %j', source, content);
 		} else {

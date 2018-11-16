@@ -1,0 +1,37 @@
+body .cn {
+	display: none;
+}
+
+body.cn .en {
+	display: none;
+}
+
+body.cn .cn {
+	display: initial;
+}
+
+body, html {
+	height: 100%;
+}
+
+body {
+	padding: 3em 0;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.platform {
+	margin-top: 0.5em;
+}
+
+.platform.active {
+	margin-top: 0;
+}
+
+.show-active {
+	display: none;
+}
+
+.active .show-active {
+	display: initial;
+}

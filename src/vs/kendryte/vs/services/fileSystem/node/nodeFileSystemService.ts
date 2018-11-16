@@ -19,7 +19,6 @@ import { ITextModel } from 'vs/editor/common/model';
 import { Edit } from 'vs/base/common/jsonFormatter';
 import { EditOperation } from 'vs/editor/common/core/editOperation';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { PackageTypes } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 import { ICompileOptions } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
 
 class NodeFileSystemService implements INodeFileSystemService {
@@ -98,9 +97,6 @@ class NodeFileSystemService implements INodeFileSystemService {
 	public async readJsonFile<T>(file: string): TPromise<[T, ExParseError[]]> {
 		const data = await readFile(file, 'utf8');
 		const [result, errors] = parseExtendedJson(data, file);
-		if (result) {
-			result.type = PackageTypes.Library;
-		}
 		return [result, errors];
 	}
 

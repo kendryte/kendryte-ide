@@ -1,7 +1,12 @@
 import { localize } from 'vs/nls';
 import { SERIAL_MONITOR_ACTION_REFRESH_DEVICE } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { registerConfiguration } from 'vs/kendryte/vs/platform/config/common/extendWithCategory';
-import { CONFIG_CATEGORY_DEPLOY, CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE, CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
+import {
+	CONFIG_CATEGORY_DEPLOY,
+	CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE,
+	CONFIG_KEY_FLASH_SERIAL_BAUDRATE,
+	CONFIG_KEY_RELOAD_SERIAL_DEVICES,
+} from 'vs/kendryte/vs/base/common/configKeys';
 import { standardBaudRate } from 'vs/kendryte/vs/workbench/config/common/baudrate';
 
 registerConfiguration({
@@ -23,7 +28,7 @@ registerConfiguration({
 			default: '115200',
 			description: localize('serialport.baudrate.flash.desc', 'Default baudrate when flashing program.'),
 		},
-		'serialport.reloadDevice': {
+		[CONFIG_KEY_RELOAD_SERIAL_DEVICES]: {
 			title: localize('serialport.reloadDevice.title', 'Reload device list'),
 			type: 'button',
 			description: localize('serialport.reloadDevice.desc', 'Reload device list'),

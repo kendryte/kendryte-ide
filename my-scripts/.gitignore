@@ -1,0 +1,8 @@
+node_modules
+.idea/*
+!.idea/codeStyles
+!.idea/my-scripts.iml
+!.idea/modules.xml
+!.idea/vcs.xml
+
+*.js

@@ -1,9 +1,7 @@
 {
-	"extends": "../src/tsconfig.base.json",
 	"compilerOptions": {
 		"declaration": false,
-		"sourceMap": true,
-		"inlineSourceMap": false,
+		"inlineSourceMap": true,
 		"inlineSources": false,
 		"module": "commonjs",
 		"target": "esnext",
@@ -17,9 +15,17 @@
 		"checkJs": false,
 		"outDir": ".",
 		"noEmitOnError": false,
-		"typeRoots": []
+		"sourceRoot": ".",
+		"types": [
+			"node"
+		],
+		"typeRoots": [
+			"node_modules/@types"
+		]
 	},
-	"exclude": [],
+	"exclude": [
+		"node_modules/**"
+	],
 	"include": [
 		"./**/*.ts"
 	]

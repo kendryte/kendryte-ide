@@ -11,9 +11,8 @@ if [ "$(id -u)" -eq 0 ]; then
 fi
 
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-source fn.sh
-set_path_when_developing
-source common.sh
+source build-env/fn.sh
+source build-env/common.sh
 cd ..
 
 if [ -n "${FOUND_CYGWIN}" ] ; then

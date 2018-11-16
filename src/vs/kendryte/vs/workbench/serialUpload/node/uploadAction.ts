@@ -14,6 +14,8 @@ import { IStorageService, StorageScope } from 'vs/platform/storage/common/storag
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ACTION_ID_MAIX_SERIAL_UPLOAD } from 'vs/kendryte/vs/workbench/serialUpload/common/actionIds';
 import { ChipType, SerialLoader } from 'vs/kendryte/vs/workbench/serialUpload/node/flasher';
+import { CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
+import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 
 export class MaixSerialUploadAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_SERIAL_UPLOAD;
@@ -33,6 +35,7 @@ export class MaixSerialUploadAction extends Action {
 		@IChannelLogService private channelLogService: IChannelLogService,
 		@IStorageService private storageService: IStorageService,
 		@IQuickInputService protected quickInputService: IQuickInputService,
+		@IConfigurationService private configurationService: IConfigurationService,
 	) {
 		super(id, label);
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
@@ -91,11 +94,13 @@ export class MaixSerialUploadAction extends Action {
 
 		this.logger.info(`\t${(await lstat(app)).size} bytes`);
 
+		const br = parseInt(this.configurationService.getValue(CONFIG_KEY_FLASH_SERIAL_BAUDRATE)) || 115200;
 		this.logger.info(`Opening serial port ${sel}`);
 		const port = await this.serialPortService.openPort(sel, {
 			dataBits: 8,
 			parity: 'none',
 			stopBits: 1,
+			baudRate: br,
 		}, true);
 		this.logger.info('\t - OK.');
 

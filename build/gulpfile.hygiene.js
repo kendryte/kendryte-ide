@@ -36,6 +36,8 @@ const all = [
 	'test/**/*',
 	'!**/node_modules/**',
 	'!my-scripts/**',
+	'!node_modules.asar',
+	'!node_modules.asar.unpacked/**',
 ];
 
 const indentationFilter = [

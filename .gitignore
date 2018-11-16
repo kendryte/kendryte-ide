@@ -33,4 +33,5 @@ node_modules
 .idea/deployment.xml
 .idea/typescript-compiler.xml
 /data
+*.log
 

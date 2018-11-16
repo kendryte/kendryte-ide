@@ -1,5 +1,4 @@
-import { IProgress } from 'vs/platform/progress/common/progress';
-import { IProgressStep } from 'vs/platform/progress/common/progress';
+import { IProgress, IProgressStep } from 'vs/platform/progress/common/progress';
 
 export interface INatureProgressStatus {
 	message: string;

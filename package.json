@@ -1,8 +1,8 @@
 {
   "name": "code-oss-dev",
-  "version": "1.29.0",
+  "version": "1.29.1",
   "distro": "eceef408e99ace55c0a17a2a90b88e46a8c9090a",
-  "patchVersion": 20181024.222328,
+  "patchVersion": 20181113.150840,
   "author": {
     "name": "Microsoft Corporation"
   },
@@ -10,13 +10,13 @@
   "private": true,
   "scripts": {
     "test": "mocha",
-    "preinstall": "bash my-scripts/pre-install.sh && node build/npm/preinstall.js",
-    "postinstall": "node build/npm/postinstall.js ; bash my-scripts/post-install.sh",
+    "preinstall": "node my-scripts/npm/preinstall.js && node build/npm/preinstall.js",
+    "postinstall": "node my-scripts/npm/postinstall.js && node build/npm/postinstall.js",
     "compile": "gulp compile --max_old_space_size=4095",
     "watch": "gulp watch --max_old_space_size=4095",
     "watch-client": "gulp watch-client --max_old_space_size=4095",
     "monaco-editor-test": "mocha --only-monaco-editor",
-    "precommit": "bash my-scripts/pre-commit.sh",
+    "precommit": "node my-scripts/npm/precommit.js",
     "gulp": "gulp --max_old_space_size=4095",
     "7z": "7z",
     "bash": "bash",
@@ -100,6 +100,7 @@
     "express": "^4.13.1",
     "glob": "^5.0.13",
     "gulp": "^3.8.9",
+    "gulp-bom": "^2.0.0",
     "gulp-atom-electron": "^1.19.0",
     "gulp-azure-storage": "^0.7.0",
     "gulp-buffer": "0.0.2",

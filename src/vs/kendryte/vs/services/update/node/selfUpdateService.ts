@@ -19,6 +19,7 @@ import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { asJson } from 'vs/base/node/request';
 import { ILogService } from 'vs/platform/log/common/log';
 import { OpenKendryteReleasePageAction } from 'vs/kendryte/vs/services/update/node/openReleasePageAction';
+import product from 'vs/platform/node/product';
 
 export interface IUpdateUserInterface {
 	error(e: Error): void;
@@ -275,7 +276,7 @@ export abstract class AbstractSelfUpdateService implements IUpdateService {
 			return this.checkingPromise;
 		}
 		if (force || !this.cached) {
-			const url = resolveUrl(IDE_MAIN_DISTRIBUTE_URL + '/', 'IDE.json');
+			const url = resolveUrl(IDE_MAIN_DISTRIBUTE_URL + '/', 'IDE.' + product.quality + '.json');
 			this.logger.info('[IDE] checking update from ' + url + (force ? '(force)' : '') + '.');
 			this.setState(State.CheckingForUpdates({}));
 			return this.checkingPromise = this.requestService.request({

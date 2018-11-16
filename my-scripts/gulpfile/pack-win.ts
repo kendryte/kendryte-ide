@@ -1,4 +1,4 @@
-import { yarnPackageDir } from '../build-env/include';
+import { yarnPackageDir } from '../build-env/misc/pathUtil';
 
 const gulp = require('gulp');
 const path = require('path');
@@ -31,7 +31,7 @@ const depsSrc = [
 	// @ts-ignore JSON checking: dependencies is optional
 	..._.flatten(Object.keys(product.dependencies || {}).map(d => [`node_modules/${d}/**`, `!node_modules/${d}/**/{test,tests}/**`])),
 ];
-gulp.task('default', () => {
+gulp.task('create-asar-package', () => {
 	return gulp.src(depsSrc, {base: '.', dot: true})
 	           .pipe(filter(['**', '!**/package-lock.json']))
 	           .pipe(createAsar(path.join(root, 'node_modules'), [
@@ -43,3 +43,5 @@ gulp.task('default', () => {
 	           ], 'node_modules.asar'))
 	           .pipe(vfs.dest(root + '/aa'));
 });
+
+gulp.task('default', ['create-asar-package']);

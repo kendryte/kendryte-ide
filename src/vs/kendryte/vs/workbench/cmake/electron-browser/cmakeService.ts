@@ -148,8 +148,6 @@ export class CMakeService implements ICMakeService {
 
 	init(access: ServicesAccessor) {
 		console.log('cmake service init.');
-		this.localEnv.TOOLCHAIN = this.nodePathService.getToolchainBinPath();
-		this.localEnv.CMAKE_SYSTEM = 'Generic';
 		if (isWindows) {
 			this.localEnv.CMAKE_MAKE_PROGRAM = 'mingw32-make.exe';
 		} else {
@@ -189,6 +187,42 @@ export class CMakeService implements ICMakeService {
 			...staticEnv,
 			...this.localEnv,
 		};
+	}
+
+	protected async runCMakeRaw(...args: string[]) {
+		const cmakePath = this.getCMakeToRun();
+		await mkdirp(this.buildPath);
+
+		const options: SpawnOptions = {
+			env: await this.getCMakeEnv(),
+			cwd: this.buildPath,
+		};
+
+		const dbg = new DebugScript(options.cwd, options.env);
+		dbg.command(cmakePath.cmake, args);
+		await dbg.writeBack(this.nodePathService.workspaceFilePath(), 'last-cmake-command');
+
+		this.logger.info('Start CMake Command: %s %s\nCWD=%s', cmakePath.cmake, args.join(' '), options.cwd);
+		const child = spawn(cmakePath.cmake, args, options);
+		this.logger.info(`Started CMake Command with PID %s`, child.pid);
+		child.stdout.on('data', data => this.logger.debug(data.toString()));
+		child.stderr.on('data', data => this.logger.warn(data.toString()));
+
+		return new Promise((resolve, reject) => {
+			child.on('error', (e) => {
+				this.logger.error(`CMake Command Failed: %s`, e.message);
+				reject(e);
+			});
+			child.on('exit', (code, signal) => {
+				if (signal || code) {
+					this.logger.info(`CMake Command exit with %s`, signal || code);
+					reject(new Error('CMake command failed with ' + (signal || code)));
+				} else {
+					this.logger.info('CMake Command successful finished');
+					resolve();
+				}
+			});
+		});
 	}
 
 	private async ensureProcess() {
@@ -412,7 +446,7 @@ ${JSON.stringify(payload)}
 		const p = this._rescanCurrentFolder();
 		p.catch((e) => {
 			this.logger.info('rescan current folder error!');
-			this.logger.error(e.message);
+			this.logger.error(e.stack);
 			this.channelLogService.show(CMAKE_CHANNEL);
 			this.statusBarController.setError();
 		});
@@ -427,6 +461,7 @@ ${JSON.stringify(payload)}
 
 		this.logger.info('Workspace change to: %s', currentDir);
 		this._currentFolder = currentDir;
+		// this.localEnv.INSTALL_PREFIX = resolvePath(currentDir, 'build/install');
 		await this.detectCMakeProject();
 
 		if (currentDir) {
@@ -456,7 +491,7 @@ ${JSON.stringify(payload)}
 			buildDirectory: buildFolder,
 			protocolVersion: hello.supportedProtocolVersions[0],
 			sourceDirectory: this._currentFolder,
-			generator: isWindows ? 'MinGW Makefiles' : 'Unix Makefiles',
+			generator: 'Unix Makefiles',
 		};
 
 		const tmpCache = await CMakeCache.fromPath(resolvePath(buildFolder, 'CMakeCache.txt'));
@@ -542,6 +577,9 @@ ${JSON.stringify(payload)}
 		if (this.selectedVariant) {
 			configArgs.push(`-DCMAKE_BUILD_TYPE:STRING=${this.selectedVariant}`);
 		}
+
+		// await this.runCMakeRaw('..', '-G', 'Unix Makefiles', ...configArgs);
+
 		this.logger.info('configuring project: %s', this.cmakeLists);
 		await this.sendRequest({
 			type: CMAKE_EVENT_TYPE.CONFIGURE,
