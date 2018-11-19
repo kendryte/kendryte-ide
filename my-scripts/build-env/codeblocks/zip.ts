@@ -124,12 +124,16 @@ export async function un7zip(output: OutputStreamControl, from: string, to: stri
 	
 	await mkdirp(to);
 	chdir(to);
-	return invoke(
+	await invoke(
 		stdout, stderr,
 		'x',
 		'-y',
 		from,
 	);
+	
+	if (stdout !== stdout) {
+		stdout.end();
+	}
 }
 
 export function releaseZipStorageFolder() {
@@ -137,7 +141,7 @@ export function releaseZipStorageFolder() {
 }
 
 function TransformEncode() {
-	return decodeStream('936');
+	return Object.assign(decodeStream('936'), {noEnd: true});
 }
 
 class ProgressStream extends Transform {
