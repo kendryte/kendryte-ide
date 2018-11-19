@@ -9,7 +9,7 @@ import { removeDirectory } from '../codeblocks/removeDir';
 import { releaseZipStorageFolder, un7zip } from '../codeblocks/zip';
 import { CURRENT_PLATFORM_TYPES, releaseFileName } from '../codeblocks/zip.name';
 import { RELEASE_ROOT } from '../misc/constants';
-import { calcCompileFolderName, getPackageData, mkdirpSync } from '../misc/fsUtil';
+import { calcCompileRootFolderName, getPackageData, mkdirpSync } from '../misc/fsUtil';
 import { chdir } from '../misc/pathUtil';
 import { IDEJson, SYS_NAME } from './release.json';
 
@@ -27,7 +27,7 @@ async function extractVersion(output: OutputStreamControl, zip: string, type: st
 	await un7zip(output, zip, temp);
 	output.success('extract complete.');
 	
-	const ideDirName = calcCompileFolderName();
+	const ideDirName = calcCompileRootFolderName();
 	output.writeln(`move ${ideDirName}/resources/app`);
 	await move(resolve(temp, ideDirName, 'resources/app'), result);
 	output.writeln('ok.');

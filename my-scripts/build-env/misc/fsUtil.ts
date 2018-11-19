@@ -110,6 +110,10 @@ export function calcCompileFolderName() {
 	return product.nameShort + (isMac? '.app' : '');
 }
 
+export function calcCompileRootFolderName() {
+	return isMac? resolve(calcCompileFolderName(), 'Contents') : calcCompileFolderName();
+}
+
 const cache: {[fn: string]: any} = {};
 
 export function getProductData(alterRoot: string = VSCODE_ROOT): IProduction {
