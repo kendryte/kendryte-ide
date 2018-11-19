@@ -19,7 +19,7 @@ export async function publishCompiledResult(output: OutputStreamControl, remote:
 	
 	const plat = platform();
 	const rType = CURRENT_PLATFORM_TYPES.slice().reverse(); // this put first -> remote[SYS_NAME]
-	for (const type of CURRENT_PLATFORM_TYPES) {
+	for (const type of rType) {
 		const zipResult = resolve(releaseZipStorageFolder(), releaseFileName(plat, type));
 		const s3Key = calcReleaseFileAwsKey(plat, type);
 		
