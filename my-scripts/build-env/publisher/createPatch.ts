@@ -81,12 +81,17 @@ async function createDiffWithGit(output: OutputStreamControl, remote: IDEJson) {
 	if (lines.length === 0) {
 		throw new Error('Nothing changed.');
 	}
+	output.writeln('---------------------------');
+	output.writeln(fileList);
+	output.writeln('---------------------------');
 	for (const file of lines) {
+		if (file.startsWith('node_modules')) {
+			continue;
+		}
 		const source = resolve(newVersion, file);
 		const target = resolve(patchingDir, file);
 		mkdirpSync(dirname(target));
 		output.screen.log(`copy %s => %s`, source, target);
-		output.log(source);
 		await copy(source, target).catch((e) => {
 			if (e.code === ENOENT) { // missing file => deleted from git
 				output.log('ignore missing file: ', e.message);
@@ -98,6 +103,7 @@ async function createDiffWithGit(output: OutputStreamControl, remote: IDEJson) {
 	}
 	output.writeln('ok.');
 	
+	chdir(patchingDir);
 	await removeDirectory(oldVersion, output);
 	await removeDirectory(newVersion, output);
 	
