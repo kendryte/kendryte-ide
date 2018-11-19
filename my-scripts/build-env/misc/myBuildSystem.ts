@@ -16,7 +16,7 @@ export function mainDispose(dispose: DisposeFunction) {
 	disposeList.push(dispose);
 }
 
-let finalPromise: Promise<void> = new Promise((resolve, reject) => {
+let finalPromise: Promise<void|number> = new Promise((resolve, reject) => {
 	setImmediate(resolve);
 });
 
