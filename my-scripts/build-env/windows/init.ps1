@@ -108,7 +108,9 @@ writeScriptFile yarn @"
 	} else {
 		`$BL="--bin-links"
 	}
-	
+	`$e = (0x1B -as [char])
+	`$es = (0x07 -as [char])
+	echo "`$e]0;yarn `$args`$es"
 	& '$NODEJS' ``
 		'$NODEJS_INSTALL\node_modules\yarn\bin\yarn.js' ``
 			--prefer-offline --no-default-rc `$BL ``

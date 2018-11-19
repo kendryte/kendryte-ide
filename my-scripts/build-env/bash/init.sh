@@ -89,6 +89,7 @@ writeShFile yarn "
 		BL='--bin-links'
 	fi
 
+	echo -en \"\e]0;yarn \${ARGS[@]}\x07\"
 	exec '$NODEJS' \\
 		'$NODEJS_INSTALL/node_modules/yarn/bin/yarn.js' \\
 			--prefer-offline --no-default-rc \$BL \\
