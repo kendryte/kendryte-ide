@@ -62,7 +62,7 @@ export async function initS3(output: OutputStreamControl) {
 	}
 	const awsConfig = await loadCred(output, process.env.HOME) || await loadCred(output, process.env.ORIGINAL_HOME);
 	if (!awsConfig) {
-		throw new Error('Not able to load AWS config. see https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/setup-credentials.html');
+		throw new Error('Not able to load AWS config.');
 	}
 	
 	s3 = new S3({
