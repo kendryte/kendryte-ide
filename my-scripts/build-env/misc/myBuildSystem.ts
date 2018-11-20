@@ -16,16 +16,19 @@ export function mainDispose(dispose: DisposeFunction) {
 	disposeList.push(dispose);
 }
 
-let finalPromise: Promise<void> = new Promise((resolve, reject) => {
+let finalPromise: Promise<void|number> = new Promise((resolve, reject) => {
 	setImmediate(resolve);
 });
 
-export function runMain(main: () => Promise<void>) {
+export function runMain(main: () => Promise<void|number>) {
 	if (WIT()) {
 		return;
 	}
 	const p = finalPromise = finalPromise.then(main);
-	p.then(() => {
+	p.then((exitCode) => {
+		if (exitCode) {
+			return exitCode;
+		}
 		return 0;
 	}, async (e) => {
 		if (e.__programError) {

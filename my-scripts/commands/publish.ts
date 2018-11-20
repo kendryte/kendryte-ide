@@ -80,7 +80,7 @@ async function createAndPublishPatch(output: OutputStreamControl, remote: IDEJso
 	);
 	
 	const data = ensurePatchData(packageJson.patchVersion, remote);
-	data[SYS_NAME].generic = patchFile;
+	data[SYS_NAME].generic = patchUrl;
 	
 	output.writeln('saving IDE.json to AWS.');
 	await saveRemoteState(remote);

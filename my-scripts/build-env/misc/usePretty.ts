@@ -7,6 +7,7 @@ export function usePretty(save?: string, opts?: MyOptions): OutputStreamControl 
 	const stream = startWorking();
 	useThisStream(stream);
 	Object.assign(stream, {noEnd: true});
+	Object.assign(stream.screen, {noEnd: true});
 	mainDispose((error: Error) => {
 		useThisStream(process.stderr);
 		if (error) {

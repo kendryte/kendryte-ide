@@ -105,9 +105,13 @@ export interface IPackage {
 	patchVersion: string;
 }
 
-export async function calcCompileFolderName() {
-	const product = await getProductData();
+export function calcCompileFolderName() {
+	const product = getProductData();
 	return product.nameShort + (isMac? '.app' : '');
+}
+
+export function calcCompileRootFolderName() {
+	return isMac? resolve(calcCompileFolderName(), 'Contents') : calcCompileFolderName();
 }
 
 const cache: {[fn: string]: any} = {};

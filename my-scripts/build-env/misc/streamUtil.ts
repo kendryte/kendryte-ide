@@ -1,7 +1,7 @@
 import { resolve } from 'path';
 import { Transform, Writable } from 'stream';
 import { VSCODE_ROOT } from './constants';
-import { globalInterruptLog, globalLog } from './globalOutput';
+import { globalLog } from './globalOutput';
 import { yarnPackageDir } from './pathUtil';
 
 export class CollectingStream extends Writable {
@@ -105,7 +105,7 @@ export function streamPromise(stream: NodeJS.ReadableStream|NodeJS.WritableStrea
 }
 
 export function endArg(stream: NodeJS.WritableStream) {
-	if (stream.hasOwnProperty('noEnd') || stream === process.stdout || stream === process.stderr) {
+	if (stream && (stream as any).noEnd || stream === process.stdout || stream === process.stderr) {
 		return {end: false};
 	} else {
 		return {end: true};

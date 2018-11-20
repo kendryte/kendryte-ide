@@ -62,7 +62,7 @@ export async function initS3(output: OutputStreamControl) {
 	}
 	const awsConfig = await loadCred(output, process.env.HOME) || await loadCred(output, process.env.ORIGINAL_HOME);
 	if (!awsConfig) {
-		throw new Error('Not able to load AWS config. see https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/setup-credentials.html');
+		throw new Error('Not able to load AWS config.');
 	}
 	
 	s3 = new S3({
@@ -168,7 +168,7 @@ export function calcReleaseFileAwsKey(platform: string, type: string): string {
 	const packageJson = getPackageData();
 	
 	const pv = parseFloat(packageJson.patchVersion).toFixed(6).replace(/\./g, '');
-	return `release/download/${product.quality}/v${packageJson.version}/${platform}.${pv}.${type}`;
+	return `release/download/${product.quality}/v${packageJson.version}/${pv}/${platform}.${type}`;
 }
 
 export function calcPackageAwsKey(platform: string, type: string): string {
@@ -181,5 +181,5 @@ export function calcPatchFileAwsKey(platform: string): string {
 	const packageJson = getPackageData();
 	
 	const pv = parseFloat(packageJson.patchVersion).toFixed(6).replace(/\./g, '');
-	return `release/patches/${product.quality}/v${packageJson.version}/${pv}.${platform}.tar.gz`;
+	return `release/patches/${product.quality}/v${packageJson.version}/${pv}/${platform}.tar.gz`;
 }

@@ -16,7 +16,7 @@ Based on a wonderful editor: [VS Code](https://code.visualstudio.com)
 		* 仅支持比较新的发行版（比如**最新版**Ubuntu、Fedora、Arch等，不支持CentOS、老的Ubuntu等）
 		* 安装以下软件包（`dnf install -y`、`apt install -y`……）
 		```dnf
-	    bash tmux wget curl tar xz findutils git
+	    bash wget curl tar xz findutils git
 	    make gcc-c++ libstdc++ gtk2 libXtst libXScrnSaver GConf2 alsa-lib
 	    libsecret-devel libX11-devel libxkbfile-devel
 	    wqy-zenhei-fonts wqy-unibit-fonts wqy-bitmap-fonts # locale font

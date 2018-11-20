@@ -14,8 +14,8 @@ export async function createReleaseDownload({sfx, zip}: info) {
 		<span>Kendryte IDE</span>
 	</th>
 </tr>
-${await createDownload(sfx, 'btn-outline-primary')}
-${await createDownload(zip, 'btn-light')}`;
+${await createDownload(sfx, 'btn-primary')}
+${await createDownload(zip, 'btn-outline-primary')}`;
 }
 
 export async function createUpdateDownload({sfx, zip}: info) {
@@ -25,8 +25,8 @@ export async function createUpdateDownload({sfx, zip}: info) {
 		<span class="cn">离线依赖包</span>
 	</th>
 </tr>
-${await createDownload(sfx, 'btn-outline-primary')}
-${await createDownload(zip, 'btn-light')}`;
+${await createDownload(sfx, 'btn-primary')}
+${await createDownload(zip, 'btn-outline-primary')}`;
 }
 
 async function createDownload(key: string, btnClass: string) {

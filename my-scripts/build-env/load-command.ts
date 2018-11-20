@@ -10,6 +10,8 @@ Error.stackTraceLimit = Infinity;
 const command = process.argv.splice(2, 1)[0];
 process.argv.splice(1, 1, resolve(__dirname, '../commands', command + '.js'));
 
+console.error('\x1B]0;%s\x07', command.toUpperCase() + ' :: Kendryte IDE');
+
 try {
 	require(process.argv[1]);
 } catch (e) {

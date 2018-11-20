@@ -9,7 +9,7 @@ import { removeDirectory } from '../codeblocks/removeDir';
 import { releaseZipStorageFolder, un7zip } from '../codeblocks/zip';
 import { CURRENT_PLATFORM_TYPES, releaseFileName } from '../codeblocks/zip.name';
 import { RELEASE_ROOT } from '../misc/constants';
-import { getPackageData, mkdirpSync } from '../misc/fsUtil';
+import { calcCompileRootFolderName, getPackageData, mkdirpSync } from '../misc/fsUtil';
 import { chdir } from '../misc/pathUtil';
 import { IDEJson, SYS_NAME } from './release.json';
 
@@ -27,13 +27,15 @@ async function extractVersion(output: OutputStreamControl, zip: string, type: st
 	await un7zip(output, zip, temp);
 	output.success('extract complete.');
 	
-	output.writeln('move resources/app');
-	await move(resolve(temp, 'resources/app'), result);
+	const ideDirName = calcCompileRootFolderName();
+	output.writeln(`move ${ideDirName}/resources/app`);
+	await move(resolve(temp, ideDirName, 'resources/app'), result);
 	output.writeln('ok.');
 	
+	chdir(process.env.TEMP);
 	await removeDirectory(temp, output);
 	
-	return temp;
+	return result;
 }
 
 async function downloadAndExtractOldVersion(output: OutputStreamControl, remote: IDEJson) {
@@ -50,7 +52,7 @@ async function downloadAndExtractOldVersion(output: OutputStreamControl, remote:
 	await downloadFile(output, oldZipUrl, cacheFileName);
 	output.success('downloaded old version.');
 	
-	return extractVersion(output, cacheFileName, 'old-version');
+	return await extractVersion(output, cacheFileName, 'old-version');
 }
 
 async function createDiffWithGit(output: OutputStreamControl, remote: IDEJson) {
@@ -62,12 +64,10 @@ async function createDiffWithGit(output: OutputStreamControl, remote: IDEJson) {
 	chdir(oldVersion);
 	await pipeCommandOut(output, 'git', 'init', '.');
 	await pipeCommandOut(output.screen, 'git', 'add', '.');
-	await pipeCommandOut(output.screen, 'git', 'commit', '-m', 'init');
+	await pipeCommandOut(output.screen, 'git', 'commit', '-m', 'old version at ' + oldVersion);
 	
 	output.writeln('move .git folder and clean old dir');
-	await move(resolve(oldVersion, '.git'), newVersion);
-	chdir(newVersion);
-	await removeDirectory(oldVersion, output);
+	await move(resolve(oldVersion, '.git'), resolve(newVersion, '.git'));
 	output.writeln('ok');
 	
 	chdir(newVersion);
@@ -75,8 +75,19 @@ async function createDiffWithGit(output: OutputStreamControl, remote: IDEJson) {
 	const fileList = await getOutputCommand('git', 'diff', '--name-only', 'HEAD');
 	
 	output.writeln('copy changed file to dist folder');
+	output.writeln(`  From: ${newVersion}`);
+	output.writeln(`  To  : ${patchingDir}`);
 	const lines = fileList.trim().split(/\n/g).map(e => e.trim()).filter(e => e);
+	if (lines.length === 0) {
+		throw new Error('Nothing changed.');
+	}
+	output.writeln('---------------------------');
+	output.writeln(fileList);
+	output.writeln('---------------------------');
 	for (const file of lines) {
+		if (file.startsWith('node_modules')) {
+			continue;
+		}
 		const source = resolve(newVersion, file);
 		const target = resolve(patchingDir, file);
 		mkdirpSync(dirname(target));
@@ -92,6 +103,8 @@ async function createDiffWithGit(output: OutputStreamControl, remote: IDEJson) {
 	}
 	output.writeln('ok.');
 	
+	chdir(patchingDir);
+	await removeDirectory(oldVersion, output);
 	await removeDirectory(newVersion, output);
 	
 	return patchingDir;
