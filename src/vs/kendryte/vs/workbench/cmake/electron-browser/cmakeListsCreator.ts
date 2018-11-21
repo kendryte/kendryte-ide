@@ -25,6 +25,7 @@ let readed: KnownFiles;
 
 export class CMakeListsCreator {
 	private readonly projectDependencies: { [name: string]: boolean };
+	private readonly projectLinkerScripts: string[];
 	private readonly projectIncludes: string[];
 
 	private config: ICompileOptions;
@@ -46,10 +47,12 @@ export class CMakeListsCreator {
 			this.isRoot = false;
 			this.projectDependencies = depsRef.projectDependencies;
 			this.projectIncludes = depsRef.projectIncludes;
+			this.projectLinkerScripts = depsRef.projectLinkerScripts;
 		} else {
 			this.isRoot = true;
 			this.projectDependencies = {};
 			this.projectIncludes = [];
+			this.projectLinkerScripts = [];
 		}
 	}
 
@@ -86,6 +89,15 @@ export class CMakeListsCreator {
 			['link_flags', 'LD'],
 		];
 		content.push('');
+		content.push('##### internal flags #####');
+		content.push(`add_compile_flags(LD -nostartfiles -Wl,--gc-sections)`);
+		if (this.projectLinkerScripts.length) {
+			content.push(`add_compile_flags(LD`);
+			for (const file of this.projectLinkerScripts) {
+				content.push(`  -T ${JSON.stringify(file)}`);
+			}
+			content.push(`)`);
+		}
 		content.push('##### flags from config json #####');
 		for (const [from, to] of add_compile_flags_map) {
 			const arr = normalizeArray<string>(config[from]);
@@ -162,8 +174,8 @@ export class CMakeListsCreator {
 		}
 
 		content.push('## dependencies link');
+		content.push('target_link_libraries(${PROJECT_NAME} -Wl,--start-group gcc m c -Wl,--end-group)');
 		if (this.myDependency.length) {
-			content.push('target_link_libraries(${PROJECT_NAME} -Wl,--start-group gcc m c -Wl,--end-group)');
 			content.push('target_link_libraries(${PROJECT_NAME}');
 			content.push('  -Wl,--start-group');
 			this.myDependency.forEach((item: string) => {
@@ -216,6 +228,9 @@ export class CMakeListsCreator {
 				}
 				this.myDependency.push(dirName);
 			}
+		}
+		if (config.ld_file) {
+			this.projectLinkerScripts.push(resolvePath(this.listSourceFile, '..', config.ld_file));
 		}
 
 		if (config.extraList) {
