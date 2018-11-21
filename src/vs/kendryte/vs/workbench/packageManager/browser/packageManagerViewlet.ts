@@ -15,7 +15,6 @@ import { ViewletPanel } from 'vs/workbench/browser/parts/views/panelViewlet';
 import { IAddedViewDescriptorRef } from 'vs/workbench/browser/parts/views/views';
 import { always } from 'vs/base/common/async';
 import { IProgressService } from 'vs/platform/progress/common/progress';
-import { LocalPackagesListView } from 'vs/kendryte/vs/workbench/packageManager/browser/viewletPanels/localPackagesListView';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 
 export class PackageManagerViewlet extends ViewContainerViewlet implements IPackageManagerViewlet {
@@ -55,7 +54,7 @@ export class PackageManagerViewlet extends ViewContainerViewlet implements IPack
 
 	protected onDidAddViews(added: IAddedViewDescriptorRef[]): ViewletPanel[] {
 		const addedViews = super.onDidAddViews(added);
-		this.progress(TPromise.join(addedViews.map(addedView => (<LocalPackagesListView>addedView).show())));
+		this.progress(TPromise.join(addedViews.map(addedView => (<ViewletPanel & { show: () => void }>addedView).show())));
 		return addedViews;
 	}
 

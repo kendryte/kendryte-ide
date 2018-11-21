@@ -4140,6 +4140,14 @@ gulp-azure-storage@^0.7.0:
     vinyl "^0.4.5"
     vinyl-fs "^0.3.13"
 
+gulp-bom@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/gulp-bom/-/gulp-bom-2.0.0.tgz#f0d8121c115d7e87f19972352a9fec2c0815e327"
+  integrity sha1-8NgSHBFdfofxmXI1Kp/sLAgV4yc=
+  dependencies:
+    plugin-error "^0.1.2"
+    through2 "^2.0.0"
+
 gulp-buffer@0.0.2:
   version "0.0.2"
   resolved "https://registry.yarnpkg.com/gulp-buffer/-/gulp-buffer-0.0.2.tgz#af81b4346101736b49942ec6c9fa867ffe737036"

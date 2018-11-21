@@ -3,6 +3,7 @@ import { S3 } from 'aws-sdk';
 import { ClientConfiguration } from 'aws-sdk/clients/s3';
 import { createReadStream } from 'fs';
 import { format, promisify } from 'util';
+import { ICompileOptions } from '../package-manager/type';
 import { getPackageData, getProductData } from './fsUtil';
 import { globalLog } from './globalOutput';
 import { hashStream } from './hashUtil';
@@ -15,6 +16,8 @@ const loadCredentialsAndRegion = promisify(require('awscred').loadCredentialsAnd
 
 export const OBJKEY_IDE_JSON = 'release/IDE.' + getProductData().quality + '.json';
 export const OBJKEY_DOWNLOAD_INDEX = 'release/download/index.html';
+export const OBJKEY_PACKAGE_MANAGER_LIBRARY = 'package-manager/registry/library.json';
+export const OBJKEY_PACKAGE_MANAGER_EXAMPLE = 'package-manager/registry/example.json';
 
 let s3: S3;
 
@@ -93,7 +96,18 @@ export async function s3LoadJson<T>(Key: string, Bucket: string = getDefaultBuck
 	const json = await new CollectingStream(
 		s3.getObject({Bucket, Key}).createReadStream(),
 	).promise();
-	return JSON.parse(json) as any;
+	return (void 0 || eval)('data=' + json + ';');
+}
+
+export async function s3UploadJson(
+	data: any,
+	Key: string,
+	Bucket: string = getDefaultBucket(),
+): Promise<void> {
+	await s3UploadBuffer({
+		stream: Buffer.from(JSON.stringify(data, null, 2) + '\n', 'utf8'),
+		mime: 'application/json',
+	}, Key);
 }
 
 export interface S3Upload<T> {
@@ -125,6 +139,7 @@ export async function s3UploadFile(
 			mime: 'text/plain',
 		},
 		Key + '.md5',
+		Bucket,
 	);
 	return await s3UploadStream(
 		output,
@@ -133,6 +148,7 @@ export async function s3UploadFile(
 			mime: data.mime,
 		},
 		Key,
+		Bucket,
 	);
 }
 
@@ -182,4 +198,8 @@ export function calcPatchFileAwsKey(platform: string): string {
 	
 	const pv = parseFloat(packageJson.patchVersion).toFixed(6).replace(/\./g, '');
 	return `release/patches/${product.quality}/v${packageJson.version}/${pv}/${platform}.tar.gz`;
+}
+
+export function calcLibraryFileAwsKey(data: ICompileOptions): string {
+	return `package-manager/${data.type}/${data.name}/${data.version}.tar.gz`;
 }

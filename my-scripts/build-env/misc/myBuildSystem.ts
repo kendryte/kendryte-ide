@@ -50,7 +50,7 @@ export function runMain(main: () => Promise<void|number>) {
 			await disposeList.shift()();
 			await timeout(50); // give time to finish
 		}
-		await timeout(500);
+		await timeout(300);
 		process.exit(quit);
 	}).catch((e) => {
 		console.error(e);

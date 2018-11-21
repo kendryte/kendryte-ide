@@ -162,14 +162,14 @@ export class CMakeListsCreator {
 		}
 
 		content.push('## dependencies link');
-		content.push('target_link_libraries(${PROJECT_NAME} gcc m c)');
 		if (this.myDependency.length) {
+			content.push('target_link_libraries(${PROJECT_NAME} -Wl,--start-group gcc m c -Wl,--end-group)');
 			content.push('target_link_libraries(${PROJECT_NAME}');
 			content.push('  -Wl,--start-group');
 			this.myDependency.forEach((item: string) => {
 				content.push('    ' + JSON.stringify(item));
 			});
-			content.push('  -Wl,--end-group #');
+			content.push('  -Wl,--end-group');
 			content.push(')');
 		}
 

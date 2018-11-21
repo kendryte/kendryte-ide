@@ -79,6 +79,7 @@ export class FpioaLeftPanel extends Disposable implements IView {
 	}
 
 	public layout(width: number): void {
+		console.log(width, this.element, this.element.clientHeight);
 		this.list.layout(this.element.clientHeight);
 	}
 
