@@ -70,15 +70,15 @@ export function saveRemoteState(remote: IDEJson) {
 }
 
 export function ensurePatchData(version: any, state: IDEJson): IDEPatchJson {
-	const latest = state.patches[state.patches.length - 1];
-	if (latest && parseFloat(latest.version) === parseFloat(version)) {
+	const latest = state.patches.find(item => item.version === version.toFixed(6));
+	if (latest) {
 		if (!latest[SYS_NAME]) {
 			latest[SYS_NAME] = {} as any;
 		}
 		return latest;
 	}
 	const data: IDEPatchJson = {
-		version: version.toString(6),
+		version: version.toFixed(6),
 		[SYS_NAME]: {},
 	} as any;
 	state.patches.push(data);
