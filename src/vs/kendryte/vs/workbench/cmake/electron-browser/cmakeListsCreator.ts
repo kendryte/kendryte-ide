@@ -134,6 +134,12 @@ export class CMakeListsCreator {
 		}
 
 		content.push('## add source from config json');
+		const internalSource = [
+			'config/*.c',
+			'config/*.h',
+			'config/*.cpp',
+		];
+		content.push(`add_source_files(\n  ${this.spaceArrayCD(internalSource)}\n)`);
 		if (config.source && config.source.length > 0) {
 			content.push(`add_source_files(\n  ${this.spaceArrayCD(config.source)}\n)`);
 		}
