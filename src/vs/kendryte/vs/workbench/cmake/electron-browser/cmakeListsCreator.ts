@@ -19,6 +19,7 @@ interface KnownFiles {
 	dumpConfig: string;
 	flash: string;
 	afterProject: string;
+	coreFlags: string;
 }
 
 let readed: KnownFiles;
@@ -90,7 +91,7 @@ export class CMakeListsCreator {
 		];
 		content.push('');
 		content.push('##### internal flags #####');
-		content.push(`add_compile_flags(LD -nostartfiles -Wl,--gc-sections)`);
+		content.push(readed.coreFlags);
 		if (this.projectLinkerScripts.length) {
 			content.push(`add_compile_flags(LD`);
 			for (const file of this.projectLinkerScripts) {
@@ -270,6 +271,7 @@ export class CMakeListsCreator {
 			read('reset'),
 			read('afterProject'),
 			read('toolchain'),
+			read('coreFlags'),
 		]);
 
 		return val;
