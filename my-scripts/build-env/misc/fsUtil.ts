@@ -149,3 +149,7 @@ export async function removeIfExists(file: string) {
 		await remove(file);
 	}
 }
+
+export function pPath(p: string): string {
+	return p.replace(/\\/g, '/');
+}
