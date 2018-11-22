@@ -20,6 +20,7 @@ import { ExtHostStorage } from 'vs/workbench/api/node/extHostStorage';
 import { ExtHostWorkspace } from 'vs/workbench/api/node/extHostWorkspace';
 import { IExtensionDescription } from 'vs/workbench/services/extensions/common/extensions';
 import { ExtensionDescriptionRegistry } from 'vs/workbench/services/extensions/node/extensionDescriptionRegistry';
+import { connectProxyResolver } from 'vs/workbench/node/proxyResolver';
 
 class ExtensionMemento implements IExtensionMemento {
 
@@ -163,6 +164,9 @@ export class ExtHostExtensionService implements ExtHostExtensionServiceShape {
 		const apiFactory = createApiFactory(initData, extHostContext, extHostWorkspace, extHostConfiguration, this, this._extHostLogService, this._storage);
 
 		initializeExtensionApi(this, apiFactory).then(() => {
+			// Do this when extension service exists, but extensions are not being activated yet.
+			return connectProxyResolver(extHostWorkspace, extHostConfiguration, this, this._extHostLogService, this._mainThreadTelemetry);
+		}).then(() => {
 
 			this._activator = new ExtensionsActivator(this._registry, {
 				showMessage: (severity: Severity, message: string): void => {
@@ -309,10 +313,30 @@ export class ExtHostExtensionService implements ExtHostExtensionServiceShape {
 			const activationTimes = activatedExtension.activationTimes;
 			let activationEvent = (reason instanceof ExtensionActivatedByEvent ? reason.activationEvent : null);
 			this._proxy.$onExtensionActivated(extensionDescription.id, activationTimes.startup, activationTimes.codeLoadingTime, activationTimes.activateCallTime, activationTimes.activateResolvedTime, activationEvent);
+			this._logExtensionActivationTimes(extensionDescription, reason, 'success', activationTimes);
 			return activatedExtension;
 		}, (err) => {
 			this._proxy.$onExtensionActivationFailed(extensionDescription.id);
+			this._logExtensionActivationTimes(extensionDescription, reason, 'failure');
 			throw err;
+		});
+	}
+
+	private _logExtensionActivationTimes(extensionDescription: IExtensionDescription, reason: ExtensionActivationReason, outcome: string, activationTimes?: ExtensionActivationTimes) {
+		let event = getTelemetryActivationEvent(extensionDescription, reason);
+		/* __GDPR__
+			"extensionActivationTimes" : {
+				"${include}": [
+					"${TelemetryActivationEvent}",
+					"${ExtensionActivationTimes}"
+				],
+				"outcome" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+			}
+		*/
+		this._mainThreadTelemetry.$publicLog('extensionActivationTimes', {
+			...event,
+			...(activationTimes || {}),
+			outcome,
 		});
 	}
 
@@ -430,6 +454,7 @@ function getTelemetryActivationEvent(extensionDescription: IExtensionDescription
 		"TelemetryActivationEvent" : {
 			"id": { "classification": "PublicNonPersonalData", "purpose": "FeatureInsight" },
 			"name": { "classification": "PublicNonPersonalData", "purpose": "FeatureInsight" },
+			"extensionVersion": { "classification": "PublicNonPersonalData", "purpose": "FeatureInsight" },
 			"publisherDisplayName": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 			"activationEvents": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 			"isBuiltin": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
@@ -439,6 +464,7 @@ function getTelemetryActivationEvent(extensionDescription: IExtensionDescription
 	let event = {
 		id: extensionDescription.id,
 		name: extensionDescription.name,
+		extensionVersion: extensionDescription.version,
 		publisherDisplayName: extensionDescription.publisher,
 		activationEvents: extensionDescription.activationEvents ? extensionDescription.activationEvents.join(',') : null,
 		isBuiltin: extensionDescription.isBuiltin,

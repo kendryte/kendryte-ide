@@ -46,6 +46,7 @@ const indentationFilter = [
 	// except specific files
 	'!ThirdPartyNotices.txt',
 	'!LICENSE.txt',
+	'!**/LICENSE',
 	'!src/vs/nls.js',
 	'!src/vs/nls.build.js',
 	'!src/vs/css.js',
@@ -86,10 +87,12 @@ const indentationFilter = [
 	'!**/*.{svg,exe,png,bmp,scpt,bat,cmd,cur,ttf,woff,eot,md,ps1,template,yaml,yml,d.ts.recipe,ico,icns}',
 	'!build/{lib,tslintRules}/**/*.js',
 	'!build/**/*.sh',
-	'!build/tfs/**/*.js',
-	'!build/tfs/**/*.config',
+	'!build/azure-pipelines/**/*.js',
+	'!build/azure-pipelines/**/*.config',
 	'!**/Dockerfile',
-	'!extensions/markdown-language-features/media/*.js',
+	'!**/*.Dockerfile',
+	'!**/*.dockerfile',
+	'!extensions/markdown-language-features/media/*.js'
 ];
 
 const copyrightFilter = [

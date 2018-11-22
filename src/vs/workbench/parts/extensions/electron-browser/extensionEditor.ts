@@ -237,10 +237,10 @@ export class ExtensionEditor extends BaseEditor {
 			animated: false,
 			actionItemProvider: (action: Action) => {
 				if (action.id === EnableAction.ID) {
-					return (<EnableAction>action).actionItem;
+					return (<EnableAction>action).createActionItem();
 				}
 				if (action.id === DisableAction.ID) {
-					return (<DisableAction>action).actionItem;
+					return (<DisableAction>action).createActionItem();
 				}
 				return null;
 			}
@@ -379,7 +379,7 @@ export class ExtensionEditor extends BaseEditor {
 		reloadAction.extension = extension;
 
 		this.extensionActionBar.clear();
-		this.extensionActionBar.push([disabledStatusAction, reloadAction, updateAction, enableAction, disableAction, installAction, maliciousStatusAction], { icon: true, label: true });
+		this.extensionActionBar.push([reloadAction, updateAction, enableAction, disableAction, installAction, maliciousStatusAction, disabledStatusAction], { icon: true, label: true });
 		this.transientDisposables.push(enableAction, updateAction, reloadAction, disableAction, installAction, maliciousStatusAction, disabledStatusAction);
 
 		const ignoreAction = this.instantiationService.createInstance(IgnoreExtensionRecommendationAction);

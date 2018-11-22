@@ -75,10 +75,10 @@ import { ITextModelService } from 'vs/editor/common/services/resolverService';
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { ShutdownReason } from 'vs/platform/lifecycle/common/lifecycle';
 import { LifecycleService } from 'vs/platform/lifecycle/electron-browser/lifecycleService';
-import { IWindowService, IWindowConfiguration as IWindowSettings, IWindowConfiguration, IPath, MenuBarVisibility } from 'vs/platform/windows/common/windows';
+import { IWindowService, IWindowConfiguration, IPath, MenuBarVisibility, getTitleBarStyle } from 'vs/platform/windows/common/windows';
 import { IStatusbarService } from 'vs/platform/statusbar/common/statusbar';
 import { IMenuService, SyncActionDescriptor } from 'vs/platform/actions/common/actions';
-import { MenuService } from 'vs/workbench/services/actions/common/menuService';
+import { MenuService } from 'vs/platform/actions/common/menuService';
 import { IContextMenuService, IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IWorkbenchActionRegistry, Extensions } from 'vs/workbench/common/actions';
@@ -357,8 +357,8 @@ export class Workbench extends Disposable implements IPartService {
 		serviceCollection.set(IContextViewService, this.contextViewService);
 
 		// Use themable context menus when custom titlebar is enabled to match custom menubar
-		if (!isMacintosh && this.getCustomTitleBarStyle() === 'custom') {
-			serviceCollection.set(IContextMenuService, new SyncDescriptor(HTMLContextMenuService, null));
+		if (!isMacintosh && this.useCustomTitleBarStyle()) {
+			serviceCollection.set(IContextMenuService, new SyncDescriptor(HTMLContextMenuService, [null]));
 		} else {
 			serviceCollection.set(IContextMenuService, new SyncDescriptor(NativeContextMenuService));
 		}
@@ -444,7 +444,7 @@ export class Workbench extends Disposable implements IPartService {
 		serviceCollection.set(IKeybindingEditingService, this.instantiationService.createInstance(KeybindingsEditingService));
 
 		// Configuration Resolver
-		serviceCollection.set(IConfigurationResolverService, new SyncDescriptor(ConfigurationResolverService, process.env));
+		serviceCollection.set(IConfigurationResolverService, new SyncDescriptor(ConfigurationResolverService, [process.env]));
 
 		// Quick open service (quick open controller)
 		this.quickOpen = this.instantiationService.createInstance(QuickOpenController);
@@ -522,8 +522,7 @@ export class Workbench extends Disposable implements IPartService {
 		}
 
 		// Changing fullscreen state of the window has an impact on custom title bar visibility, so we need to update
-		const hasCustomTitle = this.getCustomTitleBarStyle() === 'custom';
-		if (hasCustomTitle) {
+		if (this.useCustomTitleBarStyle()) {
 			this._onTitleBarVisibilityChange.fire();
 			this.layout(); // handle title bar when fullscreen changes
 		}
@@ -533,11 +532,8 @@ export class Workbench extends Disposable implements IPartService {
 		if (visible !== this.menubarToggled) {
 			this.menubarToggled = visible;
 
-			if (this.menubarVisibility === 'toggle' || (browser.isFullscreen() && this.menubarVisibility === 'default')) {
-				if (browser.isFullscreen() && this.menubarVisibility === 'default') {
-					this._onTitleBarVisibilityChange.fire();
-				}
-
+			if (browser.isFullscreen() && (this.menubarVisibility === 'toggle' || this.menubarVisibility === 'default')) {
+				this._onTitleBarVisibilityChange.fire();
 				this.layout();
 			}
 		}
@@ -757,7 +753,8 @@ export class Workbench extends Disposable implements IPartService {
 			perf.mark('willRestorePanel');
 			const isPanelToRestoreEnabled = !!this.panelPart.getPanels().filter(p => p.id === panelId).length;
 			const panelIdToRestore = isPanelToRestoreEnabled ? panelId : panelRegistry.getDefaultPanelId();
-			restorePromises.push(this.panelPart.openPanel(panelIdToRestore, false).then(() => perf.mark('didRestorePanel')));
+			this.panelPart.openPanel(panelIdToRestore, false);
+			perf.mark('didRestorePanel');
 		}
 
 		// Restore Zen Mode if active
@@ -935,26 +932,8 @@ export class Workbench extends Disposable implements IPartService {
 		this.panelPosition = (panelPosition === 'right') ? Position.RIGHT : Position.BOTTOM;
 	}
 
-	private getCustomTitleBarStyle(): 'custom' {
-		const isDev = !this.environmentService.isBuilt || this.environmentService.isExtensionDevelopment;
-		if (isMacintosh && isDev) {
-			return null; // not enabled when developing due to https://github.com/electron/electron/issues/3647
-		}
-
-		const windowConfig = this.configurationService.getValue<IWindowSettings>();
-		if (windowConfig && windowConfig.window) {
-			const useNativeTabs = windowConfig.window.nativeTabs;
-			if (useNativeTabs) {
-				return null; // native tabs on sierra do not work with custom title style
-			}
-
-			const style = windowConfig.window.titleBarStyle;
-			if (style === 'custom') {
-				return style;
-			}
-		}
-
-		return null;
+	private useCustomTitleBarStyle(): boolean {
+		return getTitleBarStyle(this.configurationService, this.environmentService) === 'custom';
 	}
 
 	private setStatusBarHidden(hidden: boolean, skipLayout?: boolean): void {
@@ -1041,7 +1020,7 @@ export class Workbench extends Disposable implements IPartService {
 
 
 		// Menubar visibility changes
-		if ((isWindows || isLinux) && this.getCustomTitleBarStyle() === 'custom') {
+		if ((isWindows || isLinux) && this.useCustomTitleBarStyle()) {
 			this.titlebarPart.onMenubarVisibilityChange()(e => this.onMenubarToggled(e));
 		}
 
@@ -1207,7 +1186,7 @@ export class Workbench extends Disposable implements IPartService {
 	isVisible(part: Parts): boolean {
 		switch (part) {
 			case Parts.TITLEBAR_PART:
-				if (this.getCustomTitleBarStyle() !== 'custom') {
+				if (!this.useCustomTitleBarStyle()) {
 					return false;
 				} else if (!browser.isFullscreen()) {
 					return true;
@@ -1371,7 +1350,7 @@ export class Workbench extends Disposable implements IPartService {
 		}
 	}
 
-	setSideBarHidden(hidden: boolean, skipLayout?: boolean): TPromise<void> {
+	setSideBarHidden(hidden: boolean, skipLayout?: boolean): void {
 		this.sideBarHidden = hidden;
 		this.sideBarVisibleContext.set(!hidden);
 
@@ -1383,47 +1362,45 @@ export class Workbench extends Disposable implements IPartService {
 		}
 
 		// If sidebar becomes hidden, also hide the current active Viewlet if any
-		let promise = TPromise.wrap<any>(null);
 		if (hidden && this.sidebarPart.getActiveViewlet()) {
-			promise = this.sidebarPart.hideActiveViewlet().then(() => {
-				const activePanel = this.panelPart.getActivePanel();
+			this.sidebarPart.hideActiveViewlet();
+			const activePanel = this.panelPart.getActivePanel();
 
-				// Pass Focus to Editor or Panel if Sidebar is now hidden
-				if (this.hasFocus(Parts.PANEL_PART) && activePanel) {
-					activePanel.focus();
-				} else {
-					this.editorGroupService.activeGroup.focus();
-				}
-			});
+			// Pass Focus to Editor or Panel if Sidebar is now hidden
+			if (this.hasFocus(Parts.PANEL_PART) && activePanel) {
+				activePanel.focus();
+			} else {
+				this.editorGroupService.activeGroup.focus();
+			}
 		}
 
 		// If sidebar becomes visible, show last active Viewlet or default viewlet
 		else if (!hidden && !this.sidebarPart.getActiveViewlet()) {
 			const viewletToOpen = this.sidebarPart.getLastActiveViewletId();
 			if (viewletToOpen) {
-				promise = this.viewletService.openViewlet(viewletToOpen, true)
-					.then(viewlet => viewlet || this.viewletService.openViewlet(this.viewletService.getDefaultViewletId(), true));
+				const viewlet = this.viewletService.openViewlet(viewletToOpen, true);
+				if (!viewlet) {
+					this.viewletService.openViewlet(this.viewletService.getDefaultViewletId(), true);
+				}
 			}
 		}
 
-		return promise.then(() => {
 
-			// Remember in settings
-			const defaultHidden = this.contextService.getWorkbenchState() === WorkbenchState.EMPTY;
-			if (hidden !== defaultHidden) {
-				this.storageService.store(Workbench.sidebarHiddenStorageKey, hidden ? 'true' : 'false', StorageScope.WORKSPACE);
-			} else {
-				this.storageService.remove(Workbench.sidebarHiddenStorageKey, StorageScope.WORKSPACE);
-			}
+		// Remember in settings
+		const defaultHidden = this.contextService.getWorkbenchState() === WorkbenchState.EMPTY;
+		if (hidden !== defaultHidden) {
+			this.storageService.store(Workbench.sidebarHiddenStorageKey, hidden ? 'true' : 'false', StorageScope.WORKSPACE);
+		} else {
+			this.storageService.remove(Workbench.sidebarHiddenStorageKey, StorageScope.WORKSPACE);
+		}
 
-			// Layout
-			if (!skipLayout) {
-				this.workbenchLayout.layout();
-			}
-		});
+		// Layout
+		if (!skipLayout) {
+			this.workbenchLayout.layout();
+		}
 	}
 
-	setPanelHidden(hidden: boolean, skipLayout?: boolean): TPromise<void> {
+	setPanelHidden(hidden: boolean, skipLayout?: boolean): void {
 		this.panelHidden = hidden;
 
 		// Adjust CSS
@@ -1434,35 +1411,31 @@ export class Workbench extends Disposable implements IPartService {
 		}
 
 		// If panel part becomes hidden, also hide the current active panel if any
-		let promise = TPromise.wrap<any>(null);
 		if (hidden && this.panelPart.getActivePanel()) {
-			promise = this.panelPart.hideActivePanel().then(() => {
-				this.editorGroupService.activeGroup.focus(); // Pass focus to editor group if panel part is now hidden
-			});
+			this.panelPart.hideActivePanel();
+			this.editorGroupService.activeGroup.focus(); // Pass focus to editor group if panel part is now hidden
 		}
 
 		// If panel part becomes visible, show last active panel or default panel
 		else if (!hidden && !this.panelPart.getActivePanel()) {
 			const panelToOpen = this.panelPart.getLastActivePanelId();
 			if (panelToOpen) {
-				promise = this.panelPart.openPanel(panelToOpen, true);
+				this.panelPart.openPanel(panelToOpen, true);
 			}
 		}
 
-		return promise.then(() => {
 
-			// Remember in settings
-			if (!hidden) {
-				this.storageService.store(Workbench.panelHiddenStorageKey, 'false', StorageScope.WORKSPACE);
-			} else {
-				this.storageService.remove(Workbench.panelHiddenStorageKey, StorageScope.WORKSPACE);
-			}
+		// Remember in settings
+		if (!hidden) {
+			this.storageService.store(Workbench.panelHiddenStorageKey, 'false', StorageScope.WORKSPACE);
+		} else {
+			this.storageService.remove(Workbench.panelHiddenStorageKey, StorageScope.WORKSPACE);
+		}
 
-			// Layout
-			if (!skipLayout) {
-				this.workbenchLayout.layout();
-			}
-		});
+		// Layout
+		if (!skipLayout) {
+			this.workbenchLayout.layout();
+		}
 	}
 
 	toggleMaximizedPanel(): void {
@@ -1518,23 +1491,25 @@ export class Workbench extends Disposable implements IPartService {
 		return this.panelPosition;
 	}
 
-	setPanelPosition(position: Position): TPromise<void> {
-		return (this.panelHidden ? this.setPanelHidden(false, true /* Skip Layout */) : TPromise.as(undefined)).then(() => {
-			const newPositionValue = (position === Position.BOTTOM) ? 'bottom' : 'right';
-			const oldPositionValue = (this.panelPosition === Position.BOTTOM) ? 'bottom' : 'right';
-			this.panelPosition = position;
-			this.storageService.store(Workbench.panelPositionStorageKey, PositionToString(this.panelPosition).toLowerCase(), StorageScope.WORKSPACE);
+	setPanelPosition(position: Position): void {
+		if (this.panelHidden) {
+			this.setPanelHidden(false, true /* Skip Layout */);
+		}
 
-			// Adjust CSS
-			DOM.removeClass(this.panelPart.getContainer(), oldPositionValue);
-			DOM.addClass(this.panelPart.getContainer(), newPositionValue);
+		const newPositionValue = (position === Position.BOTTOM) ? 'bottom' : 'right';
+		const oldPositionValue = (this.panelPosition === Position.BOTTOM) ? 'bottom' : 'right';
+		this.panelPosition = position;
+		this.storageService.store(Workbench.panelPositionStorageKey, PositionToString(this.panelPosition).toLowerCase(), StorageScope.WORKSPACE);
 
-			// Update Styles
-			this.panelPart.updateStyles();
+		// Adjust CSS
+		DOM.removeClass(this.panelPart.getContainer(), oldPositionValue);
+		DOM.addClass(this.panelPart.getContainer(), newPositionValue);
 
-			// Layout
-			this.workbenchLayout.layout();
-		});
+		// Update Styles
+		this.panelPart.updateStyles();
+
+		// Layout
+		this.workbenchLayout.layout();
 	}
 
 	//#endregion

@@ -27,8 +27,7 @@
 		"itemUrl": "https://marketplace.visualstudio.com/items"
 	},
 	"extensionAllowedProposedApi": [
-		"ms-vscode.node-debug",
-		"ms-vscode.node-debug2"
+		"ms-vscode.references-view"
 	],
 	"portable": "data"
 }

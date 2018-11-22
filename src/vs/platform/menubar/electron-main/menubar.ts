@@ -7,7 +7,7 @@ import * as nls from 'vs/nls';
 import { isMacintosh, language } from 'vs/base/common/platform';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { app, shell, Menu, MenuItem, BrowserWindow } from 'electron';
-import { OpenContext, IRunActionInWindowRequest } from 'vs/platform/windows/common/windows';
+import { OpenContext, IRunActionInWindowRequest, getTitleBarStyle } from 'vs/platform/windows/common/windows';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUpdateService, StateType } from 'vs/platform/update/common/update';
@@ -71,7 +71,9 @@ export class Menubar {
 		this.menubarMenus = Object.create(null);
 		this.keybindings = Object.create(null);
 
-		this.restoreCachedMenubarData();
+		if (isMacintosh || getTitleBarStyle(this.configurationService, this.environmentService) === 'native') {
+			this.restoreCachedMenubarData();
+		}
 
 		this.addFallbackHandlers();
 
@@ -113,7 +115,7 @@ export class Menubar {
 
 		// Help Menu Items
 		if (product.twitterUrl) {
-			this.fallbackMenuHandlers['workbench.action.openRequestFeatureUrl'] = () => this.openUrl(product.twitterUrl, 'openTwitterUrl');
+			this.fallbackMenuHandlers['workbench.action.openTwitterUrl'] = () => this.openUrl(product.twitterUrl, 'openTwitterUrl');
 		}
 
 		if (product.requestFeatureUrl) {
@@ -125,7 +127,7 @@ export class Menubar {
 		}
 
 		if (product.licenseUrl) {
-			this.addFallbackHandlers['workbench.action.openLicenseUrl'] = () => {
+			this.fallbackMenuHandlers['workbench.action.openLicenseUrl'] = () => {
 				if (language) {
 					const queryArgChar = product.licenseUrl.indexOf('?') > 0 ? '&' : '?';
 					this.openUrl(`${product.licenseUrl}${queryArgChar}lang=${language}`, 'openLicenseUrl');
@@ -178,6 +180,10 @@ export class Menubar {
 	}
 
 	private get currentEnableNativeTabs(): boolean {
+		if (!isMacintosh) {
+			return false;
+		}
+
 		let enableNativeTabs = this.configurationService.getValue<boolean>('window.nativeTabs');
 		if (typeof enableNativeTabs !== 'boolean') {
 			enableNativeTabs = false;
@@ -395,7 +401,7 @@ export class Menubar {
 
 	private shouldDrawMenu(menuId: string): boolean {
 		// We need to draw an empty menu to override the electron default
-		if (!isMacintosh && this.configurationService.getValue('window.titleBarStyle') === 'custom') {
+		if (!isMacintosh && getTitleBarStyle(this.configurationService, this.environmentService) === 'custom') {
 			return false;
 		}
 
