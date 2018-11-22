@@ -9,7 +9,7 @@ import { assign } from 'vs/base/common/objects';
 import { chain, Emitter } from 'vs/base/common/event';
 import { isPromiseCanceledError } from 'vs/base/common/errors';
 import { PagedModel, IPagedModel, IPager, DelayedPagedModel } from 'vs/base/common/paging';
-import { SortBy, SortOrder, IQueryOptions, LocalExtensionType, IExtensionTipsService, EnablementState, IExtensionRecommendation } from 'vs/platform/extensionManagement/common/extensionManagement';
+import { SortBy, SortOrder, IQueryOptions, LocalExtensionType, IExtensionTipsService, IExtensionRecommendation } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { areSameExtensions } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
@@ -40,6 +40,7 @@ import { alert } from 'vs/base/browser/ui/aria/aria';
 import { IListContextMenuEvent, IListEvent } from 'vs/base/browser/ui/list/list';
 import { createErrorWithActions } from 'vs/base/common/errorsWithActions';
 import { CancellationToken } from 'vs/base/common/cancellation';
+import { getKeywordsForExtension } from 'vs/workbench/parts/extensions/electron-browser/extensionsUtils';
 
 export class ExtensionsListView extends ViewletPanel {
 
@@ -48,7 +49,6 @@ export class ExtensionsListView extends ViewletPanel {
 	private badge: CountBadge;
 	protected badgeContainer: HTMLElement;
 	private list: WorkbenchPagedList<IExtension>;
-	private searchExperiments: IExperiment[] = [];
 
 	constructor(
 		private options: IViewletViewOptions,
@@ -68,7 +68,6 @@ export class ExtensionsListView extends ViewletPanel {
 		@IExperimentService private experimentService: IExperimentService
 	) {
 		super({ ...(options as IViewletPanelOptions), ariaHeaderLabel: options.title }, keybindingService, contextMenuService, configurationService);
-		this.experimentService.getExperimentsByType(ExperimentActionType.ExtensionSearchResults).then(result => this.searchExperiments = result);
 	}
 
 	protected renderHeader(container: HTMLElement): void {
@@ -125,9 +124,6 @@ export class ExtensionsListView extends ViewletPanel {
 			case 'rating': options = assign(options, { sortBy: SortBy.WeightedRating }); break;
 			case 'name': options = assign(options, { sortBy: SortBy.Title }); break;
 		}
-		if (!query || !query.trim()) {
-			options.sortBy = SortBy.InstallCount;
-		}
 
 		const successCallback = model => {
 			this.setModel(model);
@@ -171,7 +167,7 @@ export class ExtensionsListView extends ViewletPanel {
 			if (manageExtensionAction.enabled) {
 				this.contextMenuService.showContextMenu({
 					getAnchor: () => e.anchor,
-					getActions: () => Promise.resolve(manageExtensionAction.actionItem.getActions())
+					getActions: () => manageExtensionAction.createActionItem().getActions()
 				});
 			}
 		}
@@ -286,15 +282,14 @@ export class ExtensionsListView extends ViewletPanel {
 		if (/@enabled/i.test(value)) {
 			value = value ? value.replace(/@enabled/g, '').replace(/@sort:(\w+)(-\w*)?/g, '').trim().toLowerCase() : '';
 
-			const local = await this.extensionsWorkbenchService.queryLocal();
+			const local = (await this.extensionsWorkbenchService.queryLocal()).filter(e => e.type === LocalExtensionType.User);
+			const runningExtensions = await this.extensionService.getExtensions();
 
-			let result = local
+			const result = local
 				.sort((e1, e2) => e1.displayName.localeCompare(e2.displayName))
-				.filter(e => e.type === LocalExtensionType.User &&
-					(e.enablementState === EnablementState.Enabled || e.enablementState === EnablementState.WorkspaceEnabled) &&
-					(e.name.toLowerCase().indexOf(value) > -1 || e.displayName.toLowerCase().indexOf(value) > -1) &&
-					(!categories.length || categories.some(category => (e.local.manifest.categories || []).some(c => c.toLowerCase() === category)))
-				);
+				.filter(e => runningExtensions.some(r => areSameExtensions(r, e))
+					&& (e.name.toLowerCase().indexOf(value) > -1 || e.displayName.toLowerCase().indexOf(value) > -1)
+					&& (!categories.length || categories.some(category => (e.local.manifest.categories || []).some(c => c.toLowerCase() === category))));
 
 			return this.getPagedModel(this.sortExtensions(result, options));
 		}
@@ -303,6 +298,11 @@ export class ExtensionsListView extends ViewletPanel {
 	}
 
 	private async queryGallery(query: Query, options: IQueryOptions): Promise<IPagedModel<IExtension>> {
+		const hasUserDefinedSortOrder = options.sortBy !== undefined;
+		if (!hasUserDefinedSortOrder && !query.value.trim()) {
+			options.sortBy = SortBy.InstallCount;
+		}
+
 		let value = query.value;
 
 		const idRegex = /@id:(([a-z0-9A-Z][a-z0-9\-A-Z]*)\.([a-z0-9A-Z][a-z0-9\-A-Z]*))/g;
@@ -339,7 +339,7 @@ export class ExtensionsListView extends ViewletPanel {
 			text = query.value.replace(extensionRegex, (m, ext) => {
 
 				// Get curated keywords
-				const keywords = this.tipsService.getKeywordsForExtension(ext);
+				const keywords = getKeywordsForExtension(ext);
 
 				// Get mode name
 				const modeId = this.modeService.getModeIdByFilepathOrFirstLine(`.${ext}`);
@@ -359,11 +359,14 @@ export class ExtensionsListView extends ViewletPanel {
 		let preferredResults: string[] = [];
 		if (text) {
 			options = assign(options, { text: text.substr(0, 350), source: 'searchText' });
-			for (let i = 0; i < this.searchExperiments.length; i++) {
-				if (text.toLowerCase() === this.searchExperiments[i].action.properties['searchText'] && Array.isArray(this.searchExperiments[i].action.properties['preferredResults'])) {
-					preferredResults = this.searchExperiments[i].action.properties['preferredResults'];
-					options.source += `-experiment-${this.searchExperiments[i].id}`;
-					break;
+			if (!hasUserDefinedSortOrder) {
+				const searchExperiments = await this.getSearchExperiments();
+				for (let i = 0; i < searchExperiments.length; i++) {
+					if (text.toLowerCase() === searchExperiments[i].action.properties['searchText'] && Array.isArray(searchExperiments[i].action.properties['preferredResults'])) {
+						preferredResults = searchExperiments[i].action.properties['preferredResults'];
+						options.source += `-experiment-${searchExperiments[i].id}`;
+						break;
+					}
 				}
 			}
 		} else {
@@ -389,6 +392,14 @@ export class ExtensionsListView extends ViewletPanel {
 
 	}
 
+	private _searchExperiments: Thenable<IExperiment[]>;
+	private getSearchExperiments(): Thenable<IExperiment[]> {
+		if (!this._searchExperiments) {
+			this._searchExperiments = this.experimentService.getExperimentsByType(ExperimentActionType.ExtensionSearchResults);
+		}
+		return this._searchExperiments;
+	}
+
 	private sortExtensions(extensions: IExtension[], options: IQueryOptions): IExtension[] {
 		switch (options.sortBy) {
 			case SortBy.InstallCount:
@@ -408,6 +419,7 @@ export class ExtensionsListView extends ViewletPanel {
 		return extensions;
 	}
 
+	// Get All types of recommendations, trimmed to show a max of 8 at any given time
 	private getAllRecommendationsModel(query: Query, options: IQueryOptions): Promise<IPagedModel<IExtension>> {
 		const value = query.value.replace(/@recommended:all/g, '').replace(/@recommended/g, '').trim().toLowerCase();
 
@@ -462,6 +474,7 @@ export class ExtensionsListView extends ViewletPanel {
 		return new PagedModel([]);
 	}
 
+	// Get All types of recommendations other than Workspace recommendations, trimmed to show a max of 8 at any given time
 	private getRecommendationsModel(query: Query, options: IQueryOptions): Promise<IPagedModel<IExtension>> {
 		const value = query.value.replace(/@recommended/g, '').trim().toLowerCase();
 
@@ -576,7 +589,7 @@ export class ExtensionsListView extends ViewletPanel {
 			.then(result => this.getPagedModel(result));
 	}
 
-	// Sorts the firsPage of the pager in the same order as given array of extension ids
+	// Sorts the firstPage of the pager in the same order as given array of extension ids
 	private sortFirstPage(pager: IPager<IExtension>, ids: string[]) {
 		ids = ids.map(x => x.toLowerCase());
 		pager.firstPage.sort((a, b) => {

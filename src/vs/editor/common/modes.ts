@@ -415,7 +415,7 @@ export interface CompletionItem {
 	preselect?: boolean;
 	/**
 	 * A string or snippet that should be inserted in a document when selecting
-	 * this completion. When `falsy` the [label](#CompletionItem.label)
+	 * this completion.
 	 * is used.
 	 */
 	insertText: string;
@@ -618,12 +618,13 @@ export interface SignatureHelp {
 export enum SignatureHelpTriggerReason {
 	Invoke = 1,
 	TriggerCharacter = 2,
-	Retrigger = 3,
+	ContentChange = 3,
 }
 
 export interface SignatureHelpContext {
-	triggerReason: SignatureHelpTriggerReason;
-	triggerCharacter?: string;
+	readonly triggerReason: SignatureHelpTriggerReason;
+	readonly triggerCharacter?: string;
+	readonly isRetrigger: boolean;
 }
 
 /**
@@ -632,8 +633,8 @@ export interface SignatureHelpContext {
  */
 export interface SignatureHelpProvider {
 
-	readonly signatureHelpTriggerCharacters: ReadonlyArray<string>;
-	readonly signatureHelpRetriggerCharacters: ReadonlyArray<string>;
+	readonly signatureHelpTriggerCharacters?: ReadonlyArray<string>;
+	readonly signatureHelpRetriggerCharacters?: ReadonlyArray<string>;
 
 	/**
 	 * Provide help for the signature at the given position and document.
@@ -744,6 +745,18 @@ export interface DefinitionProvider {
 	 * Provide the definition of the symbol at the given position and document.
 	 */
 	provideDefinition(model: model.ITextModel, position: Position, token: CancellationToken): ProviderResult<Definition | DefinitionLink[]>;
+}
+
+/**
+ * The definition provider interface defines the contract between extensions and
+ * the [go to definition](https://code.visualstudio.com/docs/editor/editingevolved#_go-to-definition)
+ * and peek definition features.
+ */
+export interface DeclarationProvider {
+	/**
+	 * Provide the declaration of the symbol at the given position and document.
+	 */
+	provideDeclaration(model: model.ITextModel, position: Position, token: CancellationToken): ProviderResult<Definition | DefinitionLink[]>;
 }
 
 /**
@@ -863,7 +876,7 @@ export interface DocumentSymbolProvider {
 	provideDocumentSymbols(model: model.ITextModel, token: CancellationToken): ProviderResult<DocumentSymbol[]>;
 }
 
-export type TextEdit = { range: IRange; text: string; eol?: model.EndOfLineSequence; } | { range: undefined; text: undefined; eol: model.EndOfLineSequence; };
+export type TextEdit = { range: IRange; text: string; eol?: model.EndOfLineSequence; };
 
 /**
  * Interface used to format a model
@@ -1129,7 +1142,6 @@ export interface Command {
  * @internal
  */
 export interface CommentInfo {
-	owner: number;
 	threads: CommentThread[];
 	commentingRanges?: IRange[];
 	reply?: Command;
@@ -1186,7 +1198,6 @@ export interface Comment {
  * @internal
  */
 export interface CommentThreadChangedEvent {
-	readonly owner: number;
 	/**
 	 * Added comment threads.
 	 */
@@ -1275,6 +1286,11 @@ export const DocumentHighlightProviderRegistry = new LanguageFeatureRegistry<Doc
  * @internal
  */
 export const DefinitionProviderRegistry = new LanguageFeatureRegistry<DefinitionProvider>();
+
+/**
+ * @internal
+ */
+export const DeclarationProviderRegistry = new LanguageFeatureRegistry<DeclarationProvider>();
 
 /**
  * @internal

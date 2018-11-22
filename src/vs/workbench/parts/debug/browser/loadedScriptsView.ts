@@ -5,7 +5,6 @@
 
 import * as nls from 'vs/nls';
 import { TreeViewsViewletPanel, IViewletViewOptions } from 'vs/workbench/browser/parts/views/viewsViewlet';
-import { TPromise } from 'vs/base/common/winjs.base';
 import * as dom from 'vs/base/browser/dom';
 import { normalize, isAbsolute, sep } from 'vs/base/common/paths';
 import { IViewletPanelOptions } from 'vs/workbench/browser/parts/views/panelViewlet';
@@ -129,7 +128,7 @@ class BaseTreeItem {
 	}
 
 	// skips intermediate single-child nodes
-	getChildren(): TPromise<BaseTreeItem[]> {
+	getChildren(): Promise<BaseTreeItem[]> {
 		const child = this.oneChild();
 		if (child) {
 			return child.getChildren();
@@ -181,7 +180,7 @@ class BaseTreeItem {
 	}
 
 	private oneChild(): BaseTreeItem {
-		if (SMART && !this._source && !this._showedMoreThanOne && !(this instanceof RootFolderTreeItem)) {
+		if (SMART && !this._source && !this._showedMoreThanOne && !(this instanceof RootFolderTreeItem) && !(this instanceof SessionTreeItem)) {
 			const keys = Object.keys(this._children);
 			if (keys.length === 1) {
 				return this._children[keys[0]];
@@ -247,7 +246,7 @@ class SessionTreeItem extends BaseTreeItem {
 		return true;
 	}
 
-	getChildren(): TPromise<BaseTreeItem[]> {
+	getChildren(): Promise<BaseTreeItem[]> {
 
 		if (!this._initialized) {
 			this._initialized = true;
@@ -478,11 +477,11 @@ class LoadedScriptsDataSource implements IDataSource {
 		return element.hasChildren();
 	}
 
-	getChildren(tree: ITree, element: any): TPromise<any> {
+	getChildren(tree: ITree, element: any): Promise<any> {
 		return element.getChildren();
 	}
 
-	getParent(tree: ITree, element: any): TPromise<any> {
+	getParent(tree: ITree, element: any): Promise<any> {
 		return Promise.resolve(element.getParent());
 	}
 

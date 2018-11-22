@@ -29,15 +29,16 @@ import { INotificationService } from 'vs/platform/notification/common/notificati
 import { Dimension, EventType, addDisposableListener, trackFocus } from 'vs/base/browser/dom';
 import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { RawContextKey, IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
+import { AnchorAlignment } from 'vs/base/browser/ui/contextview/contextview';
 
-const SidebarFocusContextId = 'sidebarFocus';
-export const SidebarFocusContext = new RawContextKey<boolean>(SidebarFocusContextId, false);
+const SideBarFocusContextId = 'sideBarFocus';
+export const SidebarFocusContext = new RawContextKey<boolean>(SideBarFocusContextId, false);
 
 export class SidebarPart extends CompositePart<Viewlet> {
 
 	static readonly activeViewletSettingsKey = 'workbench.sidebar.activeviewletid';
 
-	private sidebarFocusContextKey: IContextKey<boolean>;
+	private sideBarFocusContextKey: IContextKey<boolean>;
 	private blockOpeningViewlet: boolean;
 
 	constructor(
@@ -71,7 +72,7 @@ export class SidebarPart extends CompositePart<Viewlet> {
 			{ hasTitle: true, borderWidth: () => (this.getColor(SIDE_BAR_BORDER) || this.getColor(contrastBorder)) ? 1 : 0 }
 		);
 
-		this.sidebarFocusContextKey = SidebarFocusContext.bindTo(contextKeyService);
+		this.sideBarFocusContextKey = SidebarFocusContext.bindTo(contextKeyService);
 	}
 
 	get onDidViewletOpen(): Event<IViewlet> {
@@ -88,10 +89,10 @@ export class SidebarPart extends CompositePart<Viewlet> {
 		const focusTracker = trackFocus(parent);
 
 		focusTracker.onDidFocus(() => {
-			this.sidebarFocusContextKey.set(true);
+			this.sideBarFocusContextKey.set(true);
 		});
 		focusTracker.onDidBlur(() => {
-			this.sidebarFocusContextKey.set(false);
+			this.sideBarFocusContextKey.set(false);
 		});
 	}
 
@@ -124,23 +125,22 @@ export class SidebarPart extends CompositePart<Viewlet> {
 		container.style.borderLeftColor = !isPositionLeft ? borderColor : null;
 	}
 
-	openViewlet(id: string, focus?: boolean): TPromise<Viewlet> {
+	openViewlet(id: string, focus?: boolean): Viewlet {
 		if (this.blockOpeningViewlet) {
-			return Promise.resolve(null); // Workaround against a potential race condition
+			return null; // Workaround against a potential race condition
 		}
 
 		// First check if sidebar is hidden and show if so
-		let promise = TPromise.wrap<void>(null);
 		if (!this.partService.isVisible(Parts.SIDEBAR_PART)) {
 			try {
 				this.blockOpeningViewlet = true;
-				promise = this.partService.setSideBarHidden(false);
+				this.partService.setSideBarHidden(false);
 			} finally {
 				this.blockOpeningViewlet = false;
 			}
 		}
 
-		return promise.then(() => this.openComposite(id, focus)) as TPromise<Viewlet>;
+		return this.openComposite(id, focus) as Viewlet;
 	}
 
 	getActiveViewlet(): IViewlet {
@@ -151,8 +151,8 @@ export class SidebarPart extends CompositePart<Viewlet> {
 		return this.getLastActiveCompositetId();
 	}
 
-	hideActiveViewlet(): TPromise<void> {
-		return this.hideActiveComposite().then(composite => void 0);
+	hideActiveViewlet(): void {
+		this.hideActiveComposite();
 	}
 
 	layout(dimension: Dimension): Dimension[] {
@@ -163,6 +163,10 @@ export class SidebarPart extends CompositePart<Viewlet> {
 		return super.layout(dimension);
 	}
 
+	protected getTitleAreaDropDownAnchorAlignment(): AnchorAlignment {
+		return this.partService.getSideBarPosition() === SideBarPosition.LEFT ? AnchorAlignment.LEFT : AnchorAlignment.RIGHT;
+	}
+
 	private onTitleAreaContextMenu(event: StandardMouseEvent): void {
 		const activeViewlet = this.getActiveViewlet() as Viewlet;
 		if (activeViewlet) {
@@ -171,7 +175,7 @@ export class SidebarPart extends CompositePart<Viewlet> {
 				const anchor: { x: number, y: number } = { x: event.posx, y: event.posy };
 				this.contextMenuService.showContextMenu({
 					getAnchor: () => anchor,
-					getActions: () => Promise.resolve(contextMenuActions),
+					getActions: () => contextMenuActions,
 					getActionItem: action => this.actionItemProvider(action as Action),
 					actionRunner: activeViewlet.getActionRunner()
 				});
@@ -198,7 +202,7 @@ class FocusSideBarAction extends Action {
 
 		// Show side bar
 		if (!this.partService.isVisible(Parts.SIDEBAR_PART)) {
-			return this.partService.setSideBarHidden(false);
+			return Promise.resolve(this.partService.setSideBarHidden(false));
 		}
 
 		// Focus into active viewlet
