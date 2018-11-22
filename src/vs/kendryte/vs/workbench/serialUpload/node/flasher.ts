@@ -8,7 +8,7 @@ import { GarbageData, StreamChain } from 'vs/kendryte/vs/workbench/serialUpload/
 import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
 import { Event } from 'vs/base/common/event';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { DeferredTPromise } from 'vs/base/test/common/utils';
+import { DeferredPromise } from 'vs/base/test/common/utils';
 import { ISPMemoryPacker } from 'vs/kendryte/vs/workbench/serialUpload/node/ispMemoryPacker';
 import { addDisposableEventEmitterListener } from 'vs/kendryte/vs/base/node/disposableEvents';
 import { TimeoutBuffer } from 'vs/kendryte/vs/workbench/serialUpload/node/timoutBuffer';
@@ -45,7 +45,7 @@ export class SerialLoader extends Disposable {
 
 	protected readonly bootLoaderStream: ReadStream;
 
-	private deferred: DeferredTPromise<ISPResponse>;
+	private deferred: DeferredPromise<ISPResponse>;
 	private deferredWait: ISPOperation[];
 	private deferredReturn: ISPError;
 
@@ -266,10 +266,10 @@ export class SerialLoader extends Disposable {
 			console.warn('deferred already exists: ', this.deferredWait.map(e => ISPOperation[e]));
 			throw new Error('program error: expect.');
 		}
-		this.deferred = new DeferredTPromise<ISPResponse>();
+		this.deferred = new DeferredPromise<ISPResponse>();
 		this.deferredWait = Array.isArray(what) ? what : [what];
 		this.deferredReturn = ret;
-		return this.deferred;
+		return this.deferred.p;
 	}
 
 	protected handleData(data: ISPResponse) {
@@ -283,9 +283,9 @@ export class SerialLoader extends Disposable {
 		if (deferred) {
 			if (this.deferredWait && this.deferredWait.indexOf(data.op) !== -1) {
 				if (this.deferredReturn === undefined || data.err === this.deferredReturn) {
-					deferred.complete(data);
+					deferred.complete(data).catch();
 				} else {
-					deferred.error(this.ispError(data));
+					deferred.error(this.ispError(data)).catch();
 				}
 			} else {
 				let op = ISPOperation[data.op];

@@ -10,9 +10,9 @@ class StorageMainService extends Disposable implements IStorageService {
 
 	private readonly _store = new Store();
 
-	private readonly _onDidChangeStorage: Emitter<IWorkspaceStorageChangeEvent>;
+	private readonly _onDidChangeStorage = new Emitter<IWorkspaceStorageChangeEvent>();
 	public readonly onDidChangeStorage = this._onDidChangeStorage.event;
-	private readonly _onWillSaveState: Emitter<void>;
+	private readonly _onWillSaveState = new Emitter<void>();
 	public readonly onWillSaveState = this._onWillSaveState.event;
 
 	constructor() {

@@ -122,6 +122,7 @@ class KendryteBootstrapAction extends Action {
 
 	async run() {
 		return this._run().catch((e) => {
+			console.error(e);
 			this.notificationService.notify({
 				severity: Severity.Error,
 				message: `Something goes wrong when starting IDE: ${e.message}`,

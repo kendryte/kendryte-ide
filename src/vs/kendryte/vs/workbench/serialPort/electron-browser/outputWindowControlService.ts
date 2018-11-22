@@ -60,13 +60,15 @@ class SerialMonitorControlService implements ISerialMonitorControlService {
 		});
 	}
 
-	private ensure(): TPromise<void> {
+	private async ensure(): TPromise<void> {
 		if (this.xterm) {
 			return TPromise.as(void 0);
 		}
-		return this.panelService.openPanel(SERIAL_PANEL_ID).then(e => void 0).then(undefined, (e) => {
+		try {
+			this.panelService.openPanel(SERIAL_PANEL_ID);
+		} catch (e) {
 			this.notificationService.error(e);
-		});
+		}
 	}
 }
 

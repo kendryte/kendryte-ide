@@ -1,4 +1,4 @@
-import { IKendryteMainIpcChannel, IKendryteServiceRunnerChannel } from 'vs/kendryte/vs/services/ipc/node/ipc';
+import { IKendryteMainIpcChannel, IKendryteMainIpcChannelClient, IKendryteServiceRunnerChannel } from 'vs/kendryte/vs/services/ipc/node/ipc';
 import { IKendryteClientService } from 'vs/kendryte/vs/services/ipc/electron-browser/ipcType';
 import { ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 import { Event } from 'vs/base/common/event';
@@ -20,15 +20,16 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 	private readonly mapper = new Map<string, any>();
 
 	constructor(
-		@IKendryteMainIpcChannel protected readonly mainChannel: IKendryteMainIpcChannel,
+		@IKendryteMainIpcChannel protected readonly mainChannel: IKendryteMainIpcChannelClient,
 		@IWindowService protected readonly windowService: IWindowService,
-		@IKendryteServiceRunnerChannel protected readonly runnerChannel: IKendryteServiceRunnerChannel,
+		@IKendryteServiceRunnerChannel protected readonly runnerChannel: IKendryteMainIpcChannelClient,
 		@ILogService protected readonly logService: ILogService,
 	) {
 	}
 
-	async isMeFirst() {
-		return await this.mainChannel.call<boolean>(IPC_ID_IS_ME_FIRST, this.windowService.getCurrentWindowId());
+	isMeFirst(): Thenable<boolean> {
+		const windowId = this.windowService.getCurrentWindowId();
+		return this.mainChannel.call<boolean>(IPC_ID_IS_ME_FIRST, windowId);
 	}
 
 	public listen<T>(event: string): Event<T> {

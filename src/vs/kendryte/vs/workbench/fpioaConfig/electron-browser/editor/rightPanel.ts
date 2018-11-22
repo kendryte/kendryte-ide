@@ -11,7 +11,6 @@ import { chipRenderFactory } from 'vs/kendryte/vs/workbench/fpioaConfig/electron
 import { AbstractTableRender } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/right/abstract';
 import { ContextMenuData, IFuncPinMap, PinFuncSetEvent } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { IMenuService } from 'vs/platform/actions/common/actions';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { Separator } from 'vs/base/browser/ui/actionbar/actionbar';
@@ -94,7 +93,7 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 
 			this.contextMenuService.showContextMenu({
 				getAnchor: () => data.pointer,
-				getActions: () => TPromise.as([this.funcSetActions, new Separator]),
+				getActions: () => [this.funcSetActions, new Separator],
 				getActionsContext: () => [data, this._onSetPinFunc.fire.bind(this._onSetPinFunc)],
 			});
 		});

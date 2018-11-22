@@ -15,7 +15,6 @@ import { Writable } from 'stream';
 import { isMacintosh } from 'vs/base/common/platform';
 import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IAction } from 'vs/base/common/actions';
@@ -262,7 +261,7 @@ export class OutputXTerminal extends Disposable {
 			const anchor: { x: number, y: number } = { x: standardEvent.posx, y: standardEvent.posy };
 			this._contextMenuService.showContextMenu({
 				getAnchor: () => anchor,
-				getActions: () => TPromise.as(this._getContextMenuActions()),
+				getActions: () => this._getContextMenuActions(),
 				getActionsContext: () => this._wrapperElement,
 			});
 		} else {

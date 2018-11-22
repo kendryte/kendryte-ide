@@ -224,7 +224,7 @@ export class CodeApplication {
 
 					// TODO@alex don't use call directly, wrap it around a `RemoteExtensionsFileSystemProvider`
 					const fileContents = await channel.call<Uint8Array>('readFile', [uri]);
-					callback(Buffer.from(fileContents));
+					callback(Buffer.from(fileContents as any));
 				} else {
 					callback(null);
 				}

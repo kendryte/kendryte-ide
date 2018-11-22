@@ -15,6 +15,8 @@ import { InstallDependencyAction } from 'vs/kendryte/vs/workbench/packageManager
 
 let clsName = '';
 let clsOrder = 0;
+let lastMenuId = 5000;
+let orders: { [id: number]: number } = {};
 
 cls('chipTool');
 registerTop(FpioaEditorAction);
@@ -41,26 +43,26 @@ interface ActionStatic {
 }
 
 function submenu(title: string, parent = MenuId.MenubarMaixMenu) {
-	const r = new MenuId();
-	if (!parent['order']) {
-		parent['order'] = 1;
+	const r = ++lastMenuId;
+	if (!orders[parent]) {
+		orders[parent] = 1;
 	} else {
-		parent['order']++;
+		orders[parent]++;
 	}
 	MenuRegistry.appendMenuItem(parent, {
 		title,
 		group: clsName,
-		order: parent['order'],
+		order: orders[parent],
 		submenu: r,
 	});
 	return r;
 }
 
 function register(sub: MenuId, s: ActionStatic) {
-	if (!sub['order']) {
-		sub['order'] = 1;
+	if (!orders[sub]) {
+		orders[sub] = 1;
 	} else {
-		sub['order']++;
+		orders[sub]++;
 	}
 	MenuRegistry.appendMenuItem(sub, {
 		group: clsName,
@@ -68,7 +70,7 @@ function register(sub: MenuId, s: ActionStatic) {
 			id: s.ID,
 			title: s.LABEL,
 		},
-		order: sub['order'],
+		order: orders[sub],
 	});
 }
 

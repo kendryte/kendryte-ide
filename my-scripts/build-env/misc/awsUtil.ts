@@ -189,7 +189,7 @@ export function calcReleaseFileAwsKey(platform: string, type: string): string {
 
 export function calcPackageAwsKey(platform: string, type: string): string {
 	const product = getProductData();
-	return `release/offlinepackages/${product.quality}/${platform}.${type}`;
+	return `release/offlinepackages/${product.quality}/${platform}.offlinepackages.${type}`;
 }
 
 export function calcPatchFileAwsKey(platform: string): string {

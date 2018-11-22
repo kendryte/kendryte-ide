@@ -63,7 +63,7 @@ const HISTORY_STORAGE_KEY = 'debug.repl.history';
 const IPrivateReplService = createDecorator<IPrivateReplService>('privateReplService');
 const DECORATION_KEY = 'replinputdecoration';
 
-interface IPrivateReplService {
+export interface IPrivateReplService {
 	_serviceBrand: any;
 	acceptReplInput(): void;
 	getVisibleContent(): string;
