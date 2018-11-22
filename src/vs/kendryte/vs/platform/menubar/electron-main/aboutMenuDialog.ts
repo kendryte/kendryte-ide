@@ -10,6 +10,7 @@ import { IWindowsMainService } from 'vs/platform/windows/electron-main/windows';
 import { exists, readFile } from 'vs/base/node/pfs';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { IDECurrentPatchVersion } from 'vs/kendryte/vs/services/update/node/myVersion';
 
 class WrappedWindowsService extends wss.WindowsService {
 	async openAboutDialog(): TPromise<void> {
@@ -35,13 +36,11 @@ class WrappedWindowsService extends wss.WindowsService {
 
 		console.log(`versionsFile=${versionsFile}`);
 
-		let patchVersion = 'Unknown';
-		let packagesVersions = '';
+		let patchVersion = IDECurrentPatchVersion();
+		let packagesVersions = 'missing packages versions.';
 		if (await exists(versionsFile)) {
+			packagesVersions = '';
 			const updateInfo = JSON.parse(await readFile(versionsFile, 'utf8'));
-			if (updateInfo['hot-patch-version']) {
-				patchVersion = updateInfo['hot-patch-version'];
-			}
 			for (const pack of Object.keys(updateInfo)) {
 				if (/^\./.test(pack)) {
 					continue;
