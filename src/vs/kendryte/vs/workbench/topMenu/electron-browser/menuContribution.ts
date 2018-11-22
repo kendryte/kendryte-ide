@@ -10,6 +10,8 @@ import { BuildingBlocksUpgradeAction } from 'vs/kendryte/vs/services/update/elec
 import { localize } from 'vs/nls';
 import { OpenPackagesMarketPlaceAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/openPackagesMarketPlaceAction';
 import { InstallDependencyAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/installDependencyAction';
+import { DetectJTagIdAction, InstallJTagDriverAction } from 'vs/kendryte/vs/platform/openocd/node/jtagBase';
+import { OpenOCDRestartAction, OpenOCDStartAction, OpenOCDStopAction } from 'vs/kendryte/vs/platform/openocd/node/openocdStartStopAction';
 
 // SYNC: vs/kendryte/vs/code/patches/electron-main/kendryteMenu.ts
 
@@ -20,6 +22,14 @@ let orders: { [id: number]: number } = {};
 
 cls('chipTool');
 registerTop(FpioaEditorAction);
+
+const openocd = submenu(localize('openocd', 'OpenOCD'));
+register(openocd, OpenOCDStartAction);
+register(openocd, OpenOCDStopAction);
+register(openocd, OpenOCDRestartAction);
+cls('jtag');
+register(openocd, DetectJTagIdAction);
+register(openocd, InstallJTagDriverAction);
 
 cls('cpp');
 registerTop(MaixCMakeCleanupAction);

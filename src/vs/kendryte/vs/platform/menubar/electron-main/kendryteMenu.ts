@@ -41,6 +41,44 @@ export function installKendryteMenu(access: ServicesAccessor, menubar: Menu) {
 		},
 	}));
 
+	const openocdMenu = new Menu();
+	maixMenu.append(new MenuItem({
+		label: nls.localize({ key: 'openocd', comment: ['&& denotes a mnemonic'] }, 'OpenOCD'),
+		submenu: openocdMenu,
+	}));
+
+	openocdMenu.append(new MenuItem({
+		label: nls.localize({ key: 'openocd.action.start', comment: ['&& denotes a mnemonic'] }, 'Start openocd server'),
+		click: (menuItem, win, event) => {
+			runInMain('workbench.action.openocd.start');
+		},
+	}));
+	openocdMenu.append(new MenuItem({
+		label: nls.localize({ key: 'openocd.action.stop', comment: ['&& denotes a mnemonic'] }, 'Stop openocd server'),
+		click: (menuItem, win, event) => {
+			runInMain('workbench.action.openocd.stop');
+		},
+	}));
+	openocdMenu.append(new MenuItem({
+		label: nls.localize({ key: 'openocd.action.restart', comment: ['&& denotes a mnemonic'] }, 'Restart openocd server'),
+		click: (menuItem, win, event) => {
+			runInMain('workbench.action.openocd.restart');
+		},
+	}));
+	maixMenu.append(__separator__());
+	openocdMenu.append(new MenuItem({
+		label: nls.localize({ key: 'jtag.action.detect', comment: ['&& denotes a mnemonic'] }, 'Detect connected JTag ids'),
+		click: (menuItem, win, event) => {
+			runInMain('workbench.action.jtag.get');
+		},
+	}));
+	openocdMenu.append(new MenuItem({
+		label: nls.localize({ key: 'jtag.action.install', comment: ['&& denotes a mnemonic'] }, 'Install driver'),
+		click: (menuItem, win, event) => {
+			runInMain('workbench.action.jtag.install');
+		},
+	}));
+
 	maixMenu.append(__separator__());
 	maixMenu.append(new MenuItem({
 		label: nls.localize({ key: 'Cleanup', comment: ['&& denotes a mnemonic'] }, 'Make Cleanup'),
