@@ -54,7 +54,7 @@ if [ "$SYSTEM" = mac ]; then
 fi
 LocalNodePath="$(resolvePath "${VSCODE_ROOT}" node_modules/.bin)"
 BuildingNodePath="$(resolvePath "${VSCODE_ROOT}" my-scripts/node_modules/.bin)"
-ToolchainPath="$(resolvePath "${VSCODE_ROOT}" data/packages/toolchain/bin):$(resolvePath "${VSCODE_ROOT}" data/packages/toolchain/riscv64-unknown-elf/bin):$(resolvePath "${VSCODE_ROOT}" data/packages/cmake/bin)"
+ToolchainPath="$(resolvePath "${VSCODE_ROOT}" data/packages/toolchain/bin):$(resolvePath "${VSCODE_ROOT}" data/packages/cmake/bin)"
 export PATH="$PRIVATE_BINS:$NODEJS_BIN:$BuildingNodePath:$LocalNodePath:$ToolchainPath:$CommonPaths"
 
 if [ -n "$HTTP_PROXY" ] ; then
