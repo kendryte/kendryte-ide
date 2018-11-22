@@ -4,8 +4,8 @@ import { resolve } from 'path';
 import { pipeCommandOut } from '../../childprocess/complex';
 import { installDependency } from '../../childprocess/yarn';
 import { ARCH_RELEASE_ROOT } from '../../misc/constants';
-import { isExists, mkdirpSync, rename, unlink } from '../../misc/fsUtil';
-import { chdir } from '../../misc/pathUtil';
+import { isExists, rename, unlink } from '../../misc/fsUtil';
+import { chdir, ensureChdir } from '../../misc/pathUtil';
 import { timing } from '../../misc/timeUtil';
 import { showElectronNoticeInChina } from '../getElectron';
 import { gulpCommands } from '../gulp';
@@ -55,7 +55,7 @@ export async function downloadBuiltinExtensions(output: OutputStreamControl) {
 }
 
 export async function deleteCompileCaches(output: OutputStreamControl) {
-	chdir(process.env.TMP);
+	ensureChdir(process.env.TEMP);
 	for (const folder of await readdir(process.env.TMP)) {
 		if (folder.startsWith('v8-compile-cache')) {
 			await removeDirectory(resolve(process.env.TMP, folder), output);

@@ -6,7 +6,7 @@ export function chdir(d: string) {
 	d = normalize(d);
 	if (process.cwd() !== d) {
 		process.chdir(d);
-		console.log('\n > %s', process.cwd());
+		console.log('\r\x1BK > %s', process.cwd());
 	}
 }
 

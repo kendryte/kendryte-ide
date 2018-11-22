@@ -16,7 +16,6 @@
     "watch": "gulp watch --max_old_space_size=4095",
     "watch-client": "gulp watch-client --max_old_space_size=4095",
     "monaco-editor-test": "mocha --only-monaco-editor",
-    "precommit": "node my-scripts/npm/precommit.js",
     "gulp": "gulp --max_old_space_size=4095",
     "7z": "7z",
     "bash": "bash",

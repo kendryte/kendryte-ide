@@ -1,4 +1,3 @@
-import { isAbsolute } from 'path';
 import { PassThrough } from 'stream';
 import { spawnWithLog } from '../misc/globalOutput';
 import { BlackHoleStream, CollectingStream, endArg } from '../misc/streamUtil';
@@ -46,6 +45,26 @@ export async function getOutputCommand(cmd: string, ...args: string[]): Promise<
 	stream.output.pipe(collector);
 	await stream.wait();
 	return collector.getOutput().trim();
+}
+
+export async function getOutputExitCommand(cmd: string, ...args: string[]): Promise<[number, string]> {
+	// console.log(' + %s %s | stream-output', command, argumentList.join(' '));
+	const stream = _spawnCommand(cmd, args);
+	const collector = new CollectingStream();
+	stream.output.pipe(collector);
+	let retCode = await stream.wait().then(() => {
+		return 0;
+	}, (e) => {
+		if (e.__programError) {
+			return e.status || 1;
+		} else {
+			throw e;
+		}
+	});
+	return [
+		retCode,
+		collector.getOutput().trim(),
+	];
 }
 
 function _spawnCommand(cmd: string, args: string[]): ProcessHandler {

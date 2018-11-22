@@ -17,6 +17,7 @@ export function mergeEnv() {
 	});
 	
 	newEnv.PATH += resolve(cwd, 'node_modules/.bin');
+	newEnv.LANG = 'C';
 	
 	return {
 		cwd,

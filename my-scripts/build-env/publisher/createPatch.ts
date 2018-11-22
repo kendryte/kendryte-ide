@@ -10,7 +10,7 @@ import { releaseZipStorageFolder, un7zip } from '../codeblocks/zip';
 import { CURRENT_PLATFORM_TYPES, releaseFileName } from '../codeblocks/zip.name';
 import { RELEASE_ROOT } from '../misc/constants';
 import { calcCompileRootFolderName, getPackageData, mkdirpSync } from '../misc/fsUtil';
-import { chdir } from '../misc/pathUtil';
+import { chdir, ensureChdir } from '../misc/pathUtil';
 import { IDEJson, SYS_NAME } from './release.json';
 
 const patchingDir = resolve(RELEASE_ROOT, 'create-patch');
@@ -32,7 +32,7 @@ async function extractVersion(output: OutputStreamControl, zip: string, type: st
 	await move(resolve(temp, ideDirName, 'resources/app'), result);
 	output.writeln('ok.');
 	
-	chdir(process.env.TEMP);
+	ensureChdir(process.env.TEMP);
 	await removeDirectory(temp, output);
 	
 	return result;
