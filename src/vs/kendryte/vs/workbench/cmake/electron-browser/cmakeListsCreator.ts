@@ -19,12 +19,14 @@ interface KnownFiles {
 	dumpConfig: string;
 	flash: string;
 	afterProject: string;
+	coreFlags: string;
 }
 
 let readed: KnownFiles;
 
 export class CMakeListsCreator {
 	private readonly projectDependencies: { [name: string]: boolean };
+	private readonly projectLinkerScripts: string[];
 	private readonly projectIncludes: string[];
 
 	private config: ICompileOptions;
@@ -46,10 +48,12 @@ export class CMakeListsCreator {
 			this.isRoot = false;
 			this.projectDependencies = depsRef.projectDependencies;
 			this.projectIncludes = depsRef.projectIncludes;
+			this.projectLinkerScripts = depsRef.projectLinkerScripts;
 		} else {
 			this.isRoot = true;
 			this.projectDependencies = {};
 			this.projectIncludes = [];
+			this.projectLinkerScripts = [];
 		}
 	}
 
@@ -86,6 +90,15 @@ export class CMakeListsCreator {
 			['link_flags', 'LD'],
 		];
 		content.push('');
+		content.push('##### internal flags #####');
+		content.push(readed.coreFlags);
+		if (this.projectLinkerScripts.length) {
+			content.push(`add_compile_flags(LD`);
+			for (const file of this.projectLinkerScripts) {
+				content.push(`  -T ${JSON.stringify(file)}`);
+			}
+			content.push(`)`);
+		}
 		content.push('##### flags from config json #####');
 		for (const [from, to] of add_compile_flags_map) {
 			const arr = normalizeArray<string>(config[from]);
@@ -121,6 +134,12 @@ export class CMakeListsCreator {
 		}
 
 		content.push('## add source from config json');
+		const internalSource = [
+			'config/*.c',
+			'config/*.h',
+			'config/*.cpp',
+		];
+		content.push(`add_source_files(\n  ${this.spaceArrayCD(internalSource)}\n)`);
 		if (config.source && config.source.length > 0) {
 			content.push(`add_source_files(\n  ${this.spaceArrayCD(config.source)}\n)`);
 		}
@@ -162,14 +181,14 @@ export class CMakeListsCreator {
 		}
 
 		content.push('## dependencies link');
-		content.push('target_link_libraries(${PROJECT_NAME} gcc m c)');
+		content.push('target_link_libraries(${PROJECT_NAME} -Wl,--start-group gcc m c -Wl,--end-group)');
 		if (this.myDependency.length) {
 			content.push('target_link_libraries(${PROJECT_NAME}');
 			content.push('  -Wl,--start-group');
 			this.myDependency.forEach((item: string) => {
 				content.push('    ' + JSON.stringify(item));
 			});
-			content.push('  -Wl,--end-group #');
+			content.push('  -Wl,--end-group');
 			content.push(')');
 		}
 
@@ -217,6 +236,9 @@ export class CMakeListsCreator {
 				this.myDependency.push(dirName);
 			}
 		}
+		if (config.ld_file) {
+			this.projectLinkerScripts.push(resolvePath(this.listSourceFile, '..', config.ld_file));
+		}
 
 		if (config.extraList) {
 			const path = resolvePath(this.listSourceFile, '..', config.extraList);
@@ -255,6 +277,7 @@ export class CMakeListsCreator {
 			read('reset'),
 			read('afterProject'),
 			read('toolchain'),
+			read('coreFlags'),
 		]);
 
 		return val;

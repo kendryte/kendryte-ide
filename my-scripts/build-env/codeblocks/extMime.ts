@@ -11,5 +11,7 @@ export function extMime(name) {
 	case '.gz':
 	case '.tgz':
 		return 'application/x-gzip';
+	case '.json':
+		return 'application/json';
 	}
 }

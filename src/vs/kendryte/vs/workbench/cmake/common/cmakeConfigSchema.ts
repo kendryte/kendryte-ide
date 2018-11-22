@@ -11,7 +11,7 @@ export interface ICompileOptions {
 	name: string;
 	version: string;
 	dependency: { [id: string]: string };
-	properties: {[id:string] : string};
+	properties: { [id: string]: string };
 	include: string[];
 	source: string[];
 	extraList: string;
@@ -19,6 +19,7 @@ export interface ICompileOptions {
 	cpp_flags: string[];
 	c_cpp_flags: string[];
 	link_flags: string[];
+	ld_file: string;
 	entry?: string;
 }
 
@@ -26,7 +27,7 @@ export const cmakeSchema: IJSONSchema = {
 	id: launchSchemaId,
 	type: 'object',
 	title: localize('cmake', 'CMake'),
-	required: ['name', 'version', 'source'],
+	required: ['name', 'version', 'source', 'type'],
 	default: { name: '', version: '1.0.0', dependency: {}, include: [], source: [] },
 	properties: {
 		name: {
@@ -104,6 +105,10 @@ export const cmakeSchema: IJSONSchema = {
 			items: {
 				type: 'string',
 			},
+		},
+		ld_file: {
+			type: 'string',
+			default: '',
 		},
 	},
 };

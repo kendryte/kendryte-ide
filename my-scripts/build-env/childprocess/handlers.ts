@@ -13,7 +13,10 @@ export function parseCommand(cmd: string, args: ReadonlyArray<string>): [string,
 	}
 	if (isWin) {
 		args = args.map((arg) => {
-			return JSON.stringify(arg);
+			if (/\s/.test(arg)) {
+				return JSON.stringify(arg);
+			}
+			return arg;
 		});
 		return ['powershell.exe', ['-Command', cmd, ...args]];
 	} else {

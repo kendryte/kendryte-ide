@@ -91,7 +91,7 @@ export async function packWindows(output: OutputStreamControl) {
 	chdir(root);
 	const timeOutZip = timing();
 	await pipeCommandOut(output, 'node', ...gulpCommands(), '--gulpfile', 'my-scripts/gulpfile/pack-win.js');
-	output.success('ASAR created.' + timeOutProd());
+	output.success('ASAR created.' + timeOutZip());
 	
 	log('move ASAR package to source root');
 	chdir(root);
@@ -114,8 +114,9 @@ export async function packWindows(output: OutputStreamControl) {
 	/// install child node_modules by default script
 	log('run post-install script');
 	chdir(root);
-	
-	await yarn(output, output.screen, 'run', 'postinstall');
+	const timeOutPostInstall = timing();
+	await yarn(output, output.screen, 'postinstall');
+	output.success('Yarn postinsall success.' + timeOutPostInstall());
 	
 	await copy(huskyHooks, resolve(gitDir, 'hooks'));
 	

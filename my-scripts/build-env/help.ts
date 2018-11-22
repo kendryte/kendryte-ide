@@ -1,11 +1,11 @@
 import { readdirSync, readFileSync } from 'fs';
+import { platform } from 'os';
 import { resolve } from 'path';
-import { isWin } from './misc/constants';
 import { helpTip, whatIsThis } from './misc/help';
 
 process.argv.push('--what-is-this');
 
-const extract = /\bwhatIsThis\(.+\);/;
+const extract = /^whatIsThis\(.+\);/m;
 
 helpTip('show-help', 'print this');
 
@@ -28,6 +28,6 @@ readdirSync(base).forEach((file) => {
 		whatIsThis(file.replace(/\.ts$/, '.js'), e.message);
 	}
 });
-if (isWin) {
+if (platform() === 'win32') {
 	helpTip('fork', 'Open new window like this');
 }

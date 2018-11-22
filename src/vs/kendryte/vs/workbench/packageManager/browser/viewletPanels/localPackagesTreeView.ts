@@ -15,7 +15,7 @@ import { IPagedModel, PagedModel } from 'vs/base/common/paging';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { IRemotePackageInfo } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
 
-const templateId = 'local-package-list';
+const templateId = 'local-package-tree';
 
 class Delegate implements IListVirtualDelegate<IExtension> {
 	getHeight() { return 62; }
@@ -50,7 +50,7 @@ export class Renderer implements IPagedRenderer<IRemotePackageInfo, ITemplateDat
 
 }
 
-export class LocalPackagesListView extends ViewletPanel {
+export class LocalPackagesTreeView extends ViewletPanel {
 	private list: WorkbenchPagedList<IRemotePackageInfo>;
 	private packageList: HTMLElement;
 
@@ -72,7 +72,7 @@ export class LocalPackagesListView extends ViewletPanel {
 		const delegate = new Delegate();
 		const renderer = this.instantiationService.createInstance(Renderer);
 		this.list = this.instantiationService.createInstance(WorkbenchPagedList, this.packageList, delegate, [renderer], {
-			ariaLabel: localize('packages', 'Packages'),
+			ariaLabel: localize('dependency tree', 'Dependency Tree'),
 			multipleSelectionSupport: false,
 		}) as WorkbenchPagedList<IRemotePackageInfo>;
 		this.disposables.push(this.list);
@@ -84,8 +84,6 @@ export class LocalPackagesListView extends ViewletPanel {
 	}
 
 	async show(): TPromise<IPagedModel<IRemotePackageInfo>> {
-		const model = new PagedModel(await this.packageRegistryService.listLocal());
-		this.list.model = model;
-		return model;
+		return new PagedModel(await this.packageRegistryService.listLocal());
 	}
 }

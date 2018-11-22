@@ -22,7 +22,7 @@ import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/commo
 import { URI } from 'vs/base/common/uri';
 import { dumpDate } from 'vs/kendryte/vs/base/common/dumpDate';
 import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
-import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
+import { INotificationHandle, INotificationService, Severity } from 'vs/platform/notification/common/notification';
 
 export class PackageRegistryService implements IPackageRegistryService {
 	_serviceBrand: any;
@@ -121,11 +121,16 @@ export class PackageRegistryService implements IPackageRegistryService {
 		});
 	}
 
-	public async queryPackages(type: PackageTypes, search: string): TPromise<IPager<IRemotePackageInfo>> {
+	public async queryPackages(type: PackageTypes, search: string | RegExp): TPromise<IPager<IRemotePackageInfo>> {
 		let registry = await this.getRegistry(type);
 
 		if (search) {
-			const searchReg = new RegExp(escapeRegExpCharacters(search), 'i');
+			let searchReg: RegExp;
+			if (search instanceof RegExp) {
+				searchReg = search;
+			} else {
+				searchReg = new RegExp(escapeRegExpCharacters(search), 'i');
+			}
 			registry = registry.filter((item) => {
 				return searchReg.test(item.name);
 			});
@@ -142,6 +147,31 @@ export class PackageRegistryService implements IPackageRegistryService {
 				return TPromise.as(registry.slice(start, start + pageSize));
 			},
 		};
+	}
+
+	private async installAllWork(deps: { [id: string]: string }, installed: string[], handle: INotificationHandle) {
+		const keys = Object.keys(deps);
+		let i = 1;
+		for (const item of keys) {
+			handle.updateMessage(`installing dependencies: (${i++} of ${keys.length}) ${item}`);
+
+			const version = deps[item];
+			if (/^https?:\/\//.test(version)) {
+				await this.downloadFromAbsUrl(version, item, 'Unknown');
+			} else {
+				const pkgInfoReq = await this.queryPackages(PackageTypes.Library, new RegExp(escapeRegExpCharacters(item)));
+				if (pkgInfoReq.total < 1) {
+					throw new Error('No such package: ' + item);
+				}
+				const pkgInfo = pkgInfoReq.firstPage[0];
+				const verInfo = pkgInfo.versions.find(item => item.versionName === version);
+				if (!verInfo) {
+					throw new Error('No such version: ' + item);
+				}
+
+				await this.downloadFromAbsUrl(this.findUrl(pkgInfo, version), item, version);
+			}
+		}
 	}
 
 	public async installAll(): TPromise<void> {
@@ -162,22 +192,12 @@ export class PackageRegistryService implements IPackageRegistryService {
 			message: '',
 		});
 
-		try {
-			const keys = Object.keys(pkgInfo.dependency);
-			let i = 1;
-			for (const item of keys) {
-				handle.updateMessage(`installing dependencies: ${i++} of ${keys.length}`);
-				const parts = item.split('_');
-				const version = parts.pop();
-				const name = parts.join('_');
-
-				await this.downloadFromAbsUrl(pkgInfo.dependency[item], name, version);
-			}
-		} catch (e) {
+		await this.installAllWork(pkgInfo.dependency, [], handle).then(() => {
+			handle.dispose();
+		}, (e) => {
 			handle.dispose();
 			throw e;
-		}
-		handle.dispose();
+		});
 	}
 
 	private findUrl(packageInfo: IRemotePackageInfo, version: string): string {

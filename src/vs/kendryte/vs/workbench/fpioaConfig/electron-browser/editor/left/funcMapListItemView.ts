@@ -98,11 +98,11 @@ export class FuncMapListItemRender implements IListRenderer<IListFuncMapEntry, I
 
 		let select = 0;
 		if (entry.currentPin !== undefined) {
-			console.log('func[%s] -> pin[%s:%s]', entry.fullId, entry.currentPin, this.pinToIO[entry.currentPin]);
+			// console.log('func[%s] -> pin[%s:%s]', entry.fullId, entry.currentPin, this.pinToIO[entry.currentPin]);
 			const io = this.pinToIO[entry.currentPin];
 			select = Object.keys(this.ioToPin).indexOf(io) + 1; // padding for --
 		} else {
-			console.log('func[%s] -> nil', entry.fullId);
+			// console.log('func[%s] -> nil', entry.fullId);
 		}
 		template.input.select(select);
 

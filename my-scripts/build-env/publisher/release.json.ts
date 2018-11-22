@@ -1,4 +1,4 @@
-import { OBJKEY_DOWNLOAD_INDEX, OBJKEY_IDE_JSON, s3LoadJson, s3UploadBuffer, s3WebsiteUrl } from '../misc/awsUtil';
+import { OBJKEY_DOWNLOAD_INDEX, OBJKEY_IDE_JSON, s3LoadJson, s3UploadJson, s3WebsiteUrl } from '../misc/awsUtil';
 import { isMac, isWin } from '../misc/constants';
 
 export interface IDEJson {
@@ -65,23 +65,20 @@ export async function loadRemoteState() {
 	return ideState;
 }
 
-export async function saveRemoteState(remote: IDEJson) {
-	await s3UploadBuffer({
-		stream: Buffer.from(JSON.stringify(remote, null, 4) + '\n', 'utf8'),
-		mime: 'application/json',
-	}, OBJKEY_IDE_JSON);
+export function saveRemoteState(remote: IDEJson) {
+	return s3UploadJson(remote, OBJKEY_IDE_JSON);
 }
 
 export function ensurePatchData(version: any, state: IDEJson): IDEPatchJson {
-	const latest = state.patches[state.patches.length - 1];
-	if (latest && parseFloat(latest.version) === parseFloat(version)) {
+	const latest = state.patches.find(item => item.version === version.toFixed(6));
+	if (latest) {
 		if (!latest[SYS_NAME]) {
 			latest[SYS_NAME] = {} as any;
 		}
 		return latest;
 	}
 	const data: IDEPatchJson = {
-		version: version.toString(6),
+		version: version.toFixed(6),
 		[SYS_NAME]: {},
 	} as any;
 	state.patches.push(data);
