@@ -27,17 +27,12 @@ class WrappedWindowsService extends wss.WindowsService {
 			version = `${version} (${product.target} setup)`;
 		}
 
-		let versionsFile = '';
-		if (environmentService.isBuilt) {
-			versionsFile = resolvePath(environmentService.execPath, '..', 'packages/bundled-versions.json');
-		} else {
-			versionsFile = resolvePath(environmentService.execPath, '../../..', 'packages/bundled-versions.json');
-		}
+		const versionsFile = resolvePath(environmentService.userDataPath, '..', 'packages/bundled-versions.json');
 
 		console.log(`versionsFile=${versionsFile}`);
 
 		let patchVersion = IDECurrentPatchVersion();
-		let packagesVersions = 'missing packages versions.';
+		let packagesVersions = '';
 		if (await exists(versionsFile)) {
 			packagesVersions = '';
 			const updateInfo = JSON.parse(await readFile(versionsFile, 'utf8'));
@@ -49,15 +44,16 @@ class WrappedWindowsService extends wss.WindowsService {
 
 				packagesVersions += `\n${pack}: ${ver}`;
 			}
+		} else {
+			packagesVersions += `\nmissing packages versions.\n${versionsFile}`;
 		}
 
 		let detail = nls.localize(
 			'myAboutDetail',
-			'KendryteIDE: {0}\nUpdate: {1}\nPatch: {2}\nDate: {3}\nElectron: {4}\nChrome: {5}\nNode.js: {6}\nV8: {7}\nArchitecture: {8}',
+			'VS Code: {0}\nKendryte IDE: {1}\nCommit: {2}\nElectron: {4}\nChrome: {5}\nNode.js: {6}\nV8: {7}\nArchitecture: {8}',
 			version,
-			product.commit || 'Unknown',
 			patchVersion,
-			product.date || 'Unknown',
+			product.commit || 'Unknown',
 			process.versions['electron'],
 			process.versions['chrome'],
 			process.versions['node'],
