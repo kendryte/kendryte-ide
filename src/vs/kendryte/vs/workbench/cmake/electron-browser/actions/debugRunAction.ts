@@ -27,7 +27,7 @@ import { Position } from 'vs/editor/common/core/position';
 import { generateIndent } from 'vs/editor/contrib/indentation/indentUtils';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { CONFIG_KEY_DEBUG_TARGET } from 'vs/kendryte/vs/base/common/configKeys';
-import { ACTION_ID_MAIX_CMAKE_RUN } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
+import { ACTION_ID_MAIX_CMAKE_RUN, ACTION_LABEL_MAIX_CMAKE_RUN } from 'vs/kendryte/vs/base/common/menu/cmake';
 
 class WorkspaceMaixLaunch implements ILaunch {
 	protected GDB: string;
@@ -184,7 +184,7 @@ class LaunchVisitor implements JSONVisitor {
 
 export class MaixCMakeDebugAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_RUN;
-	public static readonly LABEL = localize('Debug', 'Debug');
+	public static readonly LABEL = ACTION_LABEL_MAIX_CMAKE_RUN;
 	private readonly disposeArr: IDisposable[] = [];
 
 	constructor(

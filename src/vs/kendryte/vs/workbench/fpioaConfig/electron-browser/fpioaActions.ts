@@ -6,10 +6,11 @@ import { FpioaEditorInput } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { INotificationService } from 'vs/platform/notification/common/notification';
+import { ACTION_ID_OPEN_FPIOA_EDIT, ACTION_LABEL_OPEN_FPIOA_EDIT } from 'vs/kendryte/vs/base/common/menu/tools';
 
 export class FpioaEditorAction extends Action {
-	public static readonly ID = 'workbench.action.kendryte.openIOConfig';
-	public static readonly LABEL = localize('KendryteIOEditor', 'Edit Kendryte IO function');
+	public static readonly ID = ACTION_ID_OPEN_FPIOA_EDIT;
+	public static readonly LABEL = ACTION_LABEL_OPEN_FPIOA_EDIT;
 
 	constructor(
 		id: string,

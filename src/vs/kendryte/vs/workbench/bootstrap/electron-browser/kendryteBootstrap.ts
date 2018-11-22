@@ -7,7 +7,7 @@ import { KENDRYTE_ACTIONID_BOOTSTRAP } from 'vs/kendryte/vs/platform/vscode/comm
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { OpenDevToolsAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/openDevToolsAction';
 import { IWindowService, IWindowsService } from 'vs/platform/windows/common/windows';
-import { ACTION_ID_IDE_SELF_UPGRADE, ACTION_ID_UPGRADE_BUILDING_BLOCKS } from 'vs/kendryte/vs/services/update/common/ids';
+import { ACTION_ID_IDE_SELF_UPGRADE } from 'vs/kendryte/vs/services/update/common/ids';
 import { IKendryteClientService } from 'vs/kendryte/vs/services/ipc/electron-browser/ipcType';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -17,6 +17,7 @@ import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { isMacintosh, isWindows } from 'vs/base/common/platform';
 import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
+import { ACTION_ID_UPGRADE_BUILDING_BLOCKS } from 'vs/kendryte/vs/base/common/menu/selfUpdate';
 
 class KendryteBootstrapAction extends Action {
 	public static readonly ID = KENDRYTE_ACTIONID_BOOTSTRAP;

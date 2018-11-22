@@ -15,6 +15,7 @@ CategoryRegistry.registerCategory({ id: 'debugger', category: localize('debug', 
 CategoryRegistry.registerCategory({ id: 'deployment', category: localize('deploy', 'Deploy'), parent: 'build-deploy' });
 
 commonlyUsedData.settings = [
+	'window.titleBarStyle',
 	'workbench.colorTheme',
 	'workbench.editor.showIcons',
 	'workbench.iconTheme',

@@ -475,11 +475,16 @@ ${JSON.stringify(payload)}
 		if (this._CMakeProjectExists) {
 			return resolvePath(this._currentFolder, 'CMakeLists.txt');
 		} else {
+			this.logger.error('This is not a cmake project: ' + this._currentFolder);
 			throw new Error('cmake project is required');
 		}
 	}
 
 	get buildPath() {
+		if (!this._currentFolder) {
+			this.logger.error('You must open a folder to do this.');
+			throw new Error('You must open a folder to do this.');
+		}
 		return resolvePath(this._currentFolder, 'build');
 	}
 
@@ -556,9 +561,9 @@ ${JSON.stringify(payload)}
 
 	public async configure(): TPromise<void> {
 		if (!this._CMakeProjectExists) {
-			this.logger.info('This is not a cmake project: %s.', this._currentFolder);
-			this.logger.info('[ERROR] refuse to configure.');
-			return;
+			this.logger.error('refuse to configure.');
+			this.logger.error('This is not a cmake project: ' + this._currentFolder);
+			return TPromise.wrapError(new Error('This is not a cmake project: ' + this._currentFolder));
 		}
 
 		await this.generateCMakeListsFile(resolvePath(this._currentFolder, CMAKE_CONFIG_FILE_NAME));

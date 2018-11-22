@@ -6,12 +6,12 @@ import { localize } from 'vs/nls';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { ACTION_ID_CREATE_SHORTCUTS } from 'vs/kendryte/vs/workbench/topMenu/common/actionIds';
+import { ACTION_ID_CREATE_SHORTCUTS, ACTION_LABEL_CREATE_SHORTCUTS } from 'vs/kendryte/vs/base/common/menu/tools';
 import { isMacintosh, isWindows } from 'vs/base/common/platform';
 
 export class CreateShortcutsAction extends Action {
 	public static readonly ID = ACTION_ID_CREATE_SHORTCUTS;
-	public static readonly LABEL = localize('CreateShortcuts', 'Create Shortcuts');
+	public static readonly LABEL = ACTION_LABEL_CREATE_SHORTCUTS;
 
 	constructor(
 		id = CreateShortcutsAction.ID, label = CreateShortcutsAction.LABEL,
