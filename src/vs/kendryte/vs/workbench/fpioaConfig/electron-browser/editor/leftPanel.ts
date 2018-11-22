@@ -79,12 +79,12 @@ export class FpioaLeftPanel extends Disposable implements IView {
 	}
 
 	public layout(width: number): void {
-		console.log(width, this.element, this.element.clientHeight);
+		// console.log(width, this.element, this.element.clientHeight);
 		this.list.layout(this.element.clientHeight);
 	}
 
 	updateList(currentFuncMap: IFuncPinMap) {
-		console.warn('list update event!');
+		// console.warn('list update event!');
 		this.currentFuncMap = currentFuncMap;
 		this.chipIOList.forEach((item: IListFuncMapEntry, index) => {
 			if (currentFuncMap[item.fullId] !== item.currentPin) {
@@ -98,7 +98,7 @@ export class FpioaLeftPanel extends Disposable implements IView {
 		if (this.chipName === chipName) {
 			return;
 		}
-		console.warn('new chip selected:', chipName);
+		// console.warn('new chip selected:', chipName);
 		this.chipName = chipName;
 
 		this.list.splice(0, 1, [{ id: null, templateId: TEMPLATE_ID.CHIP_SELECT, selected: chipName }]);
@@ -111,7 +111,7 @@ export class FpioaLeftPanel extends Disposable implements IView {
 	}
 
 	private changeList(chip: IChipPackagingCalculated) {
-		console.warn('pin map is changing');
+		// console.warn('pin map is changing');
 		const newList: (IListGroupEntry | IListFuncMapEntry)[] = [];
 
 		chip.usableFunctions.forEach(({ funcBaseId: funName, ios, description }) => {
