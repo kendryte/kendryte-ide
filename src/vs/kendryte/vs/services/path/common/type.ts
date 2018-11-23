@@ -15,7 +15,7 @@ export interface INodePathService {
 	workspaceFilePath(s?: string): string;
 	createUserLink(existsFile: string, linkFile: string): TPromise<void>;
 	ensureTempDir(name?: string): TPromise<string>;
-	/** @deprecated*/tempDir(name?: string): string;
+	/** @deprecated osTempDir */tempDir(name?: string): string;
 	createAppLink(): TPromise<void>;
 	getPackageFile(): string;
 }

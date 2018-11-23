@@ -37,6 +37,7 @@ import {
 	ACTION_LABEL_PACKAGE_MANAGER_INSTALL_DEPENDENCY,
 	ACTION_LABEL_PACKAGE_MANAGER_OPEN_MARKET,
 } from 'vs/kendryte/vs/base/common/menu/packageManager';
+import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
 
 export class MyMenuSeparator {
 	public readonly separator = true;
@@ -47,9 +48,11 @@ export class MyMenuSeparator {
 }
 
 export class MyMenu {
+
 	constructor(
 		public readonly commandId: string,
 		public readonly title: string,
+		public readonly toggled?: ContextKeyExpr,
 	) {}
 }
 
@@ -75,6 +78,8 @@ export const ApplicationMenuStructure: MyMenuRegistry = [
 		new MyMenu(ACTION_ID_OPENOCD_START, ACTION_LABEL_OPENOCD_START),
 		new MyMenu(ACTION_ID_OPENOCD_STOP, ACTION_LABEL_OPENOCD_STOP),
 		new MyMenu(ACTION_ID_OPENOCD_RESTART, ACTION_LABEL_OPENOCD_RESTART),
+
+		new MyMenuSeparator('openocd_interface'),
 
 		new MyMenuSeparator('jtag'),
 		new MyMenu(ACTION_ID_JTAG_GET_ID, ACTION_LABEL_JTAG_GET_ID),

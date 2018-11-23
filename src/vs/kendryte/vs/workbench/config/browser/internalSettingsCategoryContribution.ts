@@ -1,7 +1,7 @@
 import { Registry } from 'vs/platform/registry/common/platform';
 import { Extensions, IConfigCategoryRegistry } from 'vs/kendryte/vs/platform/config/common/category';
 import { commonlyUsedData } from 'vs/workbench/parts/preferences/browser/settingsLayout';
-import { localize } from 'vs/nls';
+import { CONFIG_CATEGORY } from 'vs/kendryte/vs/base/common/configKeys';
 
 const CategoryRegistry = Registry.as<IConfigCategoryRegistry>(Extensions.ConfigCategory);
 if (!CategoryRegistry) {
@@ -9,10 +9,9 @@ if (!CategoryRegistry) {
 	(require('electron') as any).remote.getCurrentWindow().reload();
 }
 
-CategoryRegistry.registerCategory({ id: 'build-deploy', category: localize('and', '{0} and {1}', localize('build', 'Build'), localize('debug', 'Debug')) });
-CategoryRegistry.registerCategory({ id: 'build', category: localize('build', 'Build'), parent: 'build-deploy' });
-CategoryRegistry.registerCategory({ id: 'debugger', category: localize('debug', 'Debug'), parent: 'build-deploy' });
-CategoryRegistry.registerCategory({ id: 'deployment', category: localize('deploy', 'Deploy'), parent: 'build-deploy' });
+for (const object of Object.values(CONFIG_CATEGORY)) {
+	CategoryRegistry.registerCategory(object);
+}
 
 commonlyUsedData.settings = [
 	'window.titleBarStyle',

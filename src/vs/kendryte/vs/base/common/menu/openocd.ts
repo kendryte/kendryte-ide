@@ -1,6 +1,7 @@
 import { localize } from 'vs/nls';
 
 export const ACTION_CATEGORY_OPENOCD = localize('openocd', 'OpenOCD');
+export const ACTION_CATEGORY_JTAG = localize('jtag', 'JTag');
 
 export const ACTION_ID_OPENOCD_START = 'workbench.action.openocd.start';
 export const ACTION_LABEL_OPENOCD_START = localize('openocd.action.start', 'Start openocd server');

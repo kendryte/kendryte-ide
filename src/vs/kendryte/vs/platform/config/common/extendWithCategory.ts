@@ -11,6 +11,7 @@ import { Extensions as CategoryExtensions, IConfigCategoryRegistry } from 'vs/ke
 /* extend the original schema */
 export interface IExtendConfigurationPropertySchema extends IConfigurationPropertySchema {
 	category?: string;
+	longText?: boolean;
 }
 
 export interface IExtendConfigurationNode extends IConfigurationNode {

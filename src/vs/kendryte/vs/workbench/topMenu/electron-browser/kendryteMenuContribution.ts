@@ -1,5 +1,5 @@
 import { MenuId, MenuRegistry } from 'vs/platform/actions/common/actions';
-import { ApplicationMenuStructure, MyMenu, MyMenuRegistry, MyMenuSeparator, MySubMenu } from 'vs/kendryte/vs/base/common/menu/applicationMenuStructure';
+import { ApplicationMenuStructure, MyMenu, MyMenuRegistry, MyMenuSeparator, MySubMenu } from 'vs/kendryte/vs/base/common/menu/kendryteMenuDefine';
 
 let lastMenuId = 5000;
 
@@ -17,6 +17,7 @@ function createMenu(s: MyMenuRegistry, parent: MenuId) {
 				command: {
 					id: item.commandId,
 					title: item.title,
+					toggled: item.toggled,
 				},
 			});
 		} else if (item instanceof MySubMenu) {
