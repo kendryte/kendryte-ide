@@ -21,7 +21,11 @@ export async function prepareLinkForDev(output: OutputStreamControl) {
 			}
 		}
 		
-		await symlink(myConfig, resolve(source, 'tsconfig.json'));
+		const jsconfigFile = resolve(source, 'tsconfig.json');
+		if (await isExists(jsconfigFile)) {
+			await unlink(jsconfigFile);
+		}
+		await symlink(myConfig, jsconfigFile);
 		
 		await mkdirp(target);
 		await symlink(resolve(source, 'package.json'), resolve(target, 'package.json'));
