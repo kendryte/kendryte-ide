@@ -3,14 +3,16 @@ import { pipeCommandOut } from '../childprocess/complex';
 import { listExtension } from './list';
 
 export async function buildExtension(output: NodeJS.WritableStream, sourceRoot: string, targetRoot: string, watch: boolean) {
+	targetRoot = resolve(targetRoot, 'data/extensions');
+	sourceRoot = resolve(sourceRoot, 'extensions.kendryte');
+	
 	output.write('build extensions: \n');
 	output.write('  From: ' + sourceRoot + '\n');
-	output.write('    To: ' + sourceRoot + '\n');
+	output.write('    To: ' + targetRoot + '\n');
 	output.write(' Watch: ' + (watch? 'True' : 'False') + '\n');
 	
-	const tscBin = resolve(sourceRoot, 'extensions.kendryte/node_modules/typescript/lib/tsc.js');
+	const tscBin = resolve(sourceRoot, 'node_modules/typescript/lib/tsc.js');
 	
-	targetRoot = resolve(targetRoot, 'data/extensions');
 	const commands: string[][] = [];
 	for (const extName of await listExtension()) {
 		const path = resolve(sourceRoot, extName);
