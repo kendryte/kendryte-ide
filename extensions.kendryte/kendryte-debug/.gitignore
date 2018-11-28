@@ -1,0 +1,6 @@
+out
+node_modules
+*.vsix
+.vscode-test
+.idea
+tsconfig.json

@@ -2,7 +2,7 @@ import { OutputStreamControl } from '@gongt/stillalive';
 import { copy } from 'fs-extra';
 import { resolve } from 'path';
 import { pipeCommandOut } from '../../childprocess/complex';
-import { ARCH_RELEASE_ROOT, RELEASE_ROOT } from '../../misc/constants';
+import { RELEASE_ROOT } from '../../misc/constants';
 import { gulpCommands } from '../gulp';
 
 export async function windowsBuild(output: OutputStreamControl) {

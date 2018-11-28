@@ -80,7 +80,7 @@ runMain(async () => {
 	output.success('commit success.');
 	
 	output.writeln('pushing...');
-	await pipeCommandOut(output, 'git', 'push','origin','HEAD:microsoft');
+	await pipeCommandOut(output, 'git', 'push', 'origin', 'HEAD:microsoft');
 	output.writeln('push success.');
 	
 	output.writeln('cleaning...');

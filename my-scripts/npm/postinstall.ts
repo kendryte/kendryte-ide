@@ -54,7 +54,7 @@ runMain(async () => {
 		const hooksDir = resolve(gitDir, 'hooks');
 		const ls = await lstat(hooksDir);
 		if (!ls || !ls.isDirectory()) {
-			throw new Error('git hooks dir does not exists: ' + hooksDir+'\n   run `node node_modules/husky/bin/install.js` first.\n');
+			throw new Error('git hooks dir does not exists: ' + hooksDir + '\n   run `node node_modules/husky/bin/install.js` first.\n');
 		}
 		for (const item of readdirSync(hooksDir)) {
 			await parseHookItem(resolve(hooksDir, item));

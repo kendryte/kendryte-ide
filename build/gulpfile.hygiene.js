@@ -36,6 +36,7 @@ const all = [
 	'test/**/*',
 	'!**/node_modules/**',
 	'!my-scripts/**',
+	'!extensions.kendryte/**',
 	'!node_modules.asar',
 	'!node_modules.asar.unpacked/**',
 ];

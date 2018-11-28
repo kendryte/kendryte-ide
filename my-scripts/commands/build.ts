@@ -1,5 +1,8 @@
 import { OutputStreamControl } from '@gongt/stillalive';
 import { resolve } from 'path';
+import { buildExtension } from '../build-env/bundled-extension/buildExtension';
+import { installExtensionDevelopDeps } from '../build-env/bundled-extension/installAll';
+import { packExtensionModules } from '../build-env/bundled-extension/packAsar';
 import { installDependency } from '../build-env/childprocess/yarn';
 import { linuxBuild } from '../build-env/codeblocks/build/build-linux';
 import { macBuild } from '../build-env/codeblocks/build/build-mac';
@@ -78,6 +81,15 @@ runMain(async () => {
 	output.success('Build process complete.' + timeBuild());
 	
 	await rename(compileResultFolder, wantDirPath);
+	
+	await installExtensionDevelopDeps(output, ARCH_RELEASE_ROOT);
+	output.success('Bundle extensions dependencies resolved');
+	
+	await buildExtension(output, ARCH_RELEASE_ROOT, wantDirPath, false);
+	output.success('Bundle extensions built');
+	
+	await packExtensionModules(output, wantDirPath);
+	output.success('Bundle extensions production dependencies resolved');
 	
 	const timeZip = timing();
 	output.log('Creating zip packages...');

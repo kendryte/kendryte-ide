@@ -13,7 +13,6 @@ export function MaixBuildSystemPrepare(access: ServicesAccessor): TPromise<boole
 	const progressService: IProgressService2 = access.get(IProgressService2);
 
 	return installExtension(
-		'webfreak.debug',
 		'twxs.cmake',
 		'ms-vscode.cpptools',
 		'ms-ceintl.vscode-language-pack-zh-hans',

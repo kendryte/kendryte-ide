@@ -111,8 +111,8 @@ export async function s3UploadJson(
 }
 
 export interface S3Upload<T> {
-	stream: T;
 	mime: string;
+	stream: T;
 }
 
 export async function s3UploadBuffer(data: S3Upload<Buffer>, Key: string, Bucket: string = getDefaultBucket()) {

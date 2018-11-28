@@ -5,7 +5,11 @@ import { PassThrough } from 'stream';
 import { chdir } from '../misc/pathUtil';
 import { pipeCommandOut } from './complex';
 
-export async function installDependency(output: OutputStreamControl, dir?: string): Promise<void> {
+export interface IInstallOpt {
+	args?: string[]
+}
+
+export async function installDependency(output: OutputStreamControl, dir?: string, opts: IInstallOpt = {}): Promise<void> {
 	if (dir && process.cwd() !== dir) {
 		chdir(dir);
 	}
@@ -14,7 +18,11 @@ export async function installDependency(output: OutputStreamControl, dir?: strin
 	tee.pipe(output.screen, {end: false});
 	tee.pipe(createWriteStream('yarn-install.log'));
 	
-	await yarn(output, tee, 'install', '--verbose');
+	const extra = [];
+	if (opts.args) {
+		extra.push(...opts.args);
+	}
+	await yarn(output, tee, 'install', '--verbose', ...extra);
 }
 
 export async function yarn(output: OutputStreamControl, screen: NodeJS.WritableStream, cmd: string, ...args: string[]) {

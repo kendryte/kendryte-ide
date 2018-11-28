@@ -72,9 +72,9 @@ class WorkspaceMaixLaunch implements ILaunch {
 	public getConfiguration(name: string = '') {
 		return {
 			id: 'kendryte',
-			type: 'gdb',
-			request: 'attach',
-			name: 'debug maix project',
+			type: 'kendryte',
+			request: 'launch',
+			name: 'Kendryte: Debug with OpenOCD',
 			executable: this.programFile,
 			target: `127.0.0.1:${this.port}`, // <<== TODO
 			remote: true,
@@ -84,11 +84,9 @@ class WorkspaceMaixLaunch implements ILaunch {
 				...getEnvironment(this.nodePathService),
 			},
 			printCalls: true,
-			stopOnEntry: false,
-			showDevDebugOutput: false,
-			autorun: [
-				`python for cmd in ['delete breakpoints', 'delete tracepoints', 'load']: gdb.execute(cmd)`,
-			],
+			showDevDebugOutput: true,
+			stopOnAttach: false,
+			autorun: [],
 			gdbpath: this.GDB,
 		};
 	}

@@ -4,8 +4,7 @@ import { resolve } from 'path';
 import { cmp } from 'semver';
 import { releaseZipStorageFolder } from '../codeblocks/zip';
 import { CURRENT_PLATFORM_TYPES, releaseFileName } from '../codeblocks/zip.name';
-import { RELEASE_ROOT } from '../misc/constants';
-import { calcCompileFolderName, getPackageData, getProductData, isExists } from '../misc/fsUtil';
+import { getPackageData, getProductData, isExists } from '../misc/fsUtil';
 import { getRemoteVersion, IDEJson } from './release.json';
 
 export async function checkBaseIsDifferent(remote: IDEJson) {
