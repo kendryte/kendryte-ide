@@ -37,7 +37,11 @@ export function isLinkSync(path: string) {
 }
 
 export async function isExists(path: string) {
-	return !!await lstat(path);
+	try {
+		return !!await lstat(path);
+	} catch (e) {
+		return false;
+	}
 }
 
 export function isExistsSync(path: string): boolean {
@@ -94,15 +98,15 @@ export const readlink = promisify(readlinkAsync);
 let productData: any;
 
 export interface IProduction {
-	nameShort: string;
-	nameLong: string;
 	applicationName: string;
+	nameLong: string;
+	nameShort: string;
 	quality: string;
 }
 
 export interface IPackage {
-	version: string;
 	patchVersion: string;
+	version: string;
 }
 
 export function calcCompileFolderName() {

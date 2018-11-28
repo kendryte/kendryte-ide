@@ -17,6 +17,7 @@ import { app, BrowserWindow } from 'electron';
 import { isWindows } from 'vs/base/common/platform';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { format } from 'util';
+import { ILogService } from 'vs/platform/log/common/log';
 
 const STORAGE_KEY = 'block-update';
 
@@ -39,6 +40,7 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 		@ILifecycleService private lifecycleService: ILifecycleService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@INodeDownloadService private downloadService: INodeDownloadService,
+		@ILogService private logService: ILogService,
 	) {
 		this.packageBundleFile = this.nodePathService.getPackagesPath('bundled-versions.json');
 	}
@@ -53,13 +55,7 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 	}
 
 	async realRunUpdate(data: UpdateListFulfilled) {
-		if (await exists(this.packageBundleFile)) {
-			await unlink(this.packageBundleFile);
-		}
-
-		if (!this.bundledVersions) {
-			this.bundledVersions = {};
-		}
+		await this.loadBundledVersionFile(this.logService);
 
 		app.once('will-quit', (e: Event) => {
 			e.preventDefault();
@@ -114,13 +110,7 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 			return [];
 		}
 
-		if (await exists(this.packageBundleFile)) {
-			logger.info('read bundle file versions...');
-			this.bundledVersions = JSON.parse(await readFile(this.packageBundleFile, 'utf8'));
-		} else {
-			logger.info('bundle file not exists...');
-			this.bundledVersions = {};
-		}
+		await this.loadBundledVersionFile(logger);
 		const regUrl = resolveUrl(REQUIRED_BLOCK_DISTRIBUTE_URL + '/', 'projects.json');
 		logger.info('fetching registry: ' + regUrl);
 		const id = await this.downloadService.downloadTemp(regUrl, true, logger);
@@ -134,8 +124,10 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 		for (const packageData of content) {
 			logger.info(` * ${packageData.projectName}: (${i++}/${content.length})`);
 			if (packageData.version === this.bundledVersions[packageData.projectName]) {
-				logger.info(`up to date: ` + packageData.version);
-				continue;
+				if (await this.ensureDirExists(logger, packageData.projectName)) {
+					logger.info(`up to date: ` + packageData.version);
+					continue;
+				}
 			}
 
 			logger.info(`need update! local [${this.bundledVersions[packageData.projectName] || 'uninstall'}] remote [${packageData.version}].`);
@@ -152,6 +144,25 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 		}
 		logger.debug('need update:', needUpdate);
 		return needUpdate;
+	}
+
+	private async loadBundledVersionFile(logger: ILogService) {
+		if (await exists(this.packageBundleFile)) {
+			logger.info('read bundle file versions...');
+			this.bundledVersions = JSON.parse(await readFile(this.packageBundleFile, 'utf8'));
+		} else {
+			logger.info('bundle file not exists...');
+			this.bundledVersions = {};
+		}
+	}
+
+	private async ensureDirExists(logger: ILogService, projectName: string) {
+		const mustExists = this.nodePathService.getPackagesPath(projectName);
+		if (await exists(mustExists)) {
+			return true;
+		}
+		logger.warn('bundled-versions.json know project %s, but it does not exists at %s.', projectName,mustExists);
+		return false;
 	}
 
 	protected async checkHashIfKnown(hash: string, file: string, logger: IChannelLogger) {

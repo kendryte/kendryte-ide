@@ -1,17 +1,12 @@
 import { localize } from 'vs/nls';
 import { SERIAL_MONITOR_ACTION_REFRESH_DEVICE } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { registerConfiguration } from 'vs/kendryte/vs/platform/config/common/extendWithCategory';
-import {
-	CONFIG_CATEGORY_DEPLOY,
-	CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE,
-	CONFIG_KEY_FLASH_SERIAL_BAUDRATE,
-	CONFIG_KEY_RELOAD_SERIAL_DEVICES,
-} from 'vs/kendryte/vs/base/common/configKeys';
+import { CONFIG_CATEGORY, CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE, CONFIG_KEY_FLASH_SERIAL_BAUDRATE, CONFIG_KEY_RELOAD_SERIAL_DEVICES, } from 'vs/kendryte/vs/base/common/configKeys';
 import { standardBaudRate } from 'vs/kendryte/vs/workbench/config/common/baudrate';
 
 registerConfiguration({
 	id: 'serialport',
-	category: CONFIG_CATEGORY_DEPLOY,
+	category: CONFIG_CATEGORY.DEPLOY.id,
 	overridable: true,
 	properties: {
 		[CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE]: {

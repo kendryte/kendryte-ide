@@ -6,14 +6,13 @@ import { StatusBarItem } from 'vs/kendryte/vs/workbench/cmake/common/statusBarBu
 import { StatusBarController } from 'vs/kendryte/vs/workbench/cmake/common/statusBarController';
 import { localize } from 'vs/nls';
 import {
-	ACTION_ID_MAIX_CMAKE_BUILD,
-	ACTION_ID_MAIX_CMAKE_CLEANUP,
-	ACTION_ID_MAIX_CMAKE_CONFIGURE,
-	ACTION_ID_MAIX_CMAKE_RUN,
 	ACTION_ID_MAIX_CMAKE_SELECT_TARGET,
 	ACTION_ID_MAIX_CMAKE_SELECT_VARIANT,
 } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
-import { ACTION_ID_MAIX_SERIAL_UPLOAD } from 'vs/kendryte/vs/workbench/serialUpload/common/actionIds';
+import {
+	ACTION_ID_MAIX_CMAKE_BUILD, ACTION_ID_MAIX_CMAKE_CLEANUP, ACTION_ID_MAIX_CMAKE_CONFIGURE, ACTION_ID_MAIX_CMAKE_RUN,
+	ACTION_ID_MAIX_SERIAL_UPLOAD, ACTION_LABEL_MAIX_CMAKE_BUILD, ACTION_LABEL_MAIX_CMAKE_CLEANUP, ACTION_LABEL_MAIX_CMAKE_RUN, ACTION_LABEL_MAIX_SERIAL_UPLOAD,
+} from 'vs/kendryte/vs/base/common/menu/cmake';
 
 let entries: IDisposable[] = [];
 
@@ -32,8 +31,8 @@ export function addStatusBarCmakeButtons(access: ServicesAccessor) {
 	selectTip.tooltip = localize(
 		'and',
 		'{0} and {1}',
-		localize('Cleanup', 'Cleanup'),
-		localize('Build', 'Build'),
+		localize('cleanup', 'Cleanup'),
+		localize('build', 'Build'),
 	);
 	selectTip.command = ACTION_ID_MAIX_CMAKE_CONFIGURE;
 
@@ -53,25 +52,25 @@ export function addStatusBarCmakeButtons(access: ServicesAccessor) {
 
 	const cleanButton = instantiationService.createInstance(StatusBarItem, StatusbarAlignment.LEFT, 3.8);
 	cleanButton.text = '$(trashcan)';
-	cleanButton.tooltip = localize('Cleanup', 'Cleanup');
+	cleanButton.tooltip = ACTION_LABEL_MAIX_CMAKE_CLEANUP;
 	cleanButton.command = ACTION_ID_MAIX_CMAKE_CLEANUP;
 	entries.push(cleanButton);
 
 	const buildButton = instantiationService.createInstance(StatusBarItem, StatusbarAlignment.LEFT, 3.7);
 	buildButton.text = '$(checklist)';
-	buildButton.tooltip = localize('Build', 'Build');
+	buildButton.tooltip = ACTION_LABEL_MAIX_CMAKE_BUILD;
 	buildButton.command = ACTION_ID_MAIX_CMAKE_BUILD;
 	entries.push(buildButton);
 
 	const launchTargetButton = instantiationService.createInstance(StatusBarItem, StatusbarAlignment.LEFT, 3.6);
 	launchTargetButton.text = '$(triangle-right)';
-	launchTargetButton.tooltip = localize('Debug', 'Debug');
+	launchTargetButton.tooltip = ACTION_LABEL_MAIX_CMAKE_RUN;
 	launchTargetButton.command = ACTION_ID_MAIX_CMAKE_RUN;
 	entries.push(launchTargetButton);
 
 	const uploadTargetButton = instantiationService.createInstance(StatusBarItem, StatusbarAlignment.LEFT, 3.5);
 	uploadTargetButton.text = '$(desktop-download)';
-	uploadTargetButton.tooltip = localize('Upload', 'Upload');
+	uploadTargetButton.tooltip = ACTION_LABEL_MAIX_SERIAL_UPLOAD;
 	uploadTargetButton.command = ACTION_ID_MAIX_SERIAL_UPLOAD;
 	entries.push(uploadTargetButton);
 

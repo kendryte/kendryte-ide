@@ -1,13 +1,12 @@
 import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { localize } from 'vs/nls';
 import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
-import { ACTION_ID_MAIX_CMAKE_CLEANUP } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
+import { ACTION_ID_MAIX_CMAKE_CLEANUP, ACTION_LABEL_MAIX_CMAKE_CLEANUP } from 'vs/kendryte/vs/base/common/menu/cmake';
 import { CMAKE_CHANNEL, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 
 export class MaixCMakeCleanupAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_CLEANUP;
-	public static readonly LABEL = localize('Cleanup', 'Cleanup');
+	public static readonly LABEL = ACTION_LABEL_MAIX_CMAKE_CLEANUP;
 	protected outputChannel: IOutputChannel;
 
 	constructor(

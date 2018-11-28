@@ -1,0 +1,33 @@
+{
+    "compilerOptions": {
+        "declaration": false,
+        "inlineSourceMap": true,
+        "inlineSources": false,
+        "module": "commonjs",
+        "target": "esnext",
+        "lib": [
+            "es5",
+            "es6",
+            "es7",
+            "esnext"
+        ],
+        "allowJs": false,
+        "checkJs": false,
+        "outDir": "/data/DevelopmentRoot/canaan-creative/kendryte-ide/extensions.kendryte",
+        "noEmitOnError": false,
+        "sourceRoot": "/data/DevelopmentRoot/canaan-creative/kendryte-ide/extensions.kendryte/kendryte-debug",
+        "types": [
+            "node"
+        ],
+        "typeRoots": [
+            "node_modules/@types"
+        ],
+        "rootDir": "/data/DevelopmentRoot/canaan-creative/kendryte-ide/extensions.kendryte/kendryte-debug"
+    },
+    "exclude": [
+        "node_modules/**"
+    ],
+    "include": [
+        "./**/*.ts"
+    ]
+}

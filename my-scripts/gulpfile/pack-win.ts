@@ -16,16 +16,6 @@ process.chdir(modulesRoot);
 const root = process.cwd();
 
 const productionDependencies = deps.getProductionDependencies(root);
-// const l = parseInt(process.stdout.columns) || 100;
-// productionDependencies.forEach(({name, version, path}) => {
-// 	const pp = util.format(' * %s@%s: ', name, version);
-// 	if (l - pp.length >= path.length) {
-// 		console.log(pp + path.slice(0, l - pp.length - 4) + '...');
-// 	} else {
-// 		console.log(pp + path);
-// 	}
-// });
-
 const depsSrc = [
 	..._.flatten(productionDependencies.map(d => path.relative(root, d.path)).map(d => [`${d}/**`, `!${d}/**/{test,tests}/**`])),
 	// @ts-ignore JSON checking: dependencies is optional

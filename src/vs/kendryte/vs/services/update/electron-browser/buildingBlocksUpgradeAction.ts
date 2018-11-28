@@ -7,7 +7,7 @@ import { localize } from 'vs/nls';
 import { IIDEBuildingBlocksService, IUpdate, UpdateFulfilled } from 'vs/kendryte/vs/services/update/common/type';
 import { IPartService } from 'vs/workbench/services/part/common/partService';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
-import { ACTION_ID_IDE_SELF_UPGRADE, ACTION_ID_UPGRADE_BUILDING_BLOCKS, getUpdateLogger, UpdateActionCategory } from 'vs/kendryte/vs/services/update/common/ids';
+import { ACTION_ID_IDE_SELF_UPGRADE, getUpdateLogger, UpdateActionCategory } from 'vs/kendryte/vs/services/update/common/ids';
 import { IUpdateService } from 'vs/platform/update/common/update';
 import { INotificationHandle, INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
@@ -17,10 +17,11 @@ import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IFileCompressService } from 'vs/kendryte/vs/services/fileCompress/node/fileCompressService';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
+import { ACTION_ID_UPGRADE_BUILDING_BLOCKS, ACTION_LABEL_UPGRADE_BUILDING_BLOCKS } from 'vs/kendryte/vs/base/common/menu/selfUpdate';
 
 export class BuildingBlocksUpgradeAction extends Action {
 	public static readonly ID = ACTION_ID_UPGRADE_BUILDING_BLOCKS;
-	public static readonly LABEL = localize('packageManager.upgrade.building', 'Update required packages');
+	public static readonly LABEL = ACTION_LABEL_UPGRADE_BUILDING_BLOCKS;
 	protected logger: IChannelLogger;
 
 	protected dis: IDisposable[] = [];

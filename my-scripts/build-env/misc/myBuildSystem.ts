@@ -33,13 +33,13 @@ export function runMain(main: () => Promise<void|number>) {
 	}, async (e) => {
 		if (e.__programError) {
 			console.error(
-				'\n\n\x1B[38;5;9mCommand Failed:\n\t%s\x1B[0m\n  Working Directory: %s\n  Program is:\n%s',
+				'\n\n\x1B[38;5;9mCommand Failed: child process die\n\t%s\x1B[0m\n  Working Directory: %s\n  Program is:\n%s',
 				e.message,
 				e.__cwd,
 				e.__program.replace(/^/mg, '    '),
 			);
 		} else {
-			console.error('\n\n\x1B[38;5;9mCommand Failed:\n\t%s\x1B[0m', e.stack);
+			console.error('\n\n\x1B[38;5;9mCommand Failed: %s\x1B[0m', e? e.stack || e.message || e : 'Unknown error');
 		}
 		return 1;
 	}).then(async (quit) => {
@@ -51,9 +51,11 @@ export function runMain(main: () => Promise<void|number>) {
 			await timeout(50); // give time to finish
 		}
 		await timeout(300);
+		console.error('    exit with code', quit);
 		process.exit(quit);
 	}).catch((e) => {
 		console.error(e);
+		console.error('    error with code 1');
 		process.exit(1);
 	});
 }

@@ -1,7 +1,7 @@
 import { basename, resolve } from 'path';
 import { getOutputCommand, pipeCommandOut } from '../build-env/childprocess/complex';
 import { escapeRegExpCharacters } from '../build-env/codeblocks/escapeRegExpCharacters';
-import { OBJKEY_PACKAGE_MANAGER_LIBRARY, s3LoadJson, s3UploadBuffer, s3UploadJson } from '../build-env/misc/awsUtil';
+import { OBJKEY_PACKAGE_MANAGER_LIBRARY, s3LoadJson, s3UploadJson } from '../build-env/misc/awsUtil';
 import { RELEASE_ROOT } from '../build-env/misc/constants';
 import { isExists } from '../build-env/misc/fsUtil';
 import { runMain } from '../build-env/misc/myBuildSystem';
@@ -67,7 +67,7 @@ runMain(async () => {
 	});
 	
 	output.writeln('update registry file...');
-	await s3UploadJson(remote,OBJKEY_PACKAGE_MANAGER_LIBRARY);
+	await s3UploadJson(remote, OBJKEY_PACKAGE_MANAGER_LIBRARY);
 	
 	output.success('Done.').pause();
 });

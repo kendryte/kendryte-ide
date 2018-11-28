@@ -3,7 +3,6 @@ import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common
 
 export const UpdateActionCategory = localize('update', 'Update');
 
-export const ACTION_ID_UPGRADE_BUILDING_BLOCKS = 'workbench.action.kendryte.packageUpgrade';
 export const ACTION_ID_IDE_SELF_UPGRADE = 'workbench.action.kendryte.ideUpgrade';
 
 export const PACKAGE_UPDATER_LOG_CHANNEL = 'maix-update-output-channel';

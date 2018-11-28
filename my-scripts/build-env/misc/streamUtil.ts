@@ -5,8 +5,8 @@ import { globalLog } from './globalOutput';
 import { yarnPackageDir } from './pathUtil';
 
 export class CollectingStream extends Writable {
-	private buffer = '';
 	private _promise: Promise<string>;
+	private buffer = '';
 	
 	constructor(sourceStream?: NodeJS.ReadableStream) {
 		super();

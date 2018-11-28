@@ -5,11 +5,11 @@ function indentArgs(args: ReadonlyArray<string>) {
 }
 
 export interface ProgramError extends Error {
-	status: number;
-	signal: string;
-	__programError: boolean;
-	__program: string;
 	__cwd: string;
+	__program: string;
+	__programError: boolean;
+	signal: string;
+	status: number;
 }
 
 export type ProcessRunInfo = [string, ReadonlyArray<string>, string]; // cmd args cwd

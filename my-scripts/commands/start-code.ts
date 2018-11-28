@@ -7,21 +7,21 @@ import { whatIsThis } from '../build-env/misc/help';
 import { runMain } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 
-whatIsThis(__filename, 'start local debug IDE, you must run this after start-watch show success.');
+whatIsThis(__filename, 'start local debug IDE, need start-watch show success.');
 
 runMain(async () => {
 	await getElectronIfNot();
-
+	
 	delete process.env.VSCODE_PORTABLE;
-
+	
 	chdir(VSCODE_ROOT);
-
+	
 	mkdirpSync('data');
 	
 	delete process.env.HTTP_PROXY;
 	delete process.env.HTTPS_PROXY;
 	delete process.env.ALL_PROXY;
-
+	
 	const passArgs = process.argv.slice(2);
 	if (isWin) {
 		cleanScreen();

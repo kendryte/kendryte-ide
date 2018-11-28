@@ -25,6 +25,7 @@ export interface ICompileOptions {
 
 export const cmakeSchema: IJSONSchema = {
 	id: launchSchemaId,
+	allowComments: true,
 	type: 'object',
 	title: localize('cmake', 'CMake'),
 	required: ['name', 'version', 'source', 'type'],

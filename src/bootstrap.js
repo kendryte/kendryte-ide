@@ -200,8 +200,11 @@ exports.configurePortable = function () {
 	}
 
 	const portableDataPath = getPortableDataPath();
-	const isPortable = !('target' in product) && fs.existsSync(portableDataPath);
-	console.log('isPortable=%s\n\'target\' in product = %s\nportableDataPath=%s', isPortable, 'target' in product, portableDataPath);
+	if (!fs.existsSync(portableDataPath)) {
+		fs.mkdirSync(portableDataPath);
+	}
+	const isPortable = true;
+	console.log('isPortable=%s ; \'target\' in product = %s ; portableDataPath=%s', isPortable, 'target' in product, portableDataPath);
 	const portableTempPath = path.join(portableDataPath, 'tmp');
 	const isTempPortable = isPortable && fs.existsSync(portableTempPath);
 

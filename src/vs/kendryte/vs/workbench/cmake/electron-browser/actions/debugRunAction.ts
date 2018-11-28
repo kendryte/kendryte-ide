@@ -26,13 +26,14 @@ import { IIdentifiedSingleEditOperation } from 'vs/editor/common/model';
 import { Position } from 'vs/editor/common/core/position';
 import { generateIndent } from 'vs/editor/contrib/indentation/indentUtils';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { CONFIG_KEY_DEBUG_TARGET } from 'vs/kendryte/vs/base/common/configKeys';
-import { ACTION_ID_MAIX_CMAKE_RUN } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
+import { ACTION_ID_MAIX_CMAKE_RUN, ACTION_LABEL_MAIX_CMAKE_RUN } from 'vs/kendryte/vs/base/common/menu/cmake';
+import { IOpenOCDService } from 'vs/kendryte/vs/services/openocd/common/openOCDService';
 
 class WorkspaceMaixLaunch implements ILaunch {
 	protected GDB: string;
 
 	constructor(
+		protected port: number,
 		protected programFile: string,
 		@IEditorService protected editorService: IEditorService,
 		@IWorkspaceContextService protected contextService: IWorkspaceContextService,
@@ -69,14 +70,13 @@ class WorkspaceMaixLaunch implements ILaunch {
 	}
 
 	public getConfiguration(name: string = '') {
-		const target = this.configurationService.getValue(CONFIG_KEY_DEBUG_TARGET);
 		return {
 			id: 'kendryte',
-			type: 'gdb',
-			request: 'attach',
-			name: 'debug maix project',
+			type: 'kendryte',
+			request: 'launch',
+			name: 'Kendryte: Debug with OpenOCD',
 			executable: this.programFile,
-			target: target || '127.0.0.1:3333', // <<== TODO
+			target: `127.0.0.1:${this.port}`, // <<== TODO
 			remote: true,
 			cwd: '${workspaceRoot}/build',
 			internalConsoleOptions: 'openOnSessionStart' as any,
@@ -84,11 +84,9 @@ class WorkspaceMaixLaunch implements ILaunch {
 				...getEnvironment(this.nodePathService),
 			},
 			printCalls: true,
-			stopOnEntry: false,
-			showDevDebugOutput: false,
-			autorun: [
-				`python for cmd in ['delete breakpoints', 'delete tracepoints', 'load']: gdb.execute(cmd)`,
-			],
+			showDevDebugOutput: true,
+			stopOnAttach: false,
+			autorun: [],
 			gdbpath: this.GDB,
 		};
 	}
@@ -184,7 +182,7 @@ class LaunchVisitor implements JSONVisitor {
 
 export class MaixCMakeDebugAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_RUN;
-	public static readonly LABEL = localize('Debug', 'Debug');
+	public static readonly LABEL = ACTION_LABEL_MAIX_CMAKE_RUN;
 	private readonly disposeArr: IDisposable[] = [];
 
 	constructor(
@@ -196,6 +194,7 @@ export class MaixCMakeDebugAction extends Action {
 		@INotificationService private notificationService: INotificationService,
 		@IFileService private fileService: IFileService,
 		@ITextModelService private textModelService: ITextModelService,
+		@IOpenOCDService protected openOCDService: IOpenOCDService,
 	) {
 		super(MaixCMakeDebugAction.ID, MaixCMakeDebugAction.LABEL);
 	}
@@ -210,7 +209,14 @@ export class MaixCMakeDebugAction extends Action {
 		const resource = config.uri;
 		const exists = await this.fileService.existsFile(resource);
 		if (!exists) {
-			this.fileService.updateContent(resource, '{}', { encoding: encoding.UTF8 });
+			await this.fileService.updateContent(resource, `{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+    ]
+}`, { encoding: encoding.UTF8 });
 		}
 		const textModelRef = await this.textModelService.createModelReference(resource);
 		this.disposeArr.push(textModelRef);
@@ -256,8 +262,14 @@ export class MaixCMakeDebugAction extends Action {
 	}
 
 	async run(): TPromise<void> {
+		await this.openOCDService.start();
+		const port = this.openOCDService.getCurrentPort();
+		if (!port) {
+			throw new Error('OpenOCD service not able to start.');
+		}
+
 		const file = await this.cmakeService.getOutputFile();
-		const myLaunch = this.instantiationService.createInstance(WorkspaceMaixLaunch, file);
+		const myLaunch = this.instantiationService.createInstance(WorkspaceMaixLaunch, port, file);
 		const config = myLaunch.getConfiguration();
 
 		this.logService.info('Debug Config:', config);

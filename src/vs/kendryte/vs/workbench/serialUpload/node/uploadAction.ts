@@ -1,6 +1,5 @@
 import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { localize } from 'vs/nls';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
@@ -12,14 +11,14 @@ import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { IQuickInputService, IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
-import { ACTION_ID_MAIX_SERIAL_UPLOAD } from 'vs/kendryte/vs/workbench/serialUpload/common/actionIds';
+import { ACTION_ID_MAIX_SERIAL_UPLOAD, ACTION_LABEL_MAIX_SERIAL_UPLOAD } from 'vs/kendryte/vs/base/common/menu/cmake';
 import { ChipType, SerialLoader } from 'vs/kendryte/vs/workbench/serialUpload/node/flasher';
 import { CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 
 export class MaixSerialUploadAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_SERIAL_UPLOAD;
-	public static readonly LABEL = localize('Upload', 'Upload');
+	public static readonly LABEL = ACTION_LABEL_MAIX_SERIAL_UPLOAD;
 
 	static lastSelected: string;
 	private readonly logger: IChannelLogger;

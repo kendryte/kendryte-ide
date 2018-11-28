@@ -17,6 +17,10 @@ export function usePretty(save?: string, opts?: MyOptions): OutputStreamControl 
 		return streamPromise(stream);
 	});
 	
+	stream.on('end', () => {
+		useThisStream(process.stderr);
+	});
+	
 	if (save) {
 		stream.pipe(useWriteFileStream(`logs/${save}.log`), {end: true});
 	}

@@ -3,7 +3,6 @@
 // Settings sections
 import 'vs/kendryte/vs/workbench/config/browser/categoryContribution';
 import 'vs/kendryte/vs/workbench/config/electron-browser/pathSettingsContribution';
-import 'vs/kendryte/vs/workbench/config/common/openocdSettingsContribution';
 import 'vs/kendryte/vs/workbench/config/common/flashSettingsContribution';
 import 'vs/kendryte/vs/workbench/config/browser/internalSettingsCategoryContribution';
 // ipc channel (client)
@@ -43,10 +42,14 @@ import 'vs/kendryte/vs/workbench/serialPort/electron-browser/serialMonitorPanel'
 import 'vs/kendryte/vs/workbench/serialPort/common/serialMonitorActions';
 import 'vs/kendryte/vs/workbench/serialPort/electron-browser/actions/register';
 // app top menus
-import 'vs/kendryte/vs/workbench/topMenu/electron-browser/menuContribution';
+import 'vs/kendryte/vs/workbench/topMenu/electron-browser/kendryteMenuContribution';
 import 'vs/kendryte/vs/workbench/topMenu/node/shortcutsContribution';
 // cmake
 import 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeContribution';
 // Package Manager
 import 'vs/kendryte/vs/workbench/packageManager/browser/actionsContribution';
 import 'vs/kendryte/vs/workbench/packageManager/electron-browser/mainPanelContribution';
+// OpenOCD
+import 'vs/kendryte/vs/services/openocd/node/debugConfigContribution';
+import 'vs/kendryte/vs/services/openocd/node/actionConfigContribution';
+import 'vs/kendryte/vs/services/openocd/node/openOCDService';

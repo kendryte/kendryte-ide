@@ -9,6 +9,8 @@
       <excludeFolder url="file://$MODULE_DIR$/.temp" />
       <excludeFolder url="file://$MODULE_DIR$/.vscode" />
       <excludeFolder url="file://$MODULE_DIR$/data" />
+      <excludeFolder url="file://$MODULE_DIR$/data/extensions/code-debug" />
+      <excludeFolder url="file://$MODULE_DIR$/data/extensions/code-debug/out" />
       <excludeFolder url="file://$MODULE_DIR$/extensions" />
       <excludeFolder url="file://$MODULE_DIR$/my-scripts" />
       <excludeFolder url="file://$MODULE_DIR$/node_modules.asar.unpacked" />
@@ -21,6 +23,7 @@
       <excludePattern pattern="out-*" />
       <excludePattern pattern=".vscode" />
     </content>
+    <content url="file://$MODULE_DIR$/data/extensions/code-debug" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
