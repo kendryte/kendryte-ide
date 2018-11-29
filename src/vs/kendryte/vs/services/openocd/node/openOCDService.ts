@@ -29,6 +29,8 @@ import { writeFile } from 'vs/base/node/pfs';
 import { DetectJTagIdAction } from 'vs/kendryte/vs/services/openocd/node/actions/jtagFindId';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 
+const libUsbError = /\bLIBUSB_ERROR_IO\b/;
+
 export class OpenOCDService implements IOpenOCDService {
 	_serviceBrand: any;
 	private openocd: string;
@@ -111,8 +113,12 @@ export class OpenOCDService implements IOpenOCDService {
 			cwd: this.nodePathService.workspaceFilePath(),
 		});
 
-		child.stdout.on('data', (data) => this.logger.log(data.toString()));
-		child.stderr.on('data', (data) => this.logger.log(data.toString()));
+		child.stdout.on('data', (data) => {
+			data = data.toString();
+			this.logger.write(data);
+			this.handleOutput(data);
+		});
+		child.stderr.on('data', (data) => this.logger.write(data.toString()));
 
 		child.on('error', (e) => {
 			this.logger.error(`OpenOCD Command Failed: ${e.stack}`);
@@ -198,6 +204,13 @@ export class OpenOCDService implements IOpenOCDService {
 		const sn = action.run();
 		this.logger.info(' jtag sn = ' + sn);
 		return sn;
+	}
+
+	private handleOutput(data: string) {
+		if (libUsbError.test(data)) {
+			this.kill();
+			this.notificationService.error('LIBUSB_ERROR_IO');
+		}
 	}
 }
 

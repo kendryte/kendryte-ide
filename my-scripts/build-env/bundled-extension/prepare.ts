@@ -1,5 +1,5 @@
 import { OutputStreamControl } from '@gongt/stillalive';
-import { copy, mkdirp, symlink, unlink } from 'fs-extra';
+import { copy, mkdirp, unlink } from 'fs-extra';
 import { resolve } from 'path';
 import { removeDirectory } from '../codeblocks/removeDir';
 import { ARCH_RELEASE_ROOT, VSCODE_ROOT } from '../misc/constants';
@@ -25,11 +25,11 @@ export async function prepareLinkForDev(output: OutputStreamControl) {
 		if (await isExists(jsconfigFile)) {
 			await unlink(jsconfigFile);
 		}
-		await symlink(myConfig, jsconfigFile);
+		await copy(myConfig, jsconfigFile);
 		
 		await mkdirp(target);
-		await symlink(resolve(source, 'package.json'), resolve(target, 'package.json'));
-		await symlink(resolve(source, 'yarn.lock'), resolve(target, 'yarn.lock'));
+		await copy(resolve(source, 'package.json'), resolve(target, 'package.json'));
+		await copy(resolve(source, 'yarn.lock'), resolve(target, 'yarn.lock'));
 	}
 }
 

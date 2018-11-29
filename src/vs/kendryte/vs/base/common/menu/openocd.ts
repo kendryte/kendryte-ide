@@ -15,5 +15,8 @@ export const ACTION_LABEL_OPENOCD_RESTART = localize('openocd.action.restart', '
 export const ACTION_ID_JTAG_GET_ID = 'workbench.action.jtag.get';
 export const ACTION_LABEL_JTAG_GET_ID = localize('jtag.action.detect', 'Detect connected JTag ids');
 
-export const ACTION_ID_JTAG_INSTALL_DRIVER = 'workbench.action.jtag.install';
-export const ACTION_LABEL_JTAG_INSTALL_DRIVER = localize('jtag.action.install', 'Install driver');
+export const ACTION_ID_JTAG_INSTALL_DRIVER = 'workbench.action.jtag.install.libusb';
+export const ACTION_LABEL_JTAG_INSTALL_DRIVER = localize('jtag.action.install.libusb', 'Install WinUSB driver');
+
+export const ACTION_ID_JTAG_INSTALL_DRIVER_O = 'workbench.action.jtag.install';
+export const ACTION_LABEL_JTAG_INSTALL_DRIVER_O = localize('jtag.action.install', 'Restore jlink driver');
