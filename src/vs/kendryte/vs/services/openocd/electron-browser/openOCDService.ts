@@ -17,17 +17,21 @@ import {
 	CONFIG_KEY_OPENOCD_PORT,
 	CONFIG_KEY_OPENOCD_USE,
 } from 'vs/kendryte/vs/base/common/configKeys';
-import { ILifecycleService } from 'vs/platform/lifecycle/electron-main/lifecycleMain';
+import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { OPENOCD_CHANNEL, OPENOCD_CHANNEL_TITLE } from 'vs/kendryte/vs/services/openocd/common/channel';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { createCustomConfig } from 'vs/kendryte/vs/services/openocd/node/configs/custom';
-import { createDefaultFtdiConfig } from 'vs/kendryte/vs/services/openocd/node/configs/ftdi';
-import { ConfigOpenOCDTypes } from 'vs/kendryte/vs/services/openocd/node/configs/openocd';
-import { createDefaultJTagConfig } from 'vs/kendryte/vs/services/openocd/node/configs/jtag';
+import { createCustomConfig } from 'vs/kendryte/vs/services/openocd/common/configs/custom';
+import { createDefaultFtdiConfig } from 'vs/kendryte/vs/services/openocd/common/configs/ftdi';
+import { ConfigOpenOCDTypes } from 'vs/kendryte/vs/services/openocd/common/configs/openocd';
+import { createDefaultJTagConfig } from 'vs/kendryte/vs/services/openocd/common/configs/jtag';
 import { writeFile } from 'vs/base/node/pfs';
-import { DetectJTagIdAction } from 'vs/kendryte/vs/services/openocd/node/actions/jtagFindId';
+import { DetectJTagIdAction } from 'vs/kendryte/vs/services/openocd/electron-browser/actions/jtagFindId';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import * as split2 from 'split2';
+
+const libUsbError = /\bLIBUSB_ERROR_IO\b/;
+const TDOHigh = /\bTDO seems to be stuck high\b/;
 
 export class OpenOCDService implements IOpenOCDService {
 	_serviceBrand: any;
@@ -53,6 +57,8 @@ export class OpenOCDService implements IOpenOCDService {
 		lifecycleService.onShutdown(() => {
 			this.kill();
 		});
+
+		this.handleOutput = this.handleOutput.bind(this);
 	}
 
 	getCurrentPort() {
@@ -111,8 +117,8 @@ export class OpenOCDService implements IOpenOCDService {
 			cwd: this.nodePathService.workspaceFilePath(),
 		});
 
-		child.stdout.on('data', (data) => this.logger.log(data.toString()));
-		child.stderr.on('data', (data) => this.logger.log(data.toString()));
+		child.stdout.pipe(split2()).on('data', this.handleOutput);
+		child.stderr.pipe(split2()).on('data', this.handleOutput);
 
 		child.on('error', (e) => {
 			this.logger.error(`OpenOCD Command Failed: ${e.stack}`);
@@ -198,6 +204,16 @@ export class OpenOCDService implements IOpenOCDService {
 		const sn = action.run();
 		this.logger.info(' jtag sn = ' + sn);
 		return sn;
+	}
+
+	private handleOutput(line: string) {
+		this.logger.writeln(`[ OCD] ${line}`);
+		if (libUsbError.test(line)) {
+			this.kill();
+			this.notificationService.error('Error: LIBUSB_ERROR_IO.');
+		} else if (TDOHigh.test(line)) {
+			this.restart().catch(undefined);
+		}
 	}
 }
 

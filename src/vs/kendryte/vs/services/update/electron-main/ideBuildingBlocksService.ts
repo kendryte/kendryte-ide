@@ -161,7 +161,7 @@ class IDEBuildingBlocksService implements IIDEBuildingBlocksService {
 		if (await exists(mustExists)) {
 			return true;
 		}
-		logger.warn('bundled-versions.json know project %s, but it does not exists at %s.', projectName,mustExists);
+		logger.warn('bundled-versions.json know project %s, but it does not exists at %s.', projectName, mustExists);
 		return false;
 	}
 

@@ -37,7 +37,7 @@ class KendryteBootstrapAction extends Action {
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 	) {
 		super(KENDRYTE_ACTIONID_BOOTSTRAP);
-		if(!process.env['VSCODE_PORTABLE']){ // for safe
+		if (!process.env['VSCODE_PORTABLE']) { // for safe
 			throw new Error('----- ERROR -----\n bootstrap.js is not ok. VSCODE_PORTABLE not set.\n----- ERROR -----');
 		}
 	}

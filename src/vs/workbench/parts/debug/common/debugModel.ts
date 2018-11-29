@@ -225,7 +225,7 @@ export class Expression extends ExpressionContainer implements IExpression {
 	}
 
 	public evaluate(session: IDebugSession, stackFrame: IStackFrame, context: string): Promise<void> {
-		console.log('evaluate', !!session , !!stackFrame,context);
+		console.log('evaluate', !!session, !!stackFrame, context);
 		if (!session || (!stackFrame && context !== 'repl')) {
 			this.value = context === 'repl' ? nls.localize('startDebugFirst', "Please start a debug session to evaluate expressions") : Expression.DEFAULT_VALUE;
 			this.available = false;

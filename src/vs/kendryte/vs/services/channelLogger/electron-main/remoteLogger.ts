@@ -36,6 +36,10 @@ export class RemoteLogger implements IChannelLogger {
 		this.onOutput.fire({ level: 'write', message, args });
 	}
 
+	public writeln(message: string): void {
+		this.onOutput.fire({ level: 'writeln', message, args: [] });
+	}
+
 	public trace(message: string, ...args: any[]): void {
 		this.onOutput.fire({ level: 'trace', message, args });
 	}

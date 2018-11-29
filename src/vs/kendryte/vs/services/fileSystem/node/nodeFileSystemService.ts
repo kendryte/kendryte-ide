@@ -100,7 +100,7 @@ class NodeFileSystemService implements INodeFileSystemService {
 		return [result, errors];
 	}
 
-	public readPackageFile(packageFile:string = this.nodePathService.getPackageFile()): TPromise<[ICompileOptions, ExParseError[]]> {
+	public readPackageFile(packageFile: string = this.nodePathService.getPackageFile()): TPromise<[ICompileOptions, ExParseError[]]> {
 		return this.readJsonFile(packageFile);
 	}
 

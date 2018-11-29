@@ -9,11 +9,13 @@ import {
 	ACTION_CATEGORY_OPENOCD,
 	ACTION_ID_JTAG_GET_ID,
 	ACTION_ID_JTAG_INSTALL_DRIVER,
+	ACTION_ID_JTAG_INSTALL_DRIVER_O,
 	ACTION_ID_OPENOCD_RESTART,
 	ACTION_ID_OPENOCD_START,
 	ACTION_ID_OPENOCD_STOP,
 	ACTION_LABEL_JTAG_GET_ID,
 	ACTION_LABEL_JTAG_INSTALL_DRIVER,
+	ACTION_LABEL_JTAG_INSTALL_DRIVER_O,
 	ACTION_LABEL_OPENOCD_RESTART,
 	ACTION_LABEL_OPENOCD_START,
 	ACTION_LABEL_OPENOCD_STOP,
@@ -37,14 +39,14 @@ import {
 	ACTION_LABEL_PACKAGE_MANAGER_INSTALL_DEPENDENCY,
 	ACTION_LABEL_PACKAGE_MANAGER_OPEN_MARKET,
 } from 'vs/kendryte/vs/base/common/menu/packageManager';
-import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
+import { isWindows } from 'vs/base/common/platform';
 
 export class MyMenuSeparator {
 	public readonly separator = true;
 
 	constructor(
 		public readonly id: string,
-	) {}
+	) { }
 }
 
 export class MyMenu {
@@ -52,19 +54,34 @@ export class MyMenu {
 	constructor(
 		public readonly commandId: string,
 		public readonly title: string,
-		public readonly toggled?: ContextKeyExpr,
-	) {}
+	) { }
 }
 
 export class MySubMenu {
 	constructor(
 		public readonly title: string,
 		public readonly submenu: ReadonlyArray<MyMenuElement>,
-	) {}
+	) { }
 }
 
-export type MyMenuElement = (MyMenu | MyMenuSeparator | MySubMenu)
+export type MyMenuElement = (MyMenu | MyMenuSeparator | MySubMenu);
 export type MyMenuRegistry = ReadonlyArray<MyMenuElement>;
+
+const submenuOpenOCD = [
+	new MyMenuSeparator('openocd'),
+	new MyMenu(ACTION_ID_OPENOCD_START, ACTION_LABEL_OPENOCD_START),
+	new MyMenu(ACTION_ID_OPENOCD_STOP, ACTION_LABEL_OPENOCD_STOP),
+	new MyMenu(ACTION_ID_OPENOCD_RESTART, ACTION_LABEL_OPENOCD_RESTART),
+
+	new MyMenuSeparator('openocd_interface'),
+
+	new MyMenuSeparator('jtag'),
+	new MyMenu(ACTION_ID_JTAG_GET_ID, ACTION_LABEL_JTAG_GET_ID),
+	new MyMenu(ACTION_ID_JTAG_INSTALL_DRIVER, ACTION_LABEL_JTAG_INSTALL_DRIVER),
+];
+if (isWindows) {
+	submenuOpenOCD.push(new MyMenu(ACTION_ID_JTAG_INSTALL_DRIVER_O, ACTION_LABEL_JTAG_INSTALL_DRIVER_O));
+}
 
 export const ApplicationMenuStructure: MyMenuRegistry = [
 	new MyMenuSeparator('kendryte'),
@@ -72,19 +89,7 @@ export const ApplicationMenuStructure: MyMenuRegistry = [
 	new MyMenu(ACTION_ID_OPEN_FPIOA_EDIT, ACTION_LABEL_OPEN_FPIOA_EDIT),
 
 	new MyMenuSeparator('debug'),
-	new MySubMenu(ACTION_CATEGORY_OPENOCD, [
-
-		new MyMenuSeparator('openocd'),
-		new MyMenu(ACTION_ID_OPENOCD_START, ACTION_LABEL_OPENOCD_START),
-		new MyMenu(ACTION_ID_OPENOCD_STOP, ACTION_LABEL_OPENOCD_STOP),
-		new MyMenu(ACTION_ID_OPENOCD_RESTART, ACTION_LABEL_OPENOCD_RESTART),
-
-		new MyMenuSeparator('openocd_interface'),
-
-		new MyMenuSeparator('jtag'),
-		new MyMenu(ACTION_ID_JTAG_GET_ID, ACTION_LABEL_JTAG_GET_ID),
-		new MyMenu(ACTION_ID_JTAG_INSTALL_DRIVER, ACTION_LABEL_JTAG_INSTALL_DRIVER),
-	]),
+	new MySubMenu(ACTION_CATEGORY_OPENOCD, submenuOpenOCD),
 
 	new MyMenu(ACTION_ID_MAIX_CMAKE_CLEANUP, ACTION_LABEL_MAIX_CMAKE_CLEANUP),
 	new MyMenu(ACTION_ID_MAIX_CMAKE_CONFIGURE, ACTION_LABEL_MAIX_CMAKE_CONFIGURE),
