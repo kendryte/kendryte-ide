@@ -24,4 +24,5 @@ export interface IChannelLogger extends ILogService {
 
 	log(message: string, ...args: any[]): void;
 	write(message: string, ...args: any[]): void;
+	writeln(message: string): void;
 }

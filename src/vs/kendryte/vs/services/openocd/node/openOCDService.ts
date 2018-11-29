@@ -28,8 +28,10 @@ import { createDefaultJTagConfig } from 'vs/kendryte/vs/services/openocd/node/co
 import { writeFile } from 'vs/base/node/pfs';
 import { DetectJTagIdAction } from 'vs/kendryte/vs/services/openocd/node/actions/jtagFindId';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import * as split2 from 'split2';
 
 const libUsbError = /\bLIBUSB_ERROR_IO\b/;
+const TDOHigh = /\bTDO seems to be stuck high\b/;
 
 export class OpenOCDService implements IOpenOCDService {
 	_serviceBrand: any;
@@ -55,6 +57,8 @@ export class OpenOCDService implements IOpenOCDService {
 		lifecycleService.onShutdown(() => {
 			this.kill();
 		});
+
+		this.handleOutput = this.handleOutput.bind(this);
 	}
 
 	getCurrentPort() {
@@ -113,12 +117,8 @@ export class OpenOCDService implements IOpenOCDService {
 			cwd: this.nodePathService.workspaceFilePath(),
 		});
 
-		child.stdout.on('data', (data) => {
-			data = data.toString();
-			this.logger.write(data);
-			this.handleOutput(data);
-		});
-		child.stderr.on('data', (data) => this.logger.write(data.toString()));
+		child.stdout.pipe(split2()).on('data', this.handleOutput);
+		child.stderr.pipe(split2()).on('data', this.handleOutput);
 
 		child.on('error', (e) => {
 			this.logger.error(`OpenOCD Command Failed: ${e.stack}`);
@@ -206,10 +206,13 @@ export class OpenOCDService implements IOpenOCDService {
 		return sn;
 	}
 
-	private handleOutput(data: string) {
-		if (libUsbError.test(data)) {
+	private handleOutput(line: string) {
+		this.logger.writeln(`[ OCD] ${line}`);
+		if (libUsbError.test(line)) {
 			this.kill();
-			this.notificationService.error('LIBUSB_ERROR_IO');
+			this.notificationService.error('Error: LIBUSB_ERROR_IO.');
+		} else if (TDOHigh.test(line)) {
+			this.restart().catch(undefined);
 		}
 	}
 }

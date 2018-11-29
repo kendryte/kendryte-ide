@@ -42,6 +42,10 @@ export class ChannelLogger extends AbstractLogService implements IChannelLogger,
 		this.channel.append(format(message, ...args));
 	}
 
+	writeln(message: string): void {
+		this.channel.append(message + '\n');
+	}
+
 	trace(message: string, ...args: any[]): void {
 		if (this.getLevel() <= LogLevel.Trace) {
 			this.println('TRACE', 'color: #888', message, ...args);
