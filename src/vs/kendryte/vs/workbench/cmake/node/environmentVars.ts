@@ -50,7 +50,7 @@ export function getEnvironment(nodePathService: INodePathService) {
 
 	env[getEnvKey('PYTHONPATH')] = [
 		env.PYTHONHOME,
-		resolvePath(nodePathService.getToolchainPath(), 'share/gdb/python/gdb'),
+		resolvePath(nodePathService.getToolchainPath(), 'share/gdb/python'),
 	].join(PathListSep);
 
 	env[getEnvKey('PYTHONDONTWRITEBYTECODE')] = 'yes'; // prevent create .pyc files
