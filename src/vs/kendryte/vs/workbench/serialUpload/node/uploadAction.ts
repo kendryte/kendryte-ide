@@ -133,7 +133,11 @@ export class MaixSerialUploadAction extends Action {
 				total: 100,
 				cancellable: true,
 			},
-			(report) => loader.run(new SubProgress('', report)),
+			async (report) => {
+				await this.serialPortService.sendReboot(port, true);
+				await loader.run(new SubProgress('', report));
+				await this.serialPortService.sendReboot(port, false);
+			},
 			() => loader.abort(new Error('user cancel')),
 		);
 
