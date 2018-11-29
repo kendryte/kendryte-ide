@@ -111,8 +111,6 @@ start "zadig" /D ${JSON.stringify(dirname(zadigExe))} /WAIT ${JSON.stringify(zad
 				handle.close();
 			},
 		});
-
-		return handle;
 	}
 
 	dispose() {
@@ -129,12 +127,9 @@ export class InstallJTagOfficialDriverAction extends Action {
 
 	constructor(
 		id: string, label: string,
-		@IWindowsService private readonly windowsService: IWindowsService,
 		@INodePathService private readonly nodePathService: INodePathService,
 		@IChannelLogService private readonly channelLogService: IChannelLogService,
 		@INotificationService private readonly notificationService: INotificationService,
-		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@IStorageService private readonly storageService: IStorageService,
 	) {
 		super(id, label);
 		this.logger = channelLogService.createChannel(OPENOCD_CHANNEL_TITLE, OPENOCD_CHANNEL, true);

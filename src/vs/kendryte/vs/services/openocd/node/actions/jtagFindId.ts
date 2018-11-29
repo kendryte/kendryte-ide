@@ -74,6 +74,8 @@ export class DetectJTagIdAction extends Action {
 			return this.nodePathService.getPackagesPath('openocd/JLink.exe');
 		} else if (isLinux) {
 			return this.nodePathService.getPackagesPath('openocd/JLinkExe');
+		} else {
+			return this.nodePathService.getPackagesPath('openocd/JLinkExe');
 		}
 	}
 
