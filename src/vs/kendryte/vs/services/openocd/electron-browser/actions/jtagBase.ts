@@ -11,7 +11,7 @@ import { IWindowsService } from 'vs/platform/windows/common/windows';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { localize } from 'vs/nls';
-import { OpenUrlAction } from 'vs/kendryte/vs/base/electron-browser/openUrlAction';
+import { OpenUrlAction } from 'vs/kendryte/vs/platform/open/common/openUrlAction';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { dirname, normalize } from 'vs/base/common/paths';

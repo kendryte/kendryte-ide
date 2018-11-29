@@ -17,16 +17,16 @@ import {
 	CONFIG_KEY_OPENOCD_PORT,
 	CONFIG_KEY_OPENOCD_USE,
 } from 'vs/kendryte/vs/base/common/configKeys';
-import { ILifecycleService } from 'vs/platform/lifecycle/electron-main/lifecycleMain';
+import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { OPENOCD_CHANNEL, OPENOCD_CHANNEL_TITLE } from 'vs/kendryte/vs/services/openocd/common/channel';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { createCustomConfig } from 'vs/kendryte/vs/services/openocd/node/configs/custom';
-import { createDefaultFtdiConfig } from 'vs/kendryte/vs/services/openocd/node/configs/ftdi';
-import { ConfigOpenOCDTypes } from 'vs/kendryte/vs/services/openocd/node/configs/openocd';
-import { createDefaultJTagConfig } from 'vs/kendryte/vs/services/openocd/node/configs/jtag';
+import { createCustomConfig } from 'vs/kendryte/vs/services/openocd/common/configs/custom';
+import { createDefaultFtdiConfig } from 'vs/kendryte/vs/services/openocd/common/configs/ftdi';
+import { ConfigOpenOCDTypes } from 'vs/kendryte/vs/services/openocd/common/configs/openocd';
+import { createDefaultJTagConfig } from 'vs/kendryte/vs/services/openocd/common/configs/jtag';
 import { writeFile } from 'vs/base/node/pfs';
-import { DetectJTagIdAction } from 'vs/kendryte/vs/services/openocd/node/actions/jtagFindId';
+import { DetectJTagIdAction } from 'vs/kendryte/vs/services/openocd/electron-browser/actions/jtagFindId';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import * as split2 from 'split2';
 

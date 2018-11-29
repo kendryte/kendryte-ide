@@ -12,7 +12,7 @@ import { DeferredPromise } from 'vs/base/test/common/utils';
 import { isLinux, isWindows } from 'vs/base/common/platform';
 import { RawCopyAction } from 'vs/kendryte/vs/base/electron-browser/rawClipboardAction';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { OpenUrlAction } from 'vs/kendryte/vs/base/electron-browser/openUrlAction';
+import { OpenUrlAction } from 'vs/kendryte/vs/platform/open/common/openUrlAction';
 import { localize } from 'vs/nls';
 import { URL_INSTALL_JLINK_DRIVER } from 'vs/kendryte/vs/base/common/urlList';
 
@@ -100,15 +100,15 @@ export class DetectJTagIdAction extends Action {
 
 		if (sn.value()) {
 			this.notificationService.notify({
-					severity: Severity.Info,
-					message: `Found JTag device: ${sn.value()}`,
-					source: 'JLink',
-					actions: {
-						primary: [
-							new RawCopyAction(sn.value()),
-						],
-					},
+				severity: Severity.Info,
+				message: `Found JTag device: ${sn.value()}`,
+				source: 'JLink',
+				actions: {
+					primary: [
+						new RawCopyAction(sn.value()),
+					],
 				},
+			},
 			);
 			const ret = parseInt(sn.value());
 			if (!isNaN(ret)) {

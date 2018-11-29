@@ -13,8 +13,8 @@ export const CONFIG_CATEGORY = {
 
 //
 export const CONFIG_KEY_BUILD_VERBOSE = 'cmake.build.verbose';
-export const CONFIG_LABEL_BUILD_VERBOSE = localize('cmake.build.verbose', 'Verbose build');
-export const CONFIG_DESCRIPTION_BUILD_VERBOSE = localize('cmake.build.verbose', 'Verbose log when run build');
+export const CONFIG_LABEL_BUILD_VERBOSE = localize('cmake.build.verbose.lbl', 'Verbose build');
+export const CONFIG_DESCRIPTION_BUILD_VERBOSE = localize('cmake.build.verbose.desc', 'Verbose log when run build');
 
 //
 

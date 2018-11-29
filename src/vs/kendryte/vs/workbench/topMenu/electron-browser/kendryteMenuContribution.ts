@@ -17,7 +17,6 @@ function createMenu(s: MyMenuRegistry, parent: MenuId) {
 				command: {
 					id: item.commandId,
 					title: item.title,
-					toggled: item.toggled,
 				},
 			});
 		} else if (item instanceof MySubMenu) {

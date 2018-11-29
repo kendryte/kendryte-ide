@@ -37,8 +37,8 @@ ${options.serialNumber > 0 ? '' : '# '}jlink serial ${options.serialNumber}
 transport select jtag
 adapter_khz ${options.speed}
 gdb_port ${port}
-tcl_port ${port+1}
-telnet_port ${port+2}
+tcl_port ${port + 1}
+telnet_port ${port + 2}
 set _CHIPNAME riscv
 jtag newtap $_CHIPNAME cpu -irlen 5 -expected-id 0x04e4796b
 set _TARGETNAME $_CHIPNAME.cpu

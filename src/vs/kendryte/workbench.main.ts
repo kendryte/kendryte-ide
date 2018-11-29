@@ -50,6 +50,6 @@ import 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeContribution';
 import 'vs/kendryte/vs/workbench/packageManager/browser/actionsContribution';
 import 'vs/kendryte/vs/workbench/packageManager/electron-browser/mainPanelContribution';
 // OpenOCD
-import 'vs/kendryte/vs/services/openocd/node/debugConfigContribution';
-import 'vs/kendryte/vs/services/openocd/node/actionConfigContribution';
-import 'vs/kendryte/vs/services/openocd/node/openOCDService';
+import 'vs/kendryte/vs/services/openocd/common/debugConfigContribution';
+import 'vs/kendryte/vs/services/openocd/electron-browser/actionConfigContribution';
+import 'vs/kendryte/vs/services/openocd/electron-browser/openOCDService';
