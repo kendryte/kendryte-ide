@@ -32,7 +32,6 @@ import 'vs/kendryte/vs/workbench/fpioaConfig/node/generateorContribution';
 import 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaContribution';
 import 'vs/kendryte/vs/workbench/fpioaConfig/common/packagings/includeAllContribution';
 // Serial Devices
-import 'vs/kendryte/vs/workbench/serialPort/node/configContribution';
 import 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
 import 'vs/kendryte/vs/workbench/serialPort/node/reloadAction';
 // Serial Upload
@@ -50,6 +49,5 @@ import 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeContribution';
 import 'vs/kendryte/vs/workbench/packageManager/browser/actionsContribution';
 import 'vs/kendryte/vs/workbench/packageManager/electron-browser/mainPanelContribution';
 // OpenOCD
-import 'vs/kendryte/vs/services/openocd/common/debugConfigContribution';
 import 'vs/kendryte/vs/services/openocd/electron-browser/actionConfigContribution';
 import 'vs/kendryte/vs/services/openocd/electron-browser/openOCDService';

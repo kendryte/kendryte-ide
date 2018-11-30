@@ -5,6 +5,12 @@ import { _getChannelDecorators } from 'vs/kendryte/vs/platform/instantiation/nod
 import { IWindowService } from 'vs/platform/windows/common/windows';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { KENDRYTE_ACTIONID_BOOTSTRAP } from 'vs/kendryte/vs/platform/vscode/common/actionId';
+import { kendryteConfigRegisterSerialPort } from 'vs/kendryte/vs/workbench/serialPort/node/configContribution';
+import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
+import { kendryteConfigRegisterFTDI } from 'vs/kendryte/vs/platform/openocd/common/ftdi';
+import { kendryteConfigRegisterOpenOCD } from 'vs/kendryte/vs/platform/openocd/common/openocd';
+import { kendryteConfigRegisterJTag } from 'vs/kendryte/vs/platform/openocd/common/jtag';
+import { kendryteConfigRegisterOCDCustom } from 'vs/kendryte/vs/platform/openocd/common/custom';
 
 export function _kendrite_workbench_hookInstantiationService(
 	serviceCollection: ServiceCollection,
@@ -25,6 +31,20 @@ export function _kendrite_workbench_hookInstantiationService(
 				accessor.get<IWindowService>(IWindowService).openDevTools({
 					mode: 'detach',
 				});
+			});
+		});
+
+		instantiationService.invokeFunction((accessor) => {
+			accessor.get<ILifecycleService>(ILifecycleService).when(LifecyclePhase.Running).then(() => {
+				kendryteConfigRegisterSerialPort();
+
+				kendryteConfigRegisterOpenOCD();
+				kendryteConfigRegisterJTag();
+				kendryteConfigRegisterFTDI();
+				kendryteConfigRegisterOCDCustom();
+			}).catch((e) => {
+				console.error(e);
+				alert('Error during startup: ' + e.message);
 			});
 		});
 	});

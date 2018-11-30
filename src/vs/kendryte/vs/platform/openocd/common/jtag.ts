@@ -1,4 +1,4 @@
-import { CONFIG_CATEGORY, CONFIG_DESCRIPTION_JTAG_ID, CONFIG_DESCRIPTION_JTAG_SPEED, CONFIG_KEY_JTAG_ID, CONFIG_KEY_JTAG_SPEED, } from 'vs/kendryte/vs/base/common/configKeys';
+import { CONFIG_CATEGORY, CONFIG_DESCRIPTION_JTAG_ID, CONFIG_DESCRIPTION_JTAG_SPEED, CONFIG_KEY_JTAG_ID, CONFIG_KEY_JTAG_SPEED } from 'vs/kendryte/vs/base/common/configKeys';
 import { registerConfiguration } from 'vs/kendryte/vs/platform/config/common/extendWithCategory';
 
 export interface JTagConfigExtra {
@@ -11,24 +11,26 @@ const defaultValue: JTagConfigExtra = {
 	serialNumber: 0,
 };
 
-registerConfiguration({
-	id: 'jtag',
-	category: CONFIG_CATEGORY.DEBUG_JTAG.id,
-	properties: {
-		[CONFIG_KEY_JTAG_ID]: {
-			description: CONFIG_DESCRIPTION_JTAG_ID,
-			type: 'number',
-			default: defaultValue.serialNumber,
-			minimum: 0,
+export function kendryteConfigRegisterJTag() {
+	registerConfiguration({
+		id: 'jtag',
+		category: CONFIG_CATEGORY.DEBUG_JTAG.id,
+		properties: {
+			[CONFIG_KEY_JTAG_ID]: {
+				description: CONFIG_DESCRIPTION_JTAG_ID,
+				type: 'number',
+				default: defaultValue.serialNumber,
+				minimum: 0,
+			},
+			[CONFIG_KEY_JTAG_SPEED]: {
+				description: CONFIG_DESCRIPTION_JTAG_SPEED,
+				type: 'number',
+				default: defaultValue.speed,
+				minimum: 1,
+			},
 		},
-		[CONFIG_KEY_JTAG_SPEED]: {
-			description: CONFIG_DESCRIPTION_JTAG_SPEED,
-			type: 'number',
-			default: defaultValue.speed,
-			minimum: 1,
-		},
-	},
-});
+	});
+}
 
 export async function createDefaultJTagConfig(port: number, options: JTagConfigExtra) {
 	return `# debug adapter

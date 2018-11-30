@@ -25,41 +25,43 @@ const defaultValue: FtdiConfigExtra = {
 	extra: '',
 };
 
-registerConfiguration({
-	id: 'ftdi',
-	category: CONFIG_CATEGORY.DEBUG_FTDI.id,
-	properties: {
-		[CONFIG_KEY_FTDI_SPEED]: {
-			description: CONFIG_DESCRIPTION_FTDI_SPEED,
-			type: 'string',
-			default: defaultValue.speed,
+export function kendryteConfigRegisterFTDI() {
+	registerConfiguration({
+		id: 'ftdi',
+		category: CONFIG_CATEGORY.DEBUG_FTDI.id,
+		properties: {
+			[CONFIG_KEY_FTDI_SPEED]: {
+				description: CONFIG_DESCRIPTION_FTDI_SPEED,
+				type: 'string',
+				default: defaultValue.speed,
+			},
+			[CONFIG_KEY_FTDI_LAYOUT]: {
+				description: CONFIG_DESCRIPTION_FTDI_LAYOUT,
+				type: 'array',
+				items: [
+					{
+						'type': 'string',
+					}, {
+						'type': 'string',
+					},
+				],
+				minItems: 2,
+				maxItems: 2,
+				default: defaultValue.layoutInit,
+			},
+			[CONFIG_KEY_FTDI_TDO_FE]: {
+				description: CONFIG_DESCRIPTION_FTDI_TDO_FE,
+				type: 'string',
+				default: defaultValue.tdoSampleFallingEdge,
+			},
+			[CONFIG_KEY_FTDI_EXTRA]: {
+				description: CONFIG_DESCRIPTION_FTDI_EXTRA,
+				type: 'string',
+				default: defaultValue.extra,
+			},
 		},
-		[CONFIG_KEY_FTDI_LAYOUT]: {
-			description: CONFIG_DESCRIPTION_FTDI_LAYOUT,
-			type: 'array',
-			items: [
-				{
-					'type': 'string',
-				}, {
-					'type': 'string',
-				},
-			],
-			minItems: 2,
-			maxItems: 2,
-			default: defaultValue.layoutInit,
-		},
-		[CONFIG_KEY_FTDI_TDO_FE]: {
-			description: CONFIG_DESCRIPTION_FTDI_TDO_FE,
-			type: 'string',
-			default: defaultValue.tdoSampleFallingEdge,
-		},
-		[CONFIG_KEY_FTDI_EXTRA]: {
-			description: CONFIG_DESCRIPTION_FTDI_EXTRA,
-			type: 'string',
-			default: defaultValue.extra,
-		},
-	},
-});
+	});
+}
 
 export function createDefaultFtdiConfig(port: number, config: FtdiConfigExtra) {
 	return `
@@ -83,5 +85,4 @@ init
 halt
 `.trim() + '\n';
 }
-
 

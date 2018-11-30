@@ -13,6 +13,7 @@ import { SerialPortBaseBinding } from 'vs/kendryte/vs/workbench/serialPort/node/
 import { ninvoke, timeout } from 'vs/base/common/async';
 import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
 import { IDisposable } from 'vs/base/common/lifecycle';
+import { kendryteConfigRegisterSerialPort } from 'vs/kendryte/vs/workbench/serialPort/node/configContribution';
 
 function testSame(a: SerialPortItem, b: SerialPortItem) {
 	return a.comName === b.comName && a.locationId === b.locationId && a.manufacturer === b.manufacturer && a.pnpId === b.pnpId && a.productId === b.productId && a.serialNumber === b.serialNumber && a.vendorId === b.vendorId;
