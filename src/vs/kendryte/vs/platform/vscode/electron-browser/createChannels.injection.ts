@@ -36,15 +36,17 @@ export function _kendrite_workbench_hookInstantiationService(
 
 		instantiationService.invokeFunction((accessor) => {
 			accessor.get<ILifecycleService>(ILifecycleService).when(LifecyclePhase.Running).then(() => {
-				kendryteConfigRegisterSerialPort();
+				try {
+					kendryteConfigRegisterSerialPort();
 
-				kendryteConfigRegisterOpenOCD();
-				kendryteConfigRegisterJTag();
-				kendryteConfigRegisterFTDI();
-				kendryteConfigRegisterOCDCustom();
-			}).catch((e) => {
-				console.error(e);
-				alert('Error during startup: ' + e.message);
+					kendryteConfigRegisterOpenOCD();
+					kendryteConfigRegisterJTag();
+					kendryteConfigRegisterFTDI();
+					kendryteConfigRegisterOCDCustom();
+				} catch (e) {
+					console.error(e);
+					alert('Error during startup: ' + e.message);
+				}
 			});
 		});
 	});

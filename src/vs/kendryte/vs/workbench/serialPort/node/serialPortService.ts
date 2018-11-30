@@ -13,7 +13,6 @@ import { SerialPortBaseBinding } from 'vs/kendryte/vs/workbench/serialPort/node/
 import { ninvoke, timeout } from 'vs/base/common/async';
 import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
 import { IDisposable } from 'vs/base/common/lifecycle';
-import { kendryteConfigRegisterSerialPort } from 'vs/kendryte/vs/workbench/serialPort/node/configContribution';
 
 function testSame(a: SerialPortItem, b: SerialPortItem) {
 	return a.comName === b.comName && a.locationId === b.locationId && a.manufacturer === b.manufacturer && a.pnpId === b.pnpId && a.productId === b.productId && a.serialNumber === b.serialNumber && a.vendorId === b.vendorId;
@@ -126,23 +125,31 @@ class SerialPortService implements ISerialPortService {
 
 		// 1 -> all false
 		await set({ dtr: false, rts: false });
-		if (cancel.isCancellationRequested) return;
+		if (cancel.isCancellationRequested) {
+			return;
+		}
 		await timeout(10, cancel);
 
 		// 2 -> press down reset
 		await set({ dtr: true });
-		if (cancel.isCancellationRequested) return;
+		if (cancel.isCancellationRequested) {
+			return;
+		}
 		await timeout(10, cancel);
 
 		// 3 -> press down boot
 		await set({ rts: true });
-		if (cancel.isCancellationRequested) return;
+		if (cancel.isCancellationRequested) {
+			return;
+		}
 		await timeout(10, cancel);
 
 		if (isp) {
 			// 4 -> release reset
 			await set({ dtr: false });
-			if (cancel.isCancellationRequested) return;
+			if (cancel.isCancellationRequested) {
+				return;
+			}
 			await timeout(10, cancel);
 		}
 

@@ -5,6 +5,4 @@ node_modules
 !.idea/modules.xml
 !.idea/vcs.xml
 
-commands/test-script.ts
-
 *.js
