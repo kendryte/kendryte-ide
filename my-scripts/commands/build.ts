@@ -84,7 +84,7 @@ runMain(async () => {
 	
 	await installExtensionDevelopDeps(output, ARCH_RELEASE_ROOT);
 	output.success('Bundle extensions dependencies resolved');
-	await prepareLinkForProd(output);
+	await prepareLinkForProd(output, wantDirPath);
 	output.success('Bundle extensions link created.');
 	await installExtensionProdDeps(output, wantDirPath);
 	output.success('Bundle extensions production dependencies resolved');
