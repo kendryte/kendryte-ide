@@ -39,11 +39,14 @@ export const CONFIG_DESCRIPTION_JTAG_SPEED = localize('debug.jtag.speed.desc', '
 export const CONFIG_KEY_FTDI_SPEED = 'debug.ftdi.speed';
 export const CONFIG_DESCRIPTION_FTDI_SPEED = localize('debug.ftdi.speed.desc', 'khz');
 
+export const CONFIG_KEY_FTDI_VIDPID = 'debug.ftdi.vidpid';
+export const CONFIG_DESCRIPTION_FTDI_VIDPID = localize('debug.ftdi.vidpid.desc', 'USB vid and pid value (HEX string, eg: 1a2b)');
+
 export const CONFIG_KEY_FTDI_LAYOUT = 'debug.ftdi.layout';
-export const CONFIG_DESCRIPTION_FTDI_LAYOUT = localize('debug.ftdi.layout.desc', 'ftdi_layout_init');
+export const CONFIG_DESCRIPTION_FTDI_LAYOUT = localize('debug.ftdi.layout.desc', 'layout init value (HEX string, eg: 1a2b)');
 
 export const CONFIG_KEY_FTDI_TDO_FE = 'debug.ftdi.tdo-fe';
-export const CONFIG_DESCRIPTION_FTDI_TDO_FE = localize('debug.ftdi.tdo-fe.desc', 'ftdi_tdo_sample_edge');
+export const CONFIG_DESCRIPTION_FTDI_TDO_FE = localize('debug.ftdi.tdo-fe.desc', 'ftdi_tdo_sample_edge value');
 
 export const CONFIG_KEY_FTDI_EXTRA = 'debug.ftdi.extra';
 export const CONFIG_DESCRIPTION_FTDI_EXTRA = localize('debug.ftdi.extra.desc', 'extra config sections');

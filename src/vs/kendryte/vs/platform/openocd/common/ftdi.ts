@@ -5,22 +5,26 @@ import {
 	CONFIG_DESCRIPTION_FTDI_LAYOUT,
 	CONFIG_DESCRIPTION_FTDI_SPEED,
 	CONFIG_DESCRIPTION_FTDI_TDO_FE,
+	CONFIG_DESCRIPTION_FTDI_VIDPID,
 	CONFIG_KEY_FTDI_EXTRA,
 	CONFIG_KEY_FTDI_LAYOUT,
 	CONFIG_KEY_FTDI_SPEED,
 	CONFIG_KEY_FTDI_TDO_FE,
+	CONFIG_KEY_FTDI_VIDPID,
 } from 'vs/kendryte/vs/base/common/configKeys';
 
 export interface FtdiConfigExtra {
 	speed: number;
 	layoutInit: [string, string];
+	vidPid: [string, string];
 	tdoSampleFallingEdge: boolean;
 	extra: string;
 }
 
 const defaultValue: FtdiConfigExtra = {
 	speed: 25000,
-	layoutInit: ['0x00e8', '0x00eb'],
+	layoutInit: ['00e8', '00eb'],
+	vidPid: ['0403', '6014'],
 	tdoSampleFallingEdge: true,
 	extra: '',
 };
@@ -34,6 +38,20 @@ export function kendryteConfigRegisterFTDI() {
 				description: CONFIG_DESCRIPTION_FTDI_SPEED,
 				type: 'string',
 				default: defaultValue.speed,
+			},
+			[CONFIG_KEY_FTDI_VIDPID]: {
+				description: CONFIG_DESCRIPTION_FTDI_VIDPID,
+				type: 'array',
+				items: [
+					{
+						'type': 'string',
+					}, {
+						'type': 'string',
+					},
+				],
+				minItems: 2,
+				maxItems: 2,
+				default: defaultValue.layoutInit,
 			},
 			[CONFIG_KEY_FTDI_LAYOUT]: {
 				description: CONFIG_DESCRIPTION_FTDI_LAYOUT,
@@ -67,8 +85,8 @@ export function createDefaultFtdiConfig(port: number, config: FtdiConfigExtra) {
 	return `
 interface ftdi
 # for canaan's ftdi
-ftdi_vid_pid 0x0403 0x6014
-ftdi_layout_init ${config.layoutInit[0]} ${config.layoutInit[1]}
+ftdi_vid_pid 0x${config.vidPid[0]} 0x${config.vidPid[1]}
+ftdi_layout_init 0x${config.layoutInit[0]} 0x${config.layoutInit[1]}
 ${config.extra}
 
 transport select jtag

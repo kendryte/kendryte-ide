@@ -34,4 +34,4 @@ node_modules
 .idea/typescript-compiler.xml
 /data
 *.log
-
+.sass-cache

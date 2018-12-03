@@ -22,18 +22,21 @@ import { CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/c
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import {
+	defaultConfig,
 	ILocalOptions,
+	inputCharset,
 	ISerialPortStatus,
+	outputCharset,
 	SerialLocalStorageSavedData,
-	serialPortCharset,
 	serialPortEOLArr,
+	serialPortLFArr,
 	serialPortYesNoSelection,
 } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { renderOcticons } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 import * as SerialPort from 'serialport';
 import { standardBaudRate, standardDataBits, standardParity, standardStopBits } from 'vs/kendryte/vs/workbench/config/common/baudrate';
-import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
+import { IStorageService } from 'vs/platform/storage/common/storage';
 import { format } from 'util';
 
 interface ButtonList {
@@ -46,19 +49,26 @@ interface ButtonList {
 	dataBits: SelectBox;
 	stopBits: SelectBox;
 
-	charset: SelectBox;
+	outputCharset: SelectBox;
+	inputCharset: SelectBox;
 	lineEnding: SelectBox;
 	escape: SelectBox;
 	echo: SelectBox;
+
+	translateLineFeed: SelectBox;
+	hexLineFeed: SelectBox;
 
 	baudRateValue: number;
 	dataBitsValue: number;
 	parityValue: string;
 	stopBitsValue: number;
-	charsetValue: ILocalOptions['charset'];
+	outputCharsetValue: ILocalOptions['outputCharset'];
+	inputCharsetValue: ILocalOptions['inputCharset'];
 	lineEndingValue: ILocalOptions['lineEnding'];
 	escapeValue: ILocalOptions['escape'];
 	echoValue: ILocalOptions['echo'];
+	translateLineFeedValue: ILocalOptions['translateLineFeed'];
+	hexLineFeedValue: ILocalOptions['hexLineFeed'];
 }
 
 class SerialMonitorPanel extends Panel {
@@ -75,7 +85,7 @@ class SerialMonitorPanel extends Panel {
 
 	private controlList: ButtonList = {} as any;
 	private title: HTMLSpanElement;
-	private xterm: OutputXTerminal;
+	private /*readonly*/ xterm: OutputXTerminal;
 	private inputController: SerialReplInput;
 	private currentSelectedItem: ISerialPortStatus;
 	private context: SerialScope;
@@ -87,7 +97,7 @@ class SerialMonitorPanel extends Panel {
 		@ISerialPortService private serialPortService: ISerialPortService,
 		@INotificationService private notifyService: INotificationService,
 		@ICommandService private commandService: ICommandService,
-		@IStorageService private storageService: IStorageService,
+		@IStorageService storageService: IStorageService,
 		@IConfigurationService private configurationService: IConfigurationService,
 		@IContextViewService protected contextViewService: IContextViewService,
 	) {
@@ -172,6 +182,11 @@ class SerialMonitorPanel extends Panel {
 		).enabled = true;
 
 		/// options bar
+		const Title = (text: string) => {
+			const o = $('span.title-text');
+			o.innerText = text;
+			return o;
+		};
 		const TextBox = (text: string, help?: string) => {
 			const o = $('span');
 			o.innerText = text;
@@ -180,25 +195,40 @@ class SerialMonitorPanel extends Panel {
 			}
 			return o;
 		};
-		append($openOptions, TextBox('Baud Rate:'));
-		const br = parseInt(this.configurationService.getValue(CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE)) || 115200;
-		this.controlList.baudRate = this.createSelect(6, $openOptions, standardBaudRate, br, 'baudRateValue', true);
-		append($openOptions, TextBox('Data Bits:'));
-		this.controlList.dataBits = this.createSelect(6, $openOptions, standardDataBits, null, 'dataBitsValue', true);
-		append($openOptions, TextBox('Parity:'));
-		this.controlList.parity = this.createSelect(6, $openOptions, standardParity, null, 'parityValue', true);
-		append($openOptions, TextBox('Stop Bits:'));
-		this.controlList.stopBits = this.createSelect(6, $openOptions, standardStopBits, null, 'stopBitsValue', true);
 
-		append($openOptions, TextBox('| Charset:', 'input/output charset'));
-		this.controlList.charset = this.createSelect(4, $openOptions, serialPortCharset, 'binary', 'charsetValue', false);
-		append($openOptions, TextBox('Echo:'));
-		this.controlList.echo = this.createSelect(4, $openOptions, serialPortYesNoSelection, false, 'echoValue', false);
-		append($openOptions, TextBox('Line Ending:', 'Terminal mode cannot use No line ending (will fallback to \\n\\r)'));
-		this.controlList.lineEnding = this.createSelect(4, $openOptions, serialPortEOLArr, 'No', 'lineEndingValue', false);
+		const $port = append($openOptions, $('div.line.port'));
+		append($port, Title('Device - '));
 
-		append($openOptions, TextBox('| Escape:', 'Only affect RAW mode'));
-		this.controlList.escape = this.createSelect(4, $openOptions, serialPortYesNoSelection, false, 'escapeValue', false);
+		append($port, TextBox('Baud Rate:'));
+		this.controlList.baudRate = this.createSelect(6, $port, standardBaudRate, defaultConfig.baudRate, 'baudRateValue', true);
+		append($port, TextBox('Data Bits:'));
+		this.controlList.dataBits = this.createSelect(6, $port, standardDataBits, defaultConfig.dataBits, 'dataBitsValue', true);
+		append($port, TextBox('Parity:'));
+		this.controlList.parity = this.createSelect(6, $port, standardParity, defaultConfig.parity, 'parityValue', true);
+		append($port, TextBox('Stop Bits:'));
+		this.controlList.stopBits = this.createSelect(6, $port, standardStopBits, defaultConfig.stopBits, 'stopBitsValue', true);
+
+		const $input = append($openOptions, $('div.line.input'));
+		append($input, Title('I/O - '));
+
+		append($input, TextBox('Charset:', 'Input charset'));
+		this.controlList.inputCharset = this.createSelect(6, $input, inputCharset, defaultConfig.inputCharset, 'inputCharsetValue', false);
+		append($input, TextBox('Echo:', 'Print back what you type (only raw mode)'));
+		this.controlList.echo = this.createSelect(4, $input, serialPortYesNoSelection, defaultConfig.echo, 'echoValue', false);
+		append($input, TextBox('Append:', 'Binary mode: append after your input. Terminal mode: translate Enter key ("no" will be \\n).'));
+		this.controlList.lineEnding = this.createSelect(4, $input, serialPortEOLArr, defaultConfig.lineEnding, 'lineEndingValue', false);
+		append($input, TextBox('Escape:', 'Do C escape before send. Only affect RAW mode'));
+		this.controlList.escape = this.createSelect(4, $input, serialPortYesNoSelection, defaultConfig.escape, 'escapeValue', false);
+
+		const $terminal = append($openOptions, $('div.line.terminal'));
+		append($terminal, Title('Term - '));
+
+		append($terminal, TextBox('Charset:', 'Display charset'));
+		this.controlList.outputCharset = this.createSelect(6, $terminal, outputCharset, defaultConfig.outputCharset, 'outputCharsetValue', false);
+		append($terminal, TextBox('LineFeed:', 'Translate this string into \\n\\r'));
+		this.controlList.translateLineFeed = this.createSelect(4, $terminal, serialPortLFArr, defaultConfig.translateLineFeed, 'translateLineFeedValue', false);
+		append($terminal, TextBox('HexNL:', 'When hex mode, append \\n after 0x0d'));
+		this.controlList.hexLineFeed = this.createSelect(4, $terminal, serialPortYesNoSelection, defaultConfig.hexLineFeed, 'hexLineFeedValue', false);
 
 		// xterm/input container
 		const $repl = append($right, $('.repl'));
@@ -312,7 +342,8 @@ class SerialMonitorPanel extends Panel {
 
 		if (!item.openOptions) {
 			try {
-				const optStr = this.storageService.get('serialport-options::' + portItem.comName, StorageScope.WORKSPACE, '{}') || this.storageService.get('serialport-options::' + portItem.comName, StorageScope.GLOBAL, '{}');
+				const optStr = localStorage.getItem('serialport-options::' + portItem.comName) || '{}'
+				               || localStorage.getItem('serialport-options::' + portItem.comName) || '{}';
 				const opt: SerialLocalStorageSavedData = JSON.parse(optStr);
 				item.openOptions = opt.port || {};
 				item.localOptions = opt.local || {};
@@ -326,15 +357,19 @@ class SerialMonitorPanel extends Panel {
 
 		const _select1 = (e) => e === -1 ? 0 : e + 1; // for [default]
 		const _select0 = (e) => e === -1 ? 0 : e; // NO [default]
-		this.controlList.baudRate.select(_select1(standardBaudRate.indexOf(this.controlList.baudRateValue = item.openOptions.baudRate)));
-		this.controlList.parity.select(_select1(standardParity.indexOf(this.controlList.parityValue = item.openOptions.parity)));
-		this.controlList.dataBits.select(_select1(standardDataBits.indexOf(this.controlList.dataBitsValue = item.openOptions.dataBits)));
-		this.controlList.stopBits.select(_select1(standardStopBits.indexOf(this.controlList.stopBitsValue = item.openOptions.stopBits)));
+		this.controlList.baudRate.select(_select1(standardBaudRate.indexOf(this.controlList.baudRateValue = item.openOptions.baudRate || defaultConfig.baudRate)));
+		this.controlList.parity.select(_select1(standardParity.indexOf(this.controlList.parityValue = item.openOptions.parity || defaultConfig.parity)));
+		this.controlList.dataBits.select(_select1(standardDataBits.indexOf(this.controlList.dataBitsValue = item.openOptions.dataBits || defaultConfig.dataBits)));
+		this.controlList.stopBits.select(_select1(standardStopBits.indexOf(this.controlList.stopBitsValue = item.openOptions.stopBits || defaultConfig.stopBits)));
 
-		this.controlList.lineEnding.select(_select0(serialPortEOLArr.indexOf(this.controlList.lineEndingValue = item.localOptions.lineEnding)));
-		this.controlList.charset.select(_select0(serialPortCharset.indexOf(this.controlList.charsetValue = item.localOptions.charset)));
-		this.controlList.escape.select(_select0(serialPortYesNoSelection.indexOf(this.controlList.escapeValue = item.localOptions.escape)));
-		this.controlList.echo.select(_select0(serialPortYesNoSelection.indexOf(this.controlList.echoValue = item.localOptions.echo)));
+		this.controlList.lineEnding.select(_select0(serialPortEOLArr.indexOf(this.controlList.lineEndingValue = item.localOptions.lineEnding || defaultConfig.lineEnding)));
+		this.controlList.inputCharset.select(_select0(inputCharset.indexOf(this.controlList.inputCharsetValue = item.localOptions.inputCharset || defaultConfig.inputCharset)));
+		this.controlList.outputCharset.select(_select0(outputCharset.indexOf(this.controlList.outputCharsetValue = item.localOptions.outputCharset || defaultConfig.outputCharset)));
+		this.controlList.escape.select(_select0(serialPortYesNoSelection.indexOf(this.controlList.escapeValue = item.localOptions.escape || defaultConfig.escape)));
+		this.controlList.echo.select(_select0(serialPortYesNoSelection.indexOf(this.controlList.echoValue = item.localOptions.echo || defaultConfig.echo)));
+
+		this.controlList.translateLineFeed.select(_select0(serialPortLFArr.indexOf(this.controlList.translateLineFeedValue = item.localOptions.translateLineFeed || defaultConfig.translateLineFeed)));
+		this.controlList.hexLineFeed.select(_select0(serialPortYesNoSelection.indexOf(this.controlList.hexLineFeedValue = item.localOptions.hexLineFeed || defaultConfig.hexLineFeed)));
 
 		this.title.innerHTML = portItem.comName;
 		if (item.hasOpen) {
@@ -351,12 +386,25 @@ class SerialMonitorPanel extends Panel {
 
 		this.xterm.setOptions(item.localOptions);
 		this.xterm.handleSerialIncoming(item.instance);
-		if (item.instance && item.openMode === 'raw') {
-			this.context.lineInputStream.doPipe(item.instance, item.localOptions, this.xterm);
-			this.xterm.handleUserType(null, false);
+		if (item.instance) {
+			if (item.openMode === 'raw') {
+				console.log('RAW');
+				this.context.lineInputStream.setOptions(item.localOptions);
+				this.context.lineInputStream.pipe(item.instance);
+				this.context.typeInputStream.unpipe();
+				this.xterm.handleUserType(false);
+			} else {
+				console.log('TERM');
+				this.context.typeInputStream.setOptions(item.localOptions);
+				this.context.typeInputStream.pipe(item.instance);
+				this.context.lineInputStream.unpipe();
+				this.xterm.handleUserType(true);
+			}
 		} else {
+			console.log('DISALBE');
 			this.context.lineInputStream.unpipe();
-			this.xterm.handleUserType(item.instance, item.localOptions.echo);
+			this.context.typeInputStream.unpipe();
+			this.xterm.handleUserType(false);
 		}
 		if (!item.instance) {
 			this.xterm.clearScreen();
@@ -379,7 +427,7 @@ class SerialMonitorPanel extends Panel {
 	private _getCurrentOpt(): SerialLocalStorageSavedData {
 		const options: Partial<SerialPort.OpenOptions> = {};
 		if (this.controlList.baudRateValue !== null && this.controlList.baudRateValue !== undefined) {
-			options.baudRate = this.controlList.baudRateValue;
+			options.baudRate = parseInt(this.controlList.baudRateValue as any) || undefined;
 		}
 		if (this.controlList.dataBitsValue !== null && this.controlList.dataBitsValue !== undefined) {
 			options.dataBits = this.controlList.dataBitsValue as any;
@@ -393,9 +441,12 @@ class SerialMonitorPanel extends Panel {
 
 		const localOptions: ILocalOptions = {
 			lineEnding: this.controlList.lineEndingValue,
-			charset: this.controlList.charsetValue,
+			inputCharset: this.controlList.inputCharsetValue,
+			outputCharset: this.controlList.outputCharsetValue,
 			escape: this.controlList.escapeValue,
 			echo: this.controlList.echoValue,
+			translateLineFeed: this.controlList.translateLineFeedValue,
+			hexLineFeed: this.controlList.hexLineFeedValue,
 		};
 
 		return {
@@ -406,9 +457,8 @@ class SerialMonitorPanel extends Panel {
 
 	private _store(name: string, opt: SerialLocalStorageSavedData) {
 		const optStr = JSON.stringify(opt);
-		// console.log('%s -> %s', name, optStr);
-		this.storageService.store('serialport-options::' + name, optStr, StorageScope.WORKSPACE);
-		this.storageService.store('serialport-options::' + name, optStr, StorageScope.GLOBAL);
+		console.log('_store: %s -> %s', name, optStr);
+		localStorage.setItem('serialport-options::' + name, optStr);
 	}
 
 	private _doSerialOpen(item: ISerialPortStatus, openMode: ISerialPortStatus['openMode']) {
@@ -431,6 +481,10 @@ class SerialMonitorPanel extends Panel {
 
 		const result = this._getCurrentOpt();
 		this._store(opt.comName, result);
+
+		if (result.port) {
+			result.port.baudRate = parseInt(this.configurationService.getValue<string>(CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE)) || 115200;
+		}
 
 		this.serialPortService.openPort(opt.comName, result.port, true).then((port) => {
 			item.openOptions = result.port;

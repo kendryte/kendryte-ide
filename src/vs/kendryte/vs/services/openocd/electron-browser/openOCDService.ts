@@ -11,6 +11,7 @@ import {
 	CONFIG_KEY_FTDI_LAYOUT,
 	CONFIG_KEY_FTDI_SPEED,
 	CONFIG_KEY_FTDI_TDO_FE,
+	CONFIG_KEY_FTDI_VIDPID,
 	CONFIG_KEY_JTAG_ID,
 	CONFIG_KEY_JTAG_SPEED,
 	CONFIG_KEY_OPENOCD_CORE,
@@ -174,6 +175,7 @@ export class OpenOCDService implements IOpenOCDService {
 				return await createDefaultFtdiConfig(port, {
 					speed: this.configurationService.getValue<number>(CONFIG_KEY_FTDI_SPEED),
 					layoutInit: this.configurationService.getValue<[string, string]>(CONFIG_KEY_FTDI_LAYOUT),
+					vidPid: this.configurationService.getValue<[string, string]>(CONFIG_KEY_FTDI_VIDPID),
 					tdoSampleFallingEdge: this.configurationService.getValue<boolean>(CONFIG_KEY_FTDI_TDO_FE),
 					extra: this.configurationService.getValue<string>(CONFIG_KEY_FTDI_EXTRA),
 				});

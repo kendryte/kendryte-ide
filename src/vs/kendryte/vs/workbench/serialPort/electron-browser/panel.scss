@@ -41,21 +41,30 @@
 			}
 			> .options-bar {
 				display: flex;
+				flex-direction: column;
 				flex-wrap: wrap;
-				flex-direction: row;
 				margin-bottom: 2px;
-				> span {
-					flex-basis: 0;
-					flex-shrink: 1;
-					white-space: nowrap;
-					line-height: 22.4px;
-				}
-				> div { // for select
-					max-width: 6em;
-					margin: 0 4px 0 2px;
-				}
 				&.hide {
 					display: none;
+				}
+				> .line {
+					display: flex;
+					flex-direction: row;
+					> span {
+						flex-basis: 0;
+						flex-shrink: 1;
+						white-space: nowrap;
+						line-height: 22.4px;
+						&.title-text {
+							margin-right: 5px;
+							font-size: 14px;
+							font-weight: bold;
+						}
+					}
+					> div { // for select
+						max-width: 6em;
+						margin: 0 4px 0 2px;
+					}
 				}
 			}
 		}
