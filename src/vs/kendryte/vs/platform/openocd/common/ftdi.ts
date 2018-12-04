@@ -51,7 +51,7 @@ export function kendryteConfigRegisterFTDI() {
 				],
 				minItems: 2,
 				maxItems: 2,
-				default: defaultValue.layoutInit,
+				default: defaultValue.vidPid,
 			},
 			[CONFIG_KEY_FTDI_LAYOUT]: {
 				description: CONFIG_DESCRIPTION_FTDI_LAYOUT,
