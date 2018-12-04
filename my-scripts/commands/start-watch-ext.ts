@@ -1,6 +1,6 @@
 import { buildExtension } from '../build-env/bundled-extension/buildExtension';
+import { getExtensionPath } from '../build-env/bundled-extension/path';
 import { switchQuitKey } from '../build-env/codeblocks/switchQuitKey';
-import { VSCODE_ROOT } from '../build-env/misc/constants';
 import { whatIsThis } from '../build-env/misc/help';
 import { runMain } from '../build-env/misc/myBuildSystem';
 
@@ -11,5 +11,5 @@ runMain(async () => {
 	
 	switchQuitKey();
 	
-	await buildExtension(process.stderr, VSCODE_ROOT, VSCODE_ROOT, true);
+	await buildExtension(process.stderr, getExtensionPath(false), true);
 });

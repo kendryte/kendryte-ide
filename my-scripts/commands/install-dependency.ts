@@ -1,4 +1,5 @@
 import { installExtensionDevelopDeps, installExtensionProdDeps } from '../build-env/bundled-extension/installAll';
+import { getExtensionPath } from '../build-env/bundled-extension/path';
 import { prepareLinkForDev } from '../build-env/bundled-extension/prepare';
 import { installDependency } from '../build-env/childprocess/yarn';
 import { packWindows } from '../build-env/codeblocks/packWindows';
@@ -32,11 +33,11 @@ runMain(async () => {
 		output.success('node packages installed.');
 	}
 	
-	await installExtensionDevelopDeps(output, VSCODE_ROOT);
+	await installExtensionDevelopDeps(output, getExtensionPath(false));
 	output.success('extension dependencies installed.');
 	await prepareLinkForDev(output);
 	output.success('extension link created.');
-	await installExtensionProdDeps(output, VSCODE_ROOT);
+	await installExtensionProdDeps(output, getExtensionPath(false));
 	output.success('Bundle extensions production dependencies resolved');
 	
 	output.success('Done.');

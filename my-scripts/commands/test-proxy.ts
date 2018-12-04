@@ -12,7 +12,7 @@ runMain(async () => {
 	console.log('Requesting google.com for test. Timeout is 5s.');
 	
 	const ret = await new Promise<number>((resolve, reject) => {
-		let val = 0;
+		let val = 9;
 		request({
 			url: 'https://www.google.com',
 			followRedirect: false,
@@ -23,9 +23,7 @@ runMain(async () => {
 				
 				if (err) {
 					console.log('Request Error: ', err);
-					if (res.statusCode !== 200) {
-						val = 1;
-					}
+					val = 1;
 				}
 				
 				if (res) {
@@ -35,6 +33,7 @@ runMain(async () => {
 					}
 					console.log('Timing: ' + JSON.stringify(res.timings, null, 4));
 					console.log('Timing Phase: ' + JSON.stringify(res.timingPhases, null, 4));
+					val = 0;
 				}
 				
 				resolve(val);
@@ -43,9 +42,10 @@ runMain(async () => {
 	});
 	
 	if (ret === 0) {
-		console.log('connection OK.');
+		console.log('Connection OK.');
 	} else {
-		console.log('connection Failed.');
+		console.log('Connection Failed.');
+		console.log('  \x1B[38;5;9mYour proxy setting is invalid.\x1B[0m');
 	}
 	
 	return ret;

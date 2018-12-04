@@ -29,8 +29,8 @@ export async function yarn(output: OutputStreamControl, screen: NodeJS.WritableS
 	if (existsSync('yarn-error.log')) {
 		unlinkSync('yarn-error.log');
 	}
-	output.writeln(`Pwd: ${process.cwd()}\nCommand: yarn install --verbose\nLogfile: ${resolve(process.cwd(), 'yarn-install.log')}`);
-	await pipeCommandOut(screen, 'yarn', cmd, ...args);
+	output.writeln(`Pwd: ${process.cwd()}\nCommand: yarn ${cmd} --verbose\nLogfile: ${resolve(process.cwd(), 'yarn-install.log')}`);
+	await pipeCommandOut(screen, 'yarn', cmd, '--verbose', ...args);
 	output.writeln(`yarn ${cmd} success.`);
 	if (existsSync('yarn-error.log')) {
 		output.fail('yarn-error.log is exists!');

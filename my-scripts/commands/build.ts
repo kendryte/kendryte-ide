@@ -2,6 +2,7 @@ import { OutputStreamControl } from '@gongt/stillalive';
 import { resolve } from 'path';
 import { buildExtension } from '../build-env/bundled-extension/buildExtension';
 import { installExtensionDevelopDeps, installExtensionProdDeps } from '../build-env/bundled-extension/installAll';
+import { getExtensionPath } from '../build-env/bundled-extension/path';
 import { prepareLinkForProd } from '../build-env/bundled-extension/prepare';
 import { installDependency } from '../build-env/childprocess/yarn';
 import { linuxBuild } from '../build-env/codeblocks/build/build-linux';
@@ -82,13 +83,13 @@ runMain(async () => {
 	
 	await rename(compileResultFolder, wantDirPath);
 	
-	await installExtensionDevelopDeps(output, ARCH_RELEASE_ROOT);
+	await installExtensionDevelopDeps(output, getExtensionPath(true));
 	output.success('Bundle extensions dependencies resolved');
-	await prepareLinkForProd(output, wantDirPath);
+	await prepareLinkForProd(output, getExtensionPath(true, wantDirPath));
 	output.success('Bundle extensions link created.');
-	await installExtensionProdDeps(output, wantDirPath);
+	await installExtensionProdDeps(output, getExtensionPath(true, wantDirPath));
 	output.success('Bundle extensions production dependencies resolved');
-	await buildExtension(output, ARCH_RELEASE_ROOT, wantDirPath, false);
+	await buildExtension(output, getExtensionPath(true, wantDirPath), false);
 	output.success('Bundle extensions built');
 	
 	const timeZip = timing();

@@ -5,7 +5,7 @@ import { mkdirpSync } from './fsUtil';
 export function chdir(d: string) {
 	d = normalize(d);
 	if (process.cwd() !== d) {
-		console.log('\r\x1BK > %s', process.cwd());
+		console.log('\r\x1BK > %s', d);
 		process.chdir(d);
 	}
 }

@@ -1,11 +1,9 @@
 import { basename, resolve } from 'path';
 import { pipeCommandOut } from '../childprocess/complex';
 import { listExtension } from './list';
+import { IExtensionPath } from './path';
 
-export async function buildExtension(output: NodeJS.WritableStream, sourceRoot: string, targetRoot: string, watch: boolean) {
-	targetRoot = resolve(targetRoot, 'data/extensions');
-	sourceRoot = resolve(sourceRoot, 'extensions.kendryte');
-	
+export async function buildExtension(output: NodeJS.WritableStream, {targetRoot, sourceRoot}: IExtensionPath, watch: boolean) {
 	output.write('build extensions: \n');
 	output.write('  From: ' + sourceRoot + '\n');
 	output.write('    To: ' + targetRoot + '\n');

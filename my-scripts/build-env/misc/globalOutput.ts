@@ -54,13 +54,15 @@ export function globalInterruptLog(msg: any, ...args: any[]) {
 export function spawnWithLog(command: string, args?: ReadonlyArray<string>, options?: SpawnOptions) {
 	globalLog(' > %s', options.cwd || process.cwd());
 	globalInterruptLog(' + %s %s', command, args.join(' '));
-	globalScreenLog('running...');
 	
 	[command, args] = parseCommand(command, args);
+	globalLog(' -> + %s %s', command, args.join(' '));
+	globalLog('running...');
 	const r = spawn(command, args, options);
 	
 	processPromise(r, [command, args], options).then(() => {
 		globalLog('Command %s success.', command);
+		globalLog('    ', command, args);
 	}, (e: ProgramError) => {
 		if (!isAbsolute(command)) {
 			globalLog('PATH=%s', options.env.PATH || process.env.PATH);
