@@ -6,6 +6,9 @@
 //@ts-check
 'use strict';
 
+const title = process.title.replace(/[^ -~]/g, '');
+process.title = title || "KendryteIDE";
+
 //#region global bootstrapping
 
 // increase number of stack frames(from 10, https://github.com/v8/v8/wiki/Stack-Trace-API)

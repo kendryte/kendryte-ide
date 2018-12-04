@@ -171,7 +171,7 @@ export class CMakeService implements ICMakeService {
 		return this.cmakeConnectionStablePromise;
 	}
 
-	private async getCMakeEnv() {
+	private async getCMakeDef(): Promise<{ [name: string]: string }> {
 		let staticEnvFile = resolvePath(this._currentFolder, '.vscode/cmake-env.json');
 		let staticEnv: any = {};
 		if (await fileExists(staticEnvFile)) {
@@ -179,7 +179,11 @@ export class CMakeService implements ICMakeService {
 		} else {
 			await writeFile(staticEnvFile, '{}');
 		}
+		return staticEnv;
+	}
 
+	private async getCMakeEnv() {
+		const staticEnv = await this.getCMakeDef();
 		const env: any = getEnvironment(this.nodePathService);
 
 		return {
@@ -568,12 +572,13 @@ ${JSON.stringify(payload)}
 		await this.generateCMakeListsFile(resolvePath(this._currentFolder, CMAKE_CONFIG_FILE_NAME));
 
 		const envDefine: string[] = [];
-		for (const name of Object.keys(this.localEnv)) {
-			const value = this.localEnv[name];
+		const envSource = { ...await this.getCMakeDef(), ...this.localEnv };
+		for (const name of Object.keys(envSource)) {
+			const value = envSource[name];
 			if (value) {
 				envDefine.push(`-D${name}=${value}`);
 			} else {
-				this.logger.info('  empty key: %s', name);
+				envDefine.push(`-D${name}`);
 			}
 		}
 
@@ -585,6 +590,7 @@ ${JSON.stringify(payload)}
 		// await this.runCMakeRaw('..', '-G', 'Unix Makefiles', ...configArgs);
 
 		this.logger.info('configuring project: %s', this.cmakeLists);
+		this.logger.info(configArgs.join('\n'));
 		await this.sendRequest({
 			type: CMAKE_EVENT_TYPE.CONFIGURE,
 			cacheArguments: configArgs,
