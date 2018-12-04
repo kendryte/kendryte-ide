@@ -6,7 +6,6 @@ import { Emitter, Event } from 'vs/base/common/event';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { ILogService } from 'vs/platform/log/common/log';
-import { addStatusBarButtons } from 'vs/kendryte/vs/workbench/serialPort/common/buttons';
 import { SerialPortItem } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { array_has_diff_cb } from 'vs/kendryte/vs/base/common/utils';
 import { SerialPortBaseBinding } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
@@ -37,7 +36,6 @@ class SerialPortService implements ISerialPortService {
 		this._handlePromise = this._handlePromise.bind(this);
 
 		Object.assign(global, { serialPortService: this });
-		instantiationService.invokeFunction(addStatusBarButtons);
 		this.refreshDevices();
 		lifecycleService.onWillShutdown(async () => {
 			for (const port of Array.from<SerialPort>(this.openedPorts.values())) {

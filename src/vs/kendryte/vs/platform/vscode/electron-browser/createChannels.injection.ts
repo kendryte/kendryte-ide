@@ -11,6 +11,7 @@ import { kendryteConfigRegisterFTDI } from 'vs/kendryte/vs/platform/openocd/comm
 import { kendryteConfigRegisterOpenOCD } from 'vs/kendryte/vs/platform/openocd/common/openocd';
 import { kendryteConfigRegisterJTag } from 'vs/kendryte/vs/platform/openocd/common/jtag';
 import { kendryteConfigRegisterOCDCustom } from 'vs/kendryte/vs/platform/openocd/common/custom';
+import { addStatusBarButtons } from 'vs/kendryte/vs/workbench/serialPort/common/buttons';
 
 export function _kendrite_workbench_hookInstantiationService(
 	serviceCollection: ServiceCollection,
@@ -37,6 +38,8 @@ export function _kendrite_workbench_hookInstantiationService(
 		instantiationService.invokeFunction((accessor) => {
 			accessor.get<ILifecycleService>(ILifecycleService).when(LifecyclePhase.Running).then(() => {
 				try {
+					instantiationService.invokeFunction(addStatusBarButtons);
+
 					kendryteConfigRegisterSerialPort();
 
 					kendryteConfigRegisterOpenOCD();
