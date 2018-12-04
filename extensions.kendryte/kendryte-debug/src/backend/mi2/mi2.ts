@@ -373,10 +373,21 @@ GDB -> App: ${JSON.stringify(parsed).trim()}
 		} else {
 			args = this.preargs;
 		}
+
+		this.log('stdout', this.application + ' ' + args.join(' '));
 		this.process = ChildProcess.spawn(this.application, args, { cwd: cwd, env: this.procEnv });
 		this.process.stdout.on('data', this.stdout.bind(this));
 		this.process.stderr.on('data', this.stderr.bind(this));
-		this.process.on('exit', () => { this.emit('quit'); });
+		this.process.on('exit', (code, signal) => {
+			console.error(code, signal);
+			if (signal) {
+				this.emit('quit', new Error(`${this.application} killed by signal ${signal}`));
+			}
+			if (code !== 0) {
+				this.emit('quit', new Error(`${this.application} exited with code ${signal}`));
+			}
+			this.emit('quit');
+		});
 		this.process.on('error', (err) => { this.emit('launcherror', err); });
 		await this.sendCommand('gdb-set target-async on');
 		await this.sendCommand('environment-directory ' + escapePath(cwd));

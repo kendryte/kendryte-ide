@@ -41,7 +41,7 @@ class GDBDebugSession extends MI2DebugSession {
 	}
 
 	protected attachAndLaunch(islaunch: boolean, response: DebugProtocol.Response, args: RequestArguments) {
-		this.initDebugger(new MI2(args.gdbpath || ('riscv64-unknown-elf-gdb' + executableExtension), ['-q', '--interpreter=mi2'], args.debugger_args, args.env));
+		this.initDebugger(new MI2(args.gdbpath || ('riscv64-unknown-elf-gdb' + executableExtension), ['--interpreter=mi2'], args.debugger_args, args.env));
 		this.quit = false;
 		this.attached = false;
 		this.crashed = false;
