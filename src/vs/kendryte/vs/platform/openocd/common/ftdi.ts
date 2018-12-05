@@ -91,7 +91,7 @@ ${config.extra}
 
 transport select jtag
 ${config.tdoSampleFallingEdge ? '' : '# '}ftdi_tdo_sample_edge falling
-adapter_khz ${config.speed}
+adapter_khz 3000
 gdb_port ${port}
 tcl_port ${port + 1}
 telnet_port ${port + 2}
@@ -100,7 +100,14 @@ jtag newtap $_CHIPNAME cpu -irlen 5 -expected-id 0x04e4796b
 set _TARGETNAME $_CHIPNAME.cpu
 target create $_TARGETNAME riscv -chain-position $_TARGETNAME
 init
-halt
+
+$_TARGETNAME configure -event reset-start {
+    adapter_khz 100
+}
+
+$_TARGETNAME configure -event reset-init {
+	adapter_khz ${config.speed}
+}
 `.trim() + '\n';
 }
 

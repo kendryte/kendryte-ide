@@ -84,7 +84,6 @@ class WorkspaceMaixLaunch implements ILaunch {
 				...getEnvironment(this.nodePathService),
 			},
 			printCalls: true,
-			showDevDebugOutput: true,
 			stopOnAttach: false,
 			autorun: [],
 			gdbpath: this.GDB,
@@ -191,7 +190,6 @@ export class MaixCMakeDebugAction extends Action {
 		@IDebugService private debugService: IDebugService,
 		@ILogService private logService: ILogService,
 		@IInstantiationService private instantiationService: IInstantiationService,
-		@INotificationService private notificationService: INotificationService,
 		@IFileService private fileService: IFileService,
 		@ITextModelService private textModelService: ITextModelService,
 		@IOpenOCDService protected openOCDService: IOpenOCDService,
@@ -289,19 +287,7 @@ export class MaixCMakeDebugAction extends Action {
 			throw e;
 		});
 
-		const handle = this.notificationService.notify({
-			severity: Severity.Info,
-			message: `connecting to ${config.target}...`,
-		});
-		handle.progress.infinite();
-
-		await this.debugService.startDebugging(myLaunch, 'kendryte').then(undefined, (e) => {
-			debugger;
-			this.notificationService.error('Failed to start debug:\n' + e.message);
-			throw e;
-		});
-
-		handle.close();
+		await this.debugService.startDebugging(myLaunch, 'kendryte');
 	}
 }
 

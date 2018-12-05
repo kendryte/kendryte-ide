@@ -30,6 +30,10 @@ export class ChannelLogger extends AbstractLogService implements IChannelLogger,
 		}));
 	}
 
+	public clear(level: string, _colorTheme: string, message: string, ...args: any[]) {
+		this.channel.clear();
+	}
+
 	public println(level: string, _colorTheme: string, message: string, ...args: any[]) {
 		this.channel.append(format(`[${level}] ${message}`, ...args) + '\n');
 	}

@@ -25,6 +25,12 @@ export function activate(context: vscode.ExtensionContext) {
 		const ext = path.extname(fileName);
 		return fileName.substr(0, fileName.length - ext.length);
 	}));
+	const channel = vscode.window.createOutputChannel('kendryte/gdb');
+	context.subscriptions.push(vscode.debug.onDidReceiveDebugSessionCustomEvent((e: any) => {
+		channel.show(true);
+		channel.appendLine('WOW!!!');
+		console.error(e);
+	}));
 }
 
 const memoryLocationRegex = /^0x[0-9a-f]+$/;
@@ -159,7 +165,7 @@ class MemoryContentProvider implements vscode.TextDocumentContentProvider {
 					}
 					formattedCode += asciiLine;
 				}
-				resolve('<h2>Memory Range from 0x' + from.toString(16) + " to 0x" + to.toString(16) + "</h2><code><pre>" + formattedCode + "</pre></code>");
+				resolve('<h2>Memory Range from 0x' + from.toString(16) + ' to 0x' + to.toString(16) + '</h2><code><pre>' + formattedCode + '</pre></code>');
 				conn.destroy();
 			});
 		});

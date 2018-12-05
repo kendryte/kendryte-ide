@@ -49,7 +49,7 @@ class NodeFileSystemService implements INodeFileSystemService {
 		}
 	}
 
-	async writeFile(file: string, data: string | Buffer): TPromise<void> {
+	async rawWriteFile(file: string, data: string | Buffer): TPromise<void> {
 		this.logService.debug('writeFile: ' + file);
 		await mkdirp(resolvePath(file, '..'));
 
@@ -81,7 +81,7 @@ class NodeFileSystemService implements INodeFileSystemService {
 			return false;
 		}
 		this.logService.debug('writeFile: ' + file);
-		await this.writeFile(file, data);
+		await this.rawWriteFile(file, data);
 		return true;
 	}
 

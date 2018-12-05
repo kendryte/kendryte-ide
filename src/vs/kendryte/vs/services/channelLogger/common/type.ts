@@ -22,6 +22,7 @@ export const IChannelLogService = createDecorator<IChannelLogService>('channelLo
 export interface IChannelLogger extends ILogService {
 	readonly id: string;
 
+	clear(): void;
 	log(message: string, ...args: any[]): void;
 	write(message: string, ...args: any[]): void;
 	writeln(message: string): void;

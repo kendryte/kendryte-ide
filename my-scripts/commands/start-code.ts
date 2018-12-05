@@ -11,17 +11,18 @@ whatIsThis(__filename, 'start local debug IDE, need start-watch show success.');
 
 runMain(async () => {
 	await getElectronIfNot();
-	
+
 	delete process.env.VSCODE_PORTABLE;
-	
+
 	chdir(VSCODE_ROOT);
-	
+
 	mkdirpSync('data');
-	
+
 	delete process.env.HTTP_PROXY;
 	delete process.env.HTTPS_PROXY;
 	delete process.env.ALL_PROXY;
-	
+
+	inspectArgs = ['--inspect-extensions=5'];
 	const passArgs = process.argv.slice(2);
 	if (isWin) {
 		cleanScreen();

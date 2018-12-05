@@ -1,7 +1,7 @@
-import { MI2DebugSession } from './mibase';
+import { MI2DebugSession } from './backend/mibase';
 import { DebugSession } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { MI2 } from './backend/mi2/mi2';
+import { MI2 } from './backend/mi2';
 import { ValuesFormattingMode } from './backend/backend';
 import { executableExtension } from './env';
 
@@ -18,7 +18,6 @@ export interface RequestArguments {
 	remote: boolean;
 	valuesFormatting: ValuesFormattingMode;
 	printCalls: boolean;
-	showDevDebugOutput: boolean;
 }
 
 export interface LaunchRequestArguments extends RequestArguments, DebugProtocol.LaunchRequestArguments {
@@ -29,6 +28,7 @@ export interface AttachRequestArguments extends RequestArguments, DebugProtocol.
 
 class GDBDebugSession extends MI2DebugSession {
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
+		this.logger.info('[DAP] initializeRequest', response, args);
 		response.body.supportsHitConditionalBreakpoints = true;
 		response.body.supportsConfigurationDoneRequest = true;
 		response.body.supportsConditionalBreakpoints = true;
@@ -41,13 +41,19 @@ class GDBDebugSession extends MI2DebugSession {
 	}
 
 	protected attachAndLaunch(islaunch: boolean, response: DebugProtocol.Response, args: RequestArguments) {
-		this.initDebugger(new MI2(args.gdbpath || ('riscv64-unknown-elf-gdb' + executableExtension), ['--interpreter=mi2'], args.debugger_args, args.env));
+		this.logger.info('[DAP] attachAndLaunch', islaunch, response, args);
+		this.initDebugger(new MI2(
+			this,
+			args.gdbpath || ('riscv64-unknown-elf-gdb' + executableExtension),
+			['--interpreter=mi2'],
+			args.debugger_args,
+			args.env,
+		));
 		this.quit = false;
 		this.attached = false;
 		this.crashed = false;
 		this.setValuesFormattingMode(args.valuesFormatting);
 		this.miDebugger.printCalls = args.printCalls;
-		this.miDebugger.debugOutput = args.showDevDebugOutput;
 		this.miDebugger.connect(args.cwd, args.executable, args.target).then(async () => {
 			this.miDebugger.log('stdout', 'network connected.');
 			await this.miDebugger.interrupt();

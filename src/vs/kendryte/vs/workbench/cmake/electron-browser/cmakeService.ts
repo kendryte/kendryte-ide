@@ -49,6 +49,7 @@ import { ExParseError } from 'vs/kendryte/vs/base/common/jsonComments';
 import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ILogService } from 'vs/platform/log/common/log';
 import { CMAKE_LIST_GENERATED_WARNING, CMakeListsCreator } from 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeListsCreator';
+import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 
 export interface IPromiseProgress<T> {
 	progress(fn: (p: T) => void): void;
@@ -129,6 +130,7 @@ export class CMakeService implements ICMakeService {
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@INodePathService private readonly nodePathService: INodePathService,
+		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 	) {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
@@ -177,7 +179,7 @@ export class CMakeService implements ICMakeService {
 		if (await fileExists(staticEnvFile)) {
 			staticEnv = JSON.parse(await readFile(staticEnvFile, 'utf8'));
 		} else {
-			await writeFile(staticEnvFile, '{}');
+			await this.nodeFileSystemService.rawWriteFile(staticEnvFile, '{}');
 		}
 		return staticEnv;
 	}

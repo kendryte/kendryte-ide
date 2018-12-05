@@ -1,9 +1,9 @@
 import { DebugSession, Handles, InitializedEvent, OutputEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ThreadEvent } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { Breakpoint, MIError, ValuesFormattingMode, Variable, VariableObject } from './backend/backend';
-import { MINode } from './backend/mi_parse';
-import { expandValue } from './backend/gdb_expansion';
-import { MI2 } from './backend/mi2/mi2';
+import { Breakpoint, MIError, ValuesFormattingMode, Variable, VariableObject } from './backend';
+import { MINode } from './mi_parse';
+import { expandValue } from './gdb_expansion';
+import { MI2 } from './mi2';
 import * as systemPath from 'path';
 import { posix } from 'path';
 import * as net from 'net';
@@ -11,6 +11,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import { ContinuedEvent } from 'vscode-debugadapter/lib/debugSession';
 import { format } from 'util';
+import { CustomLogger } from './logger';
 
 const resolve = posix.resolve;
 const relative = posix.relative;
@@ -37,8 +38,12 @@ export class MI2DebugSession extends DebugSession {
 	protected miDebugger: MI2;
 	protected commandServer: net.Server;
 
+	protected logger: CustomLogger;
+
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
 		super(debuggerLinesStartAt1, isServer);
+
+		this.logger = new CustomLogger('DAP', this);
 
 		this.handleMsg('stderr', '[kendryte debug] debugger protocol.');
 
