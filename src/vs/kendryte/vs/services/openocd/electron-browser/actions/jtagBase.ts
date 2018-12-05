@@ -20,6 +20,7 @@ import { osTempDir } from 'vs/kendryte/vs/base/node/resolvePath';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { OPENOCD_CHANNEL, OPENOCD_CHANNEL_TITLE } from 'vs/kendryte/vs/services/openocd/common/channel';
+import { ISudoService } from 'vs/kendryte/vs/platform/sudo/node/sudoService';
 
 export class InstallJTagDriverAction extends Action {
 	public static readonly ID = ACTION_ID_JTAG_INSTALL_DRIVER;
@@ -36,6 +37,7 @@ export class InstallJTagDriverAction extends Action {
 		@INotificationService private readonly notificationService: INotificationService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IStorageService private readonly storageService: IStorageService,
+		@ISudoService private readonly sudoService: ISudoService,
 	) {
 		super(id, label);
 		this.logger = channelLogService.createChannel(OPENOCD_CHANNEL_TITLE, OPENOCD_CHANNEL, true);
@@ -54,25 +56,10 @@ start "zadig" /D ${JSON.stringify(dirname(zadigExe))} /WAIT ${JSON.stringify(zad
 			const command = `cmd.exe /C "${JSON.stringify(tempScriptFile)}"`;
 
 			this.logger.info(`spawn: ${command}`);
-			const sudoPrompt = await Promise.resolve(import('sudo-prompt'));
 
 			this.showNotify();
 
-			await new Promise((resolve, reject) => {
-				sudoPrompt.exec(command, {}, (error: string, stdout: string, stderr: string) => {
-					this.logger.info('stdout: ' + stdout);
-					this.logger.info('stderr: ' + stderr);
-
-					if (error) {
-						this.logger.error(error);
-						reject(new Error(error));
-					} else {
-						resolve();
-					}
-				});
-			});
-
-			this.logger.info('zadig return.');
+			await this.sudoService.exec(command, { logger: this.logger });
 
 			this.notificationService.info('ZADIG Program exit. Note: You may need un-plug and plug again.');
 		} else {
@@ -130,6 +117,7 @@ export class InstallJTagOfficialDriverAction extends Action {
 		@INodePathService private readonly nodePathService: INodePathService,
 		@IChannelLogService private readonly channelLogService: IChannelLogService,
 		@INotificationService private readonly notificationService: INotificationService,
+		@ISudoService private readonly sudoService: ISudoService,
 	) {
 		super(id, label);
 		this.logger = channelLogService.createChannel(OPENOCD_CHANNEL_TITLE, OPENOCD_CHANNEL, true);
@@ -144,19 +132,7 @@ export class InstallJTagOfficialDriverAction extends Action {
 			const command = `${dpinst_x64} /S /C /F`;
 			this.logger.info(`spawn: ${command}`);
 
-			const sudoPrompt = await Promise.resolve(import('sudo-prompt'));
-
-			await new Promise((resolve, reject) => {
-				sudoPrompt.exec(command, {}, (error: string, stdout: string, stderr: string) => {
-					this.logger.info('stdout: ' + stdout);
-					this.logger.info('stderr: ' + stderr);
-					this.logger.info('error: ' + error);
-
-					resolve(); // dpinst not return 0 as success.
-				});
-			});
-
-			this.logger.info('dpinst_x64 return.');
+			await this.sudoService.exec(command, { logger: this.logger });
 
 			this.notificationService.info('Driver installed, You may need un-plug and plug again.');
 		} else {
