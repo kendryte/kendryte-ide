@@ -1,10 +1,15 @@
 import * as vscode from 'vscode';
+import { CancellationToken, DebugConfiguration, ProviderResult, WorkspaceFolder } from 'vscode';
 import * as net from 'net';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { ChannelLogger } from './logger';
 
 export function activate(context: vscode.ExtensionContext) {
+	const logger = new ChannelLogger();
+	logger.info('Activating');
+
 	context.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider('debugmemory', new MemoryContentProvider()));
 	context.subscriptions.push(vscode.commands.registerCommand('kendryte-debug.examineMemoryLocation', examineMemory));
 	context.subscriptions.push(vscode.commands.registerCommand('kendryte-debug.getFileNameNoExt', () => {
@@ -25,12 +30,26 @@ export function activate(context: vscode.ExtensionContext) {
 		const ext = path.extname(fileName);
 		return fileName.substr(0, fileName.length - ext.length);
 	}));
-	const channel = vscode.window.createOutputChannel('kendryte/gdb');
+	context.subscriptions.push(logger);
 	context.subscriptions.push(vscode.debug.onDidReceiveDebugSessionCustomEvent((e: any) => {
-		channel.show(true);
-		channel.appendLine('WOW!!!');
-		console.error(e);
+		logger.info('WOW!!!', e);
 	}));
+
+	vscode.debug.registerDebugConfigurationProvider('kendryte', new Provider(logger));
+	
+	logger.info('Activated');
+}
+
+class Provider implements vscode.DebugConfigurationProvider {
+	constructor(private readonly logger: ChannelLogger) {
+	}
+
+	provideDebugConfigurations?(folder: WorkspaceFolder | undefined, token?: CancellationToken): ProviderResult<DebugConfiguration[]>;
+
+	debugAdapterExecutable() {
+		this.logger.info('debugAdapterExecutable', arguments);
+		debugger;
+	}
 }
 
 const memoryLocationRegex = /^0x[0-9a-f]+$/;

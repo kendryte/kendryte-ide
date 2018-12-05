@@ -11,7 +11,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import { ContinuedEvent } from 'vscode-debugadapter/lib/debugSession';
 import { format } from 'util';
-import { CustomLogger } from './logger';
+import { CustomLogger } from './lib/logger';
 
 const resolve = posix.resolve;
 const relative = posix.relative;

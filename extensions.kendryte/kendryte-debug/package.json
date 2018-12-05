@@ -11,6 +11,8 @@
   "publisher": "kendryte",
   "main": "./frontend/extension",
   "activationEvents": [
+    "*",
+    "onDebug",
     "onCommand:kendryte-debug.examineMemoryLocation",
     "onCommand:kendryte-debug.getFileNameNoExt",
     "onCommand:kendryte-debug.getFileBasenameNoExt"
@@ -49,7 +51,7 @@
               "target"
             ],
             "properties": {
-              "id":{
+              "id": {
                 "type": "string",
                 "description": "ID of this config"
               },
@@ -87,7 +89,7 @@
                 "description": "GDB commands to run when starting to debug",
                 "default": []
               },
-              "env":{
+              "env": {
                 "type": "object"
               }
             }

@@ -1,26 +1,18 @@
 import { format } from 'util';
-import { DebugSession, Event } from 'vscode-debugadapter';
 
-export class CustomEvent<T = any> extends Event {
-	constructor(type: string, body: T) {
-		super('custom', {
-			type,
-			body,
-		});
-	}
+export interface IMyLogger {
+	write(data: string);
+	writeln(data: string);
+	info(msg: string, ...args: any[]);
+	warn(msg: string, ...args: any[]);
+	error(msg: string, ...args: any[]);
 }
 
-export class CustomLogger {
-	constructor(
-		private readonly _tag: string,
-		private readonly session: DebugSession,
-	) {
+export abstract class NodeLoggerCommon implements IMyLogger {
+	constructor(private readonly _tag: string) {
 	}
 
-	write(data: string) {
-		this.session.sendEvent(new CustomEvent('log', { data }));
-		console.error('!!! ', data);
-	}
+	abstract write(data: string);
 
 	writeln(data: string) {
 		this.write(this.tag(data) + '\n');

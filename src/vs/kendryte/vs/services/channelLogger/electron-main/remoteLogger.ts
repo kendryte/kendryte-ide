@@ -28,7 +28,7 @@ export class RemoteLogger implements IChannelLogger {
 		throw new Error('Cannot dispose remote logger. you must do this on render process.');
 	}
 
-	public log(): void {
+	public clear(): void {
 		this.onOutput.fire({ level: 'clear', message: '', args: [] });
 	}
 

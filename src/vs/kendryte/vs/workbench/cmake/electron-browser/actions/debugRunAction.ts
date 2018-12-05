@@ -13,7 +13,6 @@ import { IEnvironmentService } from 'vs/platform/environment/common/environment'
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ILogService } from 'vs/platform/log/common/log';
-import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { DebugScript, getEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
 import { JSONVisitor, visit } from 'vs/base/common/json';

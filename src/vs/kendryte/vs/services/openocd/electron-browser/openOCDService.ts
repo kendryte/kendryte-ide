@@ -21,7 +21,6 @@ import {
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { OPENOCD_CHANNEL, OPENOCD_CHANNEL_TITLE } from 'vs/kendryte/vs/services/openocd/common/channel';
-import { INotificationService } from 'vs/platform/notification/common/notification';
 import { createCustomConfig } from 'vs/kendryte/vs/platform/openocd/common/custom';
 import { createDefaultFtdiConfig } from 'vs/kendryte/vs/platform/openocd/common/ftdi';
 import { ConfigOpenOCDTypes } from 'vs/kendryte/vs/platform/openocd/common/openocd';
@@ -57,7 +56,6 @@ export class OpenOCDService implements IOpenOCDService {
 		@INodePathService private readonly nodePathService: INodePathService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
-		@INotificationService private readonly notificationService: INotificationService,
 		@IInstantiationService private readonly IInstantiationService: IInstantiationService,
 	) {
 		this.logger = channelLogService.createChannel(OPENOCD_CHANNEL_TITLE, OPENOCD_CHANNEL, true);

@@ -5,7 +5,7 @@ import { MINode, parseMI } from './mi_parse';
 import * as nativePath from 'path';
 import { posix } from 'path';
 import { always, DeferredPromise, timeout } from '../lib';
-import { CustomLogger } from './logger';
+import { CustomLogger } from './lib/logger';
 import { DebugSession } from 'vscode-debugadapter';
 import { merge_env } from './lib/merge_env';
 

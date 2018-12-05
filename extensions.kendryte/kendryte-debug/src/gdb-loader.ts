@@ -1,7 +1,8 @@
 require('source-map-support/register');
 
 console.error('\n[kendryte debug] debugger protocol.');
-process.title = 'gdb';
+console.error('\n * '+process.argv.join('\n * '));
+process.title = 'gdb-session';
 
 Object.assign(global, {
 	DIE(e: Error) {
