@@ -146,7 +146,6 @@ export interface IPatternInfo {
 	wordSeparators?: string;
 	isMultiline?: boolean;
 	isCaseSensitive?: boolean;
-	isSmartCase?: boolean;
 }
 
 export interface IExtendedExtensionSearchOptions {
@@ -333,6 +332,7 @@ export interface ISearchConfigurationProperties {
 	useReplacePreview: boolean;
 	showLineNumbers: boolean;
 	usePCRE2: boolean;
+	actionsPosition: 'auto' | 'right';
 }
 
 export interface ISearchConfiguration extends IFilesConfiguration {

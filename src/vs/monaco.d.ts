@@ -182,7 +182,7 @@ declare namespace monaco {
 			fragment?: string;
 		}): Uri;
 		/**
-		 * Creates a string presentation for this Uri. It's guaranteed that calling
+		 * Creates a string representation for this Uri. It's guaranteed that calling
 		 * `Uri.parse` with the result of this function creates an Uri which is equal
 		 * to this Uri.
 		 *
@@ -2558,6 +2558,10 @@ declare namespace monaco.editor {
 		 * Favours words that appear close to the cursor.
 		 */
 		localityBonus?: boolean;
+		/**
+		 * Enable using global storage for remembering suggestions.
+		 */
+		useGlobalStorageForSuggestions?: boolean;
 	}
 
 	/**
@@ -3193,6 +3197,7 @@ declare namespace monaco.editor {
 		readonly snippets: 'top' | 'bottom' | 'inline' | 'none';
 		readonly snippetsPreventQuickSuggestions: boolean;
 		readonly localityBonus: boolean;
+		readonly shareSuggestSelections: boolean;
 	}
 
 	export interface InternalParameterHintOptions {
@@ -4494,11 +4499,11 @@ declare namespace monaco.languages {
 		/**
 		 * If a line matches this pattern, then **only the next line** after it should be indented once.
 		 */
-		indentNextLinePattern?: RegExp;
+		indentNextLinePattern?: RegExp | null;
 		/**
 		 * If a line matches this pattern, then its indentation should not be changed and it should not be evaluated against the other rules.
 		 */
-		unIndentedLinePattern?: RegExp;
+		unIndentedLinePattern?: RegExp | null;
 	}
 
 	/**
@@ -4922,14 +4927,14 @@ declare namespace monaco.languages {
 		activeParameter: number;
 	}
 
-	export enum SignatureHelpTriggerReason {
+	export enum SignatureHelpTriggerKind {
 		Invoke = 1,
 		TriggerCharacter = 2,
 		ContentChange = 3
 	}
 
 	export interface SignatureHelpContext {
-		readonly triggerReason: SignatureHelpTriggerReason;
+		readonly triggerKind: SignatureHelpTriggerKind;
 		readonly triggerCharacter?: string;
 		readonly isRetrigger: boolean;
 	}
@@ -5292,6 +5297,13 @@ declare namespace monaco.languages {
 		 * Provide the string representations for a color.
 		 */
 		provideColorPresentations(model: editor.ITextModel, colorInfo: IColorInformation, token: CancellationToken): ProviderResult<IColorPresentation[]>;
+	}
+
+	export interface SelectionRangeProvider {
+		/**
+		 * Provide ranges that should be selected from the given position.
+		 */
+		provideSelectionRanges(model: editor.ITextModel, position: Position, token: CancellationToken): ProviderResult<IRange[]>;
 	}
 
 	export interface FoldingContext {

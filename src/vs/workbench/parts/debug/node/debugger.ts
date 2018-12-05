@@ -89,11 +89,13 @@ export class Debugger implements IDebugger {
 		return this.configurationManager.provideDebugAdapter(session).then(adapter => {
 
 			if (adapter) {
+				console.info('DebugConfigurationProvider.debugAdapterExecutable is deprecated and will be removed soon; please use DebugAdapterDescriptorFactory.createDebugAdapterDescriptor instead.');
 				return adapter;
 			}
 
 			// try deprecated command based extension API "adapterExecutableCommand" to determine the executable
 			if (this.debuggerContribution.adapterExecutableCommand) {
+				console.info('debugAdapterExecutable attribute in package.json is deprecated and support for it will be removed soon; please use DebugAdapterDescriptorFactory.createDebugAdapterDescriptor instead.');
 				const rootFolder = session.root ? session.root.uri.toString() : undefined;
 				return this.commandService.executeCommand<IDebugAdapterExecutable>(this.debuggerContribution.adapterExecutableCommand, rootFolder).then((ae: { command: string, args: string[] }) => {
 					return <IAdapterDescriptor>{
@@ -116,10 +118,10 @@ export class Debugger implements IDebugger {
 	substituteVariables(folder: IWorkspaceFolder, config: IConfig): Thenable<IConfig> {
 		if (this.inExtHost()) {
 			return this.configurationManager.substituteVariables(this.type, folder, config).then(config => {
-				return this.configurationResolverService.resolveWithCommands(folder, config, this.variables);
+				return this.configurationResolverService.resolveWithInteractionReplace(folder, config, undefined, this.variables);
 			});
 		} else {
-			return this.configurationResolverService.resolveWithCommands(folder, config, this.variables);
+			return this.configurationResolverService.resolveWithInteractionReplace(folder, config, undefined, this.variables);
 		}
 	}
 
