@@ -86,7 +86,9 @@ export class FpioaEditor extends BaseEditor {
 	}
 
 	public layout(dimension: Dimension): void {
-		this.splitViewMain.layout(dimension.width);
+		if (this.splitViewMain) {
+			this.splitViewMain.layout(dimension.width);
+		}
 	}
 
 	private updateModel() {

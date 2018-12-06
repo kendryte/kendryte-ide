@@ -5,7 +5,7 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { PackageBrowserInput } from 'vs/kendryte/vs/workbench/packageManager/common/editors/packageBrowserInput';
 import { IRemotePackageInfo, PACKAGE_LIST_EXAMPLE, PACKAGE_LIST_LIBRARY } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
 import { CancellationToken } from 'vs/base/common/cancellation';
-import { copy, dirExists, mkdirp, readDirsInDir, readFile, rimraf } from 'vs/base/node/pfs';
+import { copy, dirExists, fileExists, mkdirp, readDirsInDir, readFile, rimraf } from 'vs/base/node/pfs';
 import { IPager } from 'vs/base/common/paging';
 import { escapeRegExpCharacters } from 'vs/base/common/strings';
 import { IDownloadWithProgressService } from 'vs/kendryte/vs/services/download/electron-browser/downloadWithProgressService';
@@ -13,7 +13,7 @@ import { parseExtendedJson } from 'vs/kendryte/vs/base/common/jsonComments';
 import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IFileCompressService } from 'vs/kendryte/vs/services/fileCompress/node/fileCompressService';
-import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME, ICompileOptions } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
+import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME, ICompileInfo } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { PACKAGE_MANAGER_DISTRIBUTE_URL } from 'vs/kendryte/vs/services/update/common/protocol';
@@ -50,10 +50,10 @@ export class PackageRegistryService implements IPackageRegistryService {
 		const ret: IRemotePackageInfo[] = [];
 		for (const item of await readDirsInDir(folder)) {
 			const pkgFile = resolvePath(folder, item, CMAKE_CONFIG_FILE_NAME);
-			const [config, errors] = await this.nodeFileSystemService.readJsonFile<IRemotePackageInfo>(pkgFile);
+			const { json: config, warnings } = await this.nodeFileSystemService.readJsonFile<IRemotePackageInfo>(pkgFile);
 
-			if (errors.length) {
-				this.logger.warn('package file (' + item + ') has error:\n' + errors.map((err) => {
+			if (warnings.length) {
+				this.logger.warn('package file (' + item + ') has error:\n' + warnings.map((err) => {
 					return '\t' + err.message;
 				}).join('\n'));
 			}
@@ -175,11 +175,11 @@ export class PackageRegistryService implements IPackageRegistryService {
 	}
 
 	public async installAll(): TPromise<void> {
-		const [pkgInfo, errors] = await this.nodeFileSystemService.readPackageFile();
-		if (errors.length) {
-			errors.map(e => this.logger.error(e.message));
+		const { json: pkgInfo, warnings } = await this.nodeFileSystemService.readPackageFile();
+		if (warnings.length) {
+			warnings.map(e => this.logger.error(e.message));
 			await this.openPackageFile();
-			throw new Error(errors[0].message);
+			throw new Error(warnings[0].message);
 		}
 
 		if (!pkgInfo.dependency) {
@@ -224,8 +224,8 @@ export class PackageRegistryService implements IPackageRegistryService {
 		this.logger.info('download & extracted: ', tempResultDir);
 
 		const jsonFile = resolvePath(tempResultDir, CMAKE_CONFIG_FILE_NAME);
-		const [config, errors] = await this.nodeFileSystemService.readJsonFile<ICompileOptions>(jsonFile);
-		errors.forEach((error) => {
+		const { json: config, warnings } = await this.nodeFileSystemService.readJsonFile<ICompileInfo>(jsonFile);
+		warnings.forEach((error) => {
 			this.logger.error(error.message);
 		});
 
@@ -248,6 +248,14 @@ export class PackageRegistryService implements IPackageRegistryService {
 		const saveDirName = await this.downloadFromAbsUrl(downloadUrl, packageInfo.name, version);
 
 		const currentConfigFile = this.nodePathService.getPackageFile();
+		if (!await fileExists(currentConfigFile)) {
+			await this.nodeFileSystemService.rawWriteFile(currentConfigFile, JSON.stringify({
+				'$schema': 'vscode://schemas/CMakeLists',
+				'name': 'unamed_project',
+				'version': '0.0.1',
+				'type': 'executable',
+			}, null, 4));
+		}
 		await this.nodeFileSystemService.editJsonFile(currentConfigFile, ['dependency', saveDirName], downloadUrl);
 	}
 
@@ -258,8 +266,8 @@ export class PackageRegistryService implements IPackageRegistryService {
 		this.logger.info('download & extracted: ', tempResultDir);
 
 		const jsonFile = resolvePath(tempResultDir, CMAKE_CONFIG_FILE_NAME);
-		const [config, errors] = await this.nodeFileSystemService.readJsonFile<ICompileOptions>(jsonFile);
-		errors.forEach((error) => {
+		const { json: config, warnings } = await this.nodeFileSystemService.readJsonFile<ICompileInfo>(jsonFile);
+		warnings.forEach((error) => {
 			this.logger.error(error.message);
 		});
 

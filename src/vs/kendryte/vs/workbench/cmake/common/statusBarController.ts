@@ -1,6 +1,6 @@
 import { StatusBarItem } from 'vs/kendryte/vs/workbench/cmake/common/statusBarButton';
 import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD, ACTION_ID_OPEN_CMAKE_LIST_CONFIG } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
-import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
+import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 
 enum State {
 	Lock,

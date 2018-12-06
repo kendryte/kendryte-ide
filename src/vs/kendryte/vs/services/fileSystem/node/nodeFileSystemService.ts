@@ -1,5 +1,5 @@
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
+import { IJSONResult, INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { copy, exists, mkdirp, readFile, rimraf, stat, unlink, writeFile } from 'vs/base/node/pfs';
 import { ILogService } from 'vs/platform/log/common/log';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
@@ -10,7 +10,7 @@ import { IReference } from 'vs/base/common/lifecycle';
 import { ITextEditorModel, ITextModelService } from 'vs/editor/common/services/resolverService';
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
 import { IFileService } from 'vs/platform/files/common/files';
-import { ExParseError, parseExtendedJson } from 'vs/kendryte/vs/base/common/jsonComments';
+import { parseExtendedJson } from 'vs/kendryte/vs/base/common/jsonComments';
 import { setProperty } from 'vs/base/common/jsonEdit';
 import { Range } from 'vs/editor/common/core/range';
 import { Selection } from 'vs/editor/common/core/selection';
@@ -18,7 +18,7 @@ import { ITextModel } from 'vs/editor/common/model';
 import { Edit } from 'vs/base/common/jsonFormatter';
 import { EditOperation } from 'vs/editor/common/core/editOperation';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { ICompileOptions } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
+import { ICompileInfo } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 
 class NodeFileSystemService implements INodeFileSystemService {
 	_serviceBrand: any;
@@ -32,16 +32,22 @@ class NodeFileSystemService implements INodeFileSystemService {
 	) {
 	}
 
+	public readFile(file: string): Promise<string>;
+	public readFile(file: string, raw: true): Promise<Buffer>;
+	public readFile(file: string, raw?: true): Promise<string | Buffer> {
+		this.logService.debug('readFile: ' + file);
+		if (raw) {
+			return readFile(file);
+		} else {
+			return readFile(file, 'utf8');
+		}
+	}
+
 	public readFileIfExists(file: string): Promise<string>;
 	public readFileIfExists(file: string, raw: true): Promise<Buffer>;
 	public async readFileIfExists(file: string, raw?: true): Promise<string | Buffer> {
 		if (await exists(file)) {
-			this.logService.debug('readFile: ' + file);
-			if (raw) {
-				return await readFile(file);
-			} else {
-				return await readFile(file, 'utf8');
-			}
+			return this.readFile(file, raw);
 		} else {
 			this.logService.debug('readFile (not exists): ' + file);
 			return raw ? Buffer.alloc(0) : '';
@@ -93,14 +99,14 @@ class NodeFileSystemService implements INodeFileSystemService {
 		await copy(from, to);
 	}
 
-	public async readJsonFile<T>(file: string): Promise<[T, ExParseError[]]> {
+	public async readJsonFile<T>(file: string): Promise<IJSONResult<T>> {
 		const data = await readFile(file, 'utf8');
-		const [result, errors] = parseExtendedJson(data, file);
-		return [result, errors];
+		const [json, warnings] = parseExtendedJson(data, file);
+		return { json, warnings };
 	}
 
-	public readPackageFile(packageFile: string = this.nodePathService.getPackageFile()): Promise<[ICompileOptions, ExParseError[]]> {
-		return this.readJsonFile(packageFile);
+	public readPackageFile(packageFile: string = this.nodePathService.getPackageFile()) {
+		return this.readJsonFile<ICompileInfo>(packageFile);
 	}
 
 	public async tryWriteInFolder(target: string): Promise<boolean> {

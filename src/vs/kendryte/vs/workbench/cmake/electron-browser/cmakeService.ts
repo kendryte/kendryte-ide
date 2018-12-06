@@ -44,12 +44,11 @@ import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { CMakeBuildErrorProcessor, CMakeBuildProgressProcessor, CMakeProcessList } from 'vs/kendryte/vs/workbench/cmake/node/outputProcessor';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
-import { ExParseError } from 'vs/kendryte/vs/base/common/jsonComments';
+import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIST_GENERATED_WARNING } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ILogService } from 'vs/platform/log/common/log';
-import { CMAKE_LIST_GENERATED_WARNING, CMakeListsCreator } from 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeListsCreator';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
+import { CMakeListsCreator } from 'vs/kendryte/vs/workbench/cmake/electron-browser/listsCreator';
 
 export interface IPromiseProgress<T> {
 	progress(fn: (p: T) => void): void;
@@ -548,7 +547,7 @@ ${JSON.stringify(payload)}
 		}
 		this._CMakeProjectExists = true;
 
-		await this.generateCMakeListsFile(listSourceFile);
+		await this.generateCMakeListsFile();
 		this.logger.info('  - CMake project is exists.');
 	}
 
@@ -571,7 +570,7 @@ ${JSON.stringify(payload)}
 			return TPromise.wrapError(new Error('This is not a cmake project: ' + this._currentFolder));
 		}
 
-		await this.generateCMakeListsFile(resolvePath(this._currentFolder, CMAKE_CONFIG_FILE_NAME));
+		await this.generateCMakeListsFile();
 
 		const envDefine: string[] = [];
 		const envSource = { ...await this.getCMakeDef(), ...this.localEnv };
@@ -857,36 +856,14 @@ ${JSON.stringify(payload)}
 		await writeFile(cppExtConfigFile, JSON.stringify(content, null, 4), { encoding: { charset: 'utf-8', addBOM: false } });
 	}
 
-	private reportErrors(jsonFile: string, errors: ExParseError[]): void {
-		errors.forEach((error) => {
-			this.logger.info(error.message);
-		});
-	}
-
-	private async generateCMakeListsFile(listSourceFile: string, parent?: CMakeListsCreator) {
-		const creator = this.instantiationService.createInstance(CMakeListsCreator, listSourceFile, this.logger, parent);
-		await creator.create().catch((e) => {
-			if (Array.isArray(e)) {
-				this.reportErrors(listSourceFile, e);
-				throw new Error(CMAKE_CONFIG_FILE_NAME + ' has error.');
-			} else {
-				throw e;
-			}
-		});
-
-		for (const dep of creator.dependencies) {
-			await this.generateCMakeListsFile(resolvePath(listSourceFile, '..', CMAKE_LIBRARY_FOLDER_NAME, dep, CMAKE_CONFIG_FILE_NAME), creator);
+	private async generateCMakeListsFile() {
+		this.logger.info('Generate CMakeLists.txt file:');
+		const creator = this.instantiationService.createInstance(CMakeListsCreator, this._currentFolder, this.logger);
+		try {
+			await creator.prepareConfigure();
+		} catch (e) {
+			console.error(e);
+			throw e;
 		}
-
-		const result = creator.getString();
-
-		this.logger.info('write to CMakeLists.txt');
-		await writeFile(resolvePath(listSourceFile, '..', 'CMakeLists.txt'), result, {
-			encoding: {
-				charset: 'utf8',
-				addBOM: false,
-			},
-		});
-		this.logger.info('OK.');
 	}
 }

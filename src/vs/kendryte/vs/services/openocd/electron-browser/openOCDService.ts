@@ -134,7 +134,7 @@ export class OpenOCDService implements IOpenOCDService {
 			cwd: this.nodePathService.workspaceFilePath(),
 		});
 
-		if (!restart) {
+		if (!restart || !this.okPromise) {
 			this.okPromise = new DeferredPromise();
 			this.okPromise.p.then(() => {
 				this.okWait = false;

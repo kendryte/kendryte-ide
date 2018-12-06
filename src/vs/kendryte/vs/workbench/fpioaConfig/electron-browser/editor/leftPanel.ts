@@ -74,8 +74,8 @@ export class FpioaLeftPanel extends Disposable implements IView {
 		this.setCurrentChip(undefined);
 
 		this.list.splice(0, 2, [
-			{ id: null, templateId: TEMPLATE_ID.CHIP_SELECT, selected: undefined },
-			{ id: null, templateId: TEMPLATE_ID.SPLIT },
+			{ id: '##' + TEMPLATE_ID.CHIP_SELECT, templateId: TEMPLATE_ID.CHIP_SELECT, selected: undefined },
+			{ id: '##' + TEMPLATE_ID.SPLIT, templateId: TEMPLATE_ID.SPLIT },
 		]);
 	}
 
@@ -102,7 +102,7 @@ export class FpioaLeftPanel extends Disposable implements IView {
 		// console.warn('new chip selected:', chipName);
 		this.chipName = chipName;
 
-		this.list.splice(0, 1, [{ id: null, templateId: TEMPLATE_ID.CHIP_SELECT, selected: chipName }]);
+		this.list.splice(0, 1, [{ id: `##${TEMPLATE_ID.CHIP_SELECT}`, templateId: TEMPLATE_ID.CHIP_SELECT, selected: chipName }]);
 		if (chipName) {
 			this.changeList(getChipPackaging(chipName));
 		} else {

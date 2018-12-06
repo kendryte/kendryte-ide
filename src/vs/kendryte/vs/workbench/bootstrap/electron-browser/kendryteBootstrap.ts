@@ -18,6 +18,9 @@ import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/commo
 import { isMacintosh, isWindows } from 'vs/base/common/platform';
 import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
 import { ACTION_ID_UPGRADE_BUILDING_BLOCKS } from 'vs/kendryte/vs/base/common/menu/selfUpdate';
+import * as electron from 'electron';
+import { IEnvironmentService } from 'vs/platform/environment/common/environment';
+import Remote = Electron.Remote;
 
 class KendryteBootstrapAction extends Action {
 	public static readonly ID = KENDRYTE_ACTIONID_BOOTSTRAP;
@@ -25,6 +28,7 @@ class KendryteBootstrapAction extends Action {
 
 	constructor(
 		id: string = KendryteBootstrapAction.ID, label: string = KendryteBootstrapAction.LABEL,
+		@IEnvironmentService environmentService: IEnvironmentService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@ILogService private readonly logService: ILogService,
 		@ILifecycleService private readonly lifecycleService: ILifecycleService,
@@ -37,6 +41,11 @@ class KendryteBootstrapAction extends Action {
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 	) {
 		super(KENDRYTE_ACTIONID_BOOTSTRAP);
+
+		if (!environmentService.isBuilt) {
+			((electron as any).remote as Remote).getCurrentWebContents().openDevTools({ mode: 'detach' });
+		}
+
 		if (!process.env['VSCODE_PORTABLE']) { // for safe
 			throw new Error('----- ERROR -----\n bootstrap.js is not ok. VSCODE_PORTABLE not set.\n----- ERROR -----');
 		}
