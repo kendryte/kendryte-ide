@@ -10,6 +10,7 @@ import 'vs/css!vs/kendryte/vs/workbench/serialPort/electron-browser/panel';
 import { OcticonLabel } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 import { addDisposableListener } from 'vs/base/browser/dom';
 import { ISerialPortStatus } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
+import { SimpleIdProvider } from 'vs/kendryte/vs/base/common/simpleIdProvider';
 
 interface IStatusWithSelect extends ISerialPortStatus {
 	selected?: boolean;
@@ -35,7 +36,7 @@ export class SerialDeviceList extends Disposable {
 			this.createDelegate(),
 			[new SerialPortItemRenderer(this._onClick)],
 			{
-				identityProvider: e => e.id,
+				identityProvider: SimpleIdProvider<IStatusWithSelect>(),
 				ariaLabel: localize('settingsListLabel', 'Settings'),
 				focusOnMouseDown: false,
 				selectOnMouseDown: false,
@@ -81,6 +82,7 @@ export class SerialDeviceList extends Disposable {
 			}
 			this.dataList = list.map((entry) => {
 				return {
+					id: entry.comName,
 					portItem: entry,
 					hasOpen: map[entry.comName] || false,
 				};
@@ -90,7 +92,7 @@ export class SerialDeviceList extends Disposable {
 			this.list.splice(0, this.list.length, this.dataList);
 		} else {
 			this.dataList = list.map((entry) => {
-				return { portItem: entry, hasOpen: false };
+				return { id: entry.comName, portItem: entry, hasOpen: false };
 			});
 			this.list.splice(0, 0, this.dataList);
 		}
@@ -98,8 +100,10 @@ export class SerialDeviceList extends Disposable {
 		this.recheckCurrent();
 	}
 
-	refreshItem(item: IStatusWithSelect) {
-		const index = this.dataList.indexOf(item);
+	refreshItem(item: ISerialPortStatus) {
+		const index = this.dataList.findIndex((e) => {
+			return item.portItem.comName === e.portItem.comName;
+		});
 		if (index === -1) {
 			debugger;
 		}

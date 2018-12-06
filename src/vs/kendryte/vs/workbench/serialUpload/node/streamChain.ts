@@ -149,6 +149,15 @@ export class StreamChain<IT, OT> extends Disposable implements NodeJS.WritableSt
 		return this;
 	}
 
+	public off(event: string | symbol, listener: (...args: any[]) => void): this {
+		this._lastChild.off(event, listener);
+		return this;
+	}
+
+	public rawListeners(event: string | symbol) {
+		return this._lastChild.rawListeners(event);
+	}
+
 	emit(event: string | symbol, ...args: any[]): boolean {
 		return this.streams[0].emit(event, ...args);
 	}

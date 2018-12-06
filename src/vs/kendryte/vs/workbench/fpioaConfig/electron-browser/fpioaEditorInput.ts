@@ -57,7 +57,7 @@ export class FpioaEditorInput extends EditorInput {
 
 		lifecycleService.onWillShutdown((e) => {
 			if (this.model && this.model.isDirty()) {
-				e.veto(this.model.save().then(() => false));
+				e.join(this.model.save().then(() => void 0));
 			}
 		});
 	}

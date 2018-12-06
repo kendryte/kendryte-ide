@@ -135,7 +135,7 @@ export class CMakeService implements ICMakeService {
 
 		// this.installExtension('twxs.cmake');
 		lifecycleService.onWillShutdown(e => {
-			return e.veto(this.shutdown(true));
+			return e.join(this.shutdown(true));
 		});
 		this.localEnv = {};
 		this.localEnv.KENDRYTE_IDE = 'yes';
@@ -321,7 +321,7 @@ export class CMakeService implements ICMakeService {
 		}
 	}
 
-	private async shutdown(force: boolean = false): TPromise<boolean> {
+	private async shutdown(force: boolean = false): TPromise<void> {
 		if (this.cmakeProcess) {
 			this.logger.info('shutdown CMake server...');
 
@@ -335,7 +335,6 @@ export class CMakeService implements ICMakeService {
 
 			this.logger.info('CMake server shutdown complete...');
 		}
-		return false;
 	}
 
 	private handleOutput(output: string) {

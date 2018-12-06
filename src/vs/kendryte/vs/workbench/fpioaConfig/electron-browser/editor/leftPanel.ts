@@ -15,6 +15,7 @@ import { IChipPackagingCalculated } from 'vs/kendryte/vs/workbench/fpioaConfig/c
 import { GroupTitleRenderer } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/left/groupTitleView';
 import { NullRenderer } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/left/nullView';
 import { IFuncPinMap, PinFuncSetEvent } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
+import { SimpleIdProvider } from 'vs/kendryte/vs/base/common/simpleIdProvider';
 
 export class FpioaLeftPanel extends Disposable implements IView {
 	onDidChange = Event.None;
@@ -61,7 +62,7 @@ export class FpioaLeftPanel extends Disposable implements IView {
 			new LeftPanelItemDelegate(),
 			[chipSelectRender, this.funcMapListItemRender, new SplitRenderer, new NullRenderer, groupRender],
 			{
-				identityProvider: e => e.id,
+				identityProvider: SimpleIdProvider<IFpioaLeftListEntry>(),
 				ariaLabel: localize('settingsListLabel', 'Settings'),
 				focusOnMouseDown: false,
 				selectOnMouseDown: false,

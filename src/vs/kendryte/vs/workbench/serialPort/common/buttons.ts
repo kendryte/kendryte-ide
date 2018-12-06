@@ -14,7 +14,7 @@ export function addStatusBarButtons(access: ServicesAccessor) {
 		dispose(entries);
 	});
 
-	lifecycleService.when(LifecyclePhase.Running).then(() => {
+	lifecycleService.when(LifecyclePhase.Ready).then(() => {
 		const entry2 = statusbarService.addEntry({
 			text: '$(plug) $(terminal)',
 			command: SERIAL_MONITOR_ACTION_TOGGLE,

@@ -49,6 +49,7 @@ export const defaultConfig: ILocalOptions & Pick<SerialPort.OpenOptions, 'baudRa
 };
 
 export interface ISerialPortStatus {
+	id: string;
 	localOptions?: ILocalOptions;
 	instance?: SerialPortBaseBinding;
 	openOptions?: SerialPort.OpenOptions;

@@ -1,4 +1,4 @@
-import { createServer } from 'net';
+import { AddressInfo, createServer } from 'net';
 import { ChildProcess, spawn } from 'child_process';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IOpenOCDService } from 'vs/kendryte/vs/services/openocd/common/openOCDService';
@@ -192,7 +192,7 @@ export class OpenOCDService implements IOpenOCDService {
 			this.logger.info('finding port.');
 			const s = createServer();
 			s.listen(0, () => {
-				const port = s.address().port;
+				const port = (s.address() as AddressInfo).port;
 				s.close(() => {
 					resolve(port);
 				});

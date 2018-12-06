@@ -1,5 +1,5 @@
 import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
-import { IStorageService, IWorkspaceStorageChangeEvent, StorageScope } from 'vs/platform/storage/common/storage';
+import { IStorageService, IWillSaveStateEvent, IWorkspaceStorageChangeEvent, StorageScope } from 'vs/platform/storage/common/storage';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { Emitter } from 'vs/base/common/event';
 import { isUndefinedOrNull } from 'vs/base/common/types';
@@ -12,7 +12,7 @@ class StorageMainService extends Disposable implements IStorageService {
 
 	private readonly _onDidChangeStorage = new Emitter<IWorkspaceStorageChangeEvent>();
 	public readonly onDidChangeStorage = this._onDidChangeStorage.event;
-	private readonly _onWillSaveState = new Emitter<void>();
+	private readonly _onWillSaveState = new Emitter<IWillSaveStateEvent>();
 	public readonly onWillSaveState = this._onWillSaveState.event;
 
 	constructor() {

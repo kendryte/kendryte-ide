@@ -79,7 +79,7 @@ class KendryteBootstrapAction extends Action {
 	}
 
 	async _run() {
-		await this.lifecycleService.when(LifecyclePhase.Running);
+		await this.lifecycleService.when(LifecyclePhase.Restored);
 
 		const hasPermInPackages = await this.nodeFileSystemService.tryWriteInFolder(this.nodePathService.getPackagesPath('test-perm'));
 		const installingRoot = this.nodePathService.getSelfControllingRoot();

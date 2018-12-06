@@ -16,7 +16,7 @@ export class SubProgress {
 	protected total: number;
 	protected currentPart: number;
 
-	private scheduleTimer: number;
+	private scheduleTimer: NodeJS.Immediate;
 	private readonly scheduleObject: IProgressStatus;
 
 	protected readonly currentObject: IProgressStatus;

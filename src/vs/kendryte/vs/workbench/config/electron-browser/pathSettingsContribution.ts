@@ -117,4 +117,4 @@ function ignore(data: any, name: string, changed: { change: boolean }) {
 }
 
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
-	.registerWorkbenchContribution(SettingCategoryContribution, LifecyclePhase.Running);
+	.registerWorkbenchContribution(SettingCategoryContribution, LifecyclePhase.Starting);

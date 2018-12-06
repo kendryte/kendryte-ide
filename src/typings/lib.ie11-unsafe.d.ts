@@ -16,6 +16,13 @@ declare interface NodeBuffer {
 	from(data: Uint8Array): Buffer;
 }
 
+declare module 'http' {
+	/**
+	 * @deprecated Use IncomingMessage
+	 */
+	export class ClientResponse extends IncomingMessage { }
+}
+
 /* ie11 safe */
 interface Map<K, V> {
 	set(key: K, value?: V): Map<K, V>;

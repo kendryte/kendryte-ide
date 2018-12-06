@@ -152,7 +152,7 @@ function $$(id: string, className: string, ...styles: Partial<CSSStyleDeclaratio
 	}
 	const $dom = $(b);
 	if (styles.length) {
-		assign($dom.style, ...styles);
+		Object.assign($dom.style, ...styles);
 	}
 	return $dom;
 }
