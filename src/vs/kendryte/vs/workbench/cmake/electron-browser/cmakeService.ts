@@ -787,7 +787,12 @@ ${JSON.stringify(payload)}
 				return proj;
 			}
 		}
-		return variant.projects[0];
+		// try find first project that has executable
+		return variant.projects.find((item) => {
+			return -1 !== item.targets.findIndex((item) => {
+				return item.type === 'EXECUTABLE';
+			});
+		});
 	}
 
 	public async getOutputFile(): TPromise<string> {

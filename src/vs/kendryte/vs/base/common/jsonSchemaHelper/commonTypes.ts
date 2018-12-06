@@ -1,7 +1,7 @@
 import { IJSONSchema } from 'vs/base/common/jsonSchema';
 
-export function SchemaMap(description: string, type: IJSONSchema | string): IJSONSchema {
-	if (typeof type === 'string') {
+export function SchemaMap(description: string, type: IJSONSchema | string | string[]): IJSONSchema {
+	if (typeof type === 'string' || Array.isArray(type)) {
 		return {
 			type: 'object',
 			description,
@@ -20,8 +20,8 @@ export function SchemaMap(description: string, type: IJSONSchema | string): IJSO
 	}
 }
 
-export function SchemaArray(description: string, type: IJSONSchema | string): IJSONSchema {
-	if (typeof type === 'string') {
+export function SchemaArray(description: string, type: IJSONSchema | string | string[]): IJSONSchema {
+	if (typeof type === 'string' || Array.isArray(type)) {
 		return {
 			type: 'array',
 			description,

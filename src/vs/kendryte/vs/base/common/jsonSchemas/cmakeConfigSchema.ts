@@ -25,7 +25,7 @@ export interface ICommonProject {
 	c_cpp_flags: string[];
 	link_flags: string[];
 	ld_file: string;
-	definitions: { [id: string]: string }
+	definitions: { [id: string]: string | number }
 	entry: string;
 }
 
@@ -103,7 +103,7 @@ const baseSchemaProps: IJSONSchemaMap = {
 		description: 'Additional LD file to use',
 		default: '',
 	},
-	definitions: SchemaMap('Constant define map', 'string'),
+	definitions: SchemaMap('Constant define map', ['string', 'number']),
 	entry: {
 		type: 'string',
 		default: 'src/main.c',

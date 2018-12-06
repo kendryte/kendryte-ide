@@ -48,7 +48,7 @@ abstract class UserInputStream extends Transform {
 			}
 			super.unpipe();
 		}
-		console.warn('pipe to ', instance);
+		// console.warn('pipe to ', instance);
 		this.instance = instance;
 		return super.pipe(instance);
 	}
@@ -71,7 +71,7 @@ export class UserTypeInputStream extends UserInputStream {
 		data = data.replace(/\r/g, this.ending);
 
 		const buff = Buffer.from(data, this.encoding);
-		console.log('transform type: %s (%s)', buff, this.encoding);
+		// console.log('transform type: %s (%s)', buff, this.encoding);
 		this.push(buff);
 
 		callback();
@@ -118,7 +118,7 @@ export class UserLineInputStream extends UserInputStream {
 		}
 
 		const buff = Buffer.from(data + this.ending, this.encoding);
-		console.log('transform: %s (%s)', buff, this.encoding);
+		// console.log('transform string: %s (%s)', buff, this.encoding);
 		this.push(buff);
 
 		callback();

@@ -10,12 +10,18 @@ import { resolve } from 'path';
 
 export const CMAKE_LIST_GENERATED_WARNING = '# [NEVER REMOVE THIS LINE] WARNING: this file is generated, please edit ' + CMAKE_CONFIG_FILE_NAME + ' file instead.';
 
+interface DefineValue {
+	id: string;
+	config: string;
+	value: string;
+}
+
 interface CreatorCachedData {
 	absoluteIncludes: string[];
 	treeIncludes: string[];
 	linkerScripts: string[];
 	extraListData: string;
-	definitionsOverwrite: { [id: string]: string };
+	definitionsWanted: DefineValue[];
 }
 
 type ICompileInfo = ICompileInfoBase & CreatorCachedData & {
@@ -51,6 +57,7 @@ export class CMakeListsCreator {
 	private readonly isDebugMode: boolean;
 	private tree: ICompileInfo;
 	private treeCache: { [id: string]: ICompileInfo };
+	private definitionsRegistry: Map<string, DefineValue>;
 
 	constructor(
 		private readonly currentDir: string,
@@ -148,13 +155,17 @@ export class CMakeListsCreator {
 
 	private walkConcatTree<K extends keyof CreatorCachedData, T extends CreatorCachedData[K]>(
 		current: ICompileInfo,
-		storeKey: K,
+		storeKey: K | null,
 		sliceMap: (item: ICompileInfo) => T,
-		concat: (a: T, b: T) => T = defaultConcat,
+		rootToLeaf: boolean = false,
+		concat?: (a: T, b: T) => T,
 		walkCache = [],
 	): T {
-		if (current[storeKey]) {
+		if (storeKey && current[storeKey]) {
 			return current[storeKey] as any;
+		}
+		if (!concat) {
+			concat = storeKey ? defaultConcat : (a) => a;
 		}
 
 		walkCache.push(current.name);
@@ -165,13 +176,18 @@ export class CMakeListsCreator {
 					continue;
 				}
 				walkCache.push(child.name);
-				const result = this.walkConcatTree(child, storeKey, sliceMap, concat, walkCache);
+				const result = this.walkConcatTree(child, storeKey, sliceMap, rootToLeaf, concat, walkCache);
 
 				concat(results, result);
 			}
 		}
+		if (rootToLeaf) {
+			concat(results, sliceMap(current));
+		}
 
-		current[storeKey] = results;
+		if (storeKey) {
+			current[storeKey] = results;
+		}
 		return results;
 	}
 
@@ -195,12 +211,30 @@ export class CMakeListsCreator {
 	}
 
 	private findAllConstants(parent: ICompileInfo) {
-		return this.walkConcatTree(parent, 'definitionsOverwrite', (current: ICompileInfo) => {
+		this.definitionsRegistry = new Map();
+		return this.walkConcatTree(parent, null, (current: ICompileInfo) => {
+			current.definitionsWanted = [];
 			if (!current.definitions) {
-				return {};
+				return;
 			}
-			return { ...current.definitions };
-		}, Object.assign);
+			for (const k of Object.keys(current.definitions)) {
+				const id = k.replace(/:RAW$/, '');
+				if (!this.definitionsRegistry.has(id)) {
+					this.definitionsRegistry.set(id, {
+						id,
+						config: k,
+						value: null,
+					});
+				}
+				const bundle = this.definitionsRegistry.get(id);
+				if (k.endsWith(':RAW')) {
+					bundle.value = '' + current.definitions[k];
+				} else {
+					bundle.value = JSON.stringify(current.definitions[k]);
+				}
+				current.definitionsWanted.push(bundle);
+			}
+		}, true);
 	}
 
 	public async prepareConfigure() {
@@ -450,10 +484,10 @@ export class CMakeListsCreator {
 		} else {
 			content.push('## no properties');
 		}
-		if (current.definitionsOverwrite) {
+		if (current.definitionsWanted.length) {
 			content.push('## set definitions');
-			for (const [key, value] of Object.entries(current.definitionsOverwrite)) {
-				content.push(`add_compile_definitions(${key}${value ? '=' + value : ''})`);
+			for (const { id, value } of current.definitionsWanted) {
+				content.push(`add_compile_definitions(${id}${value ? '=' + value : ''})`);
 			}
 		} else {
 			content.push('## no definitions');
