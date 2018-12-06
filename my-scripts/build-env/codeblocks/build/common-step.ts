@@ -61,6 +61,7 @@ export async function deleteCompileCaches(output: OutputStreamControl) {
 			await removeDirectory(resolve(process.env.TMP, folder), output);
 		}
 	}
+	await removeDirectory(resolve(process.env.TMP, 'npm-cache'), output);
 	
 	chdir(process.env.HOME);
 	await removeDirectory(resolve(process.env.HOME, '.node-gyp'), output);

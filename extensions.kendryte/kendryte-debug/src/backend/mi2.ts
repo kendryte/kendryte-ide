@@ -1,10 +1,13 @@
-import { Breakpoint, IBackend, MIError, Stack, Thread, Variable, VariableObject } from '../backend';
+import { Breakpoint, IBackend, MIError, Stack, Thread, Variable, VariableObject } from './backend';
 import * as ChildProcess from 'child_process';
 import { EventEmitter } from 'events';
-import { MINode, parseMI } from '../mi_parse';
+import { MINode, parseMI } from './mi_parse';
 import * as nativePath from 'path';
 import { posix } from 'path';
-import { always, DeferredPromise, timeout } from '../../lib';
+import { always, DeferredPromise, timeout } from '../lib';
+import { CustomLogger } from './lib/logger';
+import { DebugSession } from 'vscode-debugadapter';
+import { merge_env } from './lib/merge_env';
 
 const path = posix;
 
@@ -33,8 +36,7 @@ const trace = false;
 export class MI2 extends EventEmitter implements IBackend {
 	prettyPrint: boolean = true;
 	printCalls: boolean;
-	debugOutput: boolean;
-	public procEnv: any;
+	public readonly procEnv: any;
 	private waittingInterrupt: DeferredPromise<true>;
 	protected currentToken: number = 1;
 	protected handlers: { [index: number]: (info: MINode) => any } = {};
@@ -45,30 +47,19 @@ export class MI2 extends EventEmitter implements IBackend {
 	protected process: ChildProcess.ChildProcess;
 	protected stream;
 
-	constructor(public application: string, public preargs: string[], public extraargs: string[], procEnv: any) {
+	protected readonly logger: CustomLogger;
+
+	constructor(
+		session: DebugSession,
+		public readonly application: string,
+		public readonly preargs: string[],
+		public readonly extraargs: string[],
+		procEnv: any,
+	) {
 		super();
 
-		if (procEnv) {
-			const env = {};
-			// Duplicate process.env so we don't override it
-			for (const key in process.env) {
-				if (process.env.hasOwnProperty(key)) {
-					env[key] = process.env[key];
-				}
-			}
-
-			// Overwrite with user specified variables
-			for (const key in procEnv) {
-				if (procEnv.hasOwnProperty(key)) {
-					if (procEnv === null) {
-						delete env[key];
-					} else {
-						env[key] = procEnv[key];
-					}
-				}
-			}
-			this.procEnv = env;
-		}
+		this.logger = new CustomLogger('MI2', session);
+		this.procEnv = procEnv ? merge_env(procEnv) : process.env;
 	}
 
 	stdout(data) {
@@ -133,12 +124,10 @@ export class MI2 extends EventEmitter implements IBackend {
 				}
 			} else {
 				const parsed = parseMI(line);
-				if (this.debugOutput) {
-					this.log('stdout', `--------- \x1B[38;5;0m${parsed.token}-${this.handlersCommands[parsed.token]}\x1B[0m:
-GDB -> App: ${JSON.stringify(parsed).trim()}
----------
+				this.logger.writeln(`\x1B[38;5;0m${parsed.token}-${this.handlersCommands[parsed.token]}\x1B[0m:
+  GDB -> App: ${JSON.stringify(parsed).trim()}
 `);
-				} else if (parsed.resultRecords && parsed.resultRecords.resultClass == 'error') {
+				if (parsed.resultRecords && parsed.resultRecords.resultClass == 'error') {
 					this.log('stderr', parsed.result('msg') || line);
 				}
 				let handled = false;
@@ -373,10 +362,21 @@ GDB -> App: ${JSON.stringify(parsed).trim()}
 		} else {
 			args = this.preargs;
 		}
+
+		this.log('stdout', this.application + ' ' + args.join(' '));
 		this.process = ChildProcess.spawn(this.application, args, { cwd: cwd, env: this.procEnv });
 		this.process.stdout.on('data', this.stdout.bind(this));
 		this.process.stderr.on('data', this.stderr.bind(this));
-		this.process.on('exit', () => { this.emit('quit'); });
+		this.process.on('exit', (code, signal) => {
+			console.error(code, signal);
+			if (signal) {
+				this.emit('quit', new Error(`${this.application} killed by signal ${signal}`));
+			}
+			if (code !== 0) {
+				this.emit('quit', new Error(`${this.application} exited with code ${signal}`));
+			}
+			this.emit('quit');
+		});
 		this.process.on('error', (err) => { this.emit('launcherror', err); });
 		await this.sendCommand('gdb-set target-async on');
 		await this.sendCommand('environment-directory ' + escapePath(cwd));

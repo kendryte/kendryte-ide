@@ -10,6 +10,11 @@ import { usePretty } from '../build-env/misc/usePretty';
 
 whatIsThis(__filename, 'compile .ts files in my-scripts folder, you should run this after every git pull.');
 
+const useWatch = process.argv.includes('-w');
+if (useWatch) {
+	process.env.SKIP_FIRST_COMPILE = 'yes';
+}
+
 runMain(async () => {
 	const output = usePretty();
 	chdir(resolve(VSCODE_ROOT, 'my-scripts'));
@@ -18,7 +23,7 @@ runMain(async () => {
 	output.end();
 	useThisStream(process.stderr);
 	
-	if (process.argv.includes('-w')) {
+	if (useWatch) {
 		await pipeCommandOut(process.stdout, 'tsc', '-p', '.', ...process.argv.slice(2)).catch(e => {
 			if (e.__programError) {
 				console.error('`tsc` reported this error: %s.\nBut it will ignore.', e.message);

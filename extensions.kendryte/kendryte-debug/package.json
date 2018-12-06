@@ -11,6 +11,8 @@
   "publisher": "kendryte",
   "main": "./frontend/extension",
   "activationEvents": [
+    "*",
+    "onDebug",
     "onCommand:kendryte-debug.examineMemoryLocation",
     "onCommand:kendryte-debug.getFileNameNoExt",
     "onCommand:kendryte-debug.getFileBasenameNoExt"
@@ -33,7 +35,7 @@
       {
         "type": "kendryte",
         "extensions": [],
-        "program": "./gdb.js",
+        "program": "./gdb-loader.js",
         "runtime": "node",
         "label": "Kendryte",
         "enableBreakpointsFor": {
@@ -49,6 +51,10 @@
               "target"
             ],
             "properties": {
+              "id": {
+                "type": "string",
+                "description": "ID of this config"
+              },
               "target": {
                 "type": "string",
                 "description": "Path of executable"
@@ -82,6 +88,9 @@
                 "type": "array",
                 "description": "GDB commands to run when starting to debug",
                 "default": []
+              },
+              "env": {
+                "type": "object"
               }
             }
           }
@@ -119,11 +128,11 @@
     "compile": "tsc -watch -p ./"
   },
   "dependencies": {
+    "source-map-support": "^0.5.9",
     "vscode-debugadapter": "^1.32.1",
     "vscode-debugprotocol": "^1.32.0"
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "resolutions": {
     "flatmap-stream": "11.1.3",
     "**/flatmap-stream": "11.1.3"

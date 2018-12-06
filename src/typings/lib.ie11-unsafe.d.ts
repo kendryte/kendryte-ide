@@ -9,6 +9,7 @@
 /// <reference lib="es2015.symbol"/>
 /// <reference lib="es2015.iterable"/>
 /// <reference lib="es2017.object"/>
+/// <reference lib="es2016.array.include"/>
 /// <reference lib="es2015.proxy"/>
 /// <reference lib="es2015.collection"/>
 

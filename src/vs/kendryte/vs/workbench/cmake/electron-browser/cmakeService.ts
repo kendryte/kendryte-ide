@@ -44,11 +44,11 @@ import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { CMakeBuildErrorProcessor, CMakeBuildProgressProcessor, CMakeProcessList } from 'vs/kendryte/vs/workbench/cmake/node/outputProcessor';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
-import { ExParseError } from 'vs/kendryte/vs/base/common/jsonComments';
+import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIST_GENERATED_WARNING } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ILogService } from 'vs/platform/log/common/log';
-import { CMAKE_LIST_GENERATED_WARNING, CMakeListsCreator } from 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeListsCreator';
+import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
+import { CMakeListsCreator } from 'vs/kendryte/vs/workbench/cmake/electron-browser/listsCreator';
 
 export interface IPromiseProgress<T> {
 	progress(fn: (p: T) => void): void;
@@ -129,6 +129,7 @@ export class CMakeService implements ICMakeService {
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@INodePathService private readonly nodePathService: INodePathService,
+		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 	) {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
@@ -171,15 +172,19 @@ export class CMakeService implements ICMakeService {
 		return this.cmakeConnectionStablePromise;
 	}
 
-	private async getCMakeEnv() {
+	private async getCMakeDef(): Promise<{ [name: string]: string }> {
 		let staticEnvFile = resolvePath(this._currentFolder, '.vscode/cmake-env.json');
 		let staticEnv: any = {};
 		if (await fileExists(staticEnvFile)) {
 			staticEnv = JSON.parse(await readFile(staticEnvFile, 'utf8'));
 		} else {
-			await writeFile(staticEnvFile, '{}');
+			await this.nodeFileSystemService.rawWriteFile(staticEnvFile, '{}');
 		}
+		return staticEnv;
+	}
 
+	private async getCMakeEnv() {
+		const staticEnv = await this.getCMakeDef();
 		const env: any = getEnvironment(this.nodePathService);
 
 		return {
@@ -542,7 +547,7 @@ ${JSON.stringify(payload)}
 		}
 		this._CMakeProjectExists = true;
 
-		await this.generateCMakeListsFile(listSourceFile);
+		await this.generateCMakeListsFile();
 		this.logger.info('  - CMake project is exists.');
 	}
 
@@ -565,15 +570,16 @@ ${JSON.stringify(payload)}
 			return TPromise.wrapError(new Error('This is not a cmake project: ' + this._currentFolder));
 		}
 
-		await this.generateCMakeListsFile(resolvePath(this._currentFolder, CMAKE_CONFIG_FILE_NAME));
+		await this.generateCMakeListsFile();
 
 		const envDefine: string[] = [];
-		for (const name of Object.keys(this.localEnv)) {
-			const value = this.localEnv[name];
+		const envSource = { ...await this.getCMakeDef(), ...this.localEnv };
+		for (const name of Object.keys(envSource)) {
+			const value = envSource[name];
 			if (value) {
 				envDefine.push(`-D${name}=${value}`);
 			} else {
-				this.logger.info('  empty key: %s', name);
+				envDefine.push(`-D${name}`);
 			}
 		}
 
@@ -585,6 +591,7 @@ ${JSON.stringify(payload)}
 		// await this.runCMakeRaw('..', '-G', 'Unix Makefiles', ...configArgs);
 
 		this.logger.info('configuring project: %s', this.cmakeLists);
+		this.logger.info(configArgs.join('\n'));
 		await this.sendRequest({
 			type: CMAKE_EVENT_TYPE.CONFIGURE,
 			cacheArguments: configArgs,
@@ -780,7 +787,12 @@ ${JSON.stringify(payload)}
 				return proj;
 			}
 		}
-		return variant.projects[0];
+		// try find first project that has executable
+		return variant.projects.find((item) => {
+			return -1 !== item.targets.findIndex((item) => {
+				return item.type === 'EXECUTABLE';
+			});
+		});
 	}
 
 	public async getOutputFile(): TPromise<string> {
@@ -849,36 +861,14 @@ ${JSON.stringify(payload)}
 		await writeFile(cppExtConfigFile, JSON.stringify(content, null, 4), { encoding: { charset: 'utf-8', addBOM: false } });
 	}
 
-	private reportErrors(jsonFile: string, errors: ExParseError[]): void {
-		errors.forEach((error) => {
-			this.logger.info(error.message);
-		});
-	}
-
-	private async generateCMakeListsFile(listSourceFile: string, parent?: CMakeListsCreator) {
-		const creator = this.instantiationService.createInstance(CMakeListsCreator, listSourceFile, this.logger, parent);
-		await creator.create().catch((e) => {
-			if (Array.isArray(e)) {
-				this.reportErrors(listSourceFile, e);
-				throw new Error(CMAKE_CONFIG_FILE_NAME + ' has error.');
-			} else {
-				throw e;
-			}
-		});
-
-		for (const dep of creator.dependencies) {
-			await this.generateCMakeListsFile(resolvePath(listSourceFile, '..', CMAKE_LIBRARY_FOLDER_NAME, dep, CMAKE_CONFIG_FILE_NAME), creator);
+	private async generateCMakeListsFile() {
+		this.logger.info('Generate CMakeLists.txt file:');
+		const creator = this.instantiationService.createInstance(CMakeListsCreator, this._currentFolder, this.logger);
+		try {
+			await creator.prepareConfigure();
+		} catch (e) {
+			console.error(e);
+			throw e;
 		}
-
-		const result = creator.getString();
-
-		this.logger.info('write to CMakeLists.txt');
-		await writeFile(resolvePath(listSourceFile, '..', 'CMakeLists.txt'), result, {
-			encoding: {
-				charset: 'utf8',
-				addBOM: false,
-			},
-		});
-		this.logger.info('OK.');
 	}
 }

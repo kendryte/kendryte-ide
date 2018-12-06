@@ -7,7 +7,7 @@ import { exists, writeFile } from 'vs/base/node/pfs';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { URI } from 'vs/base/common/uri';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
-import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
+import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 
 export class OpenLocalCmakeListAction extends Action {
 	static readonly ID = ACTION_ID_OPEN_CMAKE_LIST_CONFIG;

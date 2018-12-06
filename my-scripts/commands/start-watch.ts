@@ -1,10 +1,10 @@
 import { buildExtension } from '../build-env/bundled-extension/buildExtension';
+import { getExtensionPath } from '../build-env/bundled-extension/path';
 import { pipeCommandOut } from '../build-env/childprocess/complex';
 import { getElectronIfNot } from '../build-env/codeblocks/getElectron';
 import { gulpCommands } from '../build-env/codeblocks/gulp';
 import { switchQuitKey } from '../build-env/codeblocks/switchQuitKey';
 import { cleanScreen, getCleanableStdout } from '../build-env/misc/clsUtil';
-import { VSCODE_ROOT } from '../build-env/misc/constants';
 import { isExists } from '../build-env/misc/fsUtil';
 import { useThisStream } from '../build-env/misc/globalOutput';
 import { whatIsThis } from '../build-env/misc/help';
@@ -27,7 +27,7 @@ runMain(async () => {
 	) {
 		const stream = usePretty('compile-extension');
 		
-		await buildExtension(stream, VSCODE_ROOT, VSCODE_ROOT, false);
+		await buildExtension(stream, getExtensionPath(false), false);
 		
 		stream.write('starting compile extensions...');
 		await pipeCommandOut(stream, 'node', ...gulpCommands(), 'compile-extensions');

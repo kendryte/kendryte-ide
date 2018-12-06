@@ -10,6 +10,8 @@ import { chdir } from '../build-env/misc/pathUtil';
 whatIsThis(__filename, 'start local debug IDE, need start-watch show success.');
 
 runMain(async () => {
+	const passArgs = process.argv.slice(2);
+	
 	await getElectronIfNot();
 	
 	delete process.env.VSCODE_PORTABLE;
@@ -22,16 +24,23 @@ runMain(async () => {
 	delete process.env.HTTPS_PROXY;
 	delete process.env.ALL_PROXY;
 	
-	const passArgs = process.argv.slice(2);
+	const inspect = passArgs.find(e => /^--inspect(-brk)?(=|$)/.test(e));
+	if (inspect) {
+		const port = parseInt(inspect.replace(/^--inspect(-brk)?(=|$)/, '')) || 9929;
+		passArgs.push(`--inspect${inspect[1] || ''}-extensions=${port + 1}`);
+	} else {
+		passArgs.push(`--inspect=9929`);
+		passArgs.push(`--inspect-extensions=9930`);
+	}
+	cleanScreen();
+	console.log(passArgs);
 	if (isWin) {
-		cleanScreen();
 		console.error('cmd.exe /c scripts\\code.bat %s', passArgs.join(' '));
 		spawnSync('cmd.exe', ['/C', 'scripts\\code.bat', ...passArgs], {
 			encoding: 'utf8',
 			stdio: 'inherit',
 		});
 	} else {
-		cleanScreen();
 		console.error('bash scripts/code.sh %s', passArgs.join(' '));
 		spawnSync('bash', ['scripts/code.sh', ...passArgs], {
 			encoding: 'utf8',
@@ -39,14 +48,3 @@ runMain(async () => {
 		});
 	}
 });
-
-/*
-elif [ "$SYSTEM" = "mac" ]; then
-	mkdir -p ~/kendryte-ide-user-data
-	if [ -L ../data ] && [ "$(readlink ../data)" != ~/kendryte-ide-user-data ] ; then
-		unlink ../data
-		ln -s ~/kendryte-ide-user-data ../data
-	fi
-
-	do_start bash scripts/code.sh "$@"
-*/

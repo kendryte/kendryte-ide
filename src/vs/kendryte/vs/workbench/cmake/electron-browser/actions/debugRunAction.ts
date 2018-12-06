@@ -13,7 +13,6 @@ import { IEnvironmentService } from 'vs/platform/environment/common/environment'
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ILogService } from 'vs/platform/log/common/log';
-import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { DebugScript, getEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
 import { JSONVisitor, visit } from 'vs/base/common/json';
@@ -84,7 +83,6 @@ class WorkspaceMaixLaunch implements ILaunch {
 				...getEnvironment(this.nodePathService),
 			},
 			printCalls: true,
-			showDevDebugOutput: true,
 			stopOnAttach: false,
 			autorun: [],
 			gdbpath: this.GDB,
@@ -191,7 +189,6 @@ export class MaixCMakeDebugAction extends Action {
 		@IDebugService private debugService: IDebugService,
 		@ILogService private logService: ILogService,
 		@IInstantiationService private instantiationService: IInstantiationService,
-		@INotificationService private notificationService: INotificationService,
 		@IFileService private fileService: IFileService,
 		@ITextModelService private textModelService: ITextModelService,
 		@IOpenOCDService protected openOCDService: IOpenOCDService,
@@ -289,19 +286,7 @@ export class MaixCMakeDebugAction extends Action {
 			throw e;
 		});
 
-		const handle = this.notificationService.notify({
-			severity: Severity.Info,
-			message: `connecting to ${config.target}...`,
-		});
-		handle.progress.infinite();
-
-		await this.debugService.startDebugging(myLaunch, 'kendryte').then(undefined, (e) => {
-			debugger;
-			this.notificationService.error('Failed to start debug:\n' + e.message);
-			throw e;
-		});
-
-		handle.close();
+		await this.debugService.startDebugging(myLaunch, 'kendryte');
 	}
 }
 

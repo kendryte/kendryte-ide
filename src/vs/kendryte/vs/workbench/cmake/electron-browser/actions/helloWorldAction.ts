@@ -10,7 +10,7 @@ import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace
 import { copy, mkdirp } from 'vs/base/node/pfs';
 import { ACTIVE_GROUP, IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
-import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
+import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 
 export class MaixCMakeHelloWorldAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_HELLO_WORLD;
@@ -56,7 +56,7 @@ export class MaixCMakeHelloWorldAction extends Action {
 		await copy(source, target);
 
 		// this is official package, just ignore any error
-		const [packageData] = await this.nodeFileSystemService.readPackageFile();
+		const { json: packageData } = await this.nodeFileSystemService.readPackageFile();
 		const resolver = this.workspaceContextService.getWorkspace().folders[0];
 
 		const i1 = this.editorService.createInput({ resource: resolver.toResource(CMAKE_CONFIG_FILE_NAME) });

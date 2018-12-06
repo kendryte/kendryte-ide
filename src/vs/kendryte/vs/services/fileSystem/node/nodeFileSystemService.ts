@@ -1,6 +1,5 @@
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
-import { TPromise } from 'vs/base/common/winjs.base';
+import { IJSONResult, INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { copy, exists, mkdirp, readFile, rimraf, stat, unlink, writeFile } from 'vs/base/node/pfs';
 import { ILogService } from 'vs/platform/log/common/log';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
@@ -11,7 +10,7 @@ import { IReference } from 'vs/base/common/lifecycle';
 import { ITextEditorModel, ITextModelService } from 'vs/editor/common/services/resolverService';
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
 import { IFileService } from 'vs/platform/files/common/files';
-import { ExParseError, parseExtendedJson } from 'vs/kendryte/vs/base/common/jsonComments';
+import { parseExtendedJson } from 'vs/kendryte/vs/base/common/jsonComments';
 import { setProperty } from 'vs/base/common/jsonEdit';
 import { Range } from 'vs/editor/common/core/range';
 import { Selection } from 'vs/editor/common/core/selection';
@@ -19,7 +18,7 @@ import { ITextModel } from 'vs/editor/common/model';
 import { Edit } from 'vs/base/common/jsonFormatter';
 import { EditOperation } from 'vs/editor/common/core/editOperation';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { ICompileOptions } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
+import { ICompileInfo } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 
 class NodeFileSystemService implements INodeFileSystemService {
 	_serviceBrand: any;
@@ -33,23 +32,29 @@ class NodeFileSystemService implements INodeFileSystemService {
 	) {
 	}
 
-	public readFileIfExists(file: string): TPromise<string>;
-	public readFileIfExists(file: string, raw: true): TPromise<Buffer>;
-	public async readFileIfExists(file: string, raw?: true): TPromise<string | Buffer> {
+	public readFile(file: string): Promise<string>;
+	public readFile(file: string, raw: true): Promise<Buffer>;
+	public readFile(file: string, raw?: true): Promise<string | Buffer> {
+		this.logService.debug('readFile: ' + file);
+		if (raw) {
+			return readFile(file);
+		} else {
+			return readFile(file, 'utf8');
+		}
+	}
+
+	public readFileIfExists(file: string): Promise<string>;
+	public readFileIfExists(file: string, raw: true): Promise<Buffer>;
+	public async readFileIfExists(file: string, raw?: true): Promise<string | Buffer> {
 		if (await exists(file)) {
-			this.logService.debug('readFile: ' + file);
-			if (raw) {
-				return await readFile(file);
-			} else {
-				return await readFile(file, 'utf8');
-			}
+			return this.readFile(file, raw);
 		} else {
 			this.logService.debug('readFile (not exists): ' + file);
 			return raw ? Buffer.alloc(0) : '';
 		}
 	}
 
-	async writeFile(file: string, data: string | Buffer): TPromise<void> {
+	async rawWriteFile(file: string, data: string | Buffer): Promise<void> {
 		this.logService.debug('writeFile: ' + file);
 		await mkdirp(resolvePath(file, '..'));
 
@@ -60,7 +65,7 @@ class NodeFileSystemService implements INodeFileSystemService {
 		}
 	}
 
-	protected async hasFileChanged(file: string, data: Buffer): TPromise<boolean> {
+	protected async hasFileChanged(file: string, data: Buffer): Promise<boolean> {
 		if (!await exists(file)) {
 			return true;
 		}
@@ -72,7 +77,7 @@ class NodeFileSystemService implements INodeFileSystemService {
 		return !diskContrent.compare(data);
 	}
 
-	public async writeFileIfChanged(file: string, data: string | Buffer): TPromise<boolean> {
+	public async writeFileIfChanged(file: string, data: string | Buffer): Promise<boolean> {
 		if (!Buffer.isBuffer(data)) {
 			data = Buffer.from(data, 'utf8');
 		}
@@ -81,7 +86,7 @@ class NodeFileSystemService implements INodeFileSystemService {
 			return false;
 		}
 		this.logService.debug('writeFile: ' + file);
-		await this.writeFile(file, data);
+		await this.rawWriteFile(file, data);
 		return true;
 	}
 
@@ -94,17 +99,17 @@ class NodeFileSystemService implements INodeFileSystemService {
 		await copy(from, to);
 	}
 
-	public async readJsonFile<T>(file: string): TPromise<[T, ExParseError[]]> {
+	public async readJsonFile<T>(file: string): Promise<IJSONResult<T>> {
 		const data = await readFile(file, 'utf8');
-		const [result, errors] = parseExtendedJson(data, file);
-		return [result, errors];
+		const [json, warnings] = parseExtendedJson(data, file);
+		return { json, warnings };
 	}
 
-	public readPackageFile(packageFile: string = this.nodePathService.getPackageFile()): TPromise<[ICompileOptions, ExParseError[]]> {
-		return this.readJsonFile(packageFile);
+	public readPackageFile(packageFile: string = this.nodePathService.getPackageFile()) {
+		return this.readJsonFile<ICompileInfo>(packageFile);
 	}
 
-	public async tryWriteInFolder(target: string): TPromise<boolean> {
+	public async tryWriteInFolder(target: string): Promise<boolean> {
 		if (await exists(target)) {
 			try {
 				const testFile = resolvePath(target, '.a-file-for-test-permission.txt');
@@ -123,7 +128,7 @@ class NodeFileSystemService implements INodeFileSystemService {
 		}
 	}
 
-	public async editJsonFile(file: string, key: Segment[] | Segment, value: any): TPromise<void> {
+	public async editJsonFile(file: string, key: Segment[] | Segment, value: any): Promise<void> {
 		const resource = URI.file(file);
 		const reference = await this.resolveModelReference(resource);
 		const model = reference.object.textEditorModel;
@@ -161,12 +166,12 @@ class NodeFileSystemService implements INodeFileSystemService {
 		return false;
 	}
 
-	private resolveModelReference(resource: URI): TPromise<IReference<ITextEditorModel>> {
-		return this.fileService.existsFile(resource)
-			.then(exists => {
-				const result = exists ? TPromise.as(null) : this.fileService.updateContent(resource, '{}', { encoding: encoding.UTF8 });
-				return result.then(() => this.textModelResolverService.createModelReference(resource));
-			});
+	private async resolveModelReference(resource: URI): Promise<IReference<ITextEditorModel>> {
+		const exists = await this.fileService.existsFile(resource);
+		if (!exists) {
+			await this.fileService.updateContent(resource, '{}', { encoding: encoding.UTF8 });
+		}
+		return await this.textModelResolverService.createModelReference(resource);
 	}
 }
 

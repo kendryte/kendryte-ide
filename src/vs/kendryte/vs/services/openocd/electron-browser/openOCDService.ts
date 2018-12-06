@@ -21,18 +21,22 @@ import {
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { OPENOCD_CHANNEL, OPENOCD_CHANNEL_TITLE } from 'vs/kendryte/vs/services/openocd/common/channel';
-import { INotificationService } from 'vs/platform/notification/common/notification';
 import { createCustomConfig } from 'vs/kendryte/vs/platform/openocd/common/custom';
 import { createDefaultFtdiConfig } from 'vs/kendryte/vs/platform/openocd/common/ftdi';
 import { ConfigOpenOCDTypes } from 'vs/kendryte/vs/platform/openocd/common/openocd';
 import { createDefaultJTagConfig } from 'vs/kendryte/vs/platform/openocd/common/jtag';
-import { writeFile } from 'vs/base/node/pfs';
 import { DetectJTagIdAction } from 'vs/kendryte/vs/services/openocd/electron-browser/actions/jtagFindId';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import * as split2 from 'split2';
+import { DeferredPromise } from 'vs/base/test/common/utils';
+import { timeout } from 'vs/base/common/async';
+import { CancellationTokenSource } from 'vs/base/common/cancellation';
+import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 
 const libUsbError = /\bLIBUSB_ERROR_IO\b/;
 const TDOHigh = /\bTDO seems to be stuck high\b/;
+const startOk = /\bExamined RISCV core; found ([0-9]+) harts\b/;
+const commonError = / IR capture error; saw /;
 
 export class OpenOCDService implements IOpenOCDService {
 	_serviceBrand: any;
@@ -41,6 +45,8 @@ export class OpenOCDService implements IOpenOCDService {
 	private readonly logger: IChannelLogger;
 
 	private currentConfigFile: string;
+	private okPromise: DeferredPromise<void>;
+	private okWait: boolean;
 
 	// private currentJTag: number;
 
@@ -48,8 +54,8 @@ export class OpenOCDService implements IOpenOCDService {
 		@ILifecycleService lifecycleService: ILifecycleService,
 		@IChannelLogService private readonly channelLogService: IChannelLogService,
 		@INodePathService private readonly nodePathService: INodePathService,
+		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
-		@INotificationService private readonly notificationService: INotificationService,
 		@IInstantiationService private readonly IInstantiationService: IInstantiationService,
 	) {
 		this.logger = channelLogService.createChannel(OPENOCD_CHANNEL_TITLE, OPENOCD_CHANNEL, true);
@@ -79,31 +85,41 @@ export class OpenOCDService implements IOpenOCDService {
 
 	async restart() {
 		if (this.child) {
-			await this.stop();
+			await this.stop(true);
 		}
-		await this.start();
+		await this.start(true);
 	}
 
-	async stop() {
+	async stop(restart: boolean = false) {
 		this.logger.info('stop openocd server.');
 		if (this.child) {
+			const child = this.child;
+			delete this.child;
+			if (restart) {
+				child.removeAllListeners('error');
+				child.removeAllListeners('exit');
+			}
+
 			const p = new Promise((resolve, reject) => {
-				this.logger.info('stopped.');
-				this.child.on('exit', resolve);
+				child.on('exit', resolve);
 			});
-			this.child.kill('SIGINT');
+			child.kill('SIGINT');
 			await p;
+			this.logger.info('stopped.');
 		} else {
 			this.logger.warn('server not start.');
 		}
 	}
 
-	async start() {
-		this.logger.info('start openocd server.');
+	async start(restart: boolean = false) {
 		if (this.child) {
 			this.logger.warn('server already started.');
 			return;
 		}
+
+		this.logger.clear();
+		this.logger.info('start openocd server.');
+
 		this.currentConfigFile = await this.createConfigFile();
 
 		const args = ['-f', this.currentConfigFile];
@@ -118,33 +134,71 @@ export class OpenOCDService implements IOpenOCDService {
 			cwd: this.nodePathService.workspaceFilePath(),
 		});
 
+		if (!restart || !this.okPromise) {
+			this.okPromise = new DeferredPromise();
+			this.okPromise.p.then(() => {
+				this.okWait = false;
+				this.logger.info('------------------------- OpenOCD started...');
+			}, (e) => {
+				this.okWait = false;
+				this.logger.error(`OpenOCD Command ${e.message}`);
+				this.kill();
+			});
+		}
+		this.okWait = true;
+
 		child.stdout.pipe(split2()).on('data', this.handleOutput);
 		child.stderr.pipe(split2()).on('data', this.handleOutput);
 
-		child.on('error', (e) => {
-			this.logger.error(`OpenOCD Command Failed: ${e.stack}`);
-			this.notificationService.warn(`OpenOCD Error: ${e.message}`);
+		child.once('error', (e) => {
+			if (this.okWait) {
+				this.okPromise.error(new Error(`Process cannot start: ${e.message}`));
+			}
 		});
 		child.on('exit', (code, signal) => {
+			if (this.okWait) {
+				this.okPromise.error(new Error(`Process died: ${signal || code || 'unknown why'}`));
+			}
 			if (signal || code) {
-				this.logger.error(`OpenOCD Command exit with %s`, signal || code);
+				this.logger.error(`Process exit with %s`, signal || code);
 				if (signal !== 'SIGINT') {
 					this.channelLogService.show(OPENOCD_CHANNEL);
 				}
 			} else {
-				this.logger.error('OpenOCD Command successful finished');
+				this.logger.info('Process successful finished');
 			}
 			delete this.child;
 		});
 
-		this.logger.info('started.');
+		this.logger.info('process started. waiting for output...');
+
+		this.delayActions();
+
+		return this.okPromise.p;
+	}
+
+	private delayActions() {
+		const cancelNote = new CancellationTokenSource();
+		this.okPromise.p.then(() => {
+			cancelNote.cancel();
+		}, () => {
+			cancelNote.cancel();
+		});
+		timeout(3000, cancelNote.token).then(() => {
+			this.logger.warn(`!!! Still starting, too slow !!!`);
+			this.channelLogService.show(OPENOCD_CHANNEL);
+		}, undefined);
+		timeout(10000, cancelNote.token).then(() => {
+			this.okPromise.error(new Error('Cannot start within 10s, please check log.'));
+			this.channelLogService.show(OPENOCD_CHANNEL);
+		}, undefined);
 	}
 
 	private async createConfigFile() {
 		const file = this.nodePathService.workspaceFilePath('.vscode/openocd.cfg');
 		this.logger.info('config file write to: ' + file);
 		const data = await this.createConfigContent();
-		await writeFile(file, data, { encoding: { charset: 'utf8', addBOM: false } });
+		await this.nodeFileSystemService.writeFileIfChanged(file, data);
 		return file;
 	}
 
@@ -211,10 +265,28 @@ export class OpenOCDService implements IOpenOCDService {
 	private handleOutput(line: string) {
 		this.logger.writeln(`[ OCD] ${line}`);
 		if (libUsbError.test(line)) {
-			this.kill();
-			this.notificationService.error('Error: LIBUSB_ERROR_IO.');
+			this.logger.warn('LIBUSB_ERROR_IO');
+			this.logger.warn('maybe:');
+			this.logger.warn(' * no hardware permission');
+			this.logger.warn(' * port is busy');
+			this.logger.warn(' * windows: driver not valid');
+			this.okPromise.error(new Error('Connection failed.'));
 		} else if (TDOHigh.test(line)) {
 			this.restart().catch(undefined);
+		} else if (this.okWait) {
+			if (startOk.test(line)) {
+				const cnt = parseInt(startOk.exec(line)[1]);
+				if (cnt > 0) {
+					this.okPromise.complete(undefined);
+				} else {
+					this.okPromise.error(new Error('Cannot find any cpu core, please check your board.'));
+				}
+			} else if (commonError.test(line)) {
+				this.logger.warn('maybe:');
+				this.logger.warn(' * VRef is wrong');
+				this.logger.warn(' * power fail');
+				this.okPromise.error(new Error('Failed to communicate with cpu, please check your connection.'));
+			}
 		}
 	}
 }

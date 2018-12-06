@@ -51,3 +51,6 @@ import 'vs/kendryte/vs/workbench/packageManager/electron-browser/mainPanelContri
 // OpenOCD
 import 'vs/kendryte/vs/services/openocd/electron-browser/actionConfigContribution';
 import 'vs/kendryte/vs/services/openocd/electron-browser/openOCDService';
+
+// sudo
+import 'vs/kendryte/vs/platform/sudo/electron-browser/register';

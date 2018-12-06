@@ -15,7 +15,7 @@ import { MaixCMakeConfigureAction } from 'vs/kendryte/vs/workbench/cmake/electro
 import { Extensions as JSONExtensions, IJSONContributionRegistry } from 'vs/platform/jsonschemas/common/jsonContributionRegistry';
 import { registerExternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 import { OpenLocalCmakeListAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/openLocalCmakeList';
-import { cmakeSchema, cmakeSchemaId } from 'vs/kendryte/vs/workbench/cmake/common/cmakeConfigSchema';
+import { registerCMakeSchemas } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { registerCMakeConfig } from 'vs/kendryte/vs/workbench/cmake/common/configFile';
 
 registerSingleton(ICMakeService, CMakeService);
@@ -103,8 +103,9 @@ MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 registerExternalAction(category, OpenLocalCmakeListAction);
 
 // CONFIG json
-const jsonRegistry = Registry.as<IJSONContributionRegistry>(JSONExtensions.JSONContribution);
-jsonRegistry.registerSchema(cmakeSchemaId, cmakeSchema);
+registerCMakeSchemas((id, schema) => {
+	Registry.as<IJSONContributionRegistry>(JSONExtensions.JSONContribution).registerSchema(id, schema);
+});
 
 // config sections
 registerCMakeConfig();
