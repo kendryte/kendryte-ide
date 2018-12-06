@@ -1,5 +1,5 @@
 import { TerminalWidgetManager } from 'vs/workbench/parts/terminal/browser/terminalWidgetManager';
-import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
 import { Terminal as XTermTerminal } from 'vscode-xterm';
 import { TerminalConfigHelper } from 'vs/workbench/parts/terminal/electron-browser/terminalConfigHelper';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -10,8 +10,7 @@ import { IConfigurationChangeEvent, IConfigurationService } from 'vs/platform/co
 import * as nls from 'vs/nls';
 import { $, addDisposableListener, append, Dimension } from 'vs/base/browser/dom';
 import { Emitter, Event } from 'vs/base/common/event';
-import { ILocalOptions, SerialPortBaseBinding, serialPortEOL } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
-import { Writable } from 'stream';
+import { defaultConfig, ILocalOptions, SerialPortBaseBinding, serialPortLF } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
 import { isMacintosh } from 'vs/base/common/platform';
 import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService';
 import { INotificationService } from 'vs/platform/notification/common/notification';
@@ -27,6 +26,8 @@ import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/c
 import { SerialPortClearAction } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/actions/clear';
 import { Separator } from 'vs/base/browser/ui/actionbar/actionbar';
 import { SerialPortShowFindAction } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/actions/find';
+import { XtermScrollbackBuffer } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/iobuffers/output';
+import { EscapeStringClearScreen } from 'vs/kendryte/vs/base/node/terminalConst';
 
 let Terminal: typeof XTermTerminal;
 
@@ -39,19 +40,23 @@ export class OutputXTerminal extends Disposable {
 	protected _isVisible = true;
 	protected _wrapperElement: HTMLElement;
 
-	protected scrollbackList = new Map<SerialPortBaseBinding, ScrollbackBuffer>();
-	private currentInstance: SerialPortBaseBinding;
+	protected scrollbackList = new Map<NodeJS.WritableStream, XtermScrollbackBuffer>();
+	private currentInstance: NodeJS.WritableStream;
 
-	private readonly _onDimensionsChanged: Emitter<void> = new Emitter<void>();
-	private last: ScrollbackBuffer;
-	private inputReading: IDisposable;
-	private encoding: ILocalOptions['charset'];
-	private ending: string;
+	private last: XtermScrollbackBuffer;
+	private encoding: ILocalOptions['outputCharset'];
+	private translateLineFeed: string;
+	private hexLineFeed: boolean;
+	private userInputEnabled: boolean = false;
 	private _cancelContextMenu: boolean = false;
 	private dimension: Dimension;
 	private _hasSelectContext: IContextKey<boolean>;
 	private _hasFocusContext: IContextKey<boolean>;
 
+	private readonly _onData = new Emitter<string>();
+	public readonly onData = this._onData.event;
+
+	private readonly _onDimensionsChanged: Emitter<void> = new Emitter<void>();
 	public get onDimensionsChanged(): Event<void> { return this._onDimensionsChanged.event; }
 
 	constructor(
@@ -146,6 +151,7 @@ export class OutputXTerminal extends Disposable {
 		this._register(addDisposableListener(this._wrapperElement, 'mouseup', (event: MouseEvent) => this.handleMouseUp(event)));
 		this._register(addDisposableListener(this._wrapperElement, 'contextmenu', (event: MouseEvent) => this.handleContextMenu(event)));
 		this._register(this._configurationService.onDidChangeConfiguration(e => this.reloadConfig(e)));
+		this._register(this._xterm.addDisposableListener('data', (data: string) => this.handleInput(data)));
 
 		this.registerFocusEvents();
 
@@ -192,7 +198,7 @@ export class OutputXTerminal extends Disposable {
 		}
 
 		if (!this.scrollbackList.has(instance)) {
-			const scrollbackBuffer = new ScrollbackBuffer(this.encoding);
+			const scrollbackBuffer = new XtermScrollbackBuffer(this.encoding, this.translateLineFeed, this.hexLineFeed);
 			this.scrollbackList.set(instance, scrollbackBuffer);
 			instance.pipe(scrollbackBuffer);
 		}
@@ -217,29 +223,17 @@ export class OutputXTerminal extends Disposable {
 		}
 	}
 
-	handleUserType(instance: SerialPortBaseBinding, echo: boolean) {
-		this.currentInstance = instance;
-		if (instance) {
-			this.inputReading = this._xterm.addDisposableListener('data', (buff: string) => {
-				const r = Buffer.from(buff.replace(/\r/g, this.ending || '\n'), this.encoding);
-				// console.log('xterm input', r);
-				if (echo) {
-					this.writeUser(instance, buff);
-				}
-				instance.write(r);
-			});
-		} else if (this.inputReading) {
-			this.inputReading.dispose();
-			delete this.inputReading;
-		}
+	handleUserType(enabled: boolean) {
+		this.userInputEnabled = enabled;
 	}
 
-	setOptions(options: ILocalOptions = {} as any) {
-		this.encoding = options.charset || 'binary';
-		this.ending = serialPortEOL.get(options.lineEnding) || '';
+	public setOptions(options: ILocalOptions = {} as any) {
+		this.encoding = options.outputCharset || defaultConfig.outputCharset;
+		this.translateLineFeed = serialPortLF.get(options.translateLineFeed || defaultConfig.translateLineFeed);
+		this.hexLineFeed = (typeof options.hexLineFeed === 'boolean') ? options.hexLineFeed : defaultConfig.hexLineFeed;
 	}
 
-	writeUser(instance: SerialPortBaseBinding, message: string) {
+	writeUser(instance: NodeJS.WritableStream, message: string) {
 		// the EOL in `message` Must use LF. this is what `xterm.js` default output when press enter.
 		// \r will not reset cursor column, must follow \n
 		const scrollback = this.scrollbackList.get(instance);
@@ -302,7 +296,7 @@ export class OutputXTerminal extends Disposable {
 	private _getContextMenuActions(): (IAction | ContextSubMenu)[] {
 		const acts = this._createContextMenuActions();
 		acts.copy.enabled = this._xterm.hasSelection();
-		acts.paste.enabled = !!this.inputReading;
+		acts.paste.enabled = this.userInputEnabled;
 		return acts.list;
 	}
 
@@ -377,6 +371,7 @@ export class OutputXTerminal extends Disposable {
 
 	clearScreen(instance = this.currentInstance) {
 		if (instance === this.currentInstance) {
+			this._xterm.write(EscapeStringClearScreen.toString());
 			this._xterm.clear();
 		}
 
@@ -396,46 +391,11 @@ export class OutputXTerminal extends Disposable {
 			this.findWidget.reveal();
 		}
 	}
-}
 
-const Escape = Buffer.from([0x1B, 0x63]); // \ec
-
-class ScrollbackBuffer extends Writable {
-	private scrollback: string = '';
-	private target: XTermTerminal;
-
-	constructor(private encoding: ILocalOptions['charset']) {
-		super();
-	}
-
-	pipeTo(_xterm: XTermTerminal) {
-		_xterm.clear();
-		_xterm.write(this.scrollback);
-		this.target = _xterm;
-	}
-
-	_write(data: Buffer, encoding: string, callback: Function) {
-		if (data.indexOf(Escape) !== -1) {
-			this.scrollback = '';
+	private handleInput(data: string) {
+		if (!this.userInputEnabled) {
+			return;
 		}
-		const str = data.toString(this.encoding);
-		this.scrollback += str;
-		if (this.target) {
-			this.target.write(str);
-		}
-		callback();
-	}
-
-	destroy() {
-		super.destroy();
-		delete this.target;
-	}
-
-	deletePipe() {
-		delete this.target;
-	}
-
-	flush() {
-		this.scrollback = '';
+		this._onData.fire(data);
 	}
 }

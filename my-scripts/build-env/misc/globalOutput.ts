@@ -42,14 +42,12 @@ export function globalScreenLog(msg: any, ...args: any[]) {
 
 export function globalInterruptLog(msg: any, ...args: any[]) {
 	const message = format(msg, ...args);
+	globalLogTarget.write('---------------\n' + message + '\n');
 	if (globalLogTarget['nextLine']) {
 		const screen: OutputStreamControl = globalLogTarget as any;
-		screen.screen.writeln(message);
 		screen.pause();
 		console.error('\r' + message);
 		screen.continue();
-	} else {
-		globalLogTarget.write('---------------\n' + message + '\n');
 	}
 }
 

@@ -11,6 +11,7 @@ import {
 	CONFIG_KEY_FTDI_LAYOUT,
 	CONFIG_KEY_FTDI_SPEED,
 	CONFIG_KEY_FTDI_TDO_FE,
+	CONFIG_KEY_FTDI_VIDPID,
 	CONFIG_KEY_JTAG_ID,
 	CONFIG_KEY_JTAG_SPEED,
 	CONFIG_KEY_OPENOCD_CORE,
@@ -21,10 +22,10 @@ import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { OPENOCD_CHANNEL, OPENOCD_CHANNEL_TITLE } from 'vs/kendryte/vs/services/openocd/common/channel';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { createCustomConfig } from 'vs/kendryte/vs/services/openocd/common/configs/custom';
-import { createDefaultFtdiConfig } from 'vs/kendryte/vs/services/openocd/common/configs/ftdi';
-import { ConfigOpenOCDTypes } from 'vs/kendryte/vs/services/openocd/common/configs/openocd';
-import { createDefaultJTagConfig } from 'vs/kendryte/vs/services/openocd/common/configs/jtag';
+import { createCustomConfig } from 'vs/kendryte/vs/platform/openocd/common/custom';
+import { createDefaultFtdiConfig } from 'vs/kendryte/vs/platform/openocd/common/ftdi';
+import { ConfigOpenOCDTypes } from 'vs/kendryte/vs/platform/openocd/common/openocd';
+import { createDefaultJTagConfig } from 'vs/kendryte/vs/platform/openocd/common/jtag';
 import { writeFile } from 'vs/base/node/pfs';
 import { DetectJTagIdAction } from 'vs/kendryte/vs/services/openocd/electron-browser/actions/jtagFindId';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -174,6 +175,7 @@ export class OpenOCDService implements IOpenOCDService {
 				return await createDefaultFtdiConfig(port, {
 					speed: this.configurationService.getValue<number>(CONFIG_KEY_FTDI_SPEED),
 					layoutInit: this.configurationService.getValue<[string, string]>(CONFIG_KEY_FTDI_LAYOUT),
+					vidPid: this.configurationService.getValue<[string, string]>(CONFIG_KEY_FTDI_VIDPID),
 					tdoSampleFallingEdge: this.configurationService.getValue<boolean>(CONFIG_KEY_FTDI_TDO_FE),
 					extra: this.configurationService.getValue<string>(CONFIG_KEY_FTDI_EXTRA),
 				});

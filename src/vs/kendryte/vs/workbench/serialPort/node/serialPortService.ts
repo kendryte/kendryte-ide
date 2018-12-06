@@ -6,7 +6,6 @@ import { Emitter, Event } from 'vs/base/common/event';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { ILogService } from 'vs/platform/log/common/log';
-import { addStatusBarButtons } from 'vs/kendryte/vs/workbench/serialPort/common/buttons';
 import { SerialPortItem } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { array_has_diff_cb } from 'vs/kendryte/vs/base/common/utils';
 import { SerialPortBaseBinding } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
@@ -34,8 +33,9 @@ class SerialPortService implements ISerialPortService {
 		@ILifecycleService lifecycleService: ILifecycleService,
 		@ILogService private logService: ILogService,
 	) {
+		this._handlePromise = this._handlePromise.bind(this);
+
 		Object.assign(global, { serialPortService: this });
-		instantiationService.invokeFunction(addStatusBarButtons);
 		this.refreshDevices();
 		lifecycleService.onWillShutdown(async () => {
 			for (const port of Array.from<SerialPort>(this.openedPorts.values())) {
@@ -125,23 +125,31 @@ class SerialPortService implements ISerialPortService {
 
 		// 1 -> all false
 		await set({ dtr: false, rts: false });
-		if (cancel.isCancellationRequested) return;
+		if (cancel.isCancellationRequested) {
+			return;
+		}
 		await timeout(10, cancel);
 
 		// 2 -> press down reset
 		await set({ dtr: true });
-		if (cancel.isCancellationRequested) return;
+		if (cancel.isCancellationRequested) {
+			return;
+		}
 		await timeout(10, cancel);
 
 		// 3 -> press down boot
 		await set({ rts: true });
-		if (cancel.isCancellationRequested) return;
+		if (cancel.isCancellationRequested) {
+			return;
+		}
 		await timeout(10, cancel);
 
 		if (isp) {
 			// 4 -> release reset
 			await set({ dtr: false });
-			if (cancel.isCancellationRequested) return;
+			if (cancel.isCancellationRequested) {
+				return;
+			}
 			await timeout(10, cancel);
 		}
 
@@ -153,26 +161,32 @@ class SerialPortService implements ISerialPortService {
 		}
 	}
 
+	private _handlePromise<T>(what: string, action: (cb: (e: Error, data?: T) => void) => void): Promise<T> {
+		return new Promise<T>((resolve, reject) => {
+			action((err: Error, data: T) => {
+				if (err) {
+					this.logService.error(`[serial port] ${what} Failed:`, err);
+					reject(err);
+				} else {
+					this.logService.info(`[serial port] ${what} OK:`, data);
+					resolve(data);
+				}
+			});
+		});
+	}
+
 	public openPort(serialDevice: string, opts: Partial<SerialPort.OpenOptions> = {}, exclusive = false): TPromise<SerialPort & SerialPortBaseBinding> {
 		if (this.openedPorts.has(serialDevice)) {
 			const exists = this.openedPorts.get(serialDevice);
 			if (exclusive) {
-				return new TPromise((resolve, reject) => {
-					const wrappedCallback = (err) => {
-						this.logService.info('close serial port for re-open (err=%s)', err);
-						return err ? reject(err) : resolve(void 0);
-					};
-					exists.close(wrappedCallback);
+				return this._handlePromise<void>('close serial port for re-open', (cb) => {
+					exists.close(cb);
 				}).then(() => {
 					return this.openPort(serialDevice, opts, exclusive);
 				});
 			} else {
-				return new TPromise((resolve, reject) => {
-					const wrappedCallback = (err) => {
-						this.logService.info('update serial port (err=%s)', err);
-						return err ? reject(err) : resolve(exists);
-					};
-					exists.update(opts, wrappedCallback);
+				return this._handlePromise('update serial port', (cb) => {
+					exists.update(opts, cb);
 				});
 			}
 		}
@@ -181,7 +195,7 @@ class SerialPortService implements ISerialPortService {
 			...opts,
 			autoOpen: false,
 		};
-		this.logService.info('open serial port %s with %o (exclusive=%s)', serialDevice, opts, exclusive);
+		this.logService.info(`open serial port ${serialDevice} ${exclusive ? '[EXCLUSIVE] ' : ''}with:`, serialDevice, opts, exclusive);
 		const port: SerialPort & SerialPortBaseBinding = new SerialPort(serialDevice, opts) as any;
 		port.on('close', () => {
 			this.logService.info('[serial port] ' + serialDevice + ' is end!');
@@ -189,19 +203,24 @@ class SerialPortService implements ISerialPortService {
 			this.openedPorts.delete(serialDevice);
 		});
 		this.openedPorts.set(serialDevice, port);
-		return new TPromise((resolve, reject) => {
-			port.open((error: Error) => {
-				if (error) {
-					this.logService.info('can not open serial port (err=%s)', error);
-					this.logService.warn('[serial port] ' + serialDevice + ' failed to open');
-					reject(error);
-					this.openedPorts.delete(serialDevice);
-				} else {
-					this.logService.info('new serial port (%s)', serialDevice, port);
-					this.logService.info('[serial port] ' + serialDevice + ' open ok');
-					resolve(port);
-				}
+		return this._handlePromise(`open device {${serialDevice}}`, (cb) => {
+			port.open(cb);
+		}).then(() => {
+			return this._handlePromise('get current settings', (cb) => {
+				port.get(cb);
 			});
+		}).then(() => {
+			return this._handlePromise('reset settings', (cb) => {
+				port.set({
+					brk: false,
+					cts: false,
+					dsr: false,
+					dtr: false,
+					rts: false,
+				}, cb);
+			});
+		}).then(() => {
+			return port;
 		});
 	}
 }
