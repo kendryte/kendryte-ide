@@ -140,8 +140,15 @@ export class ActivitybarPart extends Part {
 	}
 
 	private onDidViewletOpen(viewlet: IViewlet): void {
+		// Update the composite bar by adding
 		this.compositeBar.addComposite(this.viewletService.getViewlet(viewlet.getId()));
 		this.compositeBar.activateComposite(viewlet.getId());
+		const viewletDescriptor = this.viewletService.getViewlet(viewlet.getId());
+		const viewContainer = this.getViewContainer(viewletDescriptor.id);
+		if (viewContainer && this.viewsService.getViewDescriptors(viewContainer).activeViewDescriptors.length === 0) {
+			// Update the composite bar by hiding
+			this.removeComposite(viewletDescriptor.id, true);
+		}
 	}
 
 	showActivity(viewletOrActionId: string, badge: IBadge, clazz?: string, priority?: number): IDisposable {
@@ -188,7 +195,7 @@ export class ActivitybarPart extends Part {
 		// The workaround is to promote the element onto its own drawing layer. We do
 		// this only after the workbench has loaded because otherwise there is ugly flicker.
 		if (isMacintosh) {
-			this.lifecycleService.when(LifecyclePhase.Running).then(() => {
+			this.lifecycleService.when(LifecyclePhase.Restored).then(() => {
 				scheduleAtNextAnimationFrame(() => { // another delay...
 					scheduleAtNextAnimationFrame(() => { // ...to prevent more flickering on startup
 						registerThemingParticipant((theme, collector) => {

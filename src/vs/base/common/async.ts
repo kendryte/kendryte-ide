@@ -302,9 +302,6 @@ export class Barrier {
 	}
 }
 
-/**
- * Replacement for `WinJS.TPromise.timeout`.
- */
 export function timeout(millis: number): CancelablePromise<void>;
 export function timeout(millis: number, token: CancellationToken): Thenable<void>;
 export function timeout(millis: number, token?: CancellationToken): CancelablePromise<void> | Thenable<void> {
@@ -347,6 +344,10 @@ export function always<T>(promise: Thenable<T>, callback: () => void): Promise<T
 	}
 	promise.then(_ => safeCallback(), _ => safeCallback());
 	return Promise.resolve(promise);
+}
+
+export function ignoreErrors<T>(promise: Thenable<T>): Thenable<T | undefined> {
+	return promise.then(undefined, _ => undefined);
 }
 
 /**

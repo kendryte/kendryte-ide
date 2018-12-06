@@ -29,7 +29,7 @@ import { LinkedMap, Touch } from 'vs/base/common/map';
 import { OcticonLabel } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 
 import { Registry } from 'vs/platform/registry/common/platform';
-import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
+import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { MenuRegistry, MenuId } from 'vs/platform/actions/common/actions';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IMarkerService, MarkerStatistics } from 'vs/platform/markers/common/markers';
@@ -74,9 +74,9 @@ import { ITaskSystem, ITaskResolver, ITaskSummary, TaskExecuteKind, TaskError, T
 import {
 	Task, CustomTask, ConfiguringTask, ContributedTask, InMemoryTask, TaskEvent,
 	TaskEventKind, TaskSet, TaskGroup, GroupType, ExecutionEngine, JsonSchemaVersion, TaskSourceKind,
-	TaskSorter, TaskIdentifier, KeyedTaskIdentifier, TASK_RUNNING_STATE, RerunBehavior
+	TaskSorter, TaskIdentifier, KeyedTaskIdentifier, TASK_RUNNING_STATE
 } from 'vs/workbench/parts/tasks/common/tasks';
-import { ITaskService, ITaskProvider, RunOptions, CustomizationProperties, TaskFilter } from 'vs/workbench/parts/tasks/common/taskService';
+import { ITaskService, ITaskProvider, ProblemMatcherRunOptions, CustomizationProperties, TaskFilter, WorkspaceFolderTaskResult } from 'vs/workbench/parts/tasks/common/taskService';
 import { getTemplates as getTaskTemplates } from 'vs/workbench/parts/tasks/common/taskTemplates';
 
 import { KeyedTaskIdentifier as NKeyedTaskIdentifier, TaskDefinition } from 'vs/workbench/parts/tasks/node/tasks';
@@ -93,8 +93,13 @@ import { IQuickInputService, IQuickPickItem, QuickPickInput } from 'vs/platform/
 
 import { TaskDefinitionRegistry } from 'vs/workbench/parts/tasks/common/taskDefinitionRegistry';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
+import { Extensions as WorkbenchExtensions, IWorkbenchContributionsRegistry } from 'vs/workbench/common/contributions';
+import { RunAutomaticTasks } from 'vs/workbench/parts/tasks/electron-browser/runAutomaticTasks';
 
 let tasksCategory = nls.localize('tasksCategory', "Tasks");
+
+const workbenchRegistry = Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench);
+workbenchRegistry.registerWorkbenchContribution(RunAutomaticTasks, LifecyclePhase.Eventually);
 
 namespace ConfigureTaskAction {
 	export const ID = 'workbench.action.tasks.configureTaskRunner';
@@ -370,18 +375,6 @@ class ProblemReporter implements TaskConfig.IProblemReporter {
 	}
 }
 
-interface WorkspaceTaskResult {
-	set: TaskSet;
-	configurations: {
-		byIdentifier: IStringDictionary<ConfiguringTask>;
-	};
-	hasErrors: boolean;
-}
-
-interface WorkspaceFolderTaskResult extends WorkspaceTaskResult {
-	workspaceFolder: IWorkspaceFolder;
-}
-
 interface WorkspaceFolderConfigurationResult {
 	workspaceFolder: IWorkspaceFolder;
 	config: TaskConfig.ExternalTaskRunnerConfiguration;
@@ -536,7 +529,7 @@ class TaskService extends Disposable implements ITaskService {
 			this.updateWorkspaceTasks();
 		}));
 		this._taskRunningState = TASK_RUNNING_STATE.bindTo(contextKeyService);
-		this._register(lifecycleService.onWillShutdown(event => event.veto(this.beforeShutdown())));
+		this._register(lifecycleService.onBeforeShutdown(event => event.veto(this.beforeShutdown())));
 		this._register(storageService.onWillSaveState(() => this.saveState()));
 		this._onDidStateChange = this._register(new Emitter());
 		this.registerCommands();
@@ -848,7 +841,7 @@ class TaskService extends Disposable implements ITaskService {
 		});
 	}
 
-	public run(task: Task, options?: RunOptions): TPromise<ITaskSummary> {
+	public run(task: Task, options?: ProblemMatcherRunOptions): TPromise<ITaskSummary> {
 		return this.getGroupedTasks().then((grouped) => {
 			if (!task) {
 				throw new TaskError(Severity.Info, nls.localize('TaskServer.noTask', 'Requested task {0} to execute not found.', task.name), TaskErrors.TaskNotFound);
@@ -1103,8 +1096,13 @@ class TaskService extends Disposable implements ITaskService {
 		}
 	}
 
-	public openConfig(task: CustomTask): TPromise<void> {
-		let resource = Task.getWorkspaceFolder(task).toResource(task._source.config.file);
+	public openConfig(task: CustomTask | undefined): TPromise<void> {
+		let resource: URI;
+		if (task) {
+			resource = Task.getWorkspaceFolder(task).toResource(task._source.config.file);
+		} else {
+			resource = (this._workspaceFolders && (this._workspaceFolders.length > 0)) ? this._workspaceFolders[0].toResource('.vscode/tasks.json') : undefined;
+		}
 		return this.editorService.openEditor({
 			resource,
 			options: {
@@ -1179,7 +1177,7 @@ class TaskService extends Disposable implements ITaskService {
 				name: id,
 				identifier: id,
 				dependsOn: extensionTasks.map((task) => { return { workspaceFolder: Task.getWorkspaceFolder(task), task: task._id }; }),
-				runOptions: { rerunBehavior: RerunBehavior.reevaluate },
+				runOptions: { reevaluateOnRerun: true },
 			};
 			return { task, resolver };
 		}
@@ -1271,7 +1269,9 @@ class TaskService extends Disposable implements ITaskService {
 		}
 		this._taskSystem.terminate(task).then((response) => {
 			if (response.success) {
-				this.run(task);
+				this.run(task).then(undefined, reason => {
+					// eat the error, it has already been surfaced to the user and we don't care about it here
+				});
 			} else {
 				this.notificationService.warn(nls.localize('TaskSystem.restartFailed', 'Failed to terminate and restart task {0}', Types.isString(task) ? task : task.name));
 			}
@@ -1330,7 +1330,7 @@ class TaskService extends Disposable implements ITaskService {
 		return TPromise.join([this.extensionService.activateByEvent('onCommand:workbench.action.tasks.runTask'), TaskDefinitionRegistry.onReady()]).then(() => {
 			let validTypes: IStringDictionary<boolean> = Object.create(null);
 			TaskDefinitionRegistry.all().forEach(definition => validTypes[definition.taskType] = true);
-			return new TPromise<TaskSet[]>((resolve, reject) => {
+			return new Promise<TaskSet[]>(resolve => {
 				let result: TaskSet[] = [];
 				let counter: number = 0;
 				let done = (value: TaskSet) => {
@@ -1493,7 +1493,7 @@ class TaskService extends Disposable implements ITaskService {
 		return result;
 	}
 
-	private getWorkspaceTasks(): TPromise<Map<string, WorkspaceFolderTaskResult>> {
+	public getWorkspaceTasks(): TPromise<Map<string, WorkspaceFolderTaskResult>> {
 		if (this._workspaceTasksPromise) {
 			return this._workspaceTasksPromise;
 		}
@@ -1955,7 +1955,9 @@ class TaskService extends Disposable implements ITaskService {
 				for (let folder of folders) {
 					let task = resolver.resolve(folder, identifier);
 					if (task) {
-						this.run(task);
+						this.run(task).then(undefined, reason => {
+							// eat the error, it has already been surfaced to the user and we don't care about it here
+						});
 						return;
 					}
 				}
@@ -1984,7 +1986,9 @@ class TaskService extends Disposable implements ITaskService {
 					if (task === null) {
 						this.runConfigureTasks();
 					} else {
-						this.run(task, { attachProblemMatcher: true });
+						this.run(task, { attachProblemMatcher: true }).then(undefined, reason => {
+							// eat the error, it has already been surfaced to the user and we don't care about it here
+						});
 					}
 				});
 		});
@@ -2040,7 +2044,9 @@ class TaskService extends Disposable implements ITaskService {
 			if (tasks.length > 0) {
 				let { defaults, users } = this.splitPerGroupType(tasks);
 				if (defaults.length === 1) {
-					this.run(defaults[0]);
+					this.run(defaults[0]).then(undefined, reason => {
+						// eat the error, it has already been surfaced to the user and we don't care about it here
+					});
 					return;
 				} else if (defaults.length + users.length > 0) {
 					tasks = defaults.concat(users);
@@ -2061,7 +2067,9 @@ class TaskService extends Disposable implements ITaskService {
 							this.runConfigureDefaultBuildTask();
 							return;
 						}
-						this.run(task, { attachProblemMatcher: true });
+						this.run(task, { attachProblemMatcher: true }).then(undefined, reason => {
+							// eat the error, it has already been surfaced to the user and we don't care about it here
+						});
 					});
 			});
 		});
@@ -2084,7 +2092,9 @@ class TaskService extends Disposable implements ITaskService {
 			if (tasks.length > 0) {
 				let { defaults, users } = this.splitPerGroupType(tasks);
 				if (defaults.length === 1) {
-					this.run(defaults[0]);
+					this.run(defaults[0]).then(undefined, reason => {
+						// eat the error, it has already been surfaced to the user and we don't care about it here
+					});
 					return;
 				} else if (defaults.length + users.length > 0) {
 					tasks = defaults.concat(users);
@@ -2105,7 +2115,9 @@ class TaskService extends Disposable implements ITaskService {
 						this.runConfigureTasks();
 						return;
 					}
-					this.run(task);
+					this.run(task).then(undefined, reason => {
+						// eat the error, it has already been surfaced to the user and we don't care about it here
+					});
 				});
 			});
 		});

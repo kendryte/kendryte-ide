@@ -37,6 +37,7 @@ import { IEditorOptions } from 'vs/editor/common/config/editorOptions';
 
 export interface ISearchWidgetOptions {
 	value?: string;
+	replaceValue?: string;
 	isRegex?: boolean;
 	isCaseSensitive?: boolean;
 	isWholeWords?: boolean;
@@ -122,6 +123,9 @@ export class SearchWidget extends Widget {
 	private _onBlur = this._register(new Emitter<void>());
 	public readonly onBlur: Event<void> = this._onBlur.event;
 
+	private _onDidHeightChange = this._register(new Emitter<void>());
+	public readonly onDidHeightChange: Event<void> = this._onDidHeightChange.event;
+
 	constructor(
 		container: HTMLElement,
 		options: ISearchWidgetOptions,
@@ -167,6 +171,7 @@ export class SearchWidget extends Widget {
 	public setWidth(width: number) {
 		this.searchInput.setWidth(width);
 		this.replaceInput.width = width - 28;
+		this.replaceInput.layout();
 	}
 
 	public clear() {
@@ -296,8 +301,10 @@ export class SearchWidget extends Widget {
 		this._register(this.onSearchSubmit(() => {
 			this.searchInput.inputBox.addToHistory();
 		}));
-		this.searchInput.onCaseSensitiveKeyDown((keyboardEvent: IKeyboardEvent) => this.onCaseSensitiveKeyDown(keyboardEvent));
-		this.searchInput.onRegexKeyDown((keyboardEvent: IKeyboardEvent) => this.onRegexKeyDown(keyboardEvent));
+		this._register(this.searchInput.onCaseSensitiveKeyDown((keyboardEvent: IKeyboardEvent) => this.onCaseSensitiveKeyDown(keyboardEvent)));
+		this._register(this.searchInput.onRegexKeyDown((keyboardEvent: IKeyboardEvent) => this.onRegexKeyDown(keyboardEvent)));
+		this._register(this.searchInput.inputBox.onDidChange(() => this.onSearchInputChanged()));
+		this._register(this.searchInput.inputBox.onDidHeightChange(() => this._onDidHeightChange.fire()));
 
 		this._register(this.onReplaceValueChanged(() => {
 			this._replaceHistoryDelayer.trigger(() => this.replaceInput.addToHistory());
@@ -335,8 +342,9 @@ export class SearchWidget extends Widget {
 		}, this.contextKeyService));
 		this._register(attachInputBoxStyler(this.replaceInput, this.themeService));
 		this.onkeydown(this.replaceInput.inputElement, (keyboardEvent) => this.onReplaceInputKeyDown(keyboardEvent));
-		this.replaceInput.onDidChange(() => this._onReplaceValueChanged.fire());
-		this.searchInput.inputBox.onDidChange(() => this.onSearchInputChanged());
+		this.replaceInput.value = options.replaceValue || '';
+		this._register(this.replaceInput.onDidChange(() => this._onReplaceValueChanged.fire()));
+		this._register(this.replaceInput.onDidHeightChange(() => this._onDidHeightChange.fire()));
 
 		this.replaceAllAction = ReplaceAllAction.INSTANCE;
 		this.replaceAllAction.searchWidget = this;
