@@ -77,26 +77,30 @@ async function createDiffWithGit(output: OutputStreamControl, remote: IDEJson) {
 	output.writeln('copy changed file to dist folder');
 	output.writeln(`  From: ${newVersion}`);
 	output.writeln(`  To  : ${patchingDir}`);
-	const lines = fileList.trim().split(/\n/g).map(e => e.trim()).filter(e => e);
+	const lines = fileList.trim().split(/\n/g).map(e => e.trim()).filter(e => e).filter((file) => {
+		if (/(?:^|\/)node_modules(?:\.asar(?:\.unpacked\/|$)?)?/.test(file)) {
+			return false;
+		}
+		return true;
+	});
 	if (lines.length === 0) {
 		throw new Error('Nothing changed.');
 	}
 	output.writeln('---------------------------');
-	output.writeln(fileList);
+	output.writeln(lines.join('\n'));
 	output.writeln('---------------------------');
 	for (const file of lines) {
-		if (file.startsWith('node_modules')) {
-			continue;
-		}
 		const source = resolve(newVersion, file);
 		const target = resolve(patchingDir, file);
 		mkdirpSync(dirname(target));
-		output.screen.log(`copy %s => %s`, source, target);
+		output.write(`copy ${file}\n`);
+		output.screen.write(`copy ${source} => ${target}\n`);
 		await copy(source, target).catch((e) => {
-			if (e.code === ENOENT) { // missing file => deleted from git
+			if (e.code === 'ENOENT') { // missing file => deleted from git
 				output.log('ignore missing file: ', e.message);
 				return;
 			} else {
+				output.fail('failed: ' + e.message);
 				throw e;
 			}
 		});
