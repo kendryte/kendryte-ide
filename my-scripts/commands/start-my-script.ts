@@ -10,8 +10,8 @@ import { chdir } from '../build-env/misc/pathUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 
 whatIsThis(
-	'Install and compile "my-scripts" project (-w for watch)',
-	'安装并编译 "my-scripts" 项目（-w监视模式）',
+	'Install and compile "my-scripts" project',
+	'安装并编译 "my-scripts" 项目',
 );
 
 const useWatch = process.argv.includes('-w');

@@ -9,8 +9,8 @@ import { chdir } from '../build-env/misc/pathUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 
 whatIsThis(
-	'Create Offline.Dependency.Package from ./data/packages',
-	'打包 ./data/packages 创建离线依赖包',
+	'Create Offline Dependency Package',
+	'创建离线依赖包',
 );
 
 runMain(async () => {

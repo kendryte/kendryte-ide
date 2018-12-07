@@ -1,4 +1,6 @@
 import { spawnSync } from 'child_process';
+import { existsSync, unlinkSync } from 'fs';
+import { resolve } from 'path';
 import { getElectronIfNot } from '../build-env/codeblocks/getElectron';
 import { cleanScreen } from '../build-env/misc/clsUtil';
 import { isWin, VSCODE_ROOT } from '../build-env/misc/constants';
@@ -8,8 +10,8 @@ import { runMain } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 
 whatIsThis(
-	'Run KendryteIDE from source (need `start-watch` shows "success")',
-	'运行 KendryteIDE（需要先运行 `start-watch`，并等他输出 success）',
+	'Run KendryteIDE',
+	'运行 KendryteIDE',
 );
 
 runMain(async () => {
@@ -35,6 +37,17 @@ runMain(async () => {
 		passArgs.push(`--inspect=9929`);
 		passArgs.push(`--inspect-extensions=9930`);
 	}
+	
+	const markupFile = resolve(process.env.TEMP, 'debug-ide-restart.mark');
+	do {
+		if (existsSync(markupFile)) {
+			unlinkSync(markupFile);
+		}
+		run(passArgs);
+	} while (existsSync(markupFile));
+});
+
+function run(passArgs: string[]) {
 	cleanScreen();
 	console.log(passArgs);
 	if (isWin) {
@@ -50,4 +63,4 @@ runMain(async () => {
 			stdio: 'inherit',
 		});
 	}
-});
+}

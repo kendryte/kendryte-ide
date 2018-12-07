@@ -151,7 +151,7 @@ export class BuildingBlocksUpgradeAction extends Action {
 			actions: {
 				primary: [
 					new Action('retry', localize('retry', 'Retry'), 'primary', true, async () => {
-						setInterval(() => {
+						setTimeout(() => {
 							this.commandService.executeCommand(ACTION_ID_UPGRADE_BUILDING_BLOCKS).catch();
 						}, 100);
 					}),

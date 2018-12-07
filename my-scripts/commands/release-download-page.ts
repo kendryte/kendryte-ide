@@ -7,7 +7,7 @@ import { usePretty } from '../build-env/misc/usePretty';
 
 whatIsThis(
 	'Update the download page file on S3',
-	'更新S3上的下载页',
+	'更新S3上的 IDE下载页',
 );
 
 runMain(async () => {

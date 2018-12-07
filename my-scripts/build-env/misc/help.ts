@@ -62,32 +62,45 @@ const cates = {
 	tool: ['Misc', '工具'],
 };
 
-export function whatIsThis(en: string, cn: string, file?: string) {
+let firstWhat: WhatIsThis = {
+	file: 'unknown-command',
+	title: 'Unknown Command',
+	category: 'unknown',
+};
+
+export function currentCommand() {
+	return firstWhat;
+}
+
+export function whatIsThis(en: string, cn: string, file: string = stack()) {
+	if (isZh === null) {
+		if (isWin) {
+			isZh = execSync('powershell.exe -Command Get-UICulture', {encoding: 'utf8'}).toLowerCase().includes('zh');
+		} else {
+			isZh = UILanguage.includes('zh');
+		}
+	}
+	let category = (/^[^-]+/.exec(file) || ['unknown'])[0];
+	if (!cates[category]) {
+		category = 'unknown';
+	}
+	const title = isZh? cn : en;
+	const data = {
+		title,
+		category,
+		file,
+	};
+	
+	if (firstWhat.file === 'unknown-command') {
+		firstWhat = data;
+	}
+	
 	if (WIT()) {
-		if (!file) {
-			file = stack();
-		}
-		if (isZh === null) {
-			toPrintHelp();
-			if (isWin) {
-				isZh = execSync('powershell.exe -Command Get-UICulture', {encoding: 'utf8'}).toLowerCase().includes('zh');
-			} else {
-				isZh = UILanguage.includes('zh');
-			}
-		}
-		let category = (/^[^-]+/.exec(file) || ['unknown'])[0];
-		if (!cates[category]) {
-			category = 'unknown';
-		}
-		const title = isZh? cn : en;
+		toPrintHelp();
 		if (!registry.has(category)) {
 			registry.set(category, []);
 		}
-		registry.get(category).push({
-			title,
-			category,
-			file,
-		});
+		registry.get(category).push(data);
 	}
 }
 

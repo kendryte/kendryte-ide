@@ -11,7 +11,7 @@ import { chdir } from '../build-env/misc/pathUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 
 whatIsThis(
-	'Upload created Offline.Dependency.Package to S3',
+	'Upload created Offline Dependency Package to S3',
 	'将创建的离线依赖包上传到S3',
 );
 

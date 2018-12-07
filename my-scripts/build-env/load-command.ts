@@ -1,4 +1,5 @@
 import { resolve } from 'path';
+import { currentCommand } from './misc/help';
 
 try {
 	require('source-map-support/register');
@@ -14,6 +15,7 @@ console.error('\x1B]0;%s\x07', command.toUpperCase() + ' :: Kendryte IDE');
 
 try {
 	require(process.argv[1]);
+	console.error('\x1B]0;%s\x07', currentCommand().title + ' :: Kendryte IDE');
 } catch (e) {
 	const parsedTrace = e.stack.split('\n').slice(1).filter((line) => {
 		return line.includes('(/') || line.includes('(\\');

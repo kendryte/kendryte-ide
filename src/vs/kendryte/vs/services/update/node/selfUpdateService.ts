@@ -4,7 +4,6 @@ import { copy, rimraf } from 'vs/base/node/pfs';
 import { IVersionUrlHandler } from 'vs/kendryte/vs/services/update/node/versionUrlHandler';
 import { IRequestService } from 'vs/platform/request/node/request';
 import { IDECurrentPatchVersion } from 'vs/kendryte/vs/services/update/node/myVersion';
-import { IWindowsService } from 'vs/platform/windows/common/windows';
 import { IDE_MAIN_DISTRIBUTE_URL, IIDEUpdateInfo } from 'vs/kendryte/vs/services/update/common/protocol';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
@@ -20,6 +19,7 @@ import { asJson } from 'vs/base/node/request';
 import { ILogService } from 'vs/platform/log/common/log';
 import { OpenKendryteReleasePageAction } from 'vs/kendryte/vs/services/update/node/openReleasePageAction';
 import product from 'vs/platform/node/product';
+import { IRelaunchRenderService } from 'vs/kendryte/vs/platform/vscode/common/relaunchService';
 
 export interface IUpdateUserInterface {
 	error(e: Error): void;
@@ -57,7 +57,7 @@ export abstract class AbstractSelfUpdateService implements IUpdateService {
 		@IVersionUrlHandler protected readonly versionHandler: IVersionUrlHandler,
 		@IEnvironmentService protected readonly environmentService: IEnvironmentService,
 		@IStorageService protected readonly storageService: IStorageService,
-		@IWindowsService protected readonly windowsService: IWindowsService,
+		@IRelaunchRenderService protected readonly relaunchService: IRelaunchRenderService,
 		@INodePathService protected readonly nodePathService: INodePathService,
 		@IRequestService protected readonly requestService: IRequestService,
 		@INodeDownloadService protected readonly downloadService: INodeDownloadService,
@@ -255,7 +255,7 @@ export abstract class AbstractSelfUpdateService implements IUpdateService {
 			this.logger.warn('Debug mode detected, not auto restart.');
 			return;
 		}
-		await this.windowsService.relaunch({});
+		await this.relaunchService.relaunch();
 	}
 
 	protected async _notifyReleaseUpdate(result: IIDEUpdateInfo) {

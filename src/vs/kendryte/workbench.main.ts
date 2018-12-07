@@ -19,6 +19,7 @@ import 'vs/kendryte/vs/services/fileSystem/node/nodeFileSystemService';
 import 'vs/kendryte/vs/services/download/node/nodeRequestService'; // network request
 import 'vs/kendryte/vs/services/download/electron-browser/nodeDownloadService'; // download
 import 'vs/kendryte/vs/services/download/electron-browser/downloadWithProgressService'; // download
+import 'vs/kendryte/vs/platform/vscode/electron-browser/relaunchRenderService';
 // Update service
 import 'vs/kendryte/vs/services/update/electron-browser/ideBuildingBlocksService';
 import 'vs/kendryte/vs/services/update/electron-browser/buildingBlocksUpgradeAction';
@@ -51,6 +52,5 @@ import 'vs/kendryte/vs/workbench/packageManager/electron-browser/mainPanelContri
 // OpenOCD
 import 'vs/kendryte/vs/services/openocd/electron-browser/actionConfigContribution';
 import 'vs/kendryte/vs/services/openocd/electron-browser/openOCDService';
-
 // sudo
 import 'vs/kendryte/vs/platform/sudo/electron-browser/register';

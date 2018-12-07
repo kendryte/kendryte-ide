@@ -13,7 +13,6 @@ import { IRequestService } from 'vs/platform/request/node/request';
 import { IFileCompressService } from 'vs/kendryte/vs/services/fileCompress/node/fileCompressService';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
-import { IWindowsService } from 'vs/platform/windows/common/windows';
 import { ILogService } from 'vs/platform/log/common/log';
 import Severity from 'vs/base/common/severity';
 import { IDisposable } from 'vs/base/common/lifecycle';
@@ -22,6 +21,7 @@ import { OpenKendryteReleasePageAction } from 'vs/kendryte/vs/services/update/no
 import { localize } from 'vs/nls';
 import { IIDEUpdateInfo } from 'vs/kendryte/vs/services/update/common/protocol';
 import { Action } from 'vs/base/common/actions';
+import { IRelaunchRenderService } from 'vs/kendryte/vs/platform/vscode/common/relaunchService';
 
 class SelfUpdateWorkbenchService extends AbstractSelfUpdateService {
 	logger: ILogService;
@@ -31,7 +31,7 @@ class SelfUpdateWorkbenchService extends AbstractSelfUpdateService {
 		@IVersionUrlHandler versionHandler: IVersionUrlHandler,
 		@IEnvironmentService environmentService: IEnvironmentService,
 		@IStorageService storageService: IStorageService,
-		@IWindowsService windowsService: IWindowsService,
+		@IRelaunchRenderService relaunchService: IRelaunchRenderService,
 		@INodePathService nodePathService: INodePathService,
 		@IRequestService requestService: IRequestService,
 		@INodeDownloadService downloadService: INodeDownloadService,
@@ -39,7 +39,7 @@ class SelfUpdateWorkbenchService extends AbstractSelfUpdateService {
 		@IChannelLogService channelLogService: IChannelLogService,
 		@INotificationService private readonly notificationService: INotificationService,
 	) {
-		super(versionHandler, environmentService, storageService, windowsService, nodePathService, requestService, downloadService, fileCompressService);
+		super(versionHandler, environmentService, storageService, relaunchService, nodePathService, requestService, downloadService, fileCompressService);
 		this.logger = getUpdateLogger(channelLogService);
 	}
 

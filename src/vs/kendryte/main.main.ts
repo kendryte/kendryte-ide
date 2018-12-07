@@ -9,3 +9,4 @@ import 'vs/kendryte/vs/services/fileCompress/electron-main/contribution';
 import 'vs/kendryte/vs/services/storage/electron-main/contribution';
 import 'vs/kendryte/vs/services/update/electron-main/selfUpdateMainService';
 import 'vs/kendryte/vs/platform/sudo/electron-main/register';
+import 'vs/kendryte/vs/platform/vscode/electron-main/relaunchMainService';

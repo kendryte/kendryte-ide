@@ -4,7 +4,6 @@ import { AbstractSelfUpdateService, IUpdateUserInterface } from 'vs/kendryte/vs/
 import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IVersionUrlHandler } from 'vs/kendryte/vs/services/update/node/versionUrlHandler';
-import { IWindowsService } from 'vs/platform/windows/common/windows';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { IRequestService } from 'vs/platform/request/node/request';
@@ -17,6 +16,7 @@ import Severity from 'vs/base/common/severity';
 import { OpenKendryteReleasePageAction } from 'vs/kendryte/vs/services/update/node/openReleasePageAction';
 import { IIDEUpdateInfo } from 'vs/kendryte/vs/services/update/common/protocol';
 import { localize } from 'vs/nls';
+import { IRelaunchRenderService } from 'vs/kendryte/vs/platform/vscode/common/relaunchService';
 
 class SelfUpdateMainService extends AbstractSelfUpdateService {
 	logger: ILogService;
@@ -26,14 +26,14 @@ class SelfUpdateMainService extends AbstractSelfUpdateService {
 		@IVersionUrlHandler versionHandler: IVersionUrlHandler,
 		@IEnvironmentService environmentService: IEnvironmentService,
 		@IStorageService storageService: IStorageService,
-		@IWindowsService windowsService: IWindowsService,
+		@IRelaunchRenderService relaunchService: IRelaunchRenderService,
 		@INodePathService nodePathService: INodePathService,
 		@IRequestService requestService: IRequestService,
 		@INodeDownloadService downloadService: INodeDownloadService,
 		@IFileCompressService fileCompressService: IFileCompressService,
 		@IDialogService private readonly dialogService: IDialogService,
 	) {
-		super(versionHandler, environmentService, storageService, windowsService, nodePathService, requestService, downloadService, fileCompressService);
+		super(versionHandler, environmentService, storageService, relaunchService, nodePathService, requestService, downloadService, fileCompressService);
 		this.logger = instantiationService.invokeFunction((access) => {
 			return access.get(ILogService);
 		});
@@ -67,9 +67,9 @@ class SelfUpdateMainService extends AbstractSelfUpdateService {
 		const message = localize('too.old', ' Your IDE is old, please reinstall a newer one.');
 
 		await this.dialogService.show(Severity.Error, message, [
-			open.label,
-			localize('cancel', 'Cancel'),
-		], { cancelId: -1 },
+				open.label,
+				localize('cancel', 'Cancel'),
+			], { cancelId: -1 },
 		).then((selected) => {
 			this.logger.info('selected:', selected);
 			if (selected === 0) {

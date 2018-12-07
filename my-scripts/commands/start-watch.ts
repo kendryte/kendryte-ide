@@ -13,8 +13,8 @@ import { TypescriptCompileOutputStream } from '../build-env/misc/streamUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 
 whatIsThis(
-	'Start compile, for debugging',
-	'编译代码，用于本地调试',
+	'Compile source code',
+	'编译源码',
 );
 
 runMain(async () => {

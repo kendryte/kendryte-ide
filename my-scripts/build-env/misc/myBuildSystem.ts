@@ -2,7 +2,7 @@ import { createReadStream, createWriteStream, ftruncateSync, openSync, ReadStrea
 import { resolve } from 'path';
 import { RELEASE_ROOT } from './constants';
 import { mkdirpSync } from './fsUtil';
-import { WIT } from './help';
+import { currentCommand, WIT } from './help';
 import { streamPromise } from './streamUtil';
 import { timeout } from './timeUtil';
 
@@ -51,11 +51,11 @@ export function runMain(main: () => Promise<void|number>) {
 			await timeout(50); // give time to finish
 		}
 		await timeout(300);
-		console.error('    exit with code', quit);
+		console.error('\x1B[38;5;14m' + currentCommand().file + ' exit with code ' + quit + '\x1B[0m');
 		process.exit(quit);
 	}).catch((e) => {
 		console.error(e);
-		console.error('    error with code 1');
+		console.error('\x1B[38;5;14m' + currentCommand().file + ' error with code 1\x1B[0m');
 		process.exit(1);
 	});
 }
