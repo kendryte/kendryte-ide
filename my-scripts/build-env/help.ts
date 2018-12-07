@@ -1,33 +1,36 @@
-import { readdirSync, readFileSync } from 'fs';
+import { createWriteStream, existsSync, readdirSync, readFileSync } from 'fs';
+import { ensureDirSync } from 'fs-extra';
 import { platform } from 'os';
 import { resolve } from 'path';
-import { helpTip, whatIsThis } from './misc/help';
+import { PassThrough } from 'stream';
+import { helpPrint, helpStringCache, whatIsThis } from './misc/help';
 
 process.argv.push('--what-is-this');
 
-const extract = /^whatIsThis\(.+\);/m;
+if (existsSync(helpStringCache())) {
+	process.stderr.write(readFileSync(helpStringCache()));
+	process.exit(0);
+}
 
-helpTip('show-help', 'print this');
+ensureDirSync(process.env.TEMP);
+const out = helpPrint(new PassThrough());
+out.pipe(createWriteStream(helpStringCache()));
+out.pipe(process.stderr);
 
+whatIsThis('Print this', '显示这些提示', 'show-help');
 const base = resolve(__dirname, '../commands');
 readdirSync(base).forEach((file) => {
 	if (!file.endsWith('.ts')) {
 		return;
 	}
 	
-	const content = readFileSync(resolve(base, file), 'utf8');
-	const match = extract.exec(content);
-	if (!match) {
-		return;
-	}
-	
-	const fn = new Function('whatIsThis', '__filename', match[0]);
 	try {
-		fn(whatIsThis, file.replace(/\.ts$/, '.js'));
+		require(resolve(__dirname, '../commands', file.replace(/\.ts$/, '.js')));
 	} catch (e) {
-		whatIsThis(file.replace(/\.ts$/, '.js'), e.message);
+		whatIsThis(file.replace(/\.ts$/, ''), e.message, 'Unknown');
 	}
 });
+
 if (platform() === 'win32') {
-	helpTip('fork', 'Open new window like this');
+	whatIsThis('Open new window like this', '打开一个新窗口', 'fork');
 }

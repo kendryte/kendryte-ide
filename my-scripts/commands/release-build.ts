@@ -26,7 +26,10 @@ import { chdir } from '../build-env/misc/pathUtil';
 import { timing } from '../build-env/misc/timeUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 
-whatIsThis(__filename, 'build complete release.');
+whatIsThis(
+	'Run the full release process, create 7z archive(s), no upload',
+	'执行完整的发布流程，创建7z压缩包，不上传',
+);
 
 let output: OutputStreamControl;
 runMain(async () => {

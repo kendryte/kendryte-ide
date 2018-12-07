@@ -7,6 +7,7 @@ if (!process.env.RELEASE_ROOT) {
 	process.exit(1);
 }
 
+export const UILanguage = process.env.LANG || process.env.LANGUAGE || process.env.LC_ALL || '';
 process.env.LANG = 'C';
 process.env.LC_ALL = 'C';
 

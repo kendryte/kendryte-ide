@@ -8,7 +8,10 @@ import { runMain } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 
-whatIsThis(__filename, 'zip files from ./data/packages to release dir.');
+whatIsThis(
+	'Create Offline.Dependency.Package from ./data/packages',
+	'打包 ./data/packages 创建离线依赖包',
+);
 
 runMain(async () => {
 	const output = usePretty('create-offline-package');

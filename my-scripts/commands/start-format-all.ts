@@ -11,7 +11,10 @@ import { CollectingStream } from '../build-env/misc/streamUtil';
 import { timeout } from '../build-env/misc/timeUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 
-whatIsThis(__filename, 'format all source code and check any errors.');
+whatIsThis(
+	'Format all source code and check errors.',
+	'格式化所有源文件，并检查其中的错误'
+);
 
 const split2 = require('split2');
 

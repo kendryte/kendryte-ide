@@ -1,5 +1,6 @@
 import { OutputStreamControl } from '@gongt/stillalive';
 import { createReadStream } from 'fs';
+import { lstat, readdir } from 'fs-extra';
 import { basename, resolve } from 'path';
 import { extMime } from '../build-env/codeblocks/extMime';
 import { removeDirectory } from '../build-env/codeblocks/removeDir';
@@ -23,12 +24,30 @@ import { ICompileOptions, IPackageVersionDetail, IRemotePackageInfo, IRemotePack
 
 const {compress} = require('targz');
 
-whatIsThis(__filename, 'publish libraries in package-manager folder.');
+whatIsThis(
+	'Publish examples or libraries in package-manager folder',
+	'从 package-manager 文件夹发布依赖或样例程序',
+);
 
 runMain(async () => {
 	const projects = process.argv.slice(2);
-	
+	const pmPath = resolve(RELEASE_ROOT, 'package-manager');
+	console.error('Package Manager Repo: %s.', pmPath);
 	if (!projects.length) {
+		console.error('Please select project to publish: \n');
+		let max = 0;
+		const arr = [];
+		for (const item of await readdir(pmPath)) {
+			if ((await lstat(resolve(pmPath, item))).isDirectory()) {
+				arr.push(item);
+				max = Math.max(max, item.length);
+			}
+		}
+		max += 4;
+		const eachLine = Math.floor(((process.stderr.columns || 80) - 2) / max) || 1;
+		for (const line of chunk(arr, eachLine)) {
+			console.error('  ' + line.map(l => pad(l, max)).join(''));
+		}
 		throw new Error('At least 1 argument required.');
 	}
 	const output = usePretty('library-publish-version');
@@ -50,7 +69,7 @@ runMain(async () => {
 	}
 	
 	for (const project of projects) {
-		const packRoot = resolve(RELEASE_ROOT, 'package-manager', project);
+		const packRoot = resolve(pmPath, project);
 		if (!await isExists(packRoot)) {
 			throw new Error('Dir ' + packRoot + ' does not exists.');
 		}
@@ -144,4 +163,13 @@ async function createTarball(output: OutputStreamControl, packRoot: string) {
 	});
 	output.writeln('created file: ' + tempFile);
 	return tempFile;
+}
+
+function chunk<T>(arr: Array<T>, chunkSize: number): Array<Array<T>> {
+	return arr.reduce((prevVal: any, currVal: any, currIndx: number, array: Array<T>) =>
+		!(currIndx % chunkSize)? prevVal.concat([array.slice(currIndx, currIndx + chunkSize)]) : prevVal, []);
+}
+
+function pad(s: string, len: number) {
+	return s + Buffer.alloc(len - s.length, ' ').toString();
 }

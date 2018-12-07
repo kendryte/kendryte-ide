@@ -5,7 +5,10 @@ import { whatIsThis } from '../build-env/misc/help';
 import { runMain } from '../build-env/misc/myBuildSystem';
 import { usePretty } from '../build-env/misc/usePretty';
 
-whatIsThis(__filename, 'create download index file on aws.');
+whatIsThis(
+	'Update the download page file on S3',
+	'更新S3上的下载页',
+);
 
 runMain(async () => {
 	const output = usePretty('create-download-index');

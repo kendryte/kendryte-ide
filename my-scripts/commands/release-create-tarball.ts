@@ -4,7 +4,10 @@ import { runMain } from '../build-env/misc/myBuildSystem';
 import { timing } from '../build-env/misc/timeUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 
-whatIsThis(__filename, 'Re-create zip files from current compiled result.');
+whatIsThis(
+	'(re-)Create 7z files from last compiled result',
+	'从上次编译的结果（重新）创建7z压缩包',
+);
 
 runMain(async () => {
 	const output = usePretty('zip');

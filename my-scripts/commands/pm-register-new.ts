@@ -4,13 +4,17 @@ import { escapeRegExpCharacters } from '../build-env/codeblocks/escapeRegExpChar
 import { OBJKEY_PACKAGE_MANAGER_LIBRARY, s3LoadJson, s3UploadJson } from '../build-env/misc/awsUtil';
 import { RELEASE_ROOT } from '../build-env/misc/constants';
 import { isExists } from '../build-env/misc/fsUtil';
+import { whatIsThis } from '../build-env/misc/help';
 import { runMain } from '../build-env/misc/myBuildSystem';
 import { ensureChdir } from '../build-env/misc/pathUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 import { readPackageInfo } from '../build-env/package-manager/packageInfo';
 import { IRemotePackageRegistry } from '../build-env/package-manager/type';
 
-// whatIsThis(__filename, 'register a new library.');
+whatIsThis(
+	'Register an example or library with its GitHub repo',
+	'通过GitHub仓库发布一个依赖或样例程序',
+);
 
 const usage = `
 library-publish [git remote url] [git RELEASE branch name]

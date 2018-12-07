@@ -19,7 +19,7 @@ done
 
 writeShFile show-help "
 	cd '$VSCODE_ROOT'
-	exec node 'my-scripts/build-env/help.js'
+	exec node 'my-scripts/build-env/help.js' -- --what-is-this
 "
 
 function fork() {

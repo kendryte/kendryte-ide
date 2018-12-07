@@ -170,5 +170,3 @@ if (!(Test-Path -Path "$PRIVATE_BINS\git.bat")) {
 }
 
 cd $VSCODE_ROOT
-$helpStrings = (node "my-scripts\build-env\help.js") | Out-String
-setSystemVar 'helpStrings' $helpStrings

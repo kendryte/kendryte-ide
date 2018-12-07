@@ -4,6 +4,7 @@ import { extMime } from '../build-env/codeblocks/extMime';
 import { calcPatchFileAwsKey, initS3, s3UploadFile } from '../build-env/misc/awsUtil';
 import { getPackageData } from '../build-env/misc/fsUtil';
 import { globalInterruptLog } from '../build-env/misc/globalOutput';
+import { whatIsThis } from '../build-env/misc/help';
 import { runMain } from '../build-env/misc/myBuildSystem';
 import { usePretty } from '../build-env/misc/usePretty';
 import { checkBaseIsDifferent, checkPatchIsDifferent, ensureBuildComplete } from '../build-env/publisher/checkVersions';
@@ -19,6 +20,11 @@ import {
 	storeRemoteVersion,
 	SYS_NAME,
 } from '../build-env/publisher/release.json';
+
+whatIsThis(
+	'Publish created 7z archive(s) to S3',
+	'上传创建的7z压缩包到S3',
+);
 
 runMain(async () => {
 	const output = usePretty('publish');

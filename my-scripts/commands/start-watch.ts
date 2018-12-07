@@ -12,7 +12,10 @@ import { runMain } from '../build-env/misc/myBuildSystem';
 import { TypescriptCompileOutputStream } from '../build-env/misc/streamUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 
-whatIsThis(__filename, 'start compile');
+whatIsThis(
+	'Start compile, for debugging',
+	'编译代码，用于本地调试',
+);
 
 runMain(async () => {
 	process.env.FORCE_COLOR = 'yes'; // ensure typescript output has colors

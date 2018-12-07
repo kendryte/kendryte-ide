@@ -10,7 +10,10 @@ import { runMain } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 
-whatIsThis(__filename, 'zip files from ./data/packages to release dir.');
+whatIsThis(
+	'Upload created Offline.Dependency.Package to S3',
+	'将创建的离线依赖包上传到S3',
+);
 
 runMain(async () => {
 	const output = usePretty('upload-offline-package');

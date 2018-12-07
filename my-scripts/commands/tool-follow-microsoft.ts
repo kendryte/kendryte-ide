@@ -9,7 +9,10 @@ import { runMain } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 
-whatIsThis(__filename, 'follow microsoft VS Code repo');
+whatIsThis(
+	'Fetch Microsoft VS Code official update. push to "origin/microsoft"',
+	'从微软 VS Code 官方源拉更改，然后推到 "origin/microsoft"',
+);
 
 runMain(async () => {
 	const output = usePretty('follow-microsoft');

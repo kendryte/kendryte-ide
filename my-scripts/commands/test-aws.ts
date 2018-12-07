@@ -6,7 +6,10 @@ import { whatIsThis } from '../build-env/misc/help';
 import { runMain } from '../build-env/misc/myBuildSystem';
 import { usePretty } from '../build-env/misc/usePretty';
 
-whatIsThis(__filename, 'try to login to s3 with your default credentials.');
+whatIsThis(
+	'Try download file from S3, test your credentials',
+	'尝试从S3下载文件，测试S3配置是否正确',
+);
 
 const {compress} = require('targz');
 

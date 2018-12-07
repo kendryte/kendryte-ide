@@ -1,14 +1,18 @@
 import { resolve } from 'path';
 import { pipeCommandOut } from '../build-env/childprocess/complex';
 import { installDependency } from '../build-env/childprocess/yarn';
+import { removeDirectory } from '../build-env/codeblocks/removeDir';
 import { VSCODE_ROOT } from '../build-env/misc/constants';
 import { useThisStream } from '../build-env/misc/globalOutput';
-import { whatIsThis } from '../build-env/misc/help';
+import { helpStringCache, whatIsThis } from '../build-env/misc/help';
 import { runMain } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 
-whatIsThis(__filename, 'compile .ts files in my-scripts folder, you should run this after every git pull.');
+whatIsThis(
+	'Install and compile "my-scripts" project (-w for watch)',
+	'安装并编译 "my-scripts" 项目（-w监视模式）',
+);
 
 const useWatch = process.argv.includes('-w');
 if (useWatch) {
@@ -20,6 +24,10 @@ runMain(async () => {
 	chdir(resolve(VSCODE_ROOT, 'my-scripts'));
 	await installDependency(output);
 	output.success('Yarn success.').pause();
+	
+	const help = helpStringCache();
+	await removeDirectory(help, output);
+	
 	output.end();
 	useThisStream(process.stderr);
 	

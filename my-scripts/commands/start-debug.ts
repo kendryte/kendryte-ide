@@ -7,7 +7,10 @@ import { whatIsThis } from '../build-env/misc/help';
 import { runMain } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 
-whatIsThis(__filename, 'start local debug IDE, need start-watch show success.');
+whatIsThis(
+	'Run KendryteIDE from source (need `start-watch` shows "success")',
+	'运行 KendryteIDE（需要先运行 `start-watch`，并等他输出 success）',
+);
 
 runMain(async () => {
 	const passArgs = process.argv.slice(2);

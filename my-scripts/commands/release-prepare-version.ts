@@ -7,7 +7,10 @@ import { whatIsThis } from '../build-env/misc/help';
 import { runMain } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 
-whatIsThis(__filename, 'rewrite patchVersion inside package.json');
+whatIsThis(
+	'Update `patchVersion` field inside package.json',
+	'更新package.json里的 `patchVersion` 字段',
+);
 
 runMain(async () => {
 	chdir(VSCODE_ROOT);

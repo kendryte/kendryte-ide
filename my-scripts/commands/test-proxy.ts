@@ -4,7 +4,11 @@ import { runMain } from '../build-env/misc/myBuildSystem';
 
 const request = require('request');
 
-whatIsThis(__filename, 'Test your HTTP_PROXY.');
+whatIsThis(
+	'Try open googole.com, test `HTTP_PROXY` setting',
+	'尝试访问 google，来测试代理设置是否正确'
+);
+
 runMain(async () => {
 	console.log('HTTP_PROXY=%s', process.env.HTTP_PROXY);
 	console.log('HTTPS_PROXY=%s', process.env.HTTPS_PROXY);
