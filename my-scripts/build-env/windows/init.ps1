@@ -76,7 +76,7 @@ writeScriptFile yarn-install-build-tools @"
 writeCmdFile npm @"
 	@echo off
 	set PRIVATE_BINS=$PRIVATE_BINS
-	"$NODEJS" "$VSCODE_ROOT\my-scripts\build-env\mock-npm.js" %*
+"$NODEJS" "$VSCODE_ROOT\my-scripts\build-env\mock-npm.js" %*
 "@
 ### npm
 
@@ -121,7 +121,7 @@ writeScriptFile yarn @"
 ### yarn.ps
 
 ### install node_modules for my scripts
-if (!(Test-Path -Path "$VSCODE_ROOT\my-scripts\node_modules")){
+if (!(Test-Path -Path "$VSCODE_ROOT\my-scripts\node_modules")) {
 	cd $VSCODE_ROOT\my-scripts
 	yarn
 }
@@ -134,9 +134,8 @@ if (!(Get-Command python -errorAction SilentlyContinue)) {
 	echo "  "
 	echo "  You need press Enter to continue"
 	echo "================================================="
-    
-
-	Start-Process -Verb RunAs -Wait -FilePath powershell.exe -ArgumentList @("-NoExit", "-Command", $(resolvePath $PRIVATE_BINS "yarn-install-build-tools.ps1") )
+	
+	Start-Process -Verb RunAs -Wait -FilePath powershell.exe -ArgumentList @("-NoExit", "-Command", $( resolvePath $PRIVATE_BINS "yarn-install-build-tools.ps1" ) )
 	if (!$?) {
 		throw "windows-build-tools cannot install"
 	}
@@ -149,22 +148,13 @@ if (!(Get-Command python -errorAction SilentlyContinue)) {
 if (!(Test-Path -Path "$PRIVATE_BINS\git.bat")) {
 	cd $TMP
 	
-	$FindPath = $(resolvePath ([Environment]::GetFolderPath('LocalApplicationData')) GitHubDesktop)
-	$f = $(
-		Get-ChildItem -Path $FindPath -Filter git.exe -Recurse -ErrorAction SilentlyContinue -Force | `
-		Sort {$_.LastWriteTime} | `
-		Select -last 1
-	)
-	if ( $f ) {
-		$GitLocation = $f.FullName
-	} else {
-		writeCmdFile finding-git @"
+	$GitLocation = $f.FullName
+	writeCmdFile finding-git @"
 		@echo off
 		set PATH=$ORIGINAL_PATH
 		C:\Windows\System32\where.exe git
 "@
-		$GitLocation = (cmd.exe /c "finding-git")
-	}
+	$GitLocation = (cmd.exe /c "finding-git")
 	
 	if (!$GitLocation) {
 		throw "You need to install <github desktop>( https://desktop.github.com/ )."
