@@ -459,6 +459,9 @@ function getUserDefinedLocale() {
 		} else {
 			return undefined;
 		}
+	}).then((locale) => {
+		console.log(': User defined locale:', locale);
+	    return locale;
 	});
 }
 
@@ -618,6 +621,7 @@ function getNLSConfiguration(locale) {
 							return Promise.all(writes);
 						}).then(() => {
 							perf.mark('nlsGeneration:end');
+							console.log('nlsGeneration End');
 							return result;
 						}).catch((err) => {
 							console.error('Generating translation files failed.', err);

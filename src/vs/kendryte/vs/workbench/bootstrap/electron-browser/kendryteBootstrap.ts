@@ -88,7 +88,7 @@ class KendryteBootstrapAction extends Action {
 	}
 
 	async _run() {
-		await this.lifecycleService.when(LifecyclePhase.Restored);
+		await this.lifecycleService.when(LifecyclePhase.Ready);
 
 		const hasPermInPackages = await this.nodeFileSystemService.tryWriteInFolder(this.nodePathService.getPackagesPath('test-perm'));
 		const installingRoot = this.nodePathService.getSelfControllingRoot();
@@ -118,6 +118,7 @@ class KendryteBootstrapAction extends Action {
 			return;
 		}
 
+		await this.lifecycleService.when(LifecyclePhase.Restored);
 		if (await this.client.isMeFirst()) {
 			this.logService.info('{update} I\'m first window in this session, start check self update.');
 			if (await this.ide_self()) {
@@ -130,6 +131,7 @@ class KendryteBootstrapAction extends Action {
 		}
 
 		this.logService.info('{update} {COMPLETE}');
+		await this.lifecycleService.when(LifecyclePhase.Eventually);
 		await this.activateCmake();
 	}
 
