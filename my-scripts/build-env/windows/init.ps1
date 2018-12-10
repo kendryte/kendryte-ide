@@ -134,7 +134,9 @@ if (!(Get-Command python -errorAction SilentlyContinue)) {
 	echo "  "
 	echo "  You need press Enter to continue"
 	echo "================================================="
-	Start-Process powershell.exe "$NODEJS_BIN/yarn-install-build-tools.ps1" -Verb RunAs -Wait
+    
+
+	Start-Process -Verb RunAs -Wait -FilePath powershell.exe -ArgumentList @("-NoExit", "-Command", $(resolvePath $PRIVATE_BINS "yarn-install-build-tools.ps1") )
 	if (!$?) {
 		throw "windows-build-tools cannot install"
 	}
