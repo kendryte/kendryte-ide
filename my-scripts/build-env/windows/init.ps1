@@ -65,7 +65,7 @@ writeScriptFile yarn-install-build-tools @"
 	`$env:YARN_CACHE_FOLDER='$YARN_CACHE_FOLDER'
 	& '$NODEJS' ``
 		'$NODEJS_INSTALL\node_modules\yarn\bin\yarn.js' ``
-		global add windows-build-tools --vs2015 ``
+		global add windows-build-tools ``
 			--prefer-offline --no-default-rc --no-bin-links ``
 			--cache-folder '$YARN_CACHE_FOLDER' ``
 	pause
