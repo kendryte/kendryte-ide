@@ -36,7 +36,7 @@ export function _kendrite_workbench_hookInstantiationService(
 		});
 
 		instantiationService.invokeFunction((accessor) => {
-			accessor.get<ILifecycleService>(ILifecycleService).when(LifecyclePhase.Starting).then(() => {
+			accessor.get<ILifecycleService>(ILifecycleService).when(LifecyclePhase.Ready).then(() => {
 				try {
 					instantiationService.invokeFunction(addStatusBarButtons);
 
