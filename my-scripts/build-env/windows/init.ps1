@@ -145,12 +145,25 @@ if (!(Get-Command python -errorAction SilentlyContinue)) {
 }
 
 if (!(Test-Path -Path "$PRIVATE_BINS\git.bat")) {
-	writeCmdFile finding-git @"
+	cd $TMP
+	
+	$FindPath = $(resolvePath ([Environment]::GetFolderPath('LocalApplicationData')) GitHubDesktop)
+	$f = $(
+		Get-ChildItem -Path $FindPath -Filter git.exe -Recurse -ErrorAction SilentlyContinue -Force | `
+		Sort {$_.LastWriteTime} | `
+		Select -last 1
+	)
+	if ( $f ) {
+		$GitLocation = $f.FullName
+	} else {
+		writeCmdFile finding-git @"
 		@echo off
 		set PATH=$ORIGINAL_PATH
 		C:\Windows\System32\where.exe git
 "@
-	$GitLocation = (cmd.exe /c "finding-git")
+		$GitLocation = (cmd.exe /c "finding-git")
+	}
+	
 	if (!$GitLocation) {
 		throw "You need to install <github desktop>( https://desktop.github.com/ )."
 	}

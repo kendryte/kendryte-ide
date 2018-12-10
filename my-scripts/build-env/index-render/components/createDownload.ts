@@ -55,7 +55,7 @@ async function getFileInfo(key: string): Promise<{md5: string, size: string, tim
 	const md5FileKey = key + '.md5';
 	globalLog('Requesting file size: %s', key);
 	let {size, time} = await getHeadInfo(s3BucketUrl(key)).catch(() => {
-		return {};
+		return {} as any;
 	});
 	if (!time) {
 		time = 'Unknown';
@@ -101,7 +101,7 @@ async function getFileInfo(key: string): Promise<{md5: string, size: string, tim
 }
 
 function getHeadInfo(url: string) {
-	return new Promise<string>((resolve, reject) => {
+	return new Promise<{time: string; size: string}>((resolve, reject) => {
 		request(url, {method: 'HEAD'}, (res: IncomingMessage) => {
 			if (res.statusCode !== 200) {
 				reject(new Error(res.statusMessage));

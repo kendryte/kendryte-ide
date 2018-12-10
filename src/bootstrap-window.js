@@ -39,7 +39,7 @@ exports.load = function (modulePaths, resultCallback, options) {
 	});
 
 	// Developer tools
-	const enableDeveloperTools = (process.env['VSCODE_DEV'] || !!configuration.extensionDevelopmentPath) && !configuration.extensionTestsPath;
+	const enableDeveloperTools = true;
 	let developerToolsUnbind;
 	if (enableDeveloperTools || (options && options.forceEnableDeveloperKeybindings)) {
 		developerToolsUnbind = registerDeveloperKeybindings();

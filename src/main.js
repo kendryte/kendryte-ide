@@ -6,7 +6,15 @@
 //@ts-check
 'use strict';
 
-try{require('source-map-support/register');}catch(e){console.error('ignored:',e.message);}
+try{
+	// @ts-ignore
+	require('source-map-support/register');
+	// @ts-ignore
+	global.electron = require('electron');
+} catch (e) {
+	// @ts-ignore
+	console.error('ignored:',e.message);
+}
 
 const perf = require('./vs/base/common/performance');
 perf.mark('main:started');

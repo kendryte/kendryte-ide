@@ -45,7 +45,7 @@
 	ap.href = getA(current, '.packages a').href;
 })();
 (() => {
-	for (const item of document.querySelectorAll('.date')) {
+	for (const item of document.querySelectorAll('.date') as any) {
 		item.innerText = new Date(Date.parse(item.innerText.trim())).toLocaleString();
 	}
 })();
