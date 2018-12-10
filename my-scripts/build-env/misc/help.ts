@@ -13,25 +13,30 @@ export function helpPrint<T extends NodeJS.WritableStream>(out: T): T {
 	return defaultOutput = out;
 }
 
+let register = false;
+
 function toPrintHelp() {
-	process.on('beforeExit', () => {
-		setTimeout(() => {
-			process.exit(0);
-		}, 1000);
-		
-		defaultOutput.write('\n\n');
-		for (const list of registry.values()) {
-			if (!list.length) {
-				continue;
+	if (!register) {
+		register = true;
+		process.on('beforeExit', () => {
+			setTimeout(() => {
+				process.exit(0);
+			}, 1000);
+			
+			defaultOutput.write('\n\n');
+			for (const list of registry.values()) {
+				if (!list.length) {
+					continue;
+				}
+				const [en, cn] = cates[list[0].category] || cates.unknown;
+				defaultOutput.write(format('\x1B[48;5;0;1m[\x1B[38;5;10m%s\x1B[0;48;5;0;1m]\n', isZh? cn : en));
+				for (const {file, title} of list) {
+					defaultOutput.write(format('\x1B[48;5;0;1m * \x1B[38;5;14m%s\x1B[0;48;5;0m - %s.\n', file, title));
+				}
 			}
-			const [en, cn] = cates[list[0].category] || cates.unknown;
-			defaultOutput.write(format('\x1B[48;5;0;1m[\x1B[38;5;10m%s\x1B[0;48;5;0;1m]\n', isZh? cn : en));
-			for (const {file, title} of list) {
-				defaultOutput.write(format('\x1B[48;5;0;1m * \x1B[38;5;14m%s\x1B[0;48;5;0m - %s.\n', file, title));
-			}
-		}
-		defaultOutput.write('\n');
-	});
+			defaultOutput.write('\n');
+		});
+	}
 }
 
 interface WhatIsThis {
@@ -44,7 +49,7 @@ let isZh: boolean = null;
 let registry = new Map<string, WhatIsThis[]>();
 
 function stack() {
-	const frame = /([^\/]+)\.[j|t]s:/.exec((new Error).stack.split('\n', 4).pop());
+	const frame = /([^\/\\]+)\.[j|t]s:/.exec((new Error).stack.split('\n', 4).pop());
 	if (!frame) {
 		console.error((new Error).stack.split('\n', 4).slice(1));
 		throw new Error('Cannot detect stack frame');

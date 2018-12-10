@@ -1,4 +1,4 @@
-import { createWriteStream, existsSync, readdirSync, readFileSync } from 'fs';
+import { createWriteStream, existsSync, readdirSync, readFileSync, unlinkSync } from 'fs';
 import { ensureDirSync } from 'fs-extra';
 import { platform } from 'os';
 import { resolve } from 'path';
@@ -14,7 +14,11 @@ if (existsSync(helpStringCache())) {
 
 ensureDirSync(process.env.TEMP);
 const out = helpPrint(new PassThrough());
-out.pipe(createWriteStream(helpStringCache()));
+const cacheFile = helpStringCache();
+if (existsSync(cacheFile)) {
+	unlinkSync(cacheFile);
+}
+out.pipe(createWriteStream(cacheFile));
 out.pipe(process.stderr);
 
 whatIsThis('Print this', '显示这些提示', 'show-help');

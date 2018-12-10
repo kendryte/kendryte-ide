@@ -26,6 +26,8 @@ whatIsThis(
 	'上传创建的7z压缩包到S3',
 );
 
+const forceOverwride = process.argv.includes('--force');
+
 runMain(async () => {
 	const output = usePretty('publish');
 	
@@ -63,6 +65,10 @@ runMain(async () => {
 		output.writeln('base version unchanged, but patch version changed, publish new patch.');
 		await createAndPublishPatch(output, remote);
 		
+		await publishCompiledResult(output, remote);
+	} else if (forceOverwride) {
+		output.success('Everything is up to date. FORCE UPDATE.');
+		await createAndPublishPatch(output, remote);
 		await publishCompiledResult(output, remote);
 	} else {
 		output.success('Done. Everything is up to date.');

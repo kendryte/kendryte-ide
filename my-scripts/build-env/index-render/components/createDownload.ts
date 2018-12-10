@@ -30,7 +30,7 @@ ${await createDownload(zip, 'btn-outline-primary')}`;
 }
 
 async function createDownload(key: string, btnClass: string) {
-	const {md5, size} = await getFileInfo(key);
+	const {md5, size, time} = await getFileInfo(key);
 	const sizeStr = humanSize(size);
 	
 	const url = s3BucketUrl(key);
@@ -44,22 +44,31 @@ async function createDownload(key: string, btnClass: string) {
 </tr>
 <tr>
 	<td colspan="3"><span class="badge badge-info">MD5:</span>&nbsp;${md5}</td>
+</tr>
+<tr>
+	<td colspan="3"><span class="badge badge-info">Time:</span>&nbsp;<span class="date">${time}</span></td>
 </tr>`;
 }
 
-async function getFileInfo(key: string): Promise<{md5: string, size: string}> {
+async function getFileInfo(key: string): Promise<{md5: string, size: string, time: string}> {
 	globalLog('Get hash-file of file: %s', key);
 	const md5FileKey = key + '.md5';
 	globalLog('Requesting file size: %s', key);
-	const size = await getContentSize(s3BucketUrl(key)).catch(() => {
-		return '';
+	let {size, time} = await getHeadInfo(s3BucketUrl(key)).catch(() => {
+		return {};
 	});
+	if (!time) {
+		time = 'Unknown';
+	}
+	
 	globalLog('    size: %s', size);
+	globalLog('    time: %s', time);
 	if (!size) {
 		globalLog('Temporary unavailable.');
 		return {
 			md5: 'Temporary unavailable.',
 			size: '???',
+			time,
 		};
 	}
 	
@@ -69,6 +78,7 @@ async function getFileInfo(key: string): Promise<{md5: string, size: string}> {
 		return {
 			md5,
 			size,
+			time,
 		};
 	}
 	
@@ -86,16 +96,20 @@ async function getFileInfo(key: string): Promise<{md5: string, size: string}> {
 	return {
 		size,
 		md5,
+		time,
 	};
 }
 
-function getContentSize(url: string) {
+function getHeadInfo(url: string) {
 	return new Promise<string>((resolve, reject) => {
 		request(url, {method: 'HEAD'}, (res: IncomingMessage) => {
 			if (res.statusCode !== 200) {
 				reject(new Error(res.statusMessage));
 			} else {
-				resolve(res.headers['content-length'] as string);
+				resolve({
+					time: (new Date(Date.parse(res.headers['last-modified']))).toISOString(),
+					size: res.headers['content-length'] as string,
+				});
 			}
 		}).end();
 	});

@@ -50,6 +50,11 @@ export async function createIndexFileContent(output: OutputStreamControl): Promi
 	await buildHead(pieces);
 	
 	pieces.push(`<body class="en container">`);
+	pieces.push(`<div style="text-align:right;">
+<span class="en">Last update of this page:</span>
+<span class="cn">本页面更新时间：</span>
+<span class="date">${(new Date()).toISOString()}</span>
+</div>`);
 	pieces.push(readFileSync(resolve(__dirname, 'components/intro.html'), 'utf8'));
 	pieces.push(notSupportHtml());
 	pieces.push('<div id="platformContainer" class="row">');

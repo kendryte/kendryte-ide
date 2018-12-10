@@ -44,3 +44,8 @@
 	const ap = getA(fastDown, 'a.pkg');
 	ap.href = getA(current, '.packages a').href;
 })();
+(() => {
+	for (const item of document.querySelectorAll('.date')) {
+		item.innerText = new Date(Date.parse(item.innerText.trim())).toLocaleString();
+	}
+})();
