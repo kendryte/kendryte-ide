@@ -4,6 +4,7 @@ import { isMac, isWin } from '../misc/constants';
 import { getPackageData, getProductData } from '../misc/fsUtil';
 
 export const TYPE_WINDOWS_SFX = 'exe';
+export const TYPE_WINDOWS_7Z = '7z';
 export const TYPE_WINDOWS_ZIP = 'zip';
 export const TYPE_LINUX_SFX = '7z.bin';
 export const TYPE_LINUX_ZIP = 'zip';
@@ -12,7 +13,7 @@ export const TYPE_MAC_ZIP = 'zip';
 
 const types: string[] = [];
 if (isWin) {
-	types.push(TYPE_WINDOWS_SFX, TYPE_WINDOWS_ZIP);
+	types.push(TYPE_WINDOWS_SFX, TYPE_WINDOWS_7Z, TYPE_WINDOWS_ZIP);
 } else if (isMac) {
 	types.push(TYPE_MAC_SFX, TYPE_MAC_ZIP);
 } else {

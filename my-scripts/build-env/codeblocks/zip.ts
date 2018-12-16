@@ -36,7 +36,7 @@ if (!isWin) {
 		invoke = oldOutput;
 	}
 }
-const zipLzma2Args = [
+const zipLzma2ArgsWithoutSFX = [
 	...commonArgs,
 	'-t7z', // compress to xxx.7z
 	'-ms=on', // solid
@@ -44,6 +44,9 @@ const zipLzma2Args = [
 	'-m0=lzma2', // use LZMA2
 	'-md=256m', // dictionary size
 	'-mfb=64', // word size
+];
+const zipLzma2Args = [
+	...zipLzma2ArgsWithoutSFX,
 ];
 if (isWin) {
 	zipLzma2Args.push('"-sfx7z.sfx"'); // self extraction
@@ -56,6 +59,19 @@ const zipDeflateArgs = [
 	'-tzip', // compress to xxx.zip
 	'-mx6', // more compress
 ];
+
+async function createWindows7z(
+	output: NodeJS.WritableStream,
+	stderr: NodeJS.WritableStream,
+	whatToZip: string,
+	zipFileName: string,
+	...zipArgs: string[]
+) {
+	output.write('creating windows 7z file...\n');
+	zipFileName = resolve(releaseZipStorageFolder(), zipFileName);
+	await removeIfExists(zipFileName);
+	return invoke(output, stderr, 'a', ...zipLzma2ArgsWithoutSFX, ...zipArgs, '--', zipFileName, join(whatToZip, '*'));
+}
 
 async function createWindowsSfx(
 	output: NodeJS.WritableStream,
@@ -163,6 +179,7 @@ export async function creatingUniversalZip(output: OutputStreamControl, sourceDi
 		convert.pipe(output, endArg(output));
 		
 		await createWindowsSfx(convert, stderr, sourceDir, await namer('exe'));
+		await createWindows7z(convert, stderr, sourceDir, await namer('7z'));
 		await createWindowsZip(convert, stderr, sourceDir, await namer('zip'));
 		
 		convert.end();

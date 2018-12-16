@@ -32,6 +32,11 @@ export async function publishCompiledResult(output: OutputStreamControl, remote:
 		remote[SYS_NAME] = result;
 	}
 	
+	if (!remote.allDownloads) {
+		remote.allDownloads = {};
+	}
+	remote.allDownloads[SYS_NAME] = rType;
+	
 	output.writeln('saving IDE.json to AWS.');
 	await saveRemoteState(remote);
 }

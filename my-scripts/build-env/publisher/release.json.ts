@@ -2,17 +2,22 @@ import { OBJKEY_DOWNLOAD_INDEX, OBJKEY_IDE_JSON, s3LoadJson, s3UploadJson, s3Web
 import { isMac, isWin } from '../misc/constants';
 
 export interface IDEJson {
+	version: string;
+	homepageUrl: string;
 	_autoUpdateVersions: {
 		windows: {main: string; patch: string;};
 		mac: {main: string; patch: string;};
 		linux: {main: string; patch: string;};
 	},
-	homepageUrl: string;
+	patches: IDEPatchJson[];
 	linux: string;
 	mac: string;
-	patches: IDEPatchJson[];
-	version: string;
 	windows: string;
+	allDownloads: {
+		linux: string[];
+		mac: string[];
+		windows: string[];
+	};
 }
 
 export interface IDEPatchJson {
