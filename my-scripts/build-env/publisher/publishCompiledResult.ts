@@ -33,7 +33,11 @@ export async function publishCompiledResult(output: OutputStreamControl, remote:
 	}
 	
 	if (!remote.allDownloads) {
-		remote.allDownloads = {};
+		remote.allDownloads = {
+			windows: [],
+			linux: [],
+			mac: [],
+		};
 	}
 	remote.allDownloads[SYS_NAME] = rType;
 	

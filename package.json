@@ -24,7 +24,9 @@
     "monaco-compile-check": "tsc -p src/tsconfig.monaco.json --noEmit",
     "download-builtin-extensions": "node build/lib/builtInExtensions.js",
     "strict-null-check": "tsc -p src/tsconfig.strictNullChecks.json",
-    "strict-null-check-watch": "tsc -p src/tsconfig.strictNullChecks.json --watch"
+    "strict-null-check-watch": "tsc -p src/tsconfig.strictNullChecks.json --watch",
+    "postcheckout": "node my-scripts/npm/update-help.js",
+    "postmerge": "node my-scripts/npm/update-help.js"
   },
   "dependencies": {
     "@octokit/rest": "^15.13.0",

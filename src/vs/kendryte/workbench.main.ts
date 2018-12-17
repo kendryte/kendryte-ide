@@ -20,11 +20,6 @@ import 'vs/kendryte/vs/services/download/node/nodeRequestService'; // network re
 import 'vs/kendryte/vs/services/download/electron-browser/nodeDownloadService'; // download
 import 'vs/kendryte/vs/services/download/electron-browser/downloadWithProgressService'; // download
 import 'vs/kendryte/vs/platform/vscode/electron-browser/relaunchRenderService';
-// Update service
-import 'vs/kendryte/vs/services/update/electron-browser/ideBuildingBlocksService';
-import 'vs/kendryte/vs/services/update/electron-browser/buildingBlocksUpgradeAction';
-import 'vs/kendryte/vs/services/update/node/openReleasePageAction';
-import 'vs/kendryte/vs/services/update/electron-browser/selfUpdateWorkbenchService';
 // Settings Page Patcher
 import 'vs/kendryte/vs/workbench/patchSettings2/browser/settingsTreePathcer';
 import 'vs/kendryte/vs/workbench/patchSettings2/browser/settingsPage2Pathcer';

@@ -1,35 +1,75 @@
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { IRelaunchMainService } from 'vs/kendryte/vs/platform/vscode/common/relaunchService';
 import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
 import { app } from 'electron';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
-import { writeFileAndFlushSync } from 'vs/base/node/extfs';
 import { IWindowsMainService } from 'vs/platform/windows/electron-main/windows';
 import { ILifecycleService } from 'vs/platform/lifecycle/electron-main/lifecycleMain';
+import { isUpdater } from 'vs/kendryte/vs/base/common/platform';
+import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
+import { IRelaunchService } from 'vs/kendryte/vs/platform/vscode/common/relaunchService';
+import { Transform } from 'stream';
+import { createConnection, Socket } from 'net';
+import { ILogService } from 'vs/platform/log/common/log';
 
-export class MainProcessRelaunchService implements IRelaunchMainService {
+export interface IRelaunchMainService extends IRelaunchService {
+	preExit(): Promise<void>;
+}
+
+export const IRelaunchMainService = createDecorator<IRelaunchMainService>('relaunchService');
+
+class MainProcessRelaunchService implements IRelaunchMainService {
 	_serviceBrand: any;
-	protected readonly isDebug: boolean;
+
+	private socket: Socket;
+	private ipc: NodeJS.ReadableStream & NodeJS.WritableStream;
+	private readonly waitResponse = new Map<string, IResolver>();
 
 	constructor(
 		@IEnvironmentService environmentService: IEnvironmentService,
 		@IWindowsMainService private readonly windowsService: IWindowsMainService,
 		@ILifecycleService private readonly lifecycleService: ILifecycleService,
+		@ILogService private readonly logService: ILogService,
 	) {
-		this.isDebug = !environmentService.isBuilt;
+		if (isUpdater) {
+			this.ipc = this.connect();
+		} else {
+			this.ipc = new Transform({ transform(data: any, encoding: string, callback: Function) {callback();} });
+		}
+	}
+
+	private connect() {
+		const ipc = this.socket = createConnection(process.env.KENDRYTE_IDE_UPDATER_PIPE);
+		ipc.on('error', e => {
+			this.logService.error('updater server error:\n' + e.stack);
+			ipc.end();
+			delete this.ipc;
+		});
+		ipc.on('end', () => {
+			this.logService.error('updater server disconnected.');
+			delete this.ipc;
+		});
+		ipc.on('connect', () => {
+			this.send('hello', process.env.KENDRYTE_IDE_UPDATER_PIPE_ID).catch();
+		});
+
+		ipc.on('');
+		this.ipc = createConnection();
 	}
 
 	relaunch() {
-		console.log('----------------');
-		console.log(' %s # relaunch', this.constructor.name);
-		console.log('----------------');
-		debugger;
-		if (this.isDebug) {
-			const file = resolvePath(process.env.TEMP, 'debug-ide-restart.mark');
-			writeFileAndFlushSync(file, 'yEs');
-			this.windowsService.quit();
+		this.lifecycleService.relaunch({});
+	}
+
+	public notifySuccess() {
+		console.log('MainProcessRelaunchService#notifySuccess');
+		process.send('im-ok');
+	}
+
+	public launchUpdater() {
+		if (isUpdater) {
+			process.send('please-update');
+			this.lifecycleService.quit(false);
 		} else {
-			this.lifecycleService.relaunch({});
+			throw new Error('Not started from updater.');
 		}
 	}
 
@@ -44,6 +84,17 @@ export class MainProcessRelaunchService implements IRelaunchMainService {
 			win.close(); // livecycleService will notice this, and do any cleanup
 		});
 		return p;
+	}
+
+	private token = 1;
+
+	private send(type: string, data: any): Promise<void> {
+		const token = this.token;
+		this.token++;
+		this.socket.write(JSON.stringify({ type, data, token }) + '\n');
+		return new Promise((resolve) => {
+			this.waitResponse.set(type, resolve);
+		});
 	}
 }
 

@@ -53,13 +53,16 @@ export -f prompt_path
 export -f prompt
 export PROMPT_COMMAND="prompt"
 
-echo -e "\ec"
-
-show-help
-
-echo
-echo -e "\e[38;5;10m > The anwser is 42 <\e[0m"
-echo
+if [ -z "${BS_RUN_SCRIPT}" ]; then
+	echo -e "\ec"
+	show-help
+	echo
+	echo -e "\e[38;5;10m > The anwser is 42 <\e[0m"
+	echo
+else
+	echo "None-interactive mode detected. show-help will not run."
+	echo
+fi
 
 cd "${VSCODE_ROOT}" # required last item
 set +e

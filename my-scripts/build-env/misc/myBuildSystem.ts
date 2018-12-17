@@ -20,6 +20,27 @@ let finalPromise: Promise<void|number> = new Promise((resolve, reject) => {
 	setImmediate(resolve);
 });
 
+const knownProxyVar = [
+	'HTTP_PROXY',
+	'HTTPS_PROXY',
+	'ALL_PROXY',
+	'NO_PROXY',
+	'FORCE_PROXY',
+];
+for (const i of Object.keys(process.env)) {
+	if (knownProxyVar.includes(i)) {
+		continue;
+	}
+	if (i.toUpperCase().endsWith('_PROXY')) {
+		console.error('Warn: environment variable %s is ignored.', i);
+		delete process.env[i];
+	}
+}
+
+export function preventProxy() {
+	process.env.HTTP_PROXY = process.env.HTTPS_PROXY = process.env.ALL_PROXY = process.env.FORCE_PROXY;
+}
+
 export function runMain(main: () => Promise<void|number>) {
 	if (WIT()) {
 		return;

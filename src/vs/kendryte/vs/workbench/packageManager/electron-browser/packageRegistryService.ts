@@ -16,13 +16,13 @@ import { IFileCompressService } from 'vs/kendryte/vs/services/fileCompress/node/
 import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME, ICompileInfo } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { PACKAGE_MANAGER_DISTRIBUTE_URL } from 'vs/kendryte/vs/services/update/common/protocol';
 import { resolve as resolveUrl } from 'url';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { URI } from 'vs/base/common/uri';
 import { dumpDate } from 'vs/kendryte/vs/base/common/dumpDate';
 import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
 import { INotificationHandle, INotificationService, Severity } from 'vs/platform/notification/common/notification';
+import { PACKAGE_MANAGER_DISTRIBUTE_URL } from 'vs/kendryte/vs/base/common/constants/remoteRegistry';
 
 export class PackageRegistryService implements IPackageRegistryService {
 	_serviceBrand: any;
@@ -210,7 +210,6 @@ export class PackageRegistryService implements IPackageRegistryService {
 		}
 
 		return resolveUrl(PACKAGE_MANAGER_DISTRIBUTE_URL + '/', itemToInstall.downloadUrl);
-
 	}
 
 	public async installExample(packageInfo: IRemotePackageInfo, version: string, targetPath: string): TPromise<string> {
