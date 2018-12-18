@@ -5,12 +5,12 @@ export interface INodePathService {
 	_serviceBrand: any;
 
 	getIDESourceCodeRoot(): string;
-	getDataPath(): string;
 	getSelfControllingRoot(): string;
 	exeFile(filePath: string): string;
 	getToolchainBinPath(): string;
 	getToolchainPath(): string;
 	getPackagesPath(project?: string): string;
+	/** @deprecated*/
 	rawToolchainPath(): string;
 	workspaceFilePath(s?: string): string;
 	createUserLink(existsFile: string, linkFile: string): TPromise<void>;

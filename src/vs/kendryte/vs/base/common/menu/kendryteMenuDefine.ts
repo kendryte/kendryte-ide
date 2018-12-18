@@ -1,12 +1,6 @@
 import { isWindows } from 'vs/base/common/platform';
 import { isUpdater } from 'vs/kendryte/vs/base/common/platform';
-import {
-	ACTION_CATEGORY_TOOLS,
-	ACTION_ID_CREATE_SHORTCUTS,
-	ACTION_ID_OPEN_FPIOA_EDIT,
-	ACTION_LABEL_CREATE_SHORTCUTS,
-	ACTION_LABEL_OPEN_FPIOA_EDIT,
-} from 'vs/kendryte/vs/base/common/menu/tools';
+import { ACTION_CATEGORY_TOOLS, ACTION_ID_OPEN_FPIOA_EDIT, ACTION_LABEL_OPEN_FPIOA_EDIT, } from 'vs/kendryte/vs/base/common/menu/tools';
 import {
 	ACTION_CATEGORY_OPENOCD,
 	ACTION_ID_JTAG_GET_ID,

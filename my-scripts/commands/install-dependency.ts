@@ -38,10 +38,6 @@ runMain(async () => {
 	
 	await installExtensionDevelopDeps(output, getExtensionPath(false));
 	output.success('extension dependencies installed.');
-	await prepareLinkForDev(output);
-	output.success('extension link created.');
-	await installExtensionProdDeps(output, getExtensionPath(false));
-	output.success('Bundle extensions production dependencies resolved');
 	
 	output.success('Done.');
 });
