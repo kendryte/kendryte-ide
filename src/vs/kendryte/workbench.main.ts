@@ -49,3 +49,5 @@ import 'vs/kendryte/vs/services/openocd/electron-browser/actionConfigContributio
 import 'vs/kendryte/vs/services/openocd/electron-browser/openOCDService';
 // sudo
 import 'vs/kendryte/vs/platform/sudo/electron-browser/register';
+// updater
+import 'vs/kendryte/vs/code/electron-browser/updater/register';

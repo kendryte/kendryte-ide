@@ -1,27 +1,34 @@
 import { IRelaunchService } from 'vs/kendryte/vs/platform/vscode/common/relaunchService';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { IKendryteClientService } from 'vs/kendryte/vs/services/ipc/electron-browser/ipcType';
+import { IKendryteClientService, MainThreadMethod } from 'vs/kendryte/vs/services/ipc/electron-browser/ipcType';
 
 export class RenderRelaunchService implements IRelaunchService {
 	_serviceBrand: any;
-	private readonly ipc: IRelaunchService;
 
 	constructor(
 		@IKendryteClientService channelService: IKendryteClientService,
 	) {
-		this.ipc = channelService.as<IRelaunchService>(IRelaunchService);
+		channelService.initService<IRelaunchService>(this, IRelaunchService);
 	}
 
-	public notifySuccess() {
-		this.ipc.notifySuccess();
+	@MainThreadMethod(IRelaunchService)
+	public createLogsTarball(): Promise<string> {
+		return null as any;
 	}
 
+	@MainThreadMethod(IRelaunchService)
+	public connect() {
+		return null as any;
+	}
+
+	@MainThreadMethod(IRelaunchService)
 	public launchUpdater() {
-		this.ipc.launchUpdater();
+		return null as any;
 	}
 
-	relaunch() {
-		this.ipc.relaunch();
+	@MainThreadMethod(IRelaunchService)
+	public relaunch() {
+		return null as any;
 	}
 }
 

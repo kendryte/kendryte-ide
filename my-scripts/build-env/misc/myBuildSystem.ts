@@ -38,7 +38,15 @@ for (const i of Object.keys(process.env)) {
 }
 
 export function preventProxy() {
-	process.env.HTTP_PROXY = process.env.HTTPS_PROXY = process.env.ALL_PROXY = process.env.FORCE_PROXY;
+	const proxy = process.env.FORCE_PROXY || '';
+	if (proxy) {
+		process.env.HTTP_PROXY = process.env.HTTPS_PROXY = process.env.ALL_PROXY = proxy;
+	} else {
+		delete process.env.HTTP_PROXY;
+		delete process.env.HTTPS_PROXY;
+		delete process.env.ALL_PROXY;
+		delete process.env.FORCE_PROXY;
+	}
 }
 
 export function runMain(main: () => Promise<void|number>) {

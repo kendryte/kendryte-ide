@@ -8,11 +8,12 @@ export interface IKendryteRelaunchChannel extends IServerChannel {
 export interface IRelaunchService {
 	_serviceBrand: any;
 
-	launchUpdater();
-	notifySuccess();
-
 	/** @deprecated use lifecycleService */
 	relaunch();
+
+	connect(): Promise<void>;
+	launchUpdater(): Promise<void>;
+	createLogsTarball(): Promise<string>;
 }
 
 export const IRelaunchService = createDecorator<IRelaunchService>('relaunchService');

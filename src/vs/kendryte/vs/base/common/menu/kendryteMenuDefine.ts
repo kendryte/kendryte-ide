@@ -44,9 +44,11 @@ import {
 	ACTION_ID_QUIT_UPDATE,
 	ACTION_ID_REBOOT,
 	ACTION_ID_RELOAD,
+	ACTION_ID_REPORT_BUG,
 	ACTION_LABEL_QUIT_UPDATE,
 	ACTION_LABEL_REBOOT,
 	ACTION_LABEL_RELOAD,
+	ACTION_LABEL_REPORT_BUG,
 } from 'vs/kendryte/vs/base/common/menu/processTool';
 
 export class MyMenuSeparator {
@@ -105,10 +107,12 @@ export const ApplicationMenuStructure: MyMenuRegistry = [
 
 	new MyMenuSeparator('tools'),
 	new MySubMenu(ACTION_CATEGORY_TOOLS, [
-		new MyMenu(ACTION_ID_CREATE_SHORTCUTS, ACTION_LABEL_CREATE_SHORTCUTS),
+		// new MyMenu(ACTION_ID_CREATE_SHORTCUTS, ACTION_LABEL_CREATE_SHORTCUTS),
 		new MyMenuSeparator('reboot'),
 		new MyMenu(ACTION_ID_RELOAD, ACTION_LABEL_RELOAD),
 		new MyMenu(ACTION_ID_REBOOT, ACTION_LABEL_REBOOT),
 		isUpdater ? new MyMenu(ACTION_ID_QUIT_UPDATE, ACTION_LABEL_QUIT_UPDATE) : null,
 	]),
+
+	new MyMenu(ACTION_ID_REPORT_BUG, ACTION_LABEL_REPORT_BUG),
 ];

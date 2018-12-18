@@ -47,11 +47,6 @@ class KendryteBootstrapAction extends Action {
 		if (!process.env['VSCODE_PORTABLE']) { // for safe
 			throw new Error('----- ERROR -----\n bootstrap.js is not ok. VSCODE_PORTABLE not set.\n----- ERROR -----');
 		}
-
-		lifecycleService.when(LifecyclePhase.Eventually).then(() => {
-			debugger;
-			this.relaunchService.notifySuccess();
-		});
 	}
 
 	async extensions() {
@@ -65,7 +60,7 @@ class KendryteBootstrapAction extends Action {
 		this.logService.info('{update} Install Extensions {complete}');
 	}
 
-	async activateCmake() {
+	activateCmake() {
 		this.instantiationService.invokeFunction((accessor) => accessor.get(ICMakeService));
 	}
 
@@ -110,10 +105,21 @@ class KendryteBootstrapAction extends Action {
 
 		this.logService.info('{update} {COMPLETE}');
 		await this.lifecycleService.when(LifecyclePhase.Eventually);
-		await this.activateCmake();
+		this.logService.info('{update} active cmake');
+		this.activateCmake();
+		this.logService.info('{update} active complete');
 	}
 
 	async run() {
+		this.lifecycleService.when(LifecyclePhase.Eventually).then(() => {
+			this.logService.info('{update} connecting to updater...');
+			this.relaunchService.connect().then(() => {
+				this.logService.info('{update} connected to updater');
+			}, (e) => {
+				this.logService.error('{update} failed to connect updater: ' + e.message);
+			});
+		});
+
 		return this._run().catch((e) => {
 			console.error(e);
 			this.notificationService.notify({

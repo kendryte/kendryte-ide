@@ -28,6 +28,7 @@ Set-Item -Path function:global:prompt -Value {
 	}
 }.GetNewClosure()
 
+#TODO: argument - run command
 node "$VSCODE_ROOT\my-scripts\build-env\help.js" --what-is-this
 Set-Item -Path function:global:show-help -Value {
 	node "$VSCODE_ROOT\my-scripts\build-env\help.js" --what-is-this

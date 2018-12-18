@@ -1,5 +1,5 @@
 import { IKendryteMainIpcChannel, IKendryteMainIpcChannelClient, IKendryteServiceRunnerChannel } from 'vs/kendryte/vs/services/ipc/node/ipc';
-import { IKendryteClientService } from 'vs/kendryte/vs/services/ipc/electron-browser/ipcType';
+import { IKendryteClientService, symbolIpcObj } from 'vs/kendryte/vs/services/ipc/electron-browser/ipcType';
 import { ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 import { Event } from 'vs/base/common/event';
 import { TPromise } from 'vs/base/common/winjs.base';
@@ -27,6 +27,17 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 	) {
 	}
 
+	public initService<T>(serviceObj: T, iinterface: ServiceIdentifier<T>): void {
+		if (!serviceObj[symbolIpcObj]) {
+			Object.defineProperty(serviceObj, symbolIpcObj, {
+				configurable: false,
+				enumerable: true,
+				value: this,
+				writable: false,
+			});
+		}
+	}
+
 	isMeFirst(): Thenable<boolean> {
 		const windowId = this.windowService.getCurrentWindowId();
 		return this.mainChannel.call<boolean>(IPC_ID_IS_ME_FIRST, windowId);
@@ -37,6 +48,7 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 	}
 
 	markEvents<T>(service: ServiceIdentifier<T>, events: (keyof T)[]) {
+
 		if (!service.hasOwnProperty(symbolEvent)) {
 			Object.defineProperty(service, symbolEvent, {
 				value: [],
@@ -49,6 +61,7 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 	}
 
 	markMethod<T>(service: ServiceIdentifier<T>, methods: (keyof T)[]) {
+
 		if (!service.hasOwnProperty(symbolMethod)) {
 			Object.defineProperty(service, symbolMethod, {
 				value: [],
@@ -61,6 +74,7 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 	}
 
 	markEventMethod<T>(service: ServiceIdentifier<T>, methods: (keyof T)[]) {
+
 		if (!service.hasOwnProperty(symbolEventMethod)) {
 			Object.defineProperty(service, symbolEventMethod, {
 				value: [],

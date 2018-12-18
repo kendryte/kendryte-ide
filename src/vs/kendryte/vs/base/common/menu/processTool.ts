@@ -1,5 +1,8 @@
 import { localize } from 'vs/nls';
 
+export const ACTION_ID_REPORT_BUG = 'workbench.action.process.report';
+export const ACTION_LABEL_REPORT_BUG = localize('openocd.action.report', 'Generate Help Data');
+
 export const ACTION_ID_REBOOT = 'workbench.action.process.relaunch';
 export const ACTION_LABEL_REBOOT = localize('openocd.action.relaunch', 'Restart IDE');
 
