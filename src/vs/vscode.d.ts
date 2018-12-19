@@ -1854,6 +1854,11 @@ declare module 'vscode' {
 	 * * `{}` to group conditions (e.g. `**​/*.{ts,js}` matches all TypeScript and JavaScript files)
 	 * * `[]` to declare a range of characters to match in a path segment (e.g., `example.[0-9]` to match on `example.0`, `example.1`, …)
 	 * * `[!...]` to negate a range of characters to match in a path segment (e.g., `example.[!0-9]` to match on `example.a`, `example.b`, but not `example.0`)
+	 *
+	 * Note: a backslash (`\`) is not valid within a glob pattern. If you have an existing file
+	 * path to match against, consider to use the [relative pattern](#RelativePattern) support
+	 * that takes care of converting any backslash into slash. Otherwise, make sure to convert
+	 * any backslash to slash when creating the glob pattern.
 	 */
 	export type GlobPattern = string | RelativePattern;
 
@@ -3328,7 +3333,7 @@ declare module 'vscode' {
 
 		/**
 		 * Keep whitespace of the [insertText](#CompletionItem.insertText) as is. By default, the editor adjusts leading
-		 * whitespace of new lines so that they match the indentation of the line for which the item is accepeted - setting
+		 * whitespace of new lines so that they match the indentation of the line for which the item is accepted - setting
 		 * this to `true` will prevent that.
 		 */
 		keepWhitespace?: boolean;
@@ -6835,9 +6840,9 @@ declare module 'vscode' {
 		shellArgs?: string[];
 
 		/**
-		 * A path for the current working directory to be used for the terminal.
+		 * A path or Uri for the current working directory to be used for the terminal.
 		 */
-		cwd?: string;
+		cwd?: string | Uri;
 
 		/**
 		 * Object with environment variables that will be added to the VS Code process.
