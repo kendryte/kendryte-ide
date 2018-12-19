@@ -49,6 +49,7 @@ import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common
 import { ILogService } from 'vs/platform/log/common/log';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { CMakeListsCreator } from 'vs/kendryte/vs/workbench/cmake/electron-browser/listsCreator';
+import { CONFIG_KEY_MAKE_PROGRAM } from 'vs/kendryte/vs/base/common/configKeys';
 
 export interface IPromiseProgress<T> {
 	progress(fn: (p: T) => void): void;
@@ -152,7 +153,7 @@ export class CMakeService implements ICMakeService {
 		if (isWindows) {
 			this.localEnv.CMAKE_MAKE_PROGRAM = 'mingw32-make.exe';
 		} else {
-			this.localEnv.CMAKE_MAKE_PROGRAM = '/bin/make';
+			this.localEnv.CMAKE_MAKE_PROGRAM = this.configurationService.getValue<string>(CONFIG_KEY_MAKE_PROGRAM) || '/usr/bin/make';
 		}
 
 		this.statusBarController = this.instantiationService.invokeFunction(addStatusBarCmakeButtons);

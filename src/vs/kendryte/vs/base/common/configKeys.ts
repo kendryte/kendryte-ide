@@ -15,6 +15,9 @@ export const CONFIG_CATEGORY = {
 export const CONFIG_KEY_BUILD_VERBOSE = 'cmake.build.verbose';
 export const CONFIG_LABEL_BUILD_VERBOSE = localize('cmake.build.verbose.lbl', 'Verbose build');
 export const CONFIG_DESCRIPTION_BUILD_VERBOSE = localize('cmake.build.verbose.desc', 'Verbose log when run build');
+export const CONFIG_KEY_MAKE_PROGRAM = 'cmake.build.make-program';
+export const CONFIG_LABEL_MAKE_PROGRAM = '"make" program';
+export const CONFIG_DESCRIPTION_MAKE_PROGRAM = 'where is "make" program located';
 
 //
 
