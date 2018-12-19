@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { PLATFORM_STR_LINUX, PLATFORM_STR_MAC, PLATFORM_STR_WINDOWS } from '../codeblocks/platform';
 import { TYPE_ZIP_FILE } from '../codeblocks/zip.name';
-import { calcReleaseFileAwsKey } from '../misc/awsUtil';
+import { calcUpdaterAwsKey } from '../misc/awsUtil';
 import { getPackageData } from '../misc/fsUtil';
 import { createCard } from './components/card';
 import { createReleaseDownload, createUpdateDownload } from './components/createDownload';
@@ -16,19 +16,19 @@ export async function createIndexFileContent(output: OutputStreamControl): Promi
 	const config = {
 		versionString: `v${pkg.version} (${pkg.patchVersion})`,
 		windows: {
-			sevenZip: calcReleaseFileAwsKey(PLATFORM_STR_WINDOWS, TYPE_ZIP_FILE),
+			sevenZip: calcUpdaterAwsKey(PLATFORM_STR_WINDOWS, TYPE_ZIP_FILE),
 		},
 		windowsPackage: {
 			// sevenZip: calcPackageAwsKey(PLATFORM_STR_WINDOWS, TYPE_ZIP_FILE),
 		},
 		linux: {
-			sevenZip: calcReleaseFileAwsKey(PLATFORM_STR_LINUX, TYPE_ZIP_FILE),
+			sevenZip: calcUpdaterAwsKey(PLATFORM_STR_LINUX, TYPE_ZIP_FILE),
 		},
 		linuxPackage: {
 			// sevenZip: calcPackageAwsKey(PLATFORM_STR_LINUX, TYPE_ZIP_FILE),
 		},
 		mac: {
-			sevenZip: calcReleaseFileAwsKey(PLATFORM_STR_MAC, TYPE_ZIP_FILE),
+			sevenZip: calcUpdaterAwsKey(PLATFORM_STR_MAC, TYPE_ZIP_FILE),
 		},
 		macPackage: {
 			// sevenZip: calcPackageAwsKey(PLATFORM_STR_MAC, TYPE_ZIP_FILE),

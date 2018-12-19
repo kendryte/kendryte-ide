@@ -44,6 +44,9 @@ export function makeNewRemote(): IDEJson {
 }
 
 export function getRemoteVersion(remote: IDEJson, type: 'main'|'patch') {
+	if (!remote._autoUpdateVersions) {
+		remote._autoUpdateVersions = {} as any;
+	}
 	if (!remote._autoUpdateVersions[SYS_NAME]) {
 		remote._autoUpdateVersions[SYS_NAME] = {} as any;
 	}
