@@ -36,7 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	vscode.debug.registerDebugConfigurationProvider('kendryte', new Provider(logger));
-	
+
 	logger.info('Activated');
 }
 
@@ -46,8 +46,8 @@ class Provider implements vscode.DebugConfigurationProvider {
 
 	provideDebugConfigurations?(folder: WorkspaceFolder | undefined, token?: CancellationToken): ProviderResult<DebugConfiguration[]>;
 
-	debugAdapterExecutable() {
-		this.logger.info('debugAdapterExecutable', arguments);
+	createDebugAdapterDescriptor() {
+		this.logger.info('createDebugAdapterDescriptor', arguments);
 		debugger;
 	}
 }

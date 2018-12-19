@@ -201,7 +201,8 @@ exports.configurePortable = function () {
 		const portableDataName = product.portable || `${product.applicationName}-portable-data`;
 		return path.join(getApplicationPath(), portableDataName);
 	}
-
+	
+	debugger;
 	const portableDataPath = getPortableDataPath();
 	if (!fs.existsSync(portableDataPath)) {
 		fs.mkdirSync(portableDataPath);

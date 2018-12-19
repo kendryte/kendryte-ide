@@ -6,3 +6,5 @@ node_modules
 !.idea/vcs.xml
 
 *.js
+!npm/my-postinstall.js
+!npm/update-help.js

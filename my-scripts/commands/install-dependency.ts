@@ -11,7 +11,10 @@ import { runMain } from '../build-env/misc/myBuildSystem';
 import { chdir } from '../build-env/misc/pathUtil';
 import { usePretty } from '../build-env/misc/usePretty';
 
-whatIsThis(__filename, 'prepare required things for development.');
+whatIsThis(
+	'Install dependencies for developing and debugging',
+	'安装开发、调试 KendryteIDE 所需的依赖',
+);
 
 runMain(async () => {
 	chdir(VSCODE_ROOT);
@@ -35,10 +38,6 @@ runMain(async () => {
 	
 	await installExtensionDevelopDeps(output, getExtensionPath(false));
 	output.success('extension dependencies installed.');
-	await prepareLinkForDev(output);
-	output.success('extension link created.');
-	await installExtensionProdDeps(output, getExtensionPath(false));
-	output.success('Bundle extensions production dependencies resolved');
 	
 	output.success('Done.');
 });

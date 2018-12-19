@@ -1,13 +1,11 @@
 import { registerInternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 import { Action } from 'vs/base/common/actions';
-import { ICommandService } from 'vs/platform/commands/common/commands';
 import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { localize } from 'vs/nls';
 import { KENDRYTE_ACTIONID_BOOTSTRAP } from 'vs/kendryte/vs/platform/vscode/common/actionId';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { OpenDevToolsAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/openDevToolsAction';
 import { IWindowService, IWindowsService } from 'vs/platform/windows/common/windows';
-import { ACTION_ID_IDE_SELF_UPGRADE } from 'vs/kendryte/vs/services/update/common/ids';
 import { IKendryteClientService } from 'vs/kendryte/vs/services/ipc/electron-browser/ipcType';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -17,9 +15,9 @@ import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { isMacintosh, isWindows } from 'vs/base/common/platform';
 import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
-import { ACTION_ID_UPGRADE_BUILDING_BLOCKS } from 'vs/kendryte/vs/base/common/menu/selfUpdate';
 import * as electron from 'electron';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
+import { IRelaunchService } from 'vs/kendryte/vs/platform/vscode/common/relaunchService';
 import Remote = Electron.Remote;
 
 class KendryteBootstrapAction extends Action {
@@ -32,13 +30,13 @@ class KendryteBootstrapAction extends Action {
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@ILogService private readonly logService: ILogService,
 		@ILifecycleService private readonly lifecycleService: ILifecycleService,
-		@ICommandService private readonly commandService: ICommandService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@IWindowService private readonly windowService: IWindowService,
 		@IWindowsService private readonly windowsService: IWindowsService,
 		@IKendryteClientService private readonly client: IKendryteClientService,
 		@INodePathService private readonly nodePathService: INodePathService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
+		@IRelaunchService private readonly relaunchService: IRelaunchService,
 	) {
 		super(KENDRYTE_ACTIONID_BOOTSTRAP);
 
@@ -49,27 +47,6 @@ class KendryteBootstrapAction extends Action {
 		if (!process.env['VSCODE_PORTABLE']) { // for safe
 			throw new Error('----- ERROR -----\n bootstrap.js is not ok. VSCODE_PORTABLE not set.\n----- ERROR -----');
 		}
-	}
-
-	private async ide_self() {
-		this.logService.info('{update}', ACTION_ID_IDE_SELF_UPGRADE);
-		const updated = await this.commandService.executeCommand(ACTION_ID_IDE_SELF_UPGRADE);
-		if (updated) {
-			this.logService.info('{update} will relaunch now');
-			return true;
-		}
-		this.logService.info('{update}', ACTION_ID_IDE_SELF_UPGRADE, '{complete}');
-		return false;
-	}
-
-	async packages() {
-		this.logService.info('{update}', ACTION_ID_UPGRADE_BUILDING_BLOCKS);
-		const packagesChanged = await this.commandService.executeCommand(ACTION_ID_UPGRADE_BUILDING_BLOCKS);
-		if (packagesChanged) {
-			this.logService.info('{update} will relaunch now');
-			return;
-		}
-		this.logService.info('{update}', ACTION_ID_UPGRADE_BUILDING_BLOCKS, '{complete}');
 	}
 
 	async extensions() {
@@ -83,12 +60,12 @@ class KendryteBootstrapAction extends Action {
 		this.logService.info('{update} Install Extensions {complete}');
 	}
 
-	async activateCmake() {
+	activateCmake() {
 		this.instantiationService.invokeFunction((accessor) => accessor.get(ICMakeService));
 	}
 
 	async _run() {
-		await this.lifecycleService.when(LifecyclePhase.Restored);
+		await this.lifecycleService.when(LifecyclePhase.Ready);
 
 		const hasPermInPackages = await this.nodeFileSystemService.tryWriteInFolder(this.nodePathService.getPackagesPath('test-perm'));
 		const installingRoot = this.nodePathService.getSelfControllingRoot();
@@ -118,22 +95,31 @@ class KendryteBootstrapAction extends Action {
 			return;
 		}
 
+		await this.lifecycleService.when(LifecyclePhase.Restored);
 		if (await this.client.isMeFirst()) {
-			this.logService.info('{update} I\'m first window in this session, start check self update.');
-			if (await this.ide_self()) {
-				return;
-			}
-			await this.packages();
+			this.logService.info('{update} I\'m first window in this session, start check extension update.');
 			await this.extensions();
 		} else {
-			this.logService.info('{update} not first window, skip self update progress');
+			this.logService.info('{update} not first window, skip extension update progress');
 		}
 
 		this.logService.info('{update} {COMPLETE}');
-		await this.activateCmake();
+		await this.lifecycleService.when(LifecyclePhase.Eventually);
+		this.logService.info('{update} active cmake');
+		this.activateCmake();
+		this.logService.info('{update} active complete');
 	}
 
 	async run() {
+		this.lifecycleService.when(LifecyclePhase.Eventually).then(() => {
+			this.logService.info('{update} connecting to updater...');
+			this.relaunchService.connect().then(() => {
+				this.logService.info('{update} connected to updater');
+			}, (e) => {
+				this.logService.error('{update} failed to connect updater: ' + e.message);
+			});
+		});
+
 		return this._run().catch((e) => {
 			console.error(e);
 			this.notificationService.notify({

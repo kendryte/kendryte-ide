@@ -63,7 +63,7 @@ CommandsRegistry.registerCommand({
 	handler: (accessor: ServicesAccessor, ...args: any[]) => {
 		const instantiationService = accessor.get(IInstantiationService);
 		const notificationService = accessor.get(INotificationService);
-		return accessor.get(ILifecycleService).when(LifecyclePhase.Starting).then(() => {
+		return accessor.get(ILifecycleService).when(LifecyclePhase.Ready).then(() => {
 			const actionInstance = instantiationService.createInstance(descriptor.syncDescriptor);
 			try {
 				actionInstance.label = descriptor.label || actionInstance.label;

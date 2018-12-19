@@ -2,7 +2,6 @@ import { IChannel, IPCClient } from 'vs/base/parts/ipc/node/ipc';
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { _getChannelDecorators } from 'vs/kendryte/vs/platform/instantiation/node/ipcExtensions';
-import { IWindowService } from 'vs/platform/windows/common/windows';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { KENDRYTE_ACTIONID_BOOTSTRAP } from 'vs/kendryte/vs/platform/vscode/common/actionId';
 import { kendryteConfigRegisterSerialPort } from 'vs/kendryte/vs/workbench/serialPort/node/configContribution';
@@ -12,6 +11,7 @@ import { kendryteConfigRegisterOpenOCD } from 'vs/kendryte/vs/platform/openocd/c
 import { kendryteConfigRegisterJTag } from 'vs/kendryte/vs/platform/openocd/common/jtag';
 import { kendryteConfigRegisterOCDCustom } from 'vs/kendryte/vs/platform/openocd/common/custom';
 import { addStatusBarButtons } from 'vs/kendryte/vs/workbench/serialPort/common/buttons';
+import { IWindowService } from 'vs/platform/windows/common/windows';
 
 export function _kendrite_workbench_hookInstantiationService(
 	serviceCollection: ServiceCollection,
@@ -25,31 +25,31 @@ export function _kendrite_workbench_hookInstantiationService(
 
 	setImmediate(() => {
 		instantiationService.invokeFunction((accessor) => {
-			return accessor.get(ICommandService).executeCommand(KENDRYTE_ACTIONID_BOOTSTRAP);
-		}).catch((e) => {
-			console.error(e);
-			instantiationService.invokeFunction((accessor) => {
-				accessor.get<IWindowService>(IWindowService).openDevTools({
-					mode: 'detach',
-				});
-			});
-		});
-
-		instantiationService.invokeFunction((accessor) => {
-			accessor.get<ILifecycleService>(ILifecycleService).when(LifecyclePhase.Starting).then(() => {
-				try {
-					instantiationService.invokeFunction(addStatusBarButtons);
-
+			const lifecycle = accessor.get<ILifecycleService>(ILifecycleService);
+			const command = accessor.get<ICommandService>(ICommandService);
+			return Promise.all([
+				lifecycle.when(LifecyclePhase.Starting).then(() => {
+					return command.executeCommand(KENDRYTE_ACTIONID_BOOTSTRAP);
+				}),
+				lifecycle.when(LifecyclePhase.Restored).then(() => {
+					return instantiationService.invokeFunction(addStatusBarButtons);
+				}),
+				lifecycle.when(LifecyclePhase.Ready).then(async () => {
 					kendryteConfigRegisterSerialPort();
 
 					kendryteConfigRegisterOpenOCD();
 					kendryteConfigRegisterJTag();
 					kendryteConfigRegisterFTDI();
 					kendryteConfigRegisterOCDCustom();
-				} catch (e) {
-					console.error(e);
-					alert('Error during startup: ' + e.message);
-				}
+				}),
+			]);
+		}).catch((e) => {
+			console.error('Error during startup:', e);
+			alert('Error during startup: ' + e.message);
+			instantiationService.invokeFunction((accessor) => {
+				accessor.get<IWindowService>(IWindowService).openDevTools({
+					mode: 'detach',
+				});
 			});
 		});
 	});

@@ -2,8 +2,8 @@ import { OutputStreamControl } from '@gongt/stillalive';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { PLATFORM_STR_LINUX, PLATFORM_STR_MAC, PLATFORM_STR_WINDOWS } from '../codeblocks/platform';
-import { TYPE_LINUX_SFX, TYPE_LINUX_ZIP, TYPE_MAC_SFX, TYPE_MAC_ZIP, TYPE_WINDOWS_SFX, TYPE_WINDOWS_ZIP } from '../codeblocks/zip.name';
-import { calcPackageAwsKey, calcReleaseFileAwsKey } from '../misc/awsUtil';
+import { TYPE_ZIP_FILE } from '../codeblocks/zip.name';
+import { calcUpdaterAwsKey } from '../misc/awsUtil';
 import { getPackageData } from '../misc/fsUtil';
 import { createCard } from './components/card';
 import { createReleaseDownload, createUpdateDownload } from './components/createDownload';
@@ -16,28 +16,22 @@ export async function createIndexFileContent(output: OutputStreamControl): Promi
 	const config = {
 		versionString: `v${pkg.version} (${pkg.patchVersion})`,
 		windows: {
-			sfx: calcReleaseFileAwsKey(PLATFORM_STR_WINDOWS, TYPE_WINDOWS_SFX),
-			zip: calcReleaseFileAwsKey(PLATFORM_STR_WINDOWS, TYPE_WINDOWS_ZIP),
+			sevenZip: calcUpdaterAwsKey(PLATFORM_STR_WINDOWS, TYPE_ZIP_FILE),
 		},
 		windowsPackage: {
-			sfx: calcPackageAwsKey(PLATFORM_STR_WINDOWS, TYPE_WINDOWS_SFX),
-			zip: calcPackageAwsKey(PLATFORM_STR_WINDOWS, TYPE_WINDOWS_ZIP),
+			// sevenZip: calcPackageAwsKey(PLATFORM_STR_WINDOWS, TYPE_ZIP_FILE),
 		},
 		linux: {
-			sfx: calcReleaseFileAwsKey(PLATFORM_STR_LINUX, TYPE_LINUX_SFX),
-			zip: calcReleaseFileAwsKey(PLATFORM_STR_LINUX, TYPE_LINUX_ZIP),
+			sevenZip: calcUpdaterAwsKey(PLATFORM_STR_LINUX, TYPE_ZIP_FILE),
 		},
 		linuxPackage: {
-			sfx: calcPackageAwsKey(PLATFORM_STR_LINUX, TYPE_LINUX_SFX),
-			zip: calcPackageAwsKey(PLATFORM_STR_LINUX, TYPE_LINUX_ZIP),
+			// sevenZip: calcPackageAwsKey(PLATFORM_STR_LINUX, TYPE_ZIP_FILE),
 		},
 		mac: {
-			sfx: calcReleaseFileAwsKey(PLATFORM_STR_MAC, TYPE_MAC_SFX),
-			zip: calcReleaseFileAwsKey(PLATFORM_STR_MAC, TYPE_MAC_ZIP),
+			sevenZip: calcUpdaterAwsKey(PLATFORM_STR_MAC, TYPE_ZIP_FILE),
 		},
 		macPackage: {
-			sfx: calcPackageAwsKey(PLATFORM_STR_MAC, TYPE_MAC_SFX),
-			zip: calcPackageAwsKey(PLATFORM_STR_MAC, TYPE_MAC_ZIP),
+			// sevenZip: calcPackageAwsKey(PLATFORM_STR_MAC, TYPE_ZIP_FILE),
 		},
 	};
 	output.log('generating index content...\n\nconfig = %j', config);
@@ -50,6 +44,11 @@ export async function createIndexFileContent(output: OutputStreamControl): Promi
 	await buildHead(pieces);
 	
 	pieces.push(`<body class="en container">`);
+	pieces.push(`<div style="text-align:right;">
+<span class="en">Last update of this page:</span>
+<span class="cn">本页面更新时间：</span>
+<span class="date">${(new Date()).toISOString()}</span>
+</div>`);
 	pieces.push(readFileSync(resolve(__dirname, 'components/intro.html'), 'utf8'));
 	pieces.push(notSupportHtml());
 	pieces.push('<div id="platformContainer" class="row">');

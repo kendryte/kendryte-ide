@@ -1,5 +1,5 @@
-import { PACKAGE_MANAGER_DISTRIBUTE_URL } from 'vs/kendryte/vs/services/update/common/protocol';
 import { PackageTypes } from 'vs/kendryte/vs/workbench/packageManager/common/type';
+import { PACKAGE_MANAGER_DISTRIBUTE_URL } from 'vs/kendryte/vs/base/common/constants/remoteRegistry';
 
 export interface IPackageVersionDetail {
 	versionName: string;

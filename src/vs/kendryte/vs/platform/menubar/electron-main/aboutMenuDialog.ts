@@ -51,7 +51,7 @@ class WrappedWindowsService extends wss.WindowsService {
 		let detail = nls.localize(
 			'myAboutDetail',
 			'VS Code: {0}\nKendryte IDE: {1}\nCommit: {2}\nElectron: {4}\nChrome: {5}\nNode.js: {6}\nV8: {7}\nArchitecture: {8}',
-			version,
+			version + (environmentService.isBuilt ? ' (from source)' : ''),
 			patchVersion,
 			product.commit || 'Unknown',
 			process.versions['electron'],

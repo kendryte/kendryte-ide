@@ -28,10 +28,11 @@ Set-Item -Path function:global:prompt -Value {
 	}
 }.GetNewClosure()
 
+#TODO: argument - run command
+node "$VSCODE_ROOT\my-scripts\build-env\help.js" --what-is-this
 Set-Item -Path function:global:show-help -Value {
-	Write-Host $env:helpStrings
+	node "$VSCODE_ROOT\my-scripts\build-env\help.js" --what-is-this
 }.GetNewClosure()
-Write-Host $env:helpStrings
 
 Write-Host " > The anwser is 42 <" -ForegroundColor Green
 

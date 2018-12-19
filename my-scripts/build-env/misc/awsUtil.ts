@@ -187,6 +187,14 @@ export function calcReleaseFileAwsKey(platform: string, type: string): string {
 	return `release/download/${product.quality}/v${packageJson.version}/${pv}/${platform}.${type}`;
 }
 
+export function calcUpdaterAwsKey(platform: string, type: string): string {
+	const product = getProductData();
+	const packageJson = getPackageData();
+	
+	const pv = parseFloat(packageJson.patchVersion).toFixed(6).replace(/\./g, '');
+	return `release/updater/${product.quality}.${platform}.${type}`;
+}
+
 export function calcPackageAwsKey(platform: string, type: string): string {
 	const product = getProductData();
 	return `release/offlinepackages/${product.quality}/${platform}.offlinepackages.${type}`;

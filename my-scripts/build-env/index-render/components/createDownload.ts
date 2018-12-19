@@ -6,31 +6,43 @@ import { globalLog } from '../../misc/globalOutput';
 import { hashStream } from '../../misc/hashUtil';
 import { request } from '../../misc/httpUtil';
 
-type info = {sfx: string, zip: string};
+type info = {
+	sevenZip?: string;
+};
 
-export async function createReleaseDownload({sfx, zip}: info) {
+export async function createReleaseDownload({sevenZip}: info) {
 	return `<tr>
 	<th colspan="3">
 		<span>Kendryte IDE</span>
 	</th>
 </tr>
-${await createDownload(sfx, 'btn-primary')}
-${await createDownload(zip, 'btn-outline-primary')}`;
+${await createDownload(sevenZip, 'btn-primary')}
+`;
 }
 
-export async function createUpdateDownload({sfx, zip}: info) {
+export async function createUpdateDownload({sevenZip}: info) {
 	return `<tr>
 	<th colspan="3">
 		<span class="en">Offline Dependency Packages</span>
 		<span class="cn">离线依赖包</span>
 	</th>
 </tr>
-${await createDownload(sfx, 'btn-primary')}
-${await createDownload(zip, 'btn-outline-primary')}`;
+${await createDownload(sevenZip, 'btn-primary')}
+`;
 }
 
 async function createDownload(key: string, btnClass: string) {
-	const {md5, size} = await getFileInfo(key);
+	if (!key) {
+		return `
+<tr>
+	<td colspan="3">
+		<span class="en">Coming soon, Please wait...</span>
+		<span class="cn">制作中，请稍后再来……</span>
+	</td>
+</tr>
+`;
+	}
+	const {md5, size, time} = await getFileInfo(key);
 	const sizeStr = humanSize(size);
 	
 	const url = s3BucketUrl(key);
@@ -44,22 +56,31 @@ async function createDownload(key: string, btnClass: string) {
 </tr>
 <tr>
 	<td colspan="3"><span class="badge badge-info">MD5:</span>&nbsp;${md5}</td>
+</tr>
+<tr>
+	<td colspan="3"><span class="badge badge-info">Time:</span>&nbsp;<span class="date">${time}</span></td>
 </tr>`;
 }
 
-async function getFileInfo(key: string): Promise<{md5: string, size: string}> {
+async function getFileInfo(key: string): Promise<{md5: string, size: string, time: string}> {
 	globalLog('Get hash-file of file: %s', key);
 	const md5FileKey = key + '.md5';
 	globalLog('Requesting file size: %s', key);
-	const size = await getContentSize(s3BucketUrl(key)).catch(() => {
-		return '';
+	let {size, time} = await getHeadInfo(s3BucketUrl(key)).catch(() => {
+		return {} as any;
 	});
+	if (!time) {
+		time = 'Unknown';
+	}
+	
 	globalLog('    size: %s', size);
+	globalLog('    time: %s', time);
 	if (!size) {
 		globalLog('Temporary unavailable.');
 		return {
 			md5: 'Temporary unavailable.',
 			size: '???',
+			time,
 		};
 	}
 	
@@ -69,6 +90,7 @@ async function getFileInfo(key: string): Promise<{md5: string, size: string}> {
 		return {
 			md5,
 			size,
+			time,
 		};
 	}
 	
@@ -86,16 +108,20 @@ async function getFileInfo(key: string): Promise<{md5: string, size: string}> {
 	return {
 		size,
 		md5,
+		time,
 	};
 }
 
-function getContentSize(url: string) {
-	return new Promise<string>((resolve, reject) => {
+function getHeadInfo(url: string) {
+	return new Promise<{time: string; size: string}>((resolve, reject) => {
 		request(url, {method: 'HEAD'}, (res: IncomingMessage) => {
 			if (res.statusCode !== 200) {
 				reject(new Error(res.statusMessage));
 			} else {
-				resolve(res.headers['content-length'] as string);
+				resolve({
+					time: (new Date(Date.parse(res.headers['last-modified']))).toISOString(),
+					size: res.headers['content-length'] as string,
+				});
 			}
 		}).end();
 	});

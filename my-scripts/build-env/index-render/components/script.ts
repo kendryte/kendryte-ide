@@ -33,14 +33,33 @@
 	fastDown.classList.remove('d-hide');
 	
 	function getA(parent: ParentNode, select: string): HTMLAnchorElement {
-		return parent.querySelector(select);
+		return parent.querySelector(select) || {} as any;
 	}
 	
 	const am = getA(fastDown, 'a.main');
 	const ad = getA(current, '.application a');
-	am.href = ad.href;
-	am.innerText += current.querySelector('.card-title').innerText.trim();
+	if (ad.href) {
+		am.href = ad.href;
+		am.innerText += current.querySelector('.card-title').innerText.trim();
+	} else {
+		console.log('main not ready');
+		const aa = getA(current, '.packages a');
+		aa.classList.add('invalid');
+		aa.removeAttribute('href');
+	}
 	
 	const ap = getA(fastDown, 'a.pkg');
-	ap.href = getA(current, '.packages a').href;
+	if (ap.href) {
+		ap.href = getA(current, '.packages a').href || '';
+	} else {
+		console.log('offline package not ready');
+		const aa = getA(current, '.packages a');
+		aa.classList.add('invalid');
+		aa.removeAttribute('href');
+	}
+})();
+(() => {
+	for (const item of document.querySelectorAll('.date') as any) {
+		item.innerText = new Date(Date.parse(item.innerText.trim())).toLocaleString();
+	}
 })();

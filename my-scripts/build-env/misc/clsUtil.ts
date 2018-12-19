@@ -3,6 +3,9 @@ import { shellExec, shellExecAsync } from '../childprocess/simple';
 import { isWin } from './constants';
 
 export function cleanScreen() {
+	if (process.env.BS_RUN_SCRIPT) {
+		return;
+	}
 	if (isWin) {
 		shellExec('[System.Console]::Clear()');
 		process.stdout.write('\x1Bc\r');

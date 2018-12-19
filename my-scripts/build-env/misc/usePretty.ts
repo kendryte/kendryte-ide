@@ -3,6 +3,14 @@ import { useThisStream } from './globalOutput';
 import { mainDispose, useWriteFileStream } from './myBuildSystem';
 import { streamPromise } from './streamUtil';
 
+export function closeStream(s: NodeJS.WritableStream) {
+	return new Promise((resolve, reject) => {
+		s.end(() => {
+			resolve();
+		});
+	});
+}
+
 export function usePretty(save?: string, opts?: MyOptions): OutputStreamControl {
 	const stream = startWorking();
 	useThisStream(stream);

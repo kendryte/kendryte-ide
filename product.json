@@ -17,7 +17,6 @@
 	"win32ShellNameShort": "K&endryte IDE",
 	"darwinBundleIdentifier": "io.canaan.kendryte.ide",
 	"urlProtocol": "kendryte",
-	"updateUrl": "https://s3.cn-northwest-1.amazonaws.com.cn/kendryte-ide/",
 	"commit": "0.1.0",
 	"quality": "beta",
 	"reportIssueUrl": "https://github.com/kendryte/kendryte-ide/issues/new",

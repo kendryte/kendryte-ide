@@ -28,7 +28,6 @@ export class NodePathService implements INodePathService {
 	) {
 		const keys: (keyof NodePathService)[] = [
 			'getIDESourceCodeRoot',
-			'getDataPath',
 			'getPackagesPath',
 			'getSelfControllingRoot',
 		];
@@ -116,9 +115,9 @@ export class NodePathService implements INodePathService {
 
 	getPackagesPath(project?: string) {
 		if (project) {
-			return resolvePath(this.getDataPath(), 'packages', project);
+			return resolvePath(this.getDataPath(), project);
 		} else {
-			return resolvePath(this.getDataPath(), 'packages');
+			return resolvePath(this.getDataPath());
 		}
 	}
 
@@ -129,11 +128,13 @@ export class NodePathService implements INodePathService {
 	}
 
 	@memoize
-	getDataPath() {
-		if (process.env['VSCODE_PORTABLE']) {
-			return resolvePath(process.env['VSCODE_PORTABLE']);
+	private getDataPath() {
+		if (process.env['KENDRYTE_IDE_LOCAL_PACKAGE_DIR']) {
+			return resolvePath(process.env['KENDRYTE_IDE_LOCAL_PACKAGE_DIR']);
+		} else if (process.env['VSCODE_PORTABLE']) {
+			return resolvePath(process.env['VSCODE_PORTABLE'], 'packages');
 		} else {
-			return resolvePath(this.environmentService.userHome, product.dataFolderName);
+			return resolvePath(this.environmentService.userHome, product.dataFolderName, 'packages');
 		}
 	}
 
@@ -147,7 +148,7 @@ export class NodePathService implements INodePathService {
 	}
 
 	rawToolchainPath() {
-		return resolvePath(this.getDataPath(), 'packages/toolchain');
+		return this.getPackagesPath('toolchain');
 	}
 
 	getToolchainPath() {

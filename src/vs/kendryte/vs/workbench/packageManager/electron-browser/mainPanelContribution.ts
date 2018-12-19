@@ -27,7 +27,7 @@ Registry.as<ViewletRegistry>(ViewletExtensions.Viewlets).registerViewlet(new Vie
 ));
 
 const workbenchRegistry = Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench);
-workbenchRegistry.registerWorkbenchContribution(PackageManagerViewletViewsContribution, LifecyclePhase.Starting);
+workbenchRegistry.registerWorkbenchContribution(PackageManagerViewletViewsContribution, LifecyclePhase.Ready);
 
 const detailDescriptor = new EditorDescriptor(
 	PackageDetailEditor,

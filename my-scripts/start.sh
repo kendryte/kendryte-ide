@@ -19,6 +19,7 @@ fi
 /bin/sh --version 2>&1 | grep -q "bash" || die "Your /bin/sh is not a standard BASH, that is not supported."
 
 if [ $# -eq 0 ]; then
+	export BS_RUN_SCRIPT=""
 	bash --rcfile "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/build-env/bash/rc.sh" || {
 		RET=$?
 		if [ $RET -eq 0 ]; then
@@ -29,6 +30,7 @@ if [ $# -eq 0 ]; then
 		exit $RET
 	}
 else
+	export BS_RUN_SCRIPT=YES
 	source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/build-env/bash/rc.sh"
 	"$@" || die "Command failed with error $RET"
 fi

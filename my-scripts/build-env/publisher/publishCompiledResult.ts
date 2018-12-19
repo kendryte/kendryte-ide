@@ -17,6 +17,15 @@ export async function publishCompiledResult(output: OutputStreamControl, remote:
 	
 	output.writeln('uploading to s3...');
 	
+	if (!remote.allDownloads) {
+		remote.allDownloads = {
+			windows: [],
+			linux: [],
+			mac: [],
+		};
+	}
+	const urlList = remote.allDownloads[SYS_NAME] = [];
+	
 	const plat = platform();
 	const rType = CURRENT_PLATFORM_TYPES.slice().reverse(); // this put first -> remote[SYS_NAME]
 	for (const type of rType) {
@@ -30,6 +39,7 @@ export async function publishCompiledResult(output: OutputStreamControl, remote:
 		
 		output.success(`uploaded ${type} to ${result}`);
 		remote[SYS_NAME] = result;
+		urlList.push(result);
 	}
 	
 	output.writeln('saving IDE.json to AWS.');
