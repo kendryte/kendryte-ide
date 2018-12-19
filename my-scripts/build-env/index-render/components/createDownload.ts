@@ -6,30 +6,42 @@ import { globalLog } from '../../misc/globalOutput';
 import { hashStream } from '../../misc/hashUtil';
 import { request } from '../../misc/httpUtil';
 
-type info = {sfx: string, zip: string};
+type info = {
+	sevenZip?: string;
+};
 
-export async function createReleaseDownload({sfx, zip}: info) {
+export async function createReleaseDownload({sevenZip}: info) {
 	return `<tr>
 	<th colspan="3">
 		<span>Kendryte IDE</span>
 	</th>
 </tr>
-${await createDownload(sfx, 'btn-primary')}
-${await createDownload(zip, 'btn-outline-primary')}`;
+${await createDownload(sevenZip, 'btn-primary')}
+`;
 }
 
-export async function createUpdateDownload({sfx, zip}: info) {
+export async function createUpdateDownload({sevenZip}: info) {
 	return `<tr>
 	<th colspan="3">
 		<span class="en">Offline Dependency Packages</span>
 		<span class="cn">离线依赖包</span>
 	</th>
 </tr>
-${await createDownload(sfx, 'btn-primary')}
-${await createDownload(zip, 'btn-outline-primary')}`;
+${await createDownload(sevenZip, 'btn-primary')}
+`;
 }
 
 async function createDownload(key: string, btnClass: string) {
+	if (!key) {
+		return `
+<tr>
+	<td colspan="3">
+		<span class="en">Coming soon, Please wait...</span>
+		<span class="cn">制作中，请稍后再来……</span>
+	</td>
+</tr>
+`;
+	}
 	const {md5, size, time} = await getFileInfo(key);
 	const sizeStr = humanSize(size);
 	

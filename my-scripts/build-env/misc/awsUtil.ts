@@ -184,7 +184,7 @@ export function calcReleaseFileAwsKey(platform: string, type: string): string {
 	const packageJson = getPackageData();
 	
 	const pv = parseFloat(packageJson.patchVersion).toFixed(6).replace(/\./g, '');
-	return `release/download/${product.quality}/v${packageJson.version}/${pv}/${platform}.${type}`;
+	return `release/updater/${product.quality}.${platform}.${type}`;
 }
 
 export function calcPackageAwsKey(platform: string, type: string): string {
