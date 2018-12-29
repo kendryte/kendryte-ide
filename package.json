@@ -10,8 +10,8 @@
   "private": true,
   "scripts": {
     "test": "mocha",
-    "preinstall": "node my-scripts/npm/preinstall.js && node build/npm/preinstall.js",
-    "postinstall": "node my-scripts/npm/postinstall.js && node build/npm/postinstall.js",
+    "preinstall": "node build/npm/preinstall.js",
+    "postinstall": "node build/npm/postinstall.js",
     "compile": "gulp compile --max_old_space_size=4095",
     "watch": "gulp watch --max_old_space_size=4095",
     "watch-client": "gulp watch-client --max_old_space_size=4095",
@@ -24,9 +24,7 @@
     "monaco-compile-check": "tsc -p src/tsconfig.monaco.json --noEmit",
     "download-builtin-extensions": "node build/lib/builtInExtensions.js",
     "strict-null-check": "tsc -p src/tsconfig.strictNullChecks.json",
-    "strict-null-check-watch": "tsc -p src/tsconfig.strictNullChecks.json --watch",
-    "postcheckout": "node my-scripts/npm/update-help.js",
-    "postmerge": "node my-scripts/npm/update-help.js"
+    "strict-null-check-watch": "tsc -p src/tsconfig.strictNullChecks.json --watch"
   },
   "dependencies": {
     "@octokit/rest": "^15.13.0",
