@@ -8,7 +8,6 @@ import { CancellationToken } from 'vs/base/common/cancellation';
 import { copy, dirExists, fileExists, mkdirp, readDirsInDir, readFile, rimraf } from 'vs/base/node/pfs';
 import { IPager } from 'vs/base/common/paging';
 import { escapeRegExpCharacters } from 'vs/base/common/strings';
-import { IDownloadWithProgressService } from 'vs/kendryte/vs/services/download/electron-browser/downloadWithProgressService';
 import { parseExtendedJson } from 'vs/kendryte/vs/base/common/jsonComments';
 import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ILogService } from 'vs/platform/log/common/log';
@@ -23,6 +22,7 @@ import { dumpDate } from 'vs/kendryte/vs/base/common/dumpDate';
 import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
 import { INotificationHandle, INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { PACKAGE_MANAGER_DISTRIBUTE_URL } from 'vs/kendryte/vs/base/common/constants/remoteRegistry';
+import { INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
 
 export class PackageRegistryService implements IPackageRegistryService {
 	_serviceBrand: any;
@@ -32,7 +32,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 	constructor(
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IEditorService private readonly editorService: IEditorService,
-		@IDownloadWithProgressService private readonly downloadWithProgressService: IDownloadWithProgressService,
+		@INodeDownloadService private readonly downloadService: INodeDownloadService,
 		@IFileCompressService private readonly fileCompressService: IFileCompressService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@INodePathService private readonly nodePathService: INodePathService,
@@ -91,7 +91,8 @@ export class PackageRegistryService implements IPackageRegistryService {
 		}
 		this.logger.info('fetch registry file from remote.');
 
-		const filePath = await this.downloadWithProgressService.downloadTemp(this.registryUrl(type), this.logger);
+		const downId = await this.downloadService.downloadTemp(this.registryUrl(type), true, this.logger);
+		const filePath = await this.downloadService.waitResultFile(downId);
 		const fileContent = await readFile(filePath, 'utf8');
 
 		const [registry, errors] = parseExtendedJson<IRemotePackageInfo[]>(fileContent);
@@ -189,13 +190,21 @@ export class PackageRegistryService implements IPackageRegistryService {
 
 		const handle = unClosableNotify(this.notificationService, {
 			severity: Severity.Info,
-			message: '',
+			message: 'Installing...',
+			source: 'Package Manager',
 		});
+		handle.progress.infinite();
 
 		await this.installAllWork(pkgInfo.dependency, [], handle).then(() => {
-			handle.dispose();
+			handle.progress.done();
+			handle.updateMessage('All dependencies successfully installed.');
+			handle.updateSeverity(Severity.Info);
+			handle.revoke();
 		}, (e) => {
-			handle.dispose();
+			handle.progress.done();
+			handle.updateMessage('All dependencies successfully installed.');
+			handle.updateSeverity(Severity.Info);
+			handle.revoke();
 			throw e;
 		});
 	}
@@ -217,8 +226,9 @@ export class PackageRegistryService implements IPackageRegistryService {
 
 		const downloadUrl = this.findUrl(packageInfo, version);
 
-		const target = await this.downloadWithProgressService.downloadTemp(downloadUrl, this.logger);
-		const tempResultDir = await this.fileCompressService.extractTemp(target, this.logger);
+		const downId = await this.downloadService.downloadTemp(downloadUrl, true, this.logger);
+		const libZipFile = await this.downloadService.waitResultFile(downId);
+		const tempResultDir = await this.fileCompressService.extractTemp(libZipFile, this.logger);
 
 		this.logger.info('download & extracted: ', tempResultDir);
 
@@ -253,14 +263,16 @@ export class PackageRegistryService implements IPackageRegistryService {
 				'name': 'unamed_project',
 				'version': '0.0.1',
 				'type': 'executable',
+				'source': ['please set your .c files here', 'see https://github.com/kendryte/kendryte-ide/wiki/URL002'],
 			}, null, 4));
 		}
 		await this.nodeFileSystemService.editJsonFile(currentConfigFile, ['dependency', saveDirName], downloadUrl);
 	}
 
 	private async downloadFromAbsUrl(downloadUrl: string, defaultName: string, defaultVersion: string): Promise<string> {
-		const target = await this.downloadWithProgressService.downloadTemp(downloadUrl, this.logger);
-		const tempResultDir = await this.fileCompressService.extractTemp(target, this.logger);
+		const downId = await this.downloadService.downloadTemp(downloadUrl, true, this.logger);
+		const libZipFile = await this.downloadService.waitResultFile(downId);
+		const tempResultDir = await this.fileCompressService.extractTemp(libZipFile, this.logger);
 
 		this.logger.info('download & extracted: ', tempResultDir);
 
