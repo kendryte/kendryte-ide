@@ -22,6 +22,7 @@ import { createCipheriv, createHash } from 'crypto';
 import { drainStream } from 'vs/kendryte/vs/base/common/drainStream';
 import { SerialPortBaseBinding } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
 import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
+import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
 
 export enum ChipType {
 	OnBoard = 0,
@@ -50,7 +51,8 @@ export class SerialLoader extends Disposable {
 	private deferredReturn: ISPError;
 
 	constructor(
-		device: SerialPortBaseBinding,
+		private readonly serialPortService: ISerialPortService,
+		private readonly device: SerialPortBaseBinding,
 		application: string,
 		bootLoader: string,
 		protected readonly encryptionKey: Buffer,
@@ -201,7 +203,7 @@ export class SerialLoader extends Disposable {
 		let received = false;
 		while (!received) {
 			this.send(ISPOperation.ISP_FLASH_GREETING, Buffer.alloc(3));
-			await timeout(1000);
+			await timeout(300);
 		}
 
 		return p;
@@ -235,9 +237,27 @@ export class SerialLoader extends Disposable {
 
 	async flashGreeting() {
 		this.logger.info('Greeting');
-		this.send(ISPOperation.ISP_NOP, Buffer.alloc(3));
-		await this.expect(ISPOperation.ISP_NOP);
-		this.logger.info(' - Hello.');
+		try {
+			this.logger.info('try reboot as KD233');
+			await this.serialPortService.sendRebootISPKD233(this.device);
+			this.send(ISPOperation.ISP_NOP, Buffer.alloc(3));
+			await this.setTimeout('greeting kd233 board', 1000, this.expect(ISPOperation.ISP_NOP));
+			this.logger.info(' - Hello.');
+			return;
+		} catch (e) {
+			this.logger.info('Failed to boot as KD233: %s', e.message);
+		}
+		try {
+			this.logger.info('try reboot as other board');
+			await this.serialPortService.sendRebootISPDan(this.device);
+			this.send(ISPOperation.ISP_NOP, Buffer.alloc(3));
+			await this.setTimeout('greeting other board', 1000, this.expect(ISPOperation.ISP_NOP));
+			this.logger.info(' - Hello.');
+			return;
+		} catch (e) {
+			this.logger.info('Failed to boot as other board: %s', e.message);
+			throw e;
+		}
 	}
 
 	protected logGarbage({ content, source }: GarbageData) {
@@ -262,14 +282,36 @@ export class SerialLoader extends Disposable {
 		});
 	}
 
+	protected setTimeout(what: string, ms: number, promise: Promise<any>) {
+		const to = setTimeout(() => {
+			console.error('timeout');
+			deferred.error(new Error('Timeout ' + what)).catch();
+		}, ms);
+		console.log('timeout %s registered', to);
+		const deferred = this.deferred;
+		return promise.then(() => {
+			console.log('timeout %s cancel(success)', to);
+			clearTimeout(to);
+		}, (e) => {
+			console.log('timeout %s cancel(reject %s)', to, e.message);
+			clearTimeout(to);
+			throw e;
+		});
+	}
+
 	protected expect(what: ISPOperation | ISPOperation[], ret: ISPError = ISPError.ISP_RET_OK) {
 		if (this.deferred) {
 			console.warn('deferred already exists: ', this.deferredWait.map(e => ISPOperation[e]));
 			throw new Error('program error: expect.');
 		}
-		this.deferred = new DeferredPromise<ISPResponse>();
+		const self = this.deferred = new DeferredPromise<ISPResponse>();
 		this.deferredWait = Array.isArray(what) ? what : [what];
 		this.deferredReturn = ret;
+		this.deferred.p.catch(() => {
+			if (this.deferred === self) {
+				delete this.deferred;
+			}
+		});
 		return this.deferred.p;
 	}
 

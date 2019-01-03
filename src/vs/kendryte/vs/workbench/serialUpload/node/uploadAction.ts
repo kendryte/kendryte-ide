@@ -118,6 +118,7 @@ export class MaixSerialUploadAction extends Action {
 		this.logger.info('==================================');
 
 		const loader = new SerialLoader(
+			this.serialPortService,
 			port,
 			app,
 			bootLoader,
@@ -134,9 +135,8 @@ export class MaixSerialUploadAction extends Action {
 				cancellable: true,
 			},
 			async (report) => {
-				await this.serialPortService.sendReboot(port, true);
 				await loader.run(new SubProgress('', report));
-				await this.serialPortService.sendReboot(port, false);
+				await this.serialPortService.sendReboot(port);
 			},
 			() => loader.abort(new Error('user cancel')),
 		);
