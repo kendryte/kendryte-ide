@@ -7,10 +7,11 @@ import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD } from 'vs/kendryte/vs/workbench/cmake
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { CMAKE_CHANNEL, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
-import { copy, mkdirp } from 'vs/base/node/pfs';
+import { copy, fileExists, mkdirp, unlinkIgnoreError } from 'vs/base/node/pfs';
 import { ACTIVE_GROUP, IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 
 export class MaixCMakeHelloWorldAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_HELLO_WORLD;
@@ -54,6 +55,11 @@ export class MaixCMakeHelloWorldAction extends Action {
 		const target = this.nodePathService.workspaceFilePath();
 		this.outputChannel.append(`copy from: ${source} to ${target}\n`);
 		await copy(source, target);
+
+		const installOkFile = resolvePath(target, '.install-ok');
+		if (await fileExists(installOkFile)) {
+			await unlinkIgnoreError(installOkFile);
+		}
 
 		// this is official package, just ignore any error
 		const { json: packageData } = await this.nodeFileSystemService.readPackageFile();
