@@ -27,7 +27,7 @@ class WrappedWindowsService extends wss.WindowsService {
 			version = `${version} (${product.target} setup)`;
 		}
 
-		const versionsFile = resolvePath(environmentService.userDataPath, '..', 'packages/bundled-versions.json');
+		const versionsFile = resolvePath(process.env.KENDRYTE_IDE_LOCAL_PACKAGE_DIR, 'bundled-versions.json');
 
 		console.log(`versionsFile=${versionsFile}`);
 
