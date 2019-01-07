@@ -9,6 +9,7 @@
   "main": "./out/main",
   "private": true,
   "scripts": {
+    "node": "node",
     "test": "mocha",
     "preinstall": "node build/npm/preinstall.js",
     "postinstall": "node build/npm/postinstall.js",
