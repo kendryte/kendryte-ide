@@ -63,6 +63,8 @@ if ($env:AGENT_OS -eq "Linux") {
   # windows
   $TMP=$env:TMP
   echo "WindowsPath is $env:PATH"
+  exec { npm install @kendryte-ide/windows-python2 }
+  
   downloadFile 'https://registry.npmjs.org/7zip/-/7zip-0.0.6.tgz' "$TMP\7z.tar.gz"
   exec {
     echo "import tarfile
