@@ -38,7 +38,7 @@ import { addStatusBarCmakeButtons } from 'vs/kendryte/vs/workbench/cmake/common/
 import { StatusBarController } from 'vs/kendryte/vs/workbench/cmake/common/statusBarController';
 import { CMAKE_TARGET_TYPE } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/config';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { osTempDir, resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { DebugScript, getEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
 import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { CMakeBuildErrorProcessor, CMakeBuildProgressProcessor, CMakeProcessList } from 'vs/kendryte/vs/workbench/cmake/node/outputProcessor';
@@ -240,12 +240,14 @@ export class CMakeService implements ICMakeService {
 		this.logger.info('_currentFolder=%s', this._currentFolder);
 		await mkdirp(resolvePath(this._currentFolder, '.vscode'));
 
-		let pipeFile = resolvePath(this._currentFolder, '.vscode/.cmserver-pipe-' + (Date.now()).toFixed(0));
-		this.logger.info('pipeFile=%s', pipeFile);
+		let pipeFile: string;
 
 		if (process.platform === 'win32') {
-			pipeFile = '\\\\?\\pipe\\' + pipeFile;
+			pipeFile = '\\\\?\\pipe\\kendryte-ide-cmakeserver-' + (Date.now()).toFixed(0);
+		} else {
+			pipeFile = osTempDir('cmake-server-pipe-' + (Date.now()).toFixed(0));
 		}
+		this.logger.info('pipeFile=%s', pipeFile);
 		this.cmakePipeFile = pipeFile;
 
 		const args = ['-E', 'server', '--experimental', '--pipe=' + pipeFile];
