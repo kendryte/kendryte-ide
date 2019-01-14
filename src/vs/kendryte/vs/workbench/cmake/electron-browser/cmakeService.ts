@@ -329,7 +329,7 @@ export class CMakeService implements ICMakeService {
 		}
 	}
 
-	private async shutdown(force: boolean = false): TPromise<void> {
+	 async shutdown(force: boolean = false): TPromise<void> {
 		if (this.cmakeProcess) {
 			this.logger.info('shutdown CMake server...');
 

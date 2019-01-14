@@ -5,7 +5,7 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { PackageBrowserInput } from 'vs/kendryte/vs/workbench/packageManager/common/editors/packageBrowserInput';
 import { IRemotePackageInfo, PACKAGE_LIST_EXAMPLE, PACKAGE_LIST_LIBRARY } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
 import { CancellationToken } from 'vs/base/common/cancellation';
-import { copy, dirExists, fileExists, mkdirp, readDirsInDir, readFile, rimraf } from 'vs/base/node/pfs';
+import { copy, dirExists, fileExists, lstat, mkdirp, readDirsInDir, readFile, rename, rimraf } from 'vs/base/node/pfs';
 import { IPager } from 'vs/base/common/paging';
 import { escapeRegExpCharacters } from 'vs/base/common/strings';
 import { parseExtendedJson } from 'vs/kendryte/vs/base/common/jsonComments';
@@ -23,6 +23,7 @@ import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClo
 import { INotificationHandle, INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { PACKAGE_MANAGER_DISTRIBUTE_URL } from 'vs/kendryte/vs/base/common/constants/remoteRegistry';
 import { INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
+import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 
 export class PackageRegistryService implements IPackageRegistryService {
 	_serviceBrand: any;
@@ -37,6 +38,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@INodePathService private readonly nodePathService: INodePathService,
 		@IChannelLogService channelLogService: IChannelLogService,
+		@ICMakeService private CMakeService: ICMakeService,
 		@INotificationService private notificationService: INotificationService,
 	) {
 		this.logger = channelLogService.createChannel('Package Manager', PACKAGE_MANAGER_LOG_CHANNEL_ID, true);
@@ -242,9 +244,15 @@ export class PackageRegistryService implements IPackageRegistryService {
 			config.name = packageInfo.name || 'unknown-example';
 		}
 
-		const finalPath = resolvePath(targetPath, config.name);
-		this.logger.info(`  copy(${tempResultDir}, ${finalPath})`);
-		await copy(tempResultDir, finalPath);
+		let finalPath = resolvePath(targetPath, config.name);
+		let i = 0;
+		while (await lstat(finalPath).then(() => true, () => false)) {
+			i++;
+			finalPath = resolvePath(targetPath, config.name + '_' + i.toFixed(0));
+		}
+
+		this.logger.info(`  rename(${tempResultDir}, ${finalPath})`);
+		await rename(tempResultDir, finalPath);
 
 		return finalPath;
 	}
@@ -297,10 +305,16 @@ export class PackageRegistryService implements IPackageRegistryService {
 		const packagesRoot = resolvePath(this.nodePathService.workspaceFilePath(), CMAKE_LIBRARY_FOLDER_NAME);
 		const saveDirName = config.name;
 		const saveDir = resolvePath(packagesRoot, saveDirName);
+
 		this.logger.info(`  rimraf(${saveDir})`);
-		await rimraf(saveDir);
+		await this.CMakeService.shutdown();
+		await rimraf(saveDir + '.delete');
+		await rename(saveDir, saveDir + '.delete');
+		await rimraf(saveDir + '.delete').catch();
+
 		this.logger.info(`  mkdirp(${packagesRoot})`);
 		await mkdirp(packagesRoot);
+
 		this.logger.info(`  copy(${tempResultDir}, ${saveDir})`);
 		await copy(tempResultDir, saveDir);
 

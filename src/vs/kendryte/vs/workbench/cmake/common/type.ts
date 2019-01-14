@@ -23,6 +23,7 @@ export interface ICMakeService {
 	getTargetList(): TPromise<CurrentItem[]>;
 	getVariantList(): TPromise<CurrentItem[]>;
 	ensureConfiguration(): TPromise<any>;
+	shutdown(force?: boolean): TPromise<void>;
 }
 
 export const ICMakeService = createDecorator<ICMakeService>('ICMakeService');

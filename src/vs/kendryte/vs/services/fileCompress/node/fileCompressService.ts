@@ -4,9 +4,7 @@ import { CancellationToken } from 'vs/base/common/cancellation';
 import { extract as extractZip } from 'vs/platform/node/zip';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { lstat, mkdirp, readdir, rename, rimraf } from 'vs/base/node/pfs';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
-import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { hash } from 'vs/base/common/hash';
+import { osTempDir, resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { ILogService } from 'vs/platform/log/common/log';
 import { basename } from 'vs/base/common/paths';
 import decompress = require('decompress');
@@ -32,10 +30,9 @@ export interface IFileCompressService {
 
 export class FileCompressService implements IFileCompressService {
 	_serviceBrand: any;
+	private readonly runId = Date.now().toFixed(0);
 
-	constructor(
-		@INodePathService protected nodePathService: INodePathService,
-	) {
+	constructor() {
 	}
 
 	private unZip(file: string, target: string, logger: ILogService) {
@@ -56,7 +53,7 @@ export class FileCompressService implements IFileCompressService {
 	public async extractTemp(zipFile: string, logger: ILogService): TPromise<string> {
 		const debugName = basename(zipFile);
 
-		const unzipTarget = this.nodePathService.tempDir('packages-extract/UNZIP_' + hash(zipFile));
+		const unzipTarget = osTempDir('packages-extract/UNZIP_' + this.runId);
 		logger.info('[%s] Extract Files:\n  From: %s\n  To: %s', debugName, zipFile, unzipTarget);
 
 		logger.warn('  rmdir & mkdirp -> "To" folder', unzipTarget);
