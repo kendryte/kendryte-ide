@@ -10,8 +10,7 @@ import { SerialPortItem } from 'vs/kendryte/vs/workbench/serialPort/common/type'
 import { array_has_diff_cb } from 'vs/kendryte/vs/base/common/utils';
 import { SerialPortBaseBinding } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
 import { ninvoke, timeout } from 'vs/base/common/async';
-import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
-import { IDisposable } from 'vs/base/common/lifecycle';
+import { CancellationToken } from 'vs/base/common/cancellation';
 
 function testSame(a: SerialPortItem, b: SerialPortItem) {
 	return a.comName === b.comName && a.locationId === b.locationId && a.manufacturer === b.manufacturer && a.pnpId === b.pnpId && a.productId === b.productId && a.serialNumber === b.serialNumber && a.vendorId === b.vendorId;
@@ -100,65 +99,65 @@ class SerialPortService implements ISerialPortService {
 		});
 	}
 
-	public async sendReboot(port: string | SerialPortBaseBinding, isp: boolean, cancel?: CancellationToken) {
+	public async sendFlowControl(port: string | SerialPortBaseBinding, cancel?: CancellationToken, ...controlSeq: SerialPort.SetOptions[]) {
 		let serialDevice = this.getPortDevice(port) as SerialPort;
 		if (!serialDevice) {
 			throw new Error('Cannot find opened port.');
 		}
 
 		const set = (input: SerialPort.SetOptions) => {
-			console.log(input);
 			return new Promise((resolve, reject) => {
-				const wrappedCallback = (err) => err ? reject(err) : resolve();
-				serialDevice.set(input, wrappedCallback);
+				serialDevice.set(input, (err) => {
+					if (err) {
+						return reject(err);
+					} else {
+						return resolve();
+					}
+				});
 			});
 		};
 
-		let uncancelable: IDisposable;
-		if (!cancel) {
-			const ts = uncancelable = new CancellationTokenSource();
-			cancel = ts.token;
+		if (cancel) {
+			cancel.onCancellationRequested(() => {
+				console.log({ dtr: false, rts: false });
+			});
 		}
-		cancel.onCancellationRequested(() => {
-			console.log({ dtr: false, rts: false });
-		});
 
-		// 1 -> all false
-		await set({ dtr: false, rts: false });
-		if (cancel.isCancellationRequested) {
-			return;
-		}
-		await timeout(10, cancel);
-
-		// 2 -> press down reset
-		await set({ dtr: true });
-		if (cancel.isCancellationRequested) {
-			return;
-		}
-		await timeout(10, cancel);
-
-		// 3 -> press down boot
-		await set({ rts: true });
-		if (cancel.isCancellationRequested) {
-			return;
-		}
-		await timeout(10, cancel);
-
-		if (isp) {
-			// 4 -> release reset
-			await set({ dtr: false });
-			if (cancel.isCancellationRequested) {
+		for (const state of controlSeq) {
+			if (cancel && cancel.isCancellationRequested) {
 				return;
 			}
+			console.log(state);
+			await set(state);
 			await timeout(10, cancel);
 		}
+	}
 
-		// 4 -> return to normal
-		await set({ dtr: false, rts: false });
+	public async sendRebootISPDan(port: string | SerialPortBaseBinding, cancel?: CancellationToken) {
+		return this.sendFlowControl(port, cancel,
+			{ dtr: false, rts: false },	// 1 -> all false
+			{ dtr: false, rts: true }, // 2 -> press reset
+			{ dtr: true, rts: false }, // 3 -> press boot // 4 -> release reset
+			{ dtr: false, rts: false }, // 4 -> release boot
+		);
+	}
 
-		if (uncancelable) {
-			uncancelable.dispose();
-		}
+	public async sendRebootISPKD233(port: string | SerialPortBaseBinding, cancel?: CancellationToken) {
+		return this.sendFlowControl(port, cancel,
+			{ dtr: false, rts: false },	// 1 -> all false
+			{ dtr: true }, // 2 -> press reset
+			{ rts: true }, // 3 -> press boot
+			{ dtr: false }, // 4 -> release reset
+			{ dtr: false, rts: false }, // 4 -> release boot
+		);
+	}
+
+	public sendReboot(port: string | SerialPortBaseBinding, cancel?: CancellationToken) {
+		return this.sendFlowControl(port, cancel,
+			{ dtr: false, rts: false },	// 1 -> all false
+			{ dtr: true }, // 2 -> press reset
+			{ dtr: false, rts: false }, // 4 -> release boot
+		);
 	}
 
 	private _handlePromise<T>(what: string, action: (cb: (e: Error, data?: T) => void) => void): Promise<T> {
@@ -231,7 +230,10 @@ export interface ISerialPortService extends EnumProviderService<SerialPortItem> 
 	refreshDevices(): void;
 	openPort(serialDevice: string, opts?: Partial<SerialPort.OpenOptions>, exclusive?: boolean): TPromise<SerialPortBaseBinding>;
 	closePort(serialDevice: string | SerialPortBaseBinding): TPromise<void>;
-	sendReboot(serialDevice: string | SerialPortBaseBinding, isp: boolean, cancel?: CancellationToken): TPromise<void>;
+	sendReboot(serialDevice: string | SerialPortBaseBinding, cancel?: CancellationToken): TPromise<void>;
+	sendRebootISPKD233(serialDevice: string | SerialPortBaseBinding, cancel?: CancellationToken): TPromise<void>;
+	sendRebootISPDan(serialDevice: string | SerialPortBaseBinding, cancel?: CancellationToken): TPromise<void>;
+	sendFlowControl(port: string | SerialPortBaseBinding, cancel?: CancellationToken, ...controlSeq: SerialPort.SetOptions[]): Promise<void>;
 }
 
 export const ISerialPortService = createDecorator<ISerialPortService>('serialPortService');

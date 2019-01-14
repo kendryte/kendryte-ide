@@ -35,7 +35,7 @@ import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/commo
 
 const libUsbError = /\bLIBUSB_ERROR_IO\b/;
 const TDOHigh = /\bTDO seems to be stuck high\b/;
-const startOk = /\bExamined RISCV core; found ([0-9]+) harts\b/;
+const startOk = /\bExamined RISCV core\b/;
 const commonError = / IR capture error; saw /;
 
 export class OpenOCDService implements IOpenOCDService {
@@ -275,12 +275,7 @@ export class OpenOCDService implements IOpenOCDService {
 			this.restart().catch(undefined);
 		} else if (this.okWait) {
 			if (startOk.test(line)) {
-				const cnt = parseInt(startOk.exec(line)[1]);
-				if (cnt > 0) {
-					this.okPromise.complete(undefined);
-				} else {
-					this.okPromise.error(new Error('Cannot find any cpu core, please check your board.'));
-				}
+				this.okPromise.complete(undefined);
 			} else if (commonError.test(line)) {
 				this.logger.warn('maybe:');
 				this.logger.warn(' * VRef is wrong');

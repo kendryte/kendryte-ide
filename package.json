@@ -1,17 +1,18 @@
 {
   "name": "code-oss-dev",
-  "version": "1.30.1",
+  "version": "1.30.2",
   "distro": "573bd4fedabe1c0bcebeb1e683109079ae560312",
-  "patchVersion": 20181218.232418,
+  "patchVersion": 20181219.210116,
   "author": {
     "name": "Microsoft Corporation"
   },
   "main": "./out/main",
   "private": true,
   "scripts": {
+    "node": "node",
     "test": "mocha",
-    "preinstall": "node my-scripts/npm/preinstall.js && node build/npm/preinstall.js",
-    "postinstall": "node my-scripts/npm/postinstall.js && node build/npm/postinstall.js",
+    "preinstall": "node build/npm/preinstall.js",
+    "postinstall": "node build/npm/postinstall.js",
     "compile": "gulp compile --max_old_space_size=4095",
     "watch": "gulp watch --max_old_space_size=4095",
     "watch-client": "gulp watch-client --max_old_space_size=4095",
@@ -24,9 +25,7 @@
     "monaco-compile-check": "tsc -p src/tsconfig.monaco.json --noEmit",
     "download-builtin-extensions": "node build/lib/builtInExtensions.js",
     "strict-null-check": "tsc -p src/tsconfig.strictNullChecks.json",
-    "strict-null-check-watch": "tsc -p src/tsconfig.strictNullChecks.json --watch",
-    "postcheckout": "node my-scripts/npm/update-help.js",
-    "postmerge": "node my-scripts/npm/update-help.js"
+    "strict-null-check-watch": "tsc -p src/tsconfig.strictNullChecks.json --watch"
   },
   "dependencies": {
     "@octokit/rest": "^15.13.0",
@@ -168,5 +167,8 @@
     "windows-foreground-love": "0.1.0",
     "windows-mutex": "0.2.1",
     "windows-process-tree": "0.2.3"
+  },
+  "resolutions": {
+    "**/graceful-fs": "4.1.11"
   }
 }

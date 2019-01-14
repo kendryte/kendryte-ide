@@ -38,7 +38,7 @@ import { addStatusBarCmakeButtons } from 'vs/kendryte/vs/workbench/cmake/common/
 import { StatusBarController } from 'vs/kendryte/vs/workbench/cmake/common/statusBarController';
 import { CMAKE_TARGET_TYPE } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/config';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { osTempDir, resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { DebugScript, getEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
 import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { CMakeBuildErrorProcessor, CMakeBuildProgressProcessor, CMakeProcessList } from 'vs/kendryte/vs/workbench/cmake/node/outputProcessor';
@@ -49,6 +49,7 @@ import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common
 import { ILogService } from 'vs/platform/log/common/log';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { CMakeListsCreator } from 'vs/kendryte/vs/workbench/cmake/electron-browser/listsCreator';
+import { CONFIG_KEY_MAKE_PROGRAM } from 'vs/kendryte/vs/base/common/configKeys';
 
 export interface IPromiseProgress<T> {
 	progress(fn: (p: T) => void): void;
@@ -152,7 +153,7 @@ export class CMakeService implements ICMakeService {
 		if (isWindows) {
 			this.localEnv.CMAKE_MAKE_PROGRAM = 'mingw32-make.exe';
 		} else {
-			this.localEnv.CMAKE_MAKE_PROGRAM = '/bin/make';
+			this.localEnv.CMAKE_MAKE_PROGRAM = this.configurationService.getValue<string>(CONFIG_KEY_MAKE_PROGRAM) || '/usr/bin/make';
 		}
 
 		this.statusBarController = this.instantiationService.invokeFunction(addStatusBarCmakeButtons);
@@ -239,12 +240,14 @@ export class CMakeService implements ICMakeService {
 		this.logger.info('_currentFolder=%s', this._currentFolder);
 		await mkdirp(resolvePath(this._currentFolder, '.vscode'));
 
-		let pipeFile = resolvePath(this._currentFolder, '.vscode/.cmserver-pipe-' + (Date.now()).toFixed(0));
-		this.logger.info('pipeFile=%s', pipeFile);
+		let pipeFile: string;
 
 		if (process.platform === 'win32') {
-			pipeFile = '\\\\?\\pipe\\' + pipeFile;
+			pipeFile = '\\\\?\\pipe\\kendryte-ide-cmakeserver-' + (Date.now()).toFixed(0);
+		} else {
+			pipeFile = osTempDir('cmake-server-pipe-' + (Date.now()).toFixed(0));
 		}
+		this.logger.info('pipeFile=%s', pipeFile);
 		this.cmakePipeFile = pipeFile;
 
 		const args = ['-E', 'server', '--experimental', '--pipe=' + pipeFile];
@@ -326,7 +329,7 @@ export class CMakeService implements ICMakeService {
 		}
 	}
 
-	private async shutdown(force: boolean = false): TPromise<void> {
+	 async shutdown(force: boolean = false): TPromise<void> {
 		if (this.cmakeProcess) {
 			this.logger.info('shutdown CMake server...');
 
