@@ -251,8 +251,11 @@ export class PackageRegistryService implements IPackageRegistryService {
 			finalPath = resolvePath(targetPath, config.name + '_' + i.toFixed(0));
 		}
 
-		this.logger.info(`  rename(${tempResultDir}, ${finalPath})`);
-		await rename(tempResultDir, finalPath);
+		this.logger.info(`  copy(${tempResultDir}, ${finalPath})`);
+		await copy(tempResultDir, finalPath);
+		await rimraf(tempResultDir).catch((e) => {
+			this.logger.error('Cannot remove Temp dir: %s. This error is ignored', e.message);
+		});
 
 		return finalPath;
 	}
@@ -308,15 +311,23 @@ export class PackageRegistryService implements IPackageRegistryService {
 
 		this.logger.info(`  rimraf(${saveDir})`);
 		await this.CMakeService.shutdown();
-		await rimraf(saveDir + '.delete');
-		await rename(saveDir, saveDir + '.delete');
-		await rimraf(saveDir + '.delete').catch();
+		const delTemp = saveDir + '.delete';
+		if (await dirExists(delTemp)) {
+			await rimraf(delTemp);
+		}
+		if (await dirExists(saveDir)) {
+			await rename(saveDir, delTemp);
+			await rimraf(delTemp).catch();
+		}
 
 		this.logger.info(`  mkdirp(${packagesRoot})`);
 		await mkdirp(packagesRoot);
 
 		this.logger.info(`  copy(${tempResultDir}, ${saveDir})`);
 		await copy(tempResultDir, saveDir);
+		await rimraf(tempResultDir).catch((e) => {
+			this.logger.error('Cannot remove Temp dir: %s. This error is ignored', e.message);
+		});
 
 		return saveDirName;
 	}

@@ -329,7 +329,7 @@ export class CMakeService implements ICMakeService {
 		}
 	}
 
-	 async shutdown(force: boolean = false): TPromise<void> {
+	async shutdown(force: boolean = false): TPromise<void> {
 		if (this.cmakeProcess) {
 			this.logger.info('shutdown CMake server...');
 
@@ -842,7 +842,7 @@ ${JSON.stringify(payload)}
 			content.configurations.splice(content.configurations, 1);
 		}
 
-		const configPaths = this.configurationService.getValue<string[]>('C_Cpp.default.includePath');
+		const configPaths = this.configurationService.getValue<string[]>('C_Cpp.default.includePath') || [];
 
 		content.configurations.unshift({
 			name: 'Default',
