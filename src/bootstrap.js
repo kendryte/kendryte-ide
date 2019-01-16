@@ -208,7 +208,7 @@ exports.configurePortable = function () {
 		fs.mkdirSync(portableDataPath);
 	}
 	const isPortable = true;
-	console.log('isPortable=%s ; \'target\' in product = %s ; portableDataPath=%s', isPortable, 'target' in product, portableDataPath);
+	process.stderr.isTTY && console.error('isPortable=%s ; \'target\' in product = %s ; portableDataPath=%s', isPortable, 'target' in product, portableDataPath);
 	const portableTempPath = path.join(portableDataPath, 'tmp');
 	const isTempPortable = isPortable && fs.existsSync(portableTempPath);
 
@@ -246,15 +246,16 @@ function kendryteExtend(){
 		// @ts-ignore
 		require('source-map-support/register');
 	} catch (e) {
-		console.error('ignored:', e.message);
+		process.stderr.isTTY && console.error('ignored:', e.message);
 	}
 	try {
 		// @ts-ignore
 		global.electron = require('electron');
 	} catch (e) {
-		console.error('ignored:', e.message);
+		process.stderr.isTTY && console.error('ignored:', e.message);
 	}
 	
+	process.stderr.isTTY && console.error('bootstrap: kendryte-extend');
 	if (process.type === 'render') {
 		require('electron').app.once('ready', () => {
 			setTimeout(() => {
