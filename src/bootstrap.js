@@ -6,8 +6,8 @@
 //@ts-check
 'use strict';
 
-const title = process.title.replace(/[^ -~]/g, '');
-process.title = title || "KendryteIDE";
+// @ts-ignore
+kendryteExtend();
 
 //#region global bootstrapping
 
@@ -240,3 +240,28 @@ exports.avoidMonkeyPatchFromAppInsights = function () {
 	global['diagnosticsSource'] = {}; // Prevents diagnostic channel (which patches "require") from initializing entirely
 };
 //#endregion
+
+function kendryteExtend(){
+	try {
+		// @ts-ignore
+		require('source-map-support/register');
+	} catch (e) {
+		console.error('ignored:', e.message);
+	}
+	try {
+		// @ts-ignore
+		global.electron = require('electron');
+	} catch (e) {
+		console.error('ignored:', e.message);
+	}
+	
+	if (process.type === 'render') {
+		require('electron').app.once('ready', () => {
+			setTimeout(() => {
+				// renderer process title seems strange, overwrite it to prevent error
+				const title = process.title.replace(/[^a-z0-9!"#$%&'()*+,.\/:;<=>?@\[\] ^_`{|}~-]/ig, '');
+				process.title = title || 'KendryteIDE-render';
+			}, 1000);
+		});
+	}
+}
