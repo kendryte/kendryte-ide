@@ -12,7 +12,7 @@ import { parseExtendedJson } from 'vs/kendryte/vs/base/common/jsonComments';
 import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IFileCompressService } from 'vs/kendryte/vs/services/fileCompress/node/fileCompressService';
-import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME, ICompileInfo } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME, ICompileInfo, ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { resolve as resolveUrl } from 'url';
@@ -44,15 +44,15 @@ export class PackageRegistryService implements IPackageRegistryService {
 		this.logger = channelLogService.createChannel('Package Manager', PACKAGE_MANAGER_LOG_CHANNEL_ID, true);
 	}
 
-	public async listLocal(): TPromise<IRemotePackageInfo[]> {
+	public async listLocal(): TPromise<ILibraryProject[]> {
 		const folder = this.nodePathService.workspaceFilePath(CMAKE_LIBRARY_FOLDER_NAME);
 		if (!await dirExists(folder)) {
 			return [];
 		}
-		const ret: IRemotePackageInfo[] = [];
+		const ret: ILibraryProject[] = [];
 		for (const item of await readDirsInDir(folder)) {
 			const pkgFile = resolvePath(folder, item, CMAKE_CONFIG_FILE_NAME);
-			const { json: config, warnings } = await this.nodeFileSystemService.readJsonFile<IRemotePackageInfo>(pkgFile);
+			const { json: config, warnings } = await this.nodeFileSystemService.readJsonFile<ILibraryProject>(pkgFile);
 
 			if (warnings.length) {
 				this.logger.warn('package file (' + item + ') has error:\n' + warnings.map((err) => {
@@ -60,7 +60,6 @@ export class PackageRegistryService implements IPackageRegistryService {
 				}).join('\n'));
 			}
 
-			config.type = PackageTypes.Library;
 			ret.push(config);
 		}
 		return ret;

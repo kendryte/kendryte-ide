@@ -6,10 +6,11 @@ import { ILifecycleService } from 'vs/platform/lifecycle/electron-main/lifecycle
 import { isUpdater } from 'vs/kendryte/vs/base/common/platform';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { IRelaunchService } from 'vs/kendryte/vs/platform/vscode/common/relaunchService';
-import { createConnection, Socket } from 'net';
+import { Socket } from 'net';
 import { ILogService } from 'vs/platform/log/common/log';
 import * as split2 from 'split2';
 import { DeferredPromise } from 'vs/kendryte/vs/base/common/deferredPromise';
+import { connectToHost } from 'vs/kendryte/vs/platform/vscode/common/socket';
 
 export interface IRelaunchMainService extends IRelaunchService {
 	preExit(): Promise<void>;
@@ -71,8 +72,8 @@ class MainProcessRelaunchService implements IRelaunchMainService {
 		};
 
 		const host = process.env.KENDRYTE_IDE_UPDATER_PIPE || '';
-		const sp = host.split(':');
-		const ipc = this.socket = createConnection(parseInt(sp[1]), sp[0]);
+		this.logService.info('connection to updater socket: ' + host);
+		const ipc = this.socket = connectToHost(host);
 		ipc.on('error', e => {
 			this.logService.error('MainProcessRelaunchService: updater server error:\n' + e.stack);
 			ipc.end();

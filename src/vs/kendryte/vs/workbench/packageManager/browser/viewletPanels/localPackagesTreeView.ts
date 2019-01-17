@@ -13,7 +13,7 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { $, append } from 'vs/base/browser/dom';
 import { IPagedModel, PagedModel } from 'vs/base/common/paging';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { IRemotePackageInfo } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
+import { ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 
 const templateId = 'local-package-tree';
 
@@ -27,7 +27,7 @@ interface ITemplateData {
 	container: HTMLElement;
 }
 
-export class Renderer implements IPagedRenderer<IRemotePackageInfo, ITemplateData> {
+export class Renderer implements IPagedRenderer<ILibraryProject, ITemplateData> {
 	templateId = templateId;
 
 	public renderPlaceholder(index: number, templateData: ITemplateData): void {
@@ -38,11 +38,11 @@ export class Renderer implements IPagedRenderer<IRemotePackageInfo, ITemplateDat
 		return { container };
 	}
 
-	public renderElement(element: IRemotePackageInfo, index: number, templateData: ITemplateData): void {
+	public renderElement(element: ILibraryProject, index: number, templateData: ITemplateData): void {
 		templateData.container.innerText = '!!!' + index;
 	}
 
-	public disposeElement(element: IRemotePackageInfo, index: number, templateData: ITemplateData): void {
+	public disposeElement(element: ILibraryProject, index: number, templateData: ITemplateData): void {
 	}
 
 	public disposeTemplate(templateData: ITemplateData): void {
@@ -51,7 +51,7 @@ export class Renderer implements IPagedRenderer<IRemotePackageInfo, ITemplateDat
 }
 
 export class LocalPackagesTreeView extends ViewletPanel {
-	private list: WorkbenchPagedList<IRemotePackageInfo>;
+	private list: WorkbenchPagedList<ILibraryProject>;
 	private packageList: HTMLElement;
 
 	constructor(
@@ -74,7 +74,7 @@ export class LocalPackagesTreeView extends ViewletPanel {
 		this.list = this.instantiationService.createInstance(WorkbenchPagedList, this.packageList, delegate, [renderer], {
 			ariaLabel: localize('dependency tree', 'Dependency Tree'),
 			multipleSelectionSupport: false,
-		}) as WorkbenchPagedList<IRemotePackageInfo>;
+		}) as WorkbenchPagedList<ILibraryProject>;
 		this.disposables.push(this.list);
 	}
 
@@ -83,7 +83,7 @@ export class LocalPackagesTreeView extends ViewletPanel {
 		this.list.layout(size);
 	}
 
-	async show(): TPromise<IPagedModel<IRemotePackageInfo>> {
+	async show(): TPromise<IPagedModel<ILibraryProject>> {
 		return new PagedModel(await this.packageRegistryService.listLocal());
 	}
 }

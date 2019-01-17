@@ -240,17 +240,17 @@ export class CMakeService implements ICMakeService {
 		this.logger.info('_currentFolder=%s', this._currentFolder);
 		await mkdirp(resolvePath(this._currentFolder, '.vscode'));
 
-		let pipeFile: string;
+		let pidFilePath: string;
 
 		if (process.platform === 'win32') {
-			pipeFile = '\\\\?\\pipe\\kendryte-ide-cmakeserver-' + (Date.now()).toFixed(0);
+			pidFilePath = `\\\\?\\pipe\\kide-cms-${(Date.now()).toFixed(0)}`;
 		} else {
-			pipeFile = osTempDir('cmake-server-pipe-' + (Date.now()).toFixed(0));
+			pidFilePath = osTempDir(`./${(Date.now()).toFixed(0)}_cmake_server_pipe.sock`);
 		}
-		this.logger.info('pipeFile=%s', pipeFile);
-		this.cmakePipeFile = pipeFile;
+		this.logger.info('pidFilePath=%s', pidFilePath);
+		this.cmakePipeFile = pidFilePath;
 
-		const args = ['-E', 'server', '--experimental', '--pipe=' + pipeFile];
+		const args = ['-E', 'server', '--experimental', '--pipe=' + pidFilePath];
 		const options: SpawnOptions = {
 			env: await this.getCMakeEnv(),
 			cwd: cmakePath.bins,
@@ -264,6 +264,11 @@ export class CMakeService implements ICMakeService {
 
 		const child = this.cmakeProcess = spawn(cmakePath.cmake, args, options);
 
+		const pExit = new TPromise<void>((resolve, reject) => {
+			child.on('exit', resolve);
+			child.on('error', reject);
+		});
+
 		this.logger.info(`Started new CMake Server instance with PID %s`, child.pid);
 		child.stdout.on('data', data => this.handleOutput(data.toString()));
 		child.stderr.on('data', data => this.handleOutput(data.toString()));
@@ -272,18 +277,14 @@ export class CMakeService implements ICMakeService {
 			setTimeout(resolve, 1000);
 		});
 
-		console.log('CMake connect: %s', pipeFile);
+		console.log('CMake connect: %s', pidFilePath);
 		try {
-			this.cmakePipe = createConnection(pipeFile);
+			this.cmakePipe = createConnection(pidFilePath);
 		} catch (e) {
 			await this.shutdown(true);
 			throw e;
 		}
 		const pipe = this.cmakePipe;
-
-		const pExit = new TPromise<void>(resolve => {
-			child.on('exit', resolve);
-		});
 
 		this.cmakeConnectionStablePromise = new Deferred();
 		pipe.pipe(split2()).on('data', (line: Buffer) => {
@@ -302,8 +303,11 @@ export class CMakeService implements ICMakeService {
 			});
 		});
 
-		this.cmakeEndPromise = TPromise.join([pEnd, pExit]);
-		this.cmakeEndPromise.then(() => this.shutdownClean(), () => this.shutdownClean());
+		this.cmakeEndPromise = Promise.race([pEnd, pExit]);
+		this.cmakeEndPromise.then(() => this.shutdownClean(), (e) => {
+			this.cmakeConnectionStablePromise.reject(e);
+			this.shutdownClean();
+		});
 
 		child.on('close', (retc: number, signal: string) => {
 			if (retc !== 0) {

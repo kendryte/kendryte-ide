@@ -152,25 +152,25 @@ export class OpenOCDService implements IOpenOCDService {
 
 		child.once('error', (e) => {
 			if (this.okWait) {
-				this.okPromise.error(new Error(`Process cannot start: ${e.message}`));
+				this.okPromise.error(new Error(`OpenOCD process cannot start: ${e.message}`));
 			}
 		});
 		child.on('exit', (code, signal) => {
 			if (this.okWait) {
-				this.okPromise.error(new Error(`Process died: ${signal || code || 'unknown why'}`));
+				this.okPromise.error(new Error(`OpenOCD process died: ${signal || code || 'unknown why'}`));
 			}
 			if (signal || code) {
-				this.logger.error(`Process exit with %s`, signal || code);
+				this.logger.error(`OpenOCD process exit with %s`, signal || code);
 				if (signal !== 'SIGINT') {
 					this.channelLogService.show(OPENOCD_CHANNEL);
 				}
 			} else {
-				this.logger.info('Process successful finished');
+				this.logger.info('OpenOCD process successful finished');
 			}
 			delete this.child;
 		});
 
-		this.logger.info('process started. waiting for output...');
+		this.logger.info('OpenOCD process started. waiting for output...');
 
 		this.delayActions();
 

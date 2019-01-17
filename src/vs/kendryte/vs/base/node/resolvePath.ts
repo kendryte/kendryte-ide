@@ -3,7 +3,6 @@ import { isWindows } from 'vs/base/common/platform';
 import { tmpdir } from 'os';
 
 const winSlash = /\\/g;
-export const TEMP_DIR_NAME = 'KendryteIDE.Cache';
 
 export interface ResolvePathFunction {
 	(...pathSegments: string[]): string;
@@ -31,9 +30,9 @@ function normalizeWindowsPath(path: string): string {
 
 export function osTempDir(name?: string) {
 	if (name) {
-		return resolvePath(tmpdir(), TEMP_DIR_NAME, name);
+		return resolvePath(tmpdir(), name);
 	} else {
-		return resolvePath(tmpdir(), TEMP_DIR_NAME);
+		return resolvePath(tmpdir());
 	}
 }
 

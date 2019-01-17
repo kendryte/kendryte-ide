@@ -6,6 +6,7 @@ import { TPromise } from 'vs/base/common/winjs.base';
 import { IRemotePackageInfo } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
 import { localize } from 'vs/nls';
 import { IPager } from 'vs/base/common/paging';
+import { ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 
 export const PACKAGE_MANAGER_LOG_CHANNEL_ID = 'workbench.log-channel.package-manager';
 
@@ -30,7 +31,7 @@ export enum PackageTypes {
 export interface IPackageRegistryService {
 	_serviceBrand: any;
 
-	listLocal(): TPromise<IRemotePackageInfo[]>;
+	listLocal(): TPromise<ILibraryProject[]>;
 	openBrowser(sideByside?: boolean): TPromise<any>;
 	queryPackageVersions(type: PackageTypes, packageName: string): TPromise<IRemotePackageInfo>;
 	queryPackages(type: PackageTypes, search: string, page: number): TPromise<IPager<IRemotePackageInfo>>;
