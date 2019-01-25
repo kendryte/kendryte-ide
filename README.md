@@ -5,6 +5,8 @@
 
 Based on a excellent🎉 editor [Visual Studio Code](https://github.com/Microsoft/vscode)
 
+**下方内容仅供IDE开发参考，如需使用IDE，请点击上方 `Alpha` `Beta` 按钮下载**
+
 ## Status (azure pipelines)
 
 Alpha version

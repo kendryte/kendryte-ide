@@ -15,6 +15,7 @@ export type ICompileInfo = ILibraryProject | IExecutableProject;
 export interface ICommonProject {
 	name: string;
 	version: string;
+	homepage?: string;
 	dependency: { [id: string]: string };
 	properties: { [id: string]: string };
 	include: string[];
@@ -32,6 +33,7 @@ export interface ICommonProject {
 export enum CMakeProjectTypes {
 	executable = 'executable',
 	library = 'library',
+	example = 'example',
 }
 
 export interface ILibraryProject extends ICommonProject {

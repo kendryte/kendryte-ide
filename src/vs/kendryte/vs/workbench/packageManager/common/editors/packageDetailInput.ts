@@ -1,41 +1,36 @@
-import { TPromise } from 'vs/base/common/winjs.base';
 import { EditorInput } from 'vs/workbench/common/editor';
 import { URI } from 'vs/base/common/uri';
+import { IPackageRegistryService } from 'vs/kendryte/vs/workbench/packageManager/common/type';
+import { CMakeProjectTypes, ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { IRemotePackageInfo } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
 
-export class PackageDetailInput extends EditorInput {
+export interface IPackageInfo {
+	type: string;
+	name: string;
+}
 
-	static readonly ID = 'workbench.package-manager.input';
-
-	get package(): IRemotePackageInfo { return this._package; }
-
+export class PackageDetailCompletionInput extends EditorInput {
 	constructor(
-		private _package: IRemotePackageInfo,
+		private readonly packageName: string,
+		private readonly packageType: CMakeProjectTypes,
+		@IPackageRegistryService private readonly packageRegistryService: IPackageRegistryService,
 	) {
 		super();
 	}
 
-	getTypeId(): string {
-		return PackageDetailInput.ID;
-	}
-
-	getName(): string {
-		return this.package.type + ': ' + this.package.name;
-	}
-
 	matches(other: any): boolean {
-		if (!(other instanceof PackageDetailInput)) {
+		if (!(other instanceof PackageDetailCompletionInput)) {
 			return false;
 		}
 
-		const otherpackageInput = other as PackageDetailInput;
+		const otherpackageInput = other as PackageDetailCompletionInput;
 
-		return this.package.type === otherpackageInput.package.type &&
-			this.package.name === otherpackageInput.package.name;
+		return this.packageType === otherpackageInput.packageType &&
+		       this.packageName === otherpackageInput.packageName;
 	}
 
-	resolve(): TPromise<any> {
-		return TPromise.as(null);
+	getName(): string {
+		return this.packageType + ': ' + this.packageName;
 	}
 
 	supportsSplitEditor(): boolean {
@@ -45,8 +40,27 @@ export class PackageDetailInput extends EditorInput {
 	getResource(): URI {
 		return URI.from({
 			scheme: 'package',
-			authority: this.package.type,
-			path: '/' + this.package.name,
+			authority: this.packageType,
+			path: '/' + this.packageName,
 		});
 	}
+
+	async resolve(): Promise<any/* IPackageLocalRemoteInfo */> {
+		const local = await this.packageRegistryService.getPackageInfoLocal(this.packageType, this.packageName);
+		const remote = await this.packageRegistryService.getPackageInfoRegistry(this.packageType, this.packageName);
+		if (local || remote) {
+			return { local, remote };
+		} else {
+			throw new Error('What is that package?');
+		}
+	}
+
+	getTypeId(): string {
+		return 'workbench.package-manager.input';
+	}
+}
+
+export interface IPackageLocalRemoteInfo {
+	local?: ILibraryProject;
+	remote?: IRemotePackageInfo;
 }

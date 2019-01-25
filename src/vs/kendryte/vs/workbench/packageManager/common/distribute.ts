@@ -1,5 +1,5 @@
-import { PackageTypes } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 import { PACKAGE_MANAGER_DISTRIBUTE_URL } from 'vs/kendryte/vs/base/common/constants/remoteRegistry';
+import { CMakeProjectTypes } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 
 export interface IPackageVersionDetail {
 	versionName: string;
@@ -13,7 +13,7 @@ export interface IRemotePackageInfo {
 	description?: string;
 	homepage?: string;
 	versions: IPackageVersionDetail[];
-	type: PackageTypes;
+	type: CMakeProjectTypes;
 }
 
 const urlPrefix = /\/$/.test(PACKAGE_MANAGER_DISTRIBUTE_URL) ? PACKAGE_MANAGER_DISTRIBUTE_URL : PACKAGE_MANAGER_DISTRIBUTE_URL + '/';

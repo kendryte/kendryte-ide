@@ -46,12 +46,22 @@ export function getEnvironment(nodePathService: INodePathService) {
 		env.PATH = myPath.join(PathListSep) + PathListSep + process.env.PATH;
 	}
 
-	env[getEnvKey('PYTHONHOME')] = nodePathService.getPackagesPath('python2library');
-
-	env[getEnvKey('PYTHONPATH')] = [
-		env.PYTHONHOME,
-		resolvePath(nodePathService.getToolchainPath(), 'share/gdb/python'),
-	].join(PathListSep);
+	if (isWindows) {
+		env[getEnvKey('PYTHONHOME')] = nodePathService.getPackagesPath('python2library');
+		env[getEnvKey('PYTHONPATH')] = [
+			env.PYTHONHOME,
+			resolvePath(nodePathService.getToolchainPath(), 'share/gdb/python'),
+		].join(PathListSep);
+	} else {
+		env[getEnvKey('PYTHONPATH')] = [
+			env.PYTHONHOME || '',
+			'/usr/lib/python2.7/',
+			'/usr/lib/python2/',
+			'/lib/python2.7/',
+			'/lib/python2/',
+			resolvePath(nodePathService.getToolchainPath(), 'share/gdb/python'),
+		].join(PathListSep);
+	}
 
 	env[getEnvKey('PYTHONDONTWRITEBYTECODE')] = 'yes'; // prevent create .pyc files
 

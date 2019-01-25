@@ -8,7 +8,6 @@ import { PackageManagerViewletViewsContribution } from 'vs/kendryte/vs/workbench
 import { PackageManagerViewlet } from 'vs/kendryte/vs/workbench/packageManager/browser/packageManagerViewlet';
 import { EditorDescriptor, Extensions as EditorExtensions, IEditorRegistry } from 'vs/workbench/browser/editor';
 import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
-import { PackageDetailInput } from 'vs/kendryte/vs/workbench/packageManager/common/editors/packageDetailInput';
 import { localize } from 'vs/nls';
 import { PackageDetailEditor } from 'vs/kendryte/vs/workbench/packageManager/browser/editors/packageDetail';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
@@ -17,6 +16,7 @@ import { PackageBrowserEditor } from 'vs/kendryte/vs/workbench/packageManager/br
 import { PackageBrowserInput } from 'vs/kendryte/vs/workbench/packageManager/common/editors/packageBrowserInput';
 import { EditorInput, Extensions as EditorInputExtensions, IEditorInputFactory, IEditorInputFactoryRegistry } from 'vs/workbench/common/editor';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { PackageDetailCompletionInput } from 'vs/kendryte/vs/workbench/packageManager/common/editors/packageDetailInput';
 
 Registry.as<ViewletRegistry>(ViewletExtensions.Viewlets).registerViewlet(new ViewletDescriptor(
 	PackageManagerViewlet,
@@ -36,7 +36,7 @@ const detailDescriptor = new EditorDescriptor(
 );
 
 Registry.as<IEditorRegistry>(EditorExtensions.Editors)
-	.registerEditor(detailDescriptor, [new SyncDescriptor(PackageDetailInput)]);
+	.registerEditor(detailDescriptor, [new SyncDescriptor(PackageDetailCompletionInput)]);
 
 const browserDescriptor = new EditorDescriptor(
 	PackageBrowserEditor,

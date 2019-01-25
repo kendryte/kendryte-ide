@@ -6,7 +6,7 @@ import { localize } from 'vs/nls';
 import { vsiconClass } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
 import { PANEL_BACKGROUND } from 'vs/workbench/common/theme';
 import { SimpleNavBar } from 'vs/kendryte/vs/workbench/commonDomBlocks/browser/simpleNavBar';
-import { IPackageRegistryService, PACKAGE_MANAGER_LOG_CHANNEL_ID, PackageTypes } from 'vs/kendryte/vs/workbench/packageManager/common/type';
+import { IPackageRegistryService, PACKAGE_MANAGER_LOG_CHANNEL_ID } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 import { IRemotePackageInfo } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
 import { IPager, PagedModel } from 'vs/base/common/paging';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -17,6 +17,9 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { IStorageService } from 'vs/platform/storage/common/storage';
+import { InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
+import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
+import { CMakeProjectTypes } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 
 export class PackageBrowserEditor extends BaseEditor {
 	static readonly ID: string = 'workbench.editor.package-market';
@@ -28,6 +31,8 @@ export class PackageBrowserEditor extends BaseEditor {
 	private list: RemotePackagesListView;
 	private container: HTMLElement;
 	private logger: ILogService;
+	private search: string = '';
+	private type: CMakeProjectTypes = CMakeProjectTypes.library;
 
 	constructor(
 		@ITelemetryService telemetryService: ITelemetryService,
@@ -37,11 +42,14 @@ export class PackageBrowserEditor extends BaseEditor {
 		@IChannelLogService channelLogService: IChannelLogService,
 		@IWorkspaceContextService private workspaceService: IWorkspaceContextService,
 		@IStorageService storageService: IStorageService,
+		@IContextViewService private contextViewProvider: IContextViewService,
 	) {
 		super(PackageBrowserEditor.ID, telemetryService, themeService, storageService);
 		this.logger = channelLogService.createChannel('Package Manager', PACKAGE_MANAGER_LOG_CHANNEL_ID, true);
 		const sc = new ServiceCollection([ILogService, this.logger]);
 		this.instantiationService = instantiationService.createChild(sc);
+
+		this._register(this.packageRegistryService.onLocalPackageChange(e => this.refreshList()));
 	}
 
 	updateStyles() {
@@ -75,14 +83,23 @@ export class PackageBrowserEditor extends BaseEditor {
 
 		append(parent, $('h1')).textContent = this.getTitle();
 
-		const navbar = this._register(new SimpleNavBar(parent));
+		const navDiv = append(parent, $('div.pm-navbar'));
+		const navbar = this._register(new SimpleNavBar(navDiv));
+
+		const searchInput = this._register(new InputBox(append(navDiv, $('div.search')), this.contextViewProvider, {
+			placeholder: localize('packageManager.search', 'Search package'),
+		}));
+		this._register(searchInput.onDidChange((st) => {
+			this.search = st;
+			this.refreshList();
+		}));
 
 		function onWorkspaceChange(isEmpty: boolean) {
 			navbar.clear();
 			if (!isEmpty) {
-				navbar.push(PackageTypes.Library, localize('library', 'Library'), vsiconClass('library'), '');
+				navbar.push(CMakeProjectTypes.library, localize('library', 'Library'), vsiconClass('library'), '');
 			}
-			navbar.push(PackageTypes.Example, localize('example', 'Example'), vsiconClass('example'), '');
+			navbar.push(CMakeProjectTypes.example, localize('example', 'Example'), vsiconClass('example'), '');
 		}
 
 		this._register(this.workspaceService.onDidChangeWorkbenchState((state) => {
@@ -92,7 +109,7 @@ export class PackageBrowserEditor extends BaseEditor {
 			onWorkspaceChange(this.workspaceService.getWorkbenchState() === WorkbenchState.EMPTY);
 		});
 
-		this._register(navbar.onChange(({ id }) => this.onTabChange(id as PackageTypes)));
+		this._register(navbar.onChange(({ id }) => this.onTabChange(id as CMakeProjectTypes)));
 	}
 
 	private createList(parent: HTMLElement) {
@@ -108,10 +125,15 @@ export class PackageBrowserEditor extends BaseEditor {
 		this.list.layout(bodyHeight);
 	}
 
-	private onTabChange(type: PackageTypes) {
+	private onTabChange(type: CMakeProjectTypes) {
 		this.logger.info('switchTab(%s)', type);
 		this.showError(renderOcticons('$(repo-sync~spin) loading...'));
-		this.packageRegistryService.queryPackages(type, '', 1).then((list) => {
+		this.type = type;
+		this.refreshList();
+	}
+
+	private refreshList() {
+		this.packageRegistryService.queryPackages(this.type, this.search, 1).then((list) => {
 			this.updateList(list);
 		}, (e) => {
 			this.logger.error(e);

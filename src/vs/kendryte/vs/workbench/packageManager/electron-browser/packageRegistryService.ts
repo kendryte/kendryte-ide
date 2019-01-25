@@ -1,4 +1,4 @@
-import { IPackageRegistryService, PACKAGE_MANAGER_LOG_CHANNEL_ID, PackageTypes } from 'vs/kendryte/vs/workbench/packageManager/common/type';
+import { IPackageRegistryService, PACKAGE_MANAGER_LOG_CHANNEL_ID } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { ACTIVE_GROUP, IEditorService, SIDE_GROUP } from 'vs/workbench/services/editor/common/editorService';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -12,7 +12,7 @@ import { parseExtendedJson } from 'vs/kendryte/vs/base/common/jsonComments';
 import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IFileCompressService } from 'vs/kendryte/vs/services/fileCompress/node/fileCompressService';
-import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME, ICompileInfo, ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME, CMakeProjectTypes, ICompileInfo, ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { resolve as resolveUrl } from 'url';
@@ -24,11 +24,15 @@ import { INotificationHandle, INotificationService, Severity } from 'vs/platform
 import { PACKAGE_MANAGER_DISTRIBUTE_URL } from 'vs/kendryte/vs/base/common/constants/remoteRegistry';
 import { INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import { Emitter } from 'vs/base/common/event';
 
 export class PackageRegistryService implements IPackageRegistryService {
 	_serviceBrand: any;
 	private cached: any = {};
 	private readonly logger: ILogService;
+
+	private readonly _onLocalPackageChange = new Emitter<void>();
+	public readonly onLocalPackageChange = this._onLocalPackageChange.event;
 
 	constructor(
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
@@ -65,6 +69,20 @@ export class PackageRegistryService implements IPackageRegistryService {
 		return ret;
 	}
 
+	async getPackageInfoLocal(packageType: CMakeProjectTypes, packageName: string): Promise<ILibraryProject> {
+		const list = await this.listLocal();
+		return list.find((pkg) => {
+			return pkg.name === packageName && pkg.type === packageType;
+		});
+	}
+
+	async getPackageInfoRegistry(packageType: CMakeProjectTypes, packageName: string): Promise<IRemotePackageInfo> {
+		let registry = await this.getRegistry(packageType);
+		return registry.find((pkg) => {
+			return pkg.name === packageName;
+		});
+	}
+
 	openBrowser(sideByside: boolean = false): TPromise<any> {
 		return this.editorService.openEditor(this.instantiationService.createInstance(PackageBrowserInput, null), null, sideByside ? SIDE_GROUP : ACTIVE_GROUP);
 	}
@@ -75,18 +93,19 @@ export class PackageRegistryService implements IPackageRegistryService {
 		});
 	}
 
-	registryUrl(type: PackageTypes) {
+	registryUrl(type: CMakeProjectTypes) {
 		switch (type) {
-			case PackageTypes.Library:
+			case CMakeProjectTypes.library:
 				return PACKAGE_LIST_LIBRARY;
-			case PackageTypes.Example:
+			case CMakeProjectTypes.executable:
+			case CMakeProjectTypes.example:
 				return PACKAGE_LIST_EXAMPLE;
 			default:
 				throw new TypeError('unknown type of registry: ' + type);
 		}
 	}
 
-	private async getRegistry(type: PackageTypes): Promise<IRemotePackageInfo[]> {
+	private async getRegistry(type: CMakeProjectTypes): Promise<IRemotePackageInfo[]> {
 		if (this.cached[type]) {
 			return this.cached[type];
 		}
@@ -116,14 +135,14 @@ export class PackageRegistryService implements IPackageRegistryService {
 		return this.cached[type] = registry;
 	}
 
-	public async queryPackageVersions(type: PackageTypes, packageName: string, cancel: CancellationToken = CancellationToken.None): TPromise<IRemotePackageInfo> {
+	public async queryPackageVersions(type: CMakeProjectTypes, packageName: string, cancel: CancellationToken = CancellationToken.None): TPromise<IRemotePackageInfo> {
 		const registry = await this.getRegistry(type);
 		return registry.find((item) => {
 			return item.name === packageName;
 		});
 	}
 
-	public async queryPackages(type: PackageTypes, search: string | RegExp): TPromise<IPager<IRemotePackageInfo>> {
+	public async queryPackages(type: CMakeProjectTypes, search: string | RegExp): TPromise<IPager<IRemotePackageInfo>> {
 		let registry = await this.getRegistry(type);
 
 		if (search) {
@@ -161,7 +180,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 			if (/^https?:\/\//.test(version)) {
 				await this.downloadFromAbsUrl(version, item, 'Unknown');
 			} else {
-				const pkgInfoReq = await this.queryPackages(PackageTypes.Library, new RegExp(escapeRegExpCharacters(item)));
+				const pkgInfoReq = await this.queryPackages(CMakeProjectTypes.library, new RegExp(escapeRegExpCharacters(item)));
 				if (pkgInfoReq.total < 1) {
 					throw new Error('No such package: ' + item);
 				}
@@ -210,10 +229,12 @@ export class PackageRegistryService implements IPackageRegistryService {
 		});
 	}
 
-	private findUrl(packageInfo: IRemotePackageInfo, version: string): string {
-		const itemToInstall = packageInfo.versions.find((obj) => {
-			return obj.versionName === version;
-		});
+	private findUrl(packageInfo: IRemotePackageInfo, version?: string): string {
+		const itemToInstall = version
+			? packageInfo.versions.find((obj) => {
+				return obj.versionName === version;
+			})
+			: packageInfo.versions[packageInfo.versions.length - 1];
 		if (!itemToInstall) {
 			this.logger.error('Unknown version.');
 			throw new Error('Unknown version: ' + version);
@@ -256,10 +277,11 @@ export class PackageRegistryService implements IPackageRegistryService {
 			this.logger.error('Cannot remove Temp dir: %s. This error is ignored', e.message);
 		});
 
+		this._onLocalPackageChange.fire();
 		return finalPath;
 	}
 
-	public async installDependency(packageInfo: IRemotePackageInfo, version: string): TPromise<void> {
+	public async installDependency(packageInfo: IRemotePackageInfo, version?: string): TPromise<void> {
 		this.logger.info('Install package: %s @ %s', packageInfo.name, version);
 
 		const downloadUrl = this.findUrl(packageInfo, version);
@@ -276,7 +298,9 @@ export class PackageRegistryService implements IPackageRegistryService {
 				'source': ['please set your .c files here', 'see https://github.com/kendryte/kendryte-ide/wiki/URL002'],
 			}, null, 4));
 		}
-		await this.nodeFileSystemService.editJsonFile(currentConfigFile, ['dependency', saveDirName], downloadUrl);
+		await this.nodeFileSystemService.editJsonFile(currentConfigFile, ['dependency', saveDirName], version || downloadUrl);
+
+		this._onLocalPackageChange.fire();
 	}
 
 	private async downloadFromAbsUrl(downloadUrl: string, defaultName: string, defaultVersion: string): Promise<string> {
@@ -329,5 +353,14 @@ export class PackageRegistryService implements IPackageRegistryService {
 		});
 
 		return saveDirName;
+	}
+
+	public async erasePackage(packageName: string) {
+		const packageSaveDir = resolvePath(this.nodePathService.workspaceFilePath(), CMAKE_LIBRARY_FOLDER_NAME, packageName);
+		this.logger.info(`  rimraf(${packageSaveDir})`);
+
+		await rimraf(packageSaveDir);
+
+		this._onLocalPackageChange.fire();
 	}
 }

@@ -18,11 +18,12 @@ import { renderOcticons } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
 import { DisplayPackageDetailAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/displayPackageDetailAction';
-import { IPackageRegistryService, PackageTypes } from 'vs/kendryte/vs/workbench/packageManager/common/type';
+import { IPackageRegistryService } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IWindowService, IWindowsService } from 'vs/platform/windows/common/windows';
 import { URI } from 'vs/base/common/uri';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
+import { CMakeProjectTypes } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 
 const TEMPLATE_ID = 'remote-packages';
 
@@ -205,7 +206,7 @@ class ListRenderer implements IPagedRenderer<IRemotePackageInfo, ITemplateData> 
 	}
 
 	private doInstall(currentElement: MExt & IRemotePackageInfo, selectedVersion: string) {
-		if (currentElement.type === PackageTypes.Example) {
+		if (currentElement.type === CMakeProjectTypes.example || currentElement.type === CMakeProjectTypes.executable) {
 			return this.windowsService.showOpenDialog(this.windowService.getCurrentWindowId(), {
 				title: 'Select download location',
 				properties: ['openDirectory'],

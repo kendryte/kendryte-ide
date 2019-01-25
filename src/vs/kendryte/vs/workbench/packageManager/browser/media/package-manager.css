@@ -78,3 +78,19 @@
 	padding: 4px 16px;
 	margin-right: 12px;
 }
+
+#package-manager .pm-navbar {
+	display: flex;
+	flex-direction: row;
+}
+
+#package-manager .pm-navbar > .search {
+	width: 240px;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+}
+
+#package-manager .pm-navbar > .navbar {
+	flex-grow: 1;
+}
