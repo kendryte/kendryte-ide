@@ -1,0 +1,22 @@
+.package-config-list .item {
+	display: flex;
+	flex-direction: row;
+}
+
+.package-config-list .item > .name {
+	padding-left: 5px;
+}
+
+.package-config-list .item > .sp {
+	padding: 0 2px;
+}
+
+.package-config-list .item > .value {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.package-config-list .item > .edit {
+	padding-right: 5px;
+}

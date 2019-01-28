@@ -2,12 +2,12 @@ import { IWorkbenchContribution } from 'vs/workbench/common/contributions';
 import { localize } from 'vs/nls';
 import {
 	PACKAGE_MANAGER_VIEW_CONTAINER,
+	PACKAGE_MANAGER_VIEW_ID_CONFIG_LIST,
 	PACKAGE_MANAGER_VIEW_ID_LOCAL_INSTALLED_LIST,
-	PACKAGE_MANAGER_VIEW_ID_LOCAL_TREE,
 } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 import { IViewDescriptor, ViewsRegistry } from 'vs/workbench/common/views';
 import { LocalPackagesListView } from 'vs/kendryte/vs/workbench/packageManager/browser/viewletPanels/localPackagesListView';
-import { LocalPackagesTreeView } from 'vs/kendryte/vs/workbench/packageManager/browser/viewletPanels/localPackagesTreeView';
+import { PackageConfigView } from 'vs/kendryte/vs/workbench/packageManager/browser/viewletPanels/packageConfigView';
 
 export class PackageManagerViewletViewsContribution implements IWorkbenchContribution {
 	constructor() {
@@ -23,16 +23,17 @@ export class PackageManagerViewletViewsContribution implements IWorkbenchContrib
 			name: localize('package list', 'Package List'),
 			container: PACKAGE_MANAGER_VIEW_CONTAINER,
 			ctor: LocalPackagesListView,
-			weight: 1,
+			weight: 2,
+			order: 1,
 		};
 	}
 
 	private createTreeViewDescriptor(): IViewDescriptor {
 		return {
-			id: PACKAGE_MANAGER_VIEW_ID_LOCAL_TREE,
-			name: localize('dependency tree', 'Dependency Tree'),
+			id: PACKAGE_MANAGER_VIEW_ID_CONFIG_LIST,
+			name: localize('config', 'Config'),
 			container: PACKAGE_MANAGER_VIEW_CONTAINER,
-			ctor: LocalPackagesTreeView,
+			ctor: PackageConfigView,
 			weight: 1,
 		};
 	}

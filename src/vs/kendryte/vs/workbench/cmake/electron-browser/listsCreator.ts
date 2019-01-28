@@ -1,4 +1,7 @@
-import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME, CMakeProjectTypes, ICompileInfo as ICompileInfoBase } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import {
+	CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME, CMakeProjectTypes, ICompileInfo as ICompileInfoBase,
+	ILibraryProject,
+} from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IJSONResult, INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
@@ -197,10 +200,10 @@ export class CMakeListsCreator {
 		});
 	}
 
-	private findAllIncludes(parent: ICompileInfo): string[] {
-		return this.walkConcatTree(parent, 'treeIncludes', (current: ICompileInfo) => {
-			if (current.include) {
-				current.absoluteIncludes = current.include.map((file) => {
+	private findAllIncludes(parent: ICompileInfo) {
+		this.walkConcatTree(parent, 'treeIncludes', (current: ICompileInfo) => {
+			if (current.hasOwnProperty('include') && (current as ILibraryProject).include) {
+				current.absoluteIncludes = (current as ILibraryProject).include.map((file) => {
 					return resolvePath(current.fsPath, file);
 				});
 			} else {
@@ -402,14 +405,25 @@ export class CMakeListsCreator {
 	}
 
 	private includeDirs(current: ICompileInfo) {
+		const ret: string[] = [];
 		if (current.treeIncludes.length > 0) {
-			return [
+			ret.push(
 				'## add include from self and dependency',
 				`include_directories(\n  ${this.spaceArray(this.resolveAll(current.fsPath, current.treeIncludes))}\n)`,
-			];
+			);
 		} else {
-			return ['## there is no dependency include dirs'];
+			ret.push('## there is no dependency include dirs');
 		}
+
+		if (current.header) {
+			ret.push(
+				'## add headers from self',
+				`include_directories(\n  ${this.spaceArray(this.resolveAll(current.fsPath, current.header))}\n)`,
+			);
+		} else {
+			ret.push('## there is no headers');
+		}
+		return ret;
 	}
 
 	private sourceFiles(current: ICompileInfo) {

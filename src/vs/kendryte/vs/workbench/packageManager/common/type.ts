@@ -15,7 +15,7 @@ export const PACKAGE_MANAGER_VIEWLET_ID = 'workbench.view.package-manager';
 export const PACKAGE_MANAGER_TITLE = localize('packageManager', 'Package Manager');
 
 export const PACKAGE_MANAGER_VIEW_ID_LOCAL_INSTALLED_LIST = 'packageManager.local-install-list';
-export const PACKAGE_MANAGER_VIEW_ID_LOCAL_TREE = 'packageManager.local-tree';
+export const PACKAGE_MANAGER_VIEW_ID_CONFIG_LIST = 'packageManager.config';
 export const PACKAGE_MANAGER_VIEW_CONTAINER: ViewContainer = Registry.as<IViewContainersRegistry>(ViewContainerExtensions.ViewContainersRegistry)
 	.registerViewContainer(PACKAGE_MANAGER_VIEWLET_ID);
 

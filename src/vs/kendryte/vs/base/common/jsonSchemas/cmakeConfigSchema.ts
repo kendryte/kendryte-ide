@@ -18,7 +18,7 @@ export interface ICommonProject {
 	homepage?: string;
 	dependency: { [id: string]: string };
 	properties: { [id: string]: string };
-	include: string[];
+	header: string[];
 	source: string[];
 	extraList: string;
 	c_flags: string[];
@@ -38,6 +38,7 @@ export enum CMakeProjectTypes {
 
 export interface ILibraryProject extends ICommonProject {
 	type: CMakeProjectTypes.library;
+	include: string[];
 	exampleSource: string[];
 }
 
@@ -58,6 +59,10 @@ const libType: IJSONSchemaMap = {
 		type: 'string',
 		enum: [CMakeProjectTypes.library],
 		default: CMakeProjectTypes.library,
+	},
+	include: {
+		...SchemaArray('List of include dir path, will expose to user, relative to current json file.', 'string'),
+		default: ['include'],
 	},
 	exampleSource: {
 		...SchemaArray('Source file to compile, can use "*" to match file.', 'string'),
@@ -88,9 +93,9 @@ const baseSchemaProps: IJSONSchemaMap = {
 		...SchemaArray('Source file to compile, can use "*" to match file.', 'string'),
 		default: ['src/*.c', 'src/*.cpp', 'src/*.h'],
 	},
-	include: {
-		...SchemaArray('List of include dir path, relative to current json file.', 'string'),
-		default: ['include'],
+	header: {
+		...SchemaArray('List of header files dir path, relative to current json file.', 'string'),
+		default: [],
 	},
 	extraList: {
 		type: 'string',
