@@ -1,8 +1,11 @@
 import { createConnection, Socket } from 'net';
 import { ILogService } from 'vs/platform/log/common/log';
 
+const isIpPort = /:[0-9]+$/;
+
 export function connectToHost(host: string, log: ILogService): Socket {
-	if (host.includes(':')) {
+	host = host.trim();
+	if (isIpPort.test(host)) {
 		const sp = host.split(':');
 		log.info('Connect to ip host: %s, port: %s.', sp[0], sp[1]);
 		return createConnection(parseInt(sp[1]), sp[0]);
