@@ -432,7 +432,7 @@ export class DownloadTask extends Disposable {
 
 	private updateMessage(message: string) {
 		this.message = message;
-		this.logger.debug('# message = ' + message);
+		this.logger.info('[DOWNLOAD] %s', message);
 		this.getProgress().then(p => this._progressEvent.fire(p));
 	}
 

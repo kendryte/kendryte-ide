@@ -73,7 +73,7 @@ class MainProcessRelaunchService implements IRelaunchMainService {
 
 		const host = process.env.KENDRYTE_IDE_UPDATER_PIPE || '';
 		this.logService.info('connection to updater socket: ' + host);
-		const ipc = this.socket = connectToHost(host);
+		const ipc = this.socket = connectToHost(host, this.logService);
 		ipc.on('error', e => {
 			this.logService.error('MainProcessRelaunchService: updater server error:\n' + e.stack);
 			ipc.end();
