@@ -1,5 +1,8 @@
 import {
-	CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME, CMakeProjectTypes, ICompileInfo as ICompileInfoBase,
+	CMAKE_CONFIG_FILE_NAME,
+	CMAKE_LIBRARY_FOLDER_NAME,
+	CMakeProjectTypes,
+	ICompileInfo as ICompileInfoBase,
 	ILibraryProject,
 } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { ILogService } from 'vs/platform/log/common/log';
@@ -23,6 +26,8 @@ interface CreatorCachedData {
 	absoluteIncludes: string[];
 	treeIncludes: string[];
 	linkerScripts: string[];
+	absolutePrebuilt: string;
+	hasSourceCode: boolean;
 	extraListData: string;
 	definitionsWanted: DefineValue[];
 }
@@ -92,7 +97,7 @@ export class CMakeListsCreator {
 		]);
 	}
 
-	public walkList() {
+	public walkList(): ICompileInfo[] {
 		return Array.from(Object.entries(this.treeCache)).filter(([k, v]) => {
 			return k.length > 0;
 		}).map(([k, v]) => {
@@ -153,7 +158,19 @@ export class CMakeListsCreator {
 			this.treeCache[current.name] = current;
 		}
 
+		if (!current.output) {
+			current.output = 'build';
+		}
+
 		return this.treeCache[lib] = current;
+	}
+
+	private walkChildren(current: ICompileInfo, cb: (children: ICompileInfo) => void) {
+		if (current.children) {
+			for (const child of current.children) {
+				cb(child);
+			}
+		}
 	}
 
 	private walkConcatTree<K extends keyof CreatorCachedData, T extends CreatorCachedData[K]>(
@@ -173,17 +190,15 @@ export class CMakeListsCreator {
 
 		walkCache.push(current.name);
 		const results: T = sliceMap(current);
-		if (current.children) {
-			for (const child of current.children) {
-				if (walkCache.includes(child.name)) {
-					continue;
-				}
-				walkCache.push(child.name);
-				const result = this.walkConcatTree(child, storeKey, sliceMap, rootToLeaf, concat, walkCache);
-
-				concat(results, result);
+		this.walkChildren(current, (child) => {
+			if (walkCache.includes(child.name)) {
+				return;
 			}
-		}
+			walkCache.push(child.name);
+			const result = this.walkConcatTree(child, storeKey, sliceMap, rootToLeaf, concat, walkCache);
+
+			concat(results, result);
+		});
 		if (rootToLeaf) {
 			concat(results, sliceMap(current));
 		}
@@ -258,12 +273,38 @@ export class CMakeListsCreator {
 		this.logger.info('resolving constant definitions...');
 		this.findAllConstants(this.tree);
 
+		this.logger.info('resolving prebuilts...');
+		for (const item of this.walkList()) {
+			if (item.prebuilt) {
+				item.absolutePrebuilt = resolvePath(item.fsPath, item.prebuilt);
+			} else {
+				delete item.absolutePrebuilt;
+			}
+		}
+
 		for (const item of this.walkList()) {
 			this.logger.info('resolving user custom cmake files...');
 			if (item.extraList) {
 				item.extraListData = await this.nodeFileSystemService.readFile(resolve(item.fsPath, item.extraList));
 			} else {
 				item.extraListData = '';
+			}
+		}
+
+		for (const item of this.walkList()) {
+			item.hasSourceCode = item.source && item.source.length > 0;
+			if (item.type === CMakeProjectTypes.library) {
+				if (!item.hasSourceCode && !item.prebuilt) {
+					this.logger.error('Library project has no source file or prebuilt file.');
+					throw new Error(`Cannot build library: ${item.name} - no source file.`);
+				}
+				if (item.hasSourceCode && item.prebuilt) {
+					this.logger.error('Library project has both source file or prebuilt file.');
+					throw new Error(`Cannot build library: ${item.name} - source file confusing.`);
+				}
+			} else if (!item.hasSourceCode) {
+				this.logger.error('Executable project has no source file.');
+				throw new Error(`Cannot build executable: ${item.name} - no source file.`);
 			}
 		}
 
@@ -306,7 +347,7 @@ export class CMakeListsCreator {
 
 		content.push(...this.setProperties(current));
 
-		content.push(...this.linkSystemBase());
+		content.push(...this.linkSystemBase(current));
 		if (isRoot) {
 			content.push(...this.linkSubProjects());
 		}
@@ -335,8 +376,8 @@ export class CMakeListsCreator {
 		});
 	}
 
-	private spaceArray(arr: string[]) {
-		return arr.map(e => JSON.stringify(CMAKE_CWD + e)).join('\n  ');
+	private spaceArray(arr: string[], sp: string = '\n  ') {
+		return arr.map(e => JSON.stringify(CMAKE_CWD + e)).join(sp);
 	}
 
 	private prepare(current: ICompileInfo) {
@@ -448,8 +489,12 @@ export class CMakeListsCreator {
 		});
 	}
 
-	private linkSystemBase() {
-		return ['target_link_libraries(${PROJECT_NAME} -Wl,--start-group gcc m c -Wl,--end-group)'];
+	private linkSystemBase(current: ICompileInfo) {
+		if (current.hasSourceCode) {
+			return ['target_link_libraries(${PROJECT_NAME} PUBLIC -Wl,--start-group gcc m c -Wl,--end-group)'];
+		} else {
+			return [];
+		}
 	}
 
 	private linkSubProjects() {
@@ -458,7 +503,7 @@ export class CMakeListsCreator {
 		});
 		return [
 			'## dependencies link',
-			'target_link_libraries(${PROJECT_NAME}',
+			'target_link_libraries(${PROJECT_NAME} PUBLIC',
 			'  -Wl,--start-group',
 			...names,
 			'  -Wl,--end-group',
@@ -481,11 +526,22 @@ export class CMakeListsCreator {
 	}
 
 	private createTarget(current: ICompileInfo) {
-		const verb = current.type === CMakeProjectTypes.library ? 'add_library' : 'add_executable';
-		return [
-			'## final create executable or library',
-			verb + '(${PROJECT_NAME} ${SOURCE_FILES})',
-		];
+		const ret: string[] = [];
+		if (current.type === CMakeProjectTypes.library) {
+			ret.push(`## final create ${current.name} library`);
+			if (current.hasSourceCode) {
+				ret.push('add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})');
+			} else {
+				ret.push('add_library(${PROJECT_NAME} STATIC IMPORTED)');
+				ret.push('set_property(TARGET ${PROJECT_NAME} PROPERTY IMPORTED_LOCATION');
+				ret.push('    ' + relativePath(current.fsPath, current.absolutePrebuilt));
+				ret.push(')');
+			}
+		} else {
+			ret.push(`## final create ${current.name} executable`);
+			ret.push('add_executable(${PROJECT_NAME} ${SOURCE_FILES})');
+		}
+		return ret;
 	}
 
 	private setProperties(current: ICompileInfo) {

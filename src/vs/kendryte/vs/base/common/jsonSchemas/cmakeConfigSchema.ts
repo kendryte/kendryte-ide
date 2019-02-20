@@ -16,6 +16,7 @@ export interface ICommonProject {
 	name: string;
 	version: string;
 	homepage?: string;
+	output?: string;
 	dependency: { [id: string]: string };
 	properties: { [id: string]: string };
 	header: string[];
@@ -26,7 +27,8 @@ export interface ICommonProject {
 	c_cpp_flags: string[];
 	link_flags: string[];
 	ld_file: string;
-	definitions: { [id: string]: string | number }
+	definitions: { [id: string]: string | number };
+	prebuilt: string;
 	entry: string;
 }
 
@@ -115,6 +117,16 @@ const baseSchemaProps: IJSONSchemaMap = {
 		type: 'string',
 		default: 'src/main.c',
 	},
+	output: {
+		type: 'string',
+		description: 'Compile output directory, defaults to "build", you should not edit this.',
+		default: 'build',
+	},
+	prebuilt: {
+		type: 'string',
+		description: 'Set prebuilt file for imported library.',
+		default: [],
+	},
 };
 
 const executableSchema: IJSONSchema = {
@@ -143,7 +155,7 @@ const cmakeSchema: IJSONSchema = {
 	additionalProperties: false,
 	type: 'object',
 	title: localize('cmake', 'CMake'),
-	required: ['name', 'type', 'version', 'source'],
+	required: ['name', 'type', 'version'],
 	default: { name: '', version: '1.0.0', type: CMakeProjectTypes.executable, dependency: {}, include: [], source: [] },
 	properties: {
 		...baseSchemaProps,
