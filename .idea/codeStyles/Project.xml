@@ -16,7 +16,7 @@
       <option name="HTML_ALIGN_ATTRIBUTES" value="false" />
       <option name="HTML_DO_NOT_INDENT_CHILDREN_OF" value="html,body,thead,tbody,tfoot,script,style" />
     </HTMLCodeStyleSettings>
-    <JSCodeStyleSettings>
+    <JSCodeStyleSettings version="0">
       <option name="FORCE_SEMICOLON_STYLE" value="true" />
       <option name="USE_PUBLIC_MODIFIER" value="true" />
       <option name="USE_DOUBLE_QUOTES" value="false" />
@@ -27,7 +27,7 @@
       <option name="SPACES_WITHIN_OBJECT_TYPE_BRACES" value="false" />
       <option name="BLACKLIST_IMPORTS" value="rxjs" />
     </JSCodeStyleSettings>
-    <TypeScriptCodeStyleSettings>
+    <TypeScriptCodeStyleSettings version="0">
       <option name="FORCE_SEMICOLON_STYLE" value="true" />
       <option name="USE_PUBLIC_MODIFIER" value="true" />
       <option name="USE_DOUBLE_QUOTES" value="false" />

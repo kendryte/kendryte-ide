@@ -530,11 +530,11 @@ export class CMakeListsCreator {
 		if (current.type === CMakeProjectTypes.library) {
 			ret.push(`## final create ${current.name} library`);
 			if (current.hasSourceCode) {
-				ret.push('add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})');
+				ret.push('add_library(${PROJECT_NAME} SHARED STATIC ${SOURCE_FILES})');
 			} else {
-				ret.push('add_library(${PROJECT_NAME} STATIC IMPORTED)');
+				ret.push('add_library(${PROJECT_NAME} SHARED STATIC IMPORTED GLOBAL)');
 				ret.push('set_property(TARGET ${PROJECT_NAME} PROPERTY IMPORTED_LOCATION');
-				ret.push('    ' + relativePath(current.fsPath, current.absolutePrebuilt));
+				ret.push('    ' + CMAKE_CWD + relativePath(current.fsPath, current.absolutePrebuilt));
 				ret.push(')');
 			}
 		} else {
