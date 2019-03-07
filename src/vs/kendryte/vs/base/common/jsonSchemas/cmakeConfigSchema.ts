@@ -11,6 +11,7 @@ const cmakeSchemaIdExe = cmakeSchemaId + '/exe';
 const cmakeSchemaIdLib = cmakeSchemaId + '/lib';
 
 export type ICompileInfo = ILibraryProject | IExecutableProject;
+export type ICompileInfoPossibleKeys = keyof ILibraryProject | keyof IExecutableProject;
 
 export interface ICommonProject {
 	name: string;
@@ -28,24 +29,25 @@ export interface ICommonProject {
 	link_flags: string[];
 	ld_file: string;
 	definitions: { [id: string]: string | number };
-	prebuilt: string;
-	entry: string;
 }
 
 export enum CMakeProjectTypes {
 	executable = 'executable',
 	library = 'library',
-	example = 'example',
+	example = 'example', // virtual type
+	prebuiltLibrary = 'prebuiltLibrary', // virtual type
 }
 
 export interface ILibraryProject extends ICommonProject {
 	type: CMakeProjectTypes.library;
 	include: string[];
 	exampleSource: string[];
+	prebuilt: string;
 }
 
 export interface IExecutableProject extends ICommonProject {
 	type: CMakeProjectTypes.executable;
+	entry: string;
 }
 
 const exeType: IJSONSchemaMap = {

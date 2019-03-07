@@ -146,6 +146,9 @@ class NodeFileSystemService implements INodeFileSystemService {
 		const { tabSize, insertSpaces } = model.getOptions();
 		const eol = model.getEOL();
 
+		if (value === null) {
+			value = undefined;
+		}
 		const edit = setProperty(model.getValue(), Array.isArray(key) ? key : [key], value, { tabSize, insertSpaces, eol });
 		const changed = this.applyEditToBuffer(edit[0], model);
 		if (changed) {

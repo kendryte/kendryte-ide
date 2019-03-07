@@ -44,6 +44,10 @@ import 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeContribution';
 // Package Manager
 import 'vs/kendryte/vs/workbench/packageManager/browser/actionsContribution';
 import 'vs/kendryte/vs/workbench/packageManager/electron-browser/mainPanelContribution';
+// open forum
+import 'vs/kendryte/vs/workbench/webpageLink/electron-browser/registerForumContribution';
+// kendryte-package-json editor
+import 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/kendryteJsonContribution';
 // OpenOCD
 import 'vs/kendryte/vs/services/openocd/electron-browser/actionConfigContribution';
 import 'vs/kendryte/vs/services/openocd/electron-browser/openOCDService';

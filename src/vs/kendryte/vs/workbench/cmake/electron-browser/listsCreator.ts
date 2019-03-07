@@ -13,8 +13,13 @@ import { CONFIG_KEY_BUILD_VERBOSE } from 'vs/kendryte/vs/base/common/configKeys'
 import { relativePath, resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { normalizeArray } from 'vs/kendryte/vs/base/common/normalizeArray';
 import { resolve } from 'path';
+import { async as fastGlobAsync } from 'fast-glob';
 
 export const CMAKE_LIST_GENERATED_WARNING = '# [NEVER REMOVE THIS LINE] WARNING: this file is generated, please edit ' + CMAKE_CONFIG_FILE_NAME + ' file instead.';
+const iternalSourceCodeFiles = [
+	'config/fpioa-config.c',
+	'config/fpioa-config.h',
+];
 
 interface DefineValue {
 	id: string;
@@ -30,6 +35,7 @@ interface CreatorCachedData {
 	hasSourceCode: boolean;
 	extraListData: string;
 	definitionsWanted: DefineValue[];
+	matchingSourceFiles: string[];
 }
 
 type ICompileInfo = ICompileInfoBase & CreatorCachedData & {
@@ -217,14 +223,20 @@ export class CMakeListsCreator {
 
 	private findAllIncludes(parent: ICompileInfo) {
 		this.walkConcatTree(parent, 'treeIncludes', (current: ICompileInfo) => {
-			if (current.hasOwnProperty('include') && (current as ILibraryProject).include) {
-				current.absoluteIncludes = (current as ILibraryProject).include.map((file) => {
-					return resolvePath(current.fsPath, file);
-				});
-			} else {
-				current.absoluteIncludes = [];
+			const currentLib = (current as ILibraryProject);
+			current.absoluteIncludes = [];
+			if (currentLib.include) {
+				for (const file of currentLib.include) {
+					current.absoluteIncludes.push(resolvePath(current.fsPath, file));
+				}
 			}
-			return current.absoluteIncludes.slice();
+			const exposed = current.absoluteIncludes.slice();
+			if (currentLib.header) {
+				for (const file of currentLib.header) {
+					current.absoluteIncludes.push(resolvePath(current.fsPath, file));
+				}
+			}
+			return exposed;
 		});
 	}
 
@@ -275,8 +287,8 @@ export class CMakeListsCreator {
 
 		this.logger.info('resolving prebuilts...');
 		for (const item of this.walkList()) {
-			if (item.prebuilt) {
-				item.absolutePrebuilt = resolvePath(item.fsPath, item.prebuilt);
+			if (item.hasOwnProperty('prebuilt')) {
+				item.absolutePrebuilt = resolvePath(item.fsPath, (item as ILibraryProject).prebuilt);
 			} else {
 				delete item.absolutePrebuilt;
 			}
@@ -306,6 +318,10 @@ export class CMakeListsCreator {
 				this.logger.error('Executable project has no source file.');
 				throw new Error(`Cannot build executable: ${item.name} - no source file.`);
 			}
+
+			if (item.hasSourceCode) {
+				await this.matchSourceCode(item);
+			}
 		}
 
 		for (const item of this.walkList()) {
@@ -327,6 +343,7 @@ export class CMakeListsCreator {
 		content.push(...this.project());
 
 		content.push(...this.includeDirs(current));
+
 		content.push(...this.sourceFiles(current));
 
 		if (isRoot) {
@@ -447,6 +464,14 @@ export class CMakeListsCreator {
 
 	private includeDirs(current: ICompileInfo) {
 		const ret: string[] = [];
+		if (current.header) {
+			ret.push(
+				'## add headers from self',
+				`include_directories(\n  ${this.spaceArray(this.resolveAll(current.fsPath, current.absoluteIncludes))}\n)`,
+			);
+		} else {
+			ret.push('## there is no headers from self');
+		}
 		if (current.treeIncludes.length > 0) {
 			ret.push(
 				'## add include from self and dependency',
@@ -456,30 +481,20 @@ export class CMakeListsCreator {
 			ret.push('## there is no dependency include dirs');
 		}
 
-		if (current.header) {
-			ret.push(
-				'## add headers from self',
-				`include_directories(\n  ${this.spaceArray(this.resolveAll(current.fsPath, current.header))}\n)`,
-			);
-		} else {
-			ret.push('## there is no headers');
-		}
 		return ret;
 	}
 
 	private sourceFiles(current: ICompileInfo) {
-		const internalSource = [
-			'config/fpioa-config.c',
-			'config/fpioa-config.h',
-		];
-		const content = [
-			'## add source from config json',
-			`add_source_files(\n  ${this.spaceArray(internalSource)}\n)`,
-		];
-		if (current.source && current.source.length > 0) {
-			content.push(`add_source_files(\n  ${this.spaceArray(current.source)}\n)`);
+		if (current.hasSourceCode) {
+			return [
+				`## add source from config json (${current.matchingSourceFiles.length} files matched)`,
+				...current.matchingSourceFiles.map((file) => {
+					return `add_source_file(${file})`;
+				}),
+			];
+		} else {
+			return ['### project have no source code (and should not have)'];
 		}
-		return content;
 	}
 
 	private addSubProjects() {
@@ -578,5 +593,48 @@ export class CMakeListsCreator {
 		} else {
 			return [];
 		}
+	}
+
+	private async matchSourceCode(item: ICompileInfo) {
+		const sourceToMatch = [].concat(iternalSourceCodeFiles, item.source)
+			.map((fp) => {
+				// remove absolute and empty entries
+				return fp.replace(/^\.*[\/\\]*/, '').trim();
+			}).filter(e => e.length > 0);
+
+		const ignorePattern = [
+			(item.output || 'build') + '/**',
+			CMAKE_LIBRARY_FOLDER_NAME + '/**',
+			'.*',
+			'.*/**',
+		];
+
+		this.logger.info(`Source to match ${sourceToMatch.length}:`);
+		sourceToMatch.forEach((line) => {
+			this.logger.info(` + ${line}`);
+		});
+		ignorePattern.forEach((line) => {
+			this.logger.info(` - ${line}`);
+		});
+		this.logger.info(`from directory: ${item.fsPath}`);
+		const allSourceFiles = await fastGlobAsync(sourceToMatch, {
+			cwd: item.fsPath,
+			ignore: ignorePattern,
+		}).catch((e) => {
+			this.logger.error('Failed to search files:');
+			this.logger.error(e.message);
+			return [];
+		});
+		this.logger.debug('file array: ', allSourceFiles);
+		this.logger.info(`Matched source file count: ${allSourceFiles.length}.`);
+
+		if (allSourceFiles.length === 0) {
+			throw new Error('No source file matched for compile.');
+		}
+
+		item.matchingSourceFiles = allSourceFiles.map((item) => {
+			return item.toString();
+		});
+		console.log(item.matchingSourceFiles);
 	}
 }

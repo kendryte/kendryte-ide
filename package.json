@@ -1,8 +1,8 @@
 {
   "name": "code-oss-dev",
-  "version": "1.30.2",
+  "version": "1.30.3",
   "distro": "573bd4fedabe1c0bcebeb1e683109079ae560312",
-  "patchVersion": 20181219.210116,
+  "patchVersion": "auto set by pipeline",
   "author": {
     "name": "Microsoft Corporation"
   },
@@ -37,6 +37,7 @@
     "decompress-targz": "^4.1.1",
     "decompress-tarxz": "^2.1.1",
     "electron-store": "^2.0.0",
+    "fast-glob": "^2.2.6",
     "fast-plist": "0.1.2",
     "gc-signals": "^0.0.1",
     "getmac": "1.4.1",
@@ -99,9 +100,9 @@
     "express": "^4.13.1",
     "glob": "^5.0.13",
     "gulp": "^3.8.9",
-    "gulp-bom": "^2.0.0",
     "gulp-atom-electron": "^1.19.2",
     "gulp-azure-storage": "^0.8.2",
+    "gulp-bom": "^2.0.0",
     "gulp-buffer": "0.0.2",
     "gulp-concat": "^2.6.0",
     "gulp-cssnano": "^2.1.0",
