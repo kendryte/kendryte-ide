@@ -24,13 +24,13 @@ enum State {
 
 export function loadIdFromResumeFile(target: string, logger?: ILogService): Promise<DownloadID> {
 	const resumeFile = target + '.partDownloadInfo';
-	logger.debug('check resume file at ' + resumeFile + '.');
+	logger.info('check resume file at ' + resumeFile + '.');
 	return wrapActionWithFileLock(resumeFile, logger, async () => {
 		if (!await exists(resumeFile)) {
-			logger.debug('  resume file not exists.');
+			logger.info('  resume file not exists.');
 			return null;
 		}
-		logger.debug('  resume file exists.');
+		logger.info('  resume file exists.');
 		const partInfo = JSON.parse(await readFile(resumeFile, 'utf8'));
 		return createDownloadId(partInfo.id);
 	});
@@ -69,8 +69,8 @@ export class DownloadTask extends Disposable {
 		this.logServices = [defaultConsoleLogger];
 		this.logger = new MultiplexLogService(this.logServices); // NEVER dispose this !!!
 		this._register(toDisposable(() => {
-			// defaultConsoleLogger.debug('# some logger disposing #');
-			// this.logger.debug('# this download task is disposing. no more log display from current task. #');
+			// defaultConsoleLogger.info('# some logger disposing #');
+			// this.logger.info('# this download task is disposing. no more log display from current task. #');
 			this.logServices.length = 0;
 			this.logServices.push(defaultConsoleLogger);
 		}));
@@ -109,9 +109,9 @@ export class DownloadTask extends Disposable {
 	private preparePromise: Promise<void>;
 
 	prepare() {
-		this.logger.debug('Prepare Download:');
-		this.logger.debug('  From - ' + this.url);
-		this.logger.debug('  To   - ' + this.target);
+		this.logger.info('Prepare Download:');
+		this.logger.info('  From - ' + this.url);
+		this.logger.info('  To   - ' + this.target);
 
 		if (this.state !== State.INIT) {
 			return this.preparePromise;
@@ -140,10 +140,10 @@ export class DownloadTask extends Disposable {
 				this.logger.warn('start without prepare');
 				return this.prepare().then(() => this.start());
 			case State.PREPARE:
-				this.logger.debug('delay start after prepare');
+				this.logger.info('delay start after prepare');
 				return this.preparePromise.then(() => this.start());
 			case State.PAUSE:
-				this.logger.debug('_realStart');
+				this.logger.info('_realStart');
 				this._realStart();
 				return;
 			case State.ERROR:
@@ -151,7 +151,7 @@ export class DownloadTask extends Disposable {
 				return Promise.reject(new Error('download already failed.'));
 		}
 
-		this.logger.debug('called start() when status =', State[this.state]);
+		this.logger.info('called start() when status =', State[this.state]);
 	}
 
 	private _realStart() {
@@ -193,7 +193,7 @@ export class DownloadTask extends Disposable {
 
 	private _handleFireSuccess() {
 		if (this.state !== State.OK && this.state !== State.ERROR) {
-			this.logger.debug('this.state = State.OK');
+			this.logger.info('this.state = State.OK');
 			this.updateMessage('download complete!');
 			this.state = State.OK;
 			setImmediate(() => {
@@ -214,47 +214,64 @@ export class DownloadTask extends Disposable {
 	private async _lockedStart() {
 		const partInfo: IDownloadTargetInfo = this.partInfo;
 
-		if (!await fileExists(this.target)) {
-			await writeFile(this.target, Buffer.alloc(0), {});
-		}
+		const requestHeaders = partInfo.total ? {
+			'range': `bytes=${partInfo.current}-${partInfo.total}`,
+			'if-range': partInfo.check,
+		} : {};
+
+		// if (partInfo.etag) {
+		// 	requestHeaders['if-none-match'] = partInfo.etag;
+		// } else if (partInfo.lastModified) {
+		// 	requestHeaders['if-modified-since'] = partInfo.lastModified;
+		// }
+
+		this.logger.info('requestHeaders:', requestHeaders);
 
 		this.updateMessage('downloading...');
 		const res = await this.requestService.request({
 			type: 'GET',
 			url: this.url,
-			headers: partInfo.total ? {
-				'range': `bytes=${partInfo.current}-${partInfo.total}`,
-				'if-range': partInfo.check,
-			} : {},
+			headers: requestHeaders,
 			followRedirects: 3,
 		}, this._cancel.token);
 
 		if (res.res.statusCode === 200) { // success, but not part response
 			this.logger.warn('success, but not part response (200).');
-			this.logger.debug('headers:', res.res.headers);
+			this.logger.info('headers:', res.res.headers);
 			partInfo.current = 0;
+
 			this.triggerCurrentChange();
+
+			this.logger.info('truncate file with w flag...');
+			this.fd = createWriteStream(this.target, {
+				flags: 'w',
+				autoClose: true,
+			});
 		} else if (res.res.statusCode === 206) {
-			this.logger.debug('success, 206.');
-			this.logger.debug('headers:', res.res.headers);
-		} else { // faield response
+			this.logger.info('success, 206.');
+			this.logger.info('headers:', res.res.headers);
+
+			this.logger.info('append file with a flag...');
+			this.fd = createWriteStream(this.target, {
+				flags: 'a',
+				autoClose: true,
+				start: partInfo.current,
+			});
+		} else { // failed response
 			throw new Error(`HTTP: ${res.res.statusCode} HEAD ${this.url}`);
 		}
 
-		this.fd = createWriteStream(this.target, {
-			flags: 'r+',
-			autoClose: true,
-			start: partInfo.current,
-		});
+		let sizeCount = 0;
 		this.fd.once('close', () => {
-			this.logger.debug('fd has close');
+			this.logger.info('fd has close (%s bytes write out)', sizeCount);
 			delete this.fd;
 		});
 
-		this.logger.debug('start piping');
+		this.logger.info('start piping (start at %s)', partInfo.current);
 		res.stream.pipe(this.fd);
 
 		res.stream.on('data', (buff: Buffer) => {
+			sizeCount += buff.length;
 			partInfo.current += buff.length;
 		});
 
@@ -265,7 +282,7 @@ export class DownloadTask extends Disposable {
 
 	flush(): Thenable<void> {
 		if (this._cancel.token.isCancellationRequested) {
-			this.logger.debug('canceled, not flush');
+			this.logger.info('canceled, not flush');
 			return Promise.resolve();
 		}
 
@@ -276,13 +293,13 @@ export class DownloadTask extends Disposable {
 	}
 
 	private async _stop() {
-		this.logger.debug('called _stop');
+		this.logger.info('called _stop');
 		await this.flush();
 		this._cancel.cancel();
 	}
 
 	private async _destroy() {
-		this.logger.debug('called _destroy');
+		this.logger.info('called _destroy');
 		this._cancel.cancel();
 		await unlink(this.resumeFile);
 		await unlink(this.target);
@@ -330,12 +347,12 @@ export class DownloadTask extends Disposable {
 			followRedirects: 3,
 		}, this._cancel.token);
 		this._parsePartInfoFromResponse(resp);
-		this.logger.debug(`flush: [${this.resumeFile}] ${JSON.stringify(this.partInfo, null, 2)}`);
+		this.logger.info(`flush: [${this.resumeFile}] ${JSON.stringify(this.partInfo, null, 2)}`);
 		await this.flush();
 	}
 
 	private _parsePartInfoFromResponse(resp: IRequestContext) {
-		this.logger.debug('response:', resp.res.statusCode, resp.res.headers);
+		this.logger.info('response:', resp.res.statusCode, resp.res.headers);
 		const partInfo = this.partInfo;
 		if (resp.res.statusCode !== 200) {
 			this.logger.warn('request HEAD got error: ', resp.res.statusCode);
@@ -355,13 +372,13 @@ export class DownloadTask extends Disposable {
 		partInfo.etag = getFirstHeader(resp.res.headers, 'etag') || '';
 		partInfo.lastModified = getFirstHeader(resp.res.headers, 'last-modified') || '';
 		partInfo.check = partInfo.etag || partInfo.lastModified;
-		this.logger.debug('request HEAD got hash: ', partInfo.check);
+		this.logger.info('request HEAD got hash: ', partInfo.check);
 	}
 
 	private loadResumeFile(starting: boolean): Promise<boolean> {
 		return wrapActionWithFileLock(this.resumeFile, this.logger, async () => {
 			if (await fileExists(this.resumeFile)) {
-				this.logger.debug('resume file exists: ' + this.resumeFile);
+				this.logger.info('resume file exists: ' + this.resumeFile);
 				if (!starting && !await fileExists(this.target)) {
 					this.logger.warn('  resume file exists but target file not.');
 					return false;
@@ -371,7 +388,7 @@ export class DownloadTask extends Disposable {
 					partInfo.id = createDownloadId(partInfo.id);
 					partInfo.total = parseInt(partInfo.total as any); // prevent NaN
 
-					this.logger.debug('resume state by: ', partInfo);
+					this.logger.info('resume state by: ', partInfo);
 					if (partInfo.total && partInfo.current === partInfo.total) {
 						if (starting) {
 							this._handleFireSuccess();
@@ -390,7 +407,7 @@ export class DownloadTask extends Disposable {
 					return false;
 				}
 			} else {
-				this.logger.debug('resume file NOT exists.');
+				this.logger.info('resume file NOT exists.');
 				return false;
 			}
 		});
@@ -409,7 +426,7 @@ export class DownloadTask extends Disposable {
 			headers['if-modified-since'] = partInfo.lastModified;
 		}
 
-		this.logger.debug('check remote changed: ', headers);
+		this.logger.info('check remote changed: ', headers);
 		const resp = await this.requestService.request({
 			type: 'HEAD',
 			url: this.url,
@@ -418,7 +435,7 @@ export class DownloadTask extends Disposable {
 		}, this._cancel.token);
 
 		if (resp.res.statusCode === 304) {
-			this.logger.debug('  -> NOT changed. continue download.');
+			this.logger.info('  -> NOT changed. continue download.');
 			return;
 		}
 
@@ -426,7 +443,7 @@ export class DownloadTask extends Disposable {
 		await truncate(this.target, 0);
 
 		this._parsePartInfoFromResponse(resp);
-		this.logger.debug(`flush: [${this.resumeFile}] ${JSON.stringify(this.partInfo, null, 2)}`);
+		this.logger.info(`flush: [${this.resumeFile}] ${JSON.stringify(this.partInfo, null, 2)}`);
 		await this.flush();
 	}
 

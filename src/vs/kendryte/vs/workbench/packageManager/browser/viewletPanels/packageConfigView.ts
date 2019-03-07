@@ -165,19 +165,20 @@ export class PackageConfigView extends ViewletPanel {
 		}
 		this.logger.info('reading file: ' + file);
 		const { json: current, warnings }: IJSONResult<ICompileInfo> = await this.nodeFileSystemService.readJsonFile<ICompileInfo>(file).catch((e) => {
+			this.logger.error(e);
 			throw new Error(`parsing dependencies, please check. invalid JSON file "${file}".`);
 		});
 		if (warnings.length) {
 			this.logger.warn('JsonWarn:', warnings);
 		}
 
-		const defines = Object.assign(localObject, ... packages.map(e => e.definitions || {}));
+		const defines = Object.assign(localObject, ...packages.map(e => e.definitions || {}));
 		if (current.definitions) {
 			Object.assign(localObject, current.definitions);
 		}
 
 		const kv = Object.entries(defines).map(([k, v]) => {
-			return <IConfigSection> {
+			return <IConfigSection>{
 				key: k,
 				value: '' + v,
 				type: typeof v,

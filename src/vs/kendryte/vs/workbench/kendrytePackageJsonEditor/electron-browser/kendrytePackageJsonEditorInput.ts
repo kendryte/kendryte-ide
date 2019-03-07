@@ -101,9 +101,9 @@ export class KendrytePackageJsonEditorInput extends EditorInput {
 		} else {
 			const name = this.getPackageDirName();
 			if (name) {
-				return localize('kendrytePackageJson.editor.description.medium_for', `Project ${name} settings`);
+				return localize('kendrytePackageJson.editor.description.medium_for', 'Project {0} settings', name);
 			} else {
-				return localize('kendrytePackageJson.editor.description.medium', `Current project settings`);
+				return localize('kendrytePackageJson.editor.description.medium', 'Current project settings');
 			}
 		}
 	}
