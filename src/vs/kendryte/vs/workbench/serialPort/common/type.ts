@@ -1,8 +1,6 @@
-import { localize } from 'vs/nls';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { RawContextKey } from 'vs/platform/contextkey/common/contextkey';
 
-export const SerialPortActionCategory = localize('serialport', 'Serial Port');
 export const ConfigSerialPortActionId = 'ToggleMonitorAction';
 
 export const SERIAL_PORT_HISTORY_STORAGE_KEY = 'storage.serial-port.history';
@@ -41,4 +39,12 @@ export interface SerialPortItem { // copy out from serial port package
 	productId?: undefined;
 	serialNumber?: undefined;
 	vendorId?: undefined;
+}
+
+export enum SerialPortCloseReason {
+	Unknown,
+	Exclusive,
+	MainShutdown,
+	FlashComplete,
+	UserAction,
 }

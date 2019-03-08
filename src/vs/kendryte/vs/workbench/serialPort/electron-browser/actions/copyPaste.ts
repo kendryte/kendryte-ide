@@ -6,12 +6,12 @@ import {
 	CONTEXT_SERIAL_PORT_HAS_SELECT,
 	SERIAL_MONITOR_ACTION_COPY,
 	SERIAL_MONITOR_ACTION_PASTE,
-	SerialPortActionCategory,
 } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { ISerialMonitorControlService } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/outputWindowControlService';
 import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
 import { registerActionWithKey } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
+import { SerialPortActionCategory } from 'vs/kendryte/vs/base/common/menu/serialPort';
 
 export class SerialPortCopyAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_ACTION_COPY;

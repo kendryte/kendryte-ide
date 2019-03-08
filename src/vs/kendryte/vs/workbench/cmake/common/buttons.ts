@@ -5,13 +5,19 @@ import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiati
 import { StatusBarItem } from 'vs/kendryte/vs/workbench/cmake/common/statusBarButton';
 import { StatusBarController } from 'vs/kendryte/vs/workbench/cmake/common/statusBarController';
 import { localize } from 'vs/nls';
+import { ACTION_ID_MAIX_CMAKE_SELECT_TARGET, ACTION_ID_MAIX_CMAKE_SELECT_VARIANT } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
 import {
-	ACTION_ID_MAIX_CMAKE_SELECT_TARGET,
-	ACTION_ID_MAIX_CMAKE_SELECT_VARIANT,
-} from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
-import {
-	ACTION_ID_MAIX_CMAKE_BUILD, ACTION_ID_MAIX_CMAKE_CLEANUP, ACTION_ID_MAIX_CMAKE_CONFIGURE, ACTION_ID_MAIX_CMAKE_RUN,
-	ACTION_ID_MAIX_SERIAL_UPLOAD, ACTION_LABEL_MAIX_CMAKE_BUILD, ACTION_LABEL_MAIX_CMAKE_CLEANUP, ACTION_LABEL_MAIX_CMAKE_RUN, ACTION_LABEL_MAIX_SERIAL_UPLOAD,
+	ACTION_ID_MAIX_CMAKE_BUILD,
+	ACTION_ID_MAIX_CMAKE_BUILD_DEBUG,
+	ACTION_ID_MAIX_CMAKE_BUILD_RUN,
+	ACTION_ID_MAIX_CMAKE_CLEANUP,
+	ACTION_ID_MAIX_CMAKE_CONFIGURE,
+	ACTION_ID_MAIX_SERIAL_BUILD_UPLOAD,
+	ACTION_LABEL_MAIX_CMAKE_BUILD,
+	ACTION_LABEL_MAIX_CMAKE_BUILD_DEBUG,
+	ACTION_LABEL_MAIX_CMAKE_BUILD_RUN,
+	ACTION_LABEL_MAIX_CMAKE_CLEANUP,
+	ACTION_LABEL_MAIX_SERIAL_BUILD_UPLOAD,
 } from 'vs/kendryte/vs/base/common/menu/cmake';
 
 let entries: IDisposable[] = [];
@@ -62,16 +68,22 @@ export function addStatusBarCmakeButtons(access: ServicesAccessor) {
 	buildButton.command = ACTION_ID_MAIX_CMAKE_BUILD;
 	entries.push(buildButton);
 
+	const debugTargetButton = instantiationService.createInstance(StatusBarItem, StatusbarAlignment.LEFT, 3.6);
+	debugTargetButton.text = '$(bug)';
+	debugTargetButton.tooltip = ACTION_LABEL_MAIX_CMAKE_BUILD_DEBUG;
+	debugTargetButton.command = ACTION_ID_MAIX_CMAKE_BUILD_DEBUG;
+	entries.push(debugTargetButton);
+
 	const launchTargetButton = instantiationService.createInstance(StatusBarItem, StatusbarAlignment.LEFT, 3.6);
 	launchTargetButton.text = '$(triangle-right)';
-	launchTargetButton.tooltip = ACTION_LABEL_MAIX_CMAKE_RUN;
-	launchTargetButton.command = ACTION_ID_MAIX_CMAKE_RUN;
+	launchTargetButton.tooltip = ACTION_LABEL_MAIX_CMAKE_BUILD_RUN;
+	launchTargetButton.command = ACTION_ID_MAIX_CMAKE_BUILD_RUN;
 	entries.push(launchTargetButton);
 
 	const uploadTargetButton = instantiationService.createInstance(StatusBarItem, StatusbarAlignment.LEFT, 3.5);
 	uploadTargetButton.text = '$(desktop-download)';
-	uploadTargetButton.tooltip = ACTION_LABEL_MAIX_SERIAL_UPLOAD;
-	uploadTargetButton.command = ACTION_ID_MAIX_SERIAL_UPLOAD;
+	uploadTargetButton.tooltip = ACTION_LABEL_MAIX_SERIAL_BUILD_UPLOAD;
+	uploadTargetButton.command = ACTION_ID_MAIX_SERIAL_BUILD_UPLOAD;
 	entries.push(uploadTargetButton);
 
 	const statusTip = instantiationService.createInstance(StatusBarItem, StatusbarAlignment.LEFT, 4);
@@ -86,6 +98,7 @@ export function addStatusBarCmakeButtons(access: ServicesAccessor) {
 			selectVariantButton,
 			selectTargetButton,
 			uploadTargetButton,
+			debugTargetButton,
 			launchTargetButton,
 			buildButton,
 			cleanButton,

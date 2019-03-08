@@ -2,10 +2,11 @@ import { INotificationService } from 'vs/platform/notification/common/notificati
 import { TPromise } from 'vs/base/common/winjs.base';
 import { Action } from 'vs/base/common/actions';
 import { localize } from 'vs/nls';
-import { SERIAL_MONITOR_ACTION_REFRESH_DEVICE, SerialPortActionCategory } from 'vs/kendryte/vs/workbench/serialPort/common/type';
+import { SERIAL_MONITOR_ACTION_REFRESH_DEVICE } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import BaseSeverity from 'vs/base/common/severity';
 import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
 import { registerExternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
+import { SerialPortActionCategory } from 'vs/kendryte/vs/base/common/menu/serialPort';
 
 class ReloadSerialPortDevicesAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_ACTION_REFRESH_DEVICE;

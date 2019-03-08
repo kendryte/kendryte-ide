@@ -1,9 +1,11 @@
 import { Duplex } from 'stream';
-import { SerialPortItem } from 'vs/kendryte/vs/workbench/serialPort/common/type';
+import { SerialPortCloseReason, SerialPortItem } from 'vs/kendryte/vs/workbench/serialPort/common/type';
+import { Event } from 'vs/base/common/event';
 import SerialPort = require('serialport');
 
 export interface SerialPortBaseBinding extends Duplex {
 	__serial_port: never; // prevent type merge
+	beforeClose: Event<SerialPortCloseReason>;
 }
 
 export interface ILocalOptions {
@@ -49,6 +51,7 @@ export const defaultConfig: ILocalOptions & Pick<SerialPort.OpenOptions, 'baudRa
 };
 
 export interface ISerialPortStatus {
+	paused: boolean;
 	id: string;
 	localOptions?: ILocalOptions;
 	instance?: SerialPortBaseBinding;

@@ -3,10 +3,10 @@ import { $, append, Dimension, getTotalHeight, hide, show } from 'vs/base/browse
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { SERIAL_MONITOR_ACTION_REFRESH_DEVICE, SERIAL_PANEL_ID, SerialPortActionCategory } from 'vs/kendryte/vs/workbench/serialPort/common/type';
+import { SERIAL_MONITOR_ACTION_REFRESH_DEVICE, SERIAL_PANEL_ID, SerialPortCloseReason } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { attachButtonStyler, attachSelectBoxStyler } from 'vs/platform/theme/common/styler';
+import { attachButtonStyler, attachSelectBoxStyler, IButtonStyleOverrides } from 'vs/platform/theme/common/styler';
 import { Button } from 'vs/base/browser/ui/button/button';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { localize } from 'vs/nls';
@@ -16,7 +16,7 @@ import { SerialReplInput } from 'vs/kendryte/vs/workbench/serialPort/electron-br
 import { IAction } from 'vs/base/common/actions';
 import { OutputXTerminal } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/outputWindow';
 import { SerialScope } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/serialScope';
-import { isMacintosh } from 'vs/base/common/platform';
+import { isMacintosh, setImmediate } from 'vs/base/common/platform';
 import { SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
 import { CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
@@ -32,14 +32,19 @@ import {
 	serialPortLFArr,
 	serialPortYesNoSelection,
 } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
-import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
+import { INotificationService } from 'vs/platform/notification/common/notification';
 import { renderOcticons } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 import * as SerialPort from 'serialport';
 import { standardBaudRate, standardDataBits, standardParity, standardStopBits } from 'vs/kendryte/vs/workbench/config/common/baudrate';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { format } from 'util';
+import { buttonBackground, buttonForeground } from 'vs/platform/theme/common/colorRegistry';
+import { IDisposable } from 'vs/base/common/lifecycle';
+import { ILogService } from 'vs/platform/log/common/log';
+import { SerialPortActionCategory } from 'vs/kendryte/vs/base/common/menu/serialPort';
 
 interface ButtonList {
+	pause: Button & { styler: IDisposable };
 	stop: Button;
 	playTerm: Button;
 	playRaw: Button;
@@ -100,6 +105,7 @@ class SerialMonitorPanel extends Panel {
 		@IStorageService storageService: IStorageService,
 		@IConfigurationService private configurationService: IConfigurationService,
 		@IContextViewService protected contextViewService: IContextViewService,
+		@ILogService protected logService: ILogService,
 	) {
 		super(SERIAL_PANEL_ID, telemetryService, themeService, storageService);
 	}
@@ -155,10 +161,16 @@ class SerialMonitorPanel extends Panel {
 			() => this._doSerialOpen(this.currentSelectedItem, 'raw'),
 			localize('serial-port.open.raw', 'Open raw terminal'),
 		);
+		this.controlList.pause = this.createButton(
+			$rightHead,
+			'　$(pin)　',
+			() => this._doSerialPause(this.currentSelectedItem),
+			localize('serial-port.close', 'Pause output'),
+		);
 		this.controlList.stop = this.createButton(
 			$rightHead,
 			'　$(primitive-square)　',
-			() => this._doSerialClose(this.currentSelectedItem),
+			() => this._doSerialClose(this.currentSelectedItem, SerialPortCloseReason.UserAction),
 			localize('serial-port.close', 'Close port'),
 		);
 
@@ -270,7 +282,7 @@ class SerialMonitorPanel extends Panel {
 		await this.xterm.attachToElement(xtermContainer);
 	}
 
-	private createButton($target: HTMLElement, label: string, cb: (btn: Button) => void, title?: string): Button {
+	private createButton($target: HTMLElement, label: string, cb: (btn: Button) => void, title?: string): Button & { styler: IDisposable } {
 		const theButton = new Button($target);
 
 		theButton.label = '';
@@ -280,11 +292,14 @@ class SerialMonitorPanel extends Panel {
 		}
 
 		theButton.enabled = false;
-		this._register(attachButtonStyler(theButton, this.themeService));
+		const styler = attachButtonStyler(theButton, this.themeService);
+		this._register(styler);
 		this._register(theButton);
 		this._register(theButton.onDidClick(_ => cb(theButton)));
 
-		return theButton;
+		return Object.assign(theButton, {
+			styler,
+		});
 	}
 
 	public async create(parent: HTMLElement) {
@@ -385,23 +400,21 @@ class SerialMonitorPanel extends Panel {
 		this.list.refreshItem(item);
 
 		this.xterm.setOptions(item.localOptions);
+		this._updatePaused(item.paused);
 		this.xterm.handleSerialIncoming(item.instance);
 		if (item.instance) {
 			if (item.openMode === 'raw') {
-				console.log('RAW');
 				this.context.lineInputStream.setOptions(item.localOptions);
 				this.context.lineInputStream.pipe(item.instance);
 				this.context.typeInputStream.unpipe();
 				this.xterm.handleUserType(false);
 			} else {
-				console.log('TERM');
 				this.context.typeInputStream.setOptions(item.localOptions);
 				this.context.typeInputStream.pipe(item.instance);
 				this.context.lineInputStream.unpipe();
 				this.xterm.handleUserType(true);
 			}
 		} else {
-			console.log('DISALBE');
 			this.context.lineInputStream.unpipe();
 			this.context.typeInputStream.unpipe();
 			this.xterm.handleUserType(false);
@@ -422,6 +435,17 @@ class SerialMonitorPanel extends Panel {
 		this.controlList.playTerm.enabled = !hasOpen;
 
 		this.controlList.stop.enabled = hasOpen;
+		this.controlList.pause.enabled = hasOpen;
+	}
+
+	private _updatePaused(hasPaused: boolean) {
+		const override: IButtonStyleOverrides = hasPaused ? {
+			buttonForeground: buttonBackground,
+			buttonBackground: buttonForeground,
+			buttonHoverBackground: buttonForeground,
+		} : {};
+		this.controlList.pause.styler.dispose();
+		this.controlList.pause.styler = attachButtonStyler(this.controlList.pause, this.themeService, override);
 	}
 
 	private _getCurrentOpt(): SerialLocalStorageSavedData {
@@ -457,69 +481,115 @@ class SerialMonitorPanel extends Panel {
 
 	private _store(name: string, opt: SerialLocalStorageSavedData) {
 		const optStr = JSON.stringify(opt);
-		console.log('_store: %s -> %s', name, optStr);
+		this.logService.info(`[serialPort] _store: ${name} ->${optStr}`);
 		localStorage.setItem('serialport-options::' + name, optStr);
 	}
 
-	private _doSerialOpen(item: ISerialPortStatus, openMode: ISerialPortStatus['openMode']) {
-		if (!item) {
-			return;
-		}
-		const handle = this.notifyService.notify({ severity: Severity.Info, message: 'connecting...' });
-		handle.progress.infinite();
-
-		if (item.hasOpen) {
-			handle.updateSeverity(Severity.Error);
-			handle.updateMessage('port already opened.');
-			handle.progress.done();
+	private _doSerialOpen(portStat: ISerialPortStatus, openMode: ISerialPortStatus['openMode']) {
+		this.logService.info('[serialPort] _doSerialOpen:', portStat);
+		if (!portStat || portStat.hasOpen) {
+			this.logService.warn('[serialPort]    invalid stat or has already open');
 			return;
 		}
 
-		item.hasOpen = true;
-		const opt = item.portItem;
-		item.openMode = openMode;
+		const opt = portStat.portItem;
+		portStat.openMode = openMode;
 
-		const result = this._getCurrentOpt();
-		this._store(opt.comName, result);
+		const config = this._getCurrentOpt();
+		this._store(opt.comName, config);
 
-		if (result.port) {
-			result.port.baudRate = parseInt(this.configurationService.getValue<string>(CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE)) || 115200;
+		if (config.port) {
+			config.port.baudRate = parseInt(this.configurationService.getValue<string>(CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE)) || 115200;
 		}
 
-		this.serialPortService.openPort(opt.comName, result.port, true).then((port) => {
-			item.openOptions = result.port;
-			item.localOptions = result.local;
-
-			item.instance = port;
-
-			this._update(item);
-
-			port.once('close', () => {
-				this._doSerialClose(item);
-			});
-
-			handle.close();
-		}).then(undefined, (e: Error) => {
-			handle.updateSeverity(Severity.Error);
-			handle.updateMessage(e);
-			handle.progress.done();
-			item.hasOpen = false;
-			this._update(item);
+		this._realOpenPort(portStat, config).catch((e: Error) => {
+			this.notifyService.error(e);
+			portStat.hasOpen = false;
+			this._update(portStat);
 		});
 	}
 
-	private _doSerialClose(item: ISerialPortStatus) {
+	private async _realOpenPort(portStat: ISerialPortStatus, config: SerialLocalStorageSavedData) {
+		const port = await this.serialPortService.openPort(portStat.portItem.comName, config.port, true);
+		this.logService.info('[serialPort] port open success');
+
+		portStat.hasOpen = true;
+		portStat.openOptions = config.port;
+		portStat.localOptions = config.local;
+		portStat.instance = port;
+
+		this._update(portStat);
+
+		port.beforeClose((reason) => {
+			this.logService.info('[serialPort] port will close because: ' + SerialPortCloseReason[reason]);
+			this._destroyOnClose(portStat);
+			if (reason === SerialPortCloseReason.Exclusive) {
+				this.logService.info('[serialPort] will auto re-open.');
+				setTimeout(() => {
+					this.reOpenWhenAvailable(portStat, config).catch((e) => {
+						this.logService.warn('[serialPort] Not able auto open serial port monitor');
+						if (e) {
+							this.logService.error(e);
+						} else {
+							this.logService.warn('[serialPort] do not know why, commonly not an error');
+						}
+					});
+				}, 1000);
+			}
+		});
+	}
+
+	private async reOpenWhenAvailable(portStat: ISerialPortStatus, config: SerialLocalStorageSavedData) {
+		const port = await this.serialPortService.openPort(portStat.portItem.comName, config.port, false);
+		this.logService.error('[serialPort] reOpenWhenAvailable: waiting...');
+		await new Promise((resolve, reject) => {
+			const to = setTimeout(() => {
+				this.logService.error('[serialPort] auto re-connect timeout.');
+				reject();
+			}, 20000);
+			port.beforeClose((reason) => {
+				this.logService.info('[serialPort] !! port close: ' + SerialPortCloseReason[reason]);
+				clearTimeout(to);
+				if (reason === SerialPortCloseReason.FlashComplete) {
+					this.logService.info('[serialPort] try re-connect');
+					setImmediate(resolve);
+				} else {
+					this.logService.info('[serialPort] reason not FlashComplete, ignore.');
+					reject();
+				}
+			});
+		});
+
+		await this._realOpenPort(portStat, config);
+	}
+
+	private _doSerialPause(item: ISerialPortStatus) {
 		if (!item.hasOpen) {
 			return;
 		}
 
+		item.paused = !item.paused;
+		this._updatePaused(item.paused);
+
+		if (item.paused) {
+			item.instance.pause();
+		} else {
+			item.instance.resume();
+		}
+	}
+
+	private _destroyOnClose(item: ISerialPortStatus) {
+		item.hasOpen = false;
 		this.context.lineInputStream.unpipe(item.instance);
 		this.xterm.destroyScrollback(item.instance);
+		this._update(item);
+	}
 
-		this.serialPortService.closePort(item.instance).then(() => {
+	private _doSerialClose(item: ISerialPortStatus, reason: SerialPortCloseReason) {
+		this._destroyOnClose(item);
+
+		this.serialPortService.closePort(item.instance, reason).then(() => {
 			delete item.instance;
-			item.hasOpen = false;
-			this._update(item);
 		});
 	}
 

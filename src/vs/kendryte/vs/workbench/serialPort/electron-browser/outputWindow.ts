@@ -187,6 +187,10 @@ export class OutputXTerminal extends Disposable {
 		TerminalInstance.prototype['_resize'].call(this);
 	}
 
+	printScrollBack() {
+
+	}
+
 	handleSerialIncoming(instance: SerialPortBaseBinding) {
 		this.currentInstance = instance;
 		if (this.last) {

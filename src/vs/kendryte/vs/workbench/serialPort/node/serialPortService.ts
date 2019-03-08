@@ -6,11 +6,18 @@ import { Emitter, Event } from 'vs/base/common/event';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { ILogService } from 'vs/platform/log/common/log';
-import { SerialPortItem } from 'vs/kendryte/vs/workbench/serialPort/common/type';
+import { SerialPortCloseReason, SerialPortItem } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { array_has_diff_cb } from 'vs/kendryte/vs/base/common/utils';
 import { SerialPortBaseBinding } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
 import { ninvoke, timeout } from 'vs/base/common/async';
 import { CancellationToken } from 'vs/base/common/cancellation';
+import { setImmediate } from 'vs/base/common/platform';
+
+interface SerialPortEvent {
+	_beforeClose: Emitter<SerialPortCloseReason>;
+}
+
+type SerialPortInternalType = SerialPort & SerialPortBaseBinding & SerialPortEvent;
 
 function testSame(a: SerialPortItem, b: SerialPortItem) {
 	return a.comName === b.comName && a.locationId === b.locationId && a.manufacturer === b.manufacturer && a.pnpId === b.pnpId && a.productId === b.productId && a.serialNumber === b.serialNumber && a.vendorId === b.vendorId;
@@ -23,7 +30,7 @@ class SerialPortService implements ISerialPortService {
 	private memSerialDevices: SerialPortItem[];
 
 	private cachedPromise: TPromise<void>;
-	private openedPorts = new Map<string, SerialPort & SerialPortBaseBinding>();
+	private openedPorts = new Map<string, SerialPortInternalType>();
 
 	public readonly onChange: Event<SerialPortItem[]> = this.devicesListChange.event;
 
@@ -37,8 +44,8 @@ class SerialPortService implements ISerialPortService {
 		Object.assign(global, { serialPortService: this });
 		this.refreshDevices();
 		lifecycleService.onWillShutdown(async () => {
-			for (const port of Array.from<SerialPort>(this.openedPorts.values())) {
-				await ninvoke(port, port.close).then(undefined, (e: Error) => {
+			for (const port of Array.from<SerialPortBaseBinding>(this.openedPorts.values())) {
+				await this.closePort(port, SerialPortCloseReason.MainShutdown).then(undefined, (e: Error) => {
 					this.logService.error(e);
 				});
 			}
@@ -76,7 +83,7 @@ class SerialPortService implements ISerialPortService {
 		}
 	}
 
-	private getPortDevice(serialDevice: string | SerialPortBaseBinding): (SerialPort & SerialPortBaseBinding) | void {
+	private getPortDevice(serialDevice: string | SerialPortBaseBinding): (SerialPortInternalType) | void {
 		if (typeof serialDevice === 'string') {
 			return this.openedPorts.get(serialDevice);
 		} else {
@@ -84,10 +91,14 @@ class SerialPortService implements ISerialPortService {
 		}
 	}
 
-	public closePort(port: string | SerialPortBaseBinding): TPromise<void> {
+	public closePort(port: string | SerialPortBaseBinding, reason: SerialPortCloseReason): TPromise<void> {
 		const serialDevice = this.getPortDevice(port);
 		if (!serialDevice) {
 			return TPromise.as(void 0);
+		}
+
+		if (serialDevice._beforeClose) {
+			serialDevice._beforeClose.fire(reason);
 		}
 
 		return ninvoke(serialDevice, (serialDevice as any as SerialPort).close).then(undefined, (e) => {
@@ -127,7 +138,7 @@ class SerialPortService implements ISerialPortService {
 			if (cancel && cancel.isCancellationRequested) {
 				return;
 			}
-			console.log(state);
+			this.logService.debug('set port state:', state);
 			await set(state);
 			await timeout(10, cancel);
 		}
@@ -174,19 +185,19 @@ class SerialPortService implements ISerialPortService {
 		});
 	}
 
-	public openPort(serialDevice: string, opts: Partial<SerialPort.OpenOptions> = {}, exclusive = false): TPromise<SerialPort & SerialPortBaseBinding> {
+	public async openPort(serialDevice: string, opts: Partial<SerialPort.OpenOptions> = {}, exclusive = false): Promise<SerialPortInternalType> {
+		this.logService.info(`open serial port ${serialDevice} ${exclusive ? '[EXCLUSIVE] ' : ''}with:`, serialDevice, opts, exclusive);
 		if (this.openedPorts.has(serialDevice)) {
 			const exists = this.openedPorts.get(serialDevice);
 			if (exclusive) {
-				return this._handlePromise<void>('close serial port for re-open', (cb) => {
-					exists.close(cb);
-				}).then(() => {
-					return this.openPort(serialDevice, opts, exclusive);
-				});
+				await this.closePort(serialDevice, SerialPortCloseReason.Exclusive);
+
+				return this.openPort(serialDevice, opts, exclusive);
 			} else {
-				return this._handlePromise('update serial port', (cb) => {
+				await this._handlePromise('update serial port', (cb) => {
 					exists.update(opts, cb);
 				});
+				return exists;
 			}
 		}
 		opts = {
@@ -194,33 +205,57 @@ class SerialPortService implements ISerialPortService {
 			...opts,
 			autoOpen: false,
 		};
-		this.logService.info(`open serial port ${serialDevice} ${exclusive ? '[EXCLUSIVE] ' : ''}with:`, serialDevice, opts, exclusive);
-		const port: SerialPort & SerialPortBaseBinding = new SerialPort(serialDevice, opts) as any;
+
+		const port: SerialPortInternalType = new SerialPort(serialDevice, opts) as any;
+
+		const emitter = new Emitter<SerialPortCloseReason>();
+		emitter.event((e) => {
+			this.logService.info(`[serial port] fire event with type: SerialPortCloseReason.${SerialPortCloseReason[e]}`);
+			const emitter = port._beforeClose;
+			delete port._beforeClose;
+			setImmediate(() => {
+				emitter.dispose();
+			});
+		});
+		Object.assign(port, {
+			_beforeClose: emitter,
+			beforeClose: emitter.event,
+		});
+
 		port.on('close', () => {
 			this.logService.info('[serial port] ' + serialDevice + ' is end!');
 			port.removeAllListeners();
 			this.openedPorts.delete(serialDevice);
+			if (port._beforeClose) {
+				port._beforeClose.fire(SerialPortCloseReason.Unknown);
+			}
 		});
 		this.openedPorts.set(serialDevice, port);
-		return this._handlePromise(`open device {${serialDevice}}`, (cb) => {
+
+		await this._handlePromise(`open device {${serialDevice}}`, (cb) => {
 			port.open(cb);
-		}).then(() => {
-			return this._handlePromise('get current settings', (cb) => {
-				port.get(cb);
-			});
-		}).then(() => {
-			return this._handlePromise('reset settings', (cb) => {
-				port.set({
-					brk: false,
-					cts: false,
-					dsr: false,
-					dtr: false,
-					rts: false,
-				}, cb);
-			});
-		}).then(() => {
-			return port;
 		});
+
+		const settings = await this._handlePromise('get current settings', (cb) => {
+			port.get(cb);
+		});
+		this.logService.info('[serial port] Current setting: ' + JSON.stringify(settings));
+
+		await this._handlePromise('reset settings', (cb) => {
+			port.set({
+				brk: false,
+				cts: false,
+				dsr: false,
+				dtr: false,
+				rts: false,
+			}, cb);
+		});
+
+		await this._handlePromise('drain', (cb) => {
+			port.drain(cb);
+		});
+
+		return port;
 	}
 }
 
@@ -228,8 +263,8 @@ export interface ISerialPortService extends EnumProviderService<SerialPortItem> 
 	_serviceBrand: any;
 
 	refreshDevices(): void;
-	openPort(serialDevice: string, opts?: Partial<SerialPort.OpenOptions>, exclusive?: boolean): TPromise<SerialPortBaseBinding>;
-	closePort(serialDevice: string | SerialPortBaseBinding): TPromise<void>;
+	openPort(serialDevice: string, opts?: Partial<SerialPort.OpenOptions>, exclusive?: boolean): Promise<SerialPortBaseBinding>;
+	closePort(serialDevice: string | SerialPortBaseBinding, reason: SerialPortCloseReason): TPromise<void>;
 	sendReboot(serialDevice: string | SerialPortBaseBinding, cancel?: CancellationToken): TPromise<void>;
 	sendRebootISPKD233(serialDevice: string | SerialPortBaseBinding, cancel?: CancellationToken): TPromise<void>;
 	sendRebootISPDan(serialDevice: string | SerialPortBaseBinding, cancel?: CancellationToken): TPromise<void>;

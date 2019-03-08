@@ -85,6 +85,7 @@ export class SerialDeviceList extends Disposable {
 					id: entry.comName,
 					portItem: entry,
 					hasOpen: map[entry.comName] || false,
+					paused: false,
 				};
 			});
 
@@ -92,7 +93,12 @@ export class SerialDeviceList extends Disposable {
 			this.list.splice(0, this.list.length, this.dataList);
 		} else {
 			this.dataList = list.map((entry) => {
-				return { id: entry.comName, portItem: entry, hasOpen: false };
+				return {
+					id: entry.comName,
+					portItem: entry,
+					hasOpen: false,
+					paused: false,
+				};
 			});
 			this.list.splice(0, 0, this.dataList);
 		}

@@ -1,7 +1,8 @@
 import { localize } from 'vs/nls';
+import { ACTION_CATEGORY_BUILD_DEBUG } from 'vs/kendryte/vs/base/common/menu/cmake';
 
 export const CONFIG_CATEGORY = {
-	MAIN: { id: 'build-deploy', category: localize('and', '{0} and {1}', localize('build', 'Build'), localize('debug', 'Debug')) },
+	MAIN: { id: 'build-deploy', category: ACTION_CATEGORY_BUILD_DEBUG },
 	BUILD: { id: 'build', category: localize('build', 'Build'), parent: 'build-deploy' },
 	ID_DEBUG: { id: 'debug', category: localize('debug', 'Debug'), parent: 'build-deploy' },
 	OPENOCD: { id: 'openocd', category: localize('openocd', 'OpenOCD'), parent: 'build-deploy' },

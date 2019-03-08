@@ -1,12 +1,10 @@
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
-import { MenuId, MenuRegistry, SyncActionDescriptor } from 'vs/platform/actions/common/actions';
-import { Extensions as ActionExtensions, IWorkbenchActionRegistry } from 'vs/workbench/common/actions';
 import { localize } from 'vs/nls';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { CMakeService } from 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeService';
 import { MaixCMakeBuildAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/buildAction';
-import { MaixCMakeDebugAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/debugRunAction';
+import { MaixCMakeBuildDebugAction, MaixCMakeDebugAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/debugAction';
 import { MaixCMakeCleanupAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/cleanupAction';
 import { MaixCMakeSelectTargetAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/selectTargetAction';
 import { MaixCMakeSelectVariantAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/selectVariantAction';
@@ -17,87 +15,37 @@ import { registerExternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/
 import { OpenLocalCmakeListAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/openLocalCmakeList';
 import { registerCMakeSchemas } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { registerCMakeConfig } from 'vs/kendryte/vs/workbench/cmake/common/configFile';
+import { MaixCMakeBuildRunAction, MaixCMakeRunAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/runAction';
+import { ACTION_CATEGORY_BUILD_DEBUG } from 'vs/kendryte/vs/base/common/menu/cmake';
 
 registerSingleton(ICMakeService, CMakeService);
 
 const category = localize('kendryte', 'Kendryte');
 
 // BUILD
-Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeBuildAction, MaixCMakeBuildAction.ID, MaixCMakeBuildAction.LABEL), 'Kendryte: Build project', category);
-
-MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
-	command: {
-		id: MaixCMakeBuildAction.ID,
-		title: `${category}: ${MaixCMakeBuildAction.LABEL}`,
-	},
-});
+registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeBuildAction);
 
 // CONFIGURE
-Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeConfigureAction, MaixCMakeConfigureAction.ID, MaixCMakeDebugAction.LABEL), 'Kendryte: Configure', category);
-
-MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
-	command: {
-		id: MaixCMakeConfigureAction.ID,
-		title: `${category}: ${MaixCMakeConfigureAction.LABEL}`,
-	},
-});
+registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeConfigureAction);
 
 // RUN
-Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeDebugAction, MaixCMakeDebugAction.ID, MaixCMakeDebugAction.LABEL), 'Kendryte: Start Debug', category);
+registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeDebugAction);
+registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeBuildDebugAction);
 
-MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
-	command: {
-		id: MaixCMakeDebugAction.ID,
-		title: `${category}: ${MaixCMakeDebugAction.LABEL}`,
-	},
-});
+registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeRunAction);
+registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeBuildRunAction);
 
 // clean
-Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeCleanupAction, MaixCMakeCleanupAction.ID, MaixCMakeCleanupAction.LABEL), 'Kendryte: Cleanup project', category);
-
-MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
-	command: {
-		id: MaixCMakeCleanupAction.ID,
-		title: `${category}: ${MaixCMakeCleanupAction.LABEL}`,
-	},
-});
+registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeCleanupAction);
 
 // target select
-Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeSelectTargetAction, MaixCMakeSelectTargetAction.ID, MaixCMakeSelectTargetAction.LABEL), 'Kendryte: Select build target', category);
-
-MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
-	command: {
-		id: MaixCMakeSelectTargetAction.ID,
-		title: `${category}: ${MaixCMakeSelectTargetAction.LABEL}`,
-	},
-});
+registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeSelectTargetAction);
 
 // target select
-Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeSelectVariantAction, MaixCMakeSelectVariantAction.ID, MaixCMakeSelectVariantAction.LABEL), 'Kendryte: Select build variant', category);
-
-MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
-	command: {
-		id: MaixCMakeSelectVariantAction.ID,
-		title: `${category}: ${MaixCMakeSelectVariantAction.LABEL}`,
-	},
-});
+registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeSelectVariantAction);
 
 // hello world project
-Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-	.registerWorkbenchAction(new SyncActionDescriptor(MaixCMakeHelloWorldAction, MaixCMakeHelloWorldAction.ID, MaixCMakeHelloWorldAction.LABEL), 'Kendryte: Create "hello world!" project', category);
-
-MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
-	command: {
-		id: MaixCMakeHelloWorldAction.ID,
-		title: `${category}: ${MaixCMakeHelloWorldAction.LABEL}`,
-	},
-});
+registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeHelloWorldAction);
 
 // open config file
 registerExternalAction(category, OpenLocalCmakeListAction);

@@ -53,6 +53,10 @@ export class XtermScrollbackBuffer extends Writable {
 		}
 
 		this.scrollback += str;
+
+		if (this.scrollback.length > 102400) {
+			this.scrollback = this.scrollback.substr(this.scrollback.length - 102400);
+		}
 		if (this.target) {
 			this.target.write(str);
 		}

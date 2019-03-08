@@ -11,10 +11,19 @@ import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { IQuickInputService, IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
-import { ACTION_ID_MAIX_SERIAL_UPLOAD, ACTION_LABEL_MAIX_SERIAL_UPLOAD } from 'vs/kendryte/vs/base/common/menu/cmake';
+import {
+	ACTION_ID_MAIX_CMAKE_BUILD,
+	ACTION_ID_MAIX_CMAKE_RUN,
+	ACTION_ID_MAIX_SERIAL_BUILD_UPLOAD,
+	ACTION_ID_MAIX_SERIAL_UPLOAD,
+	ACTION_LABEL_MAIX_SERIAL_BUILD_UPLOAD,
+	ACTION_LABEL_MAIX_SERIAL_UPLOAD,
+} from 'vs/kendryte/vs/base/common/menu/cmake';
 import { ChipType, SerialLoader } from 'vs/kendryte/vs/workbench/serialUpload/node/flasher';
 import { CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { SerialPortCloseReason } from 'vs/kendryte/vs/workbench/serialPort/common/type';
+import { createActionInstance } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 
 export class MaixSerialUploadAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_SERIAL_UPLOAD;
@@ -25,7 +34,7 @@ export class MaixSerialUploadAction extends Action {
 	private lastSelected: string;
 
 	constructor(
-		id: string, label: string,
+		id: string = MaixSerialUploadAction.ID, label: string = MaixSerialUploadAction.LABEL,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@ISerialPortService private serialPortService: ISerialPortService,
 		@INodePathService private nodePathService: INodePathService,
@@ -76,8 +85,6 @@ export class MaixSerialUploadAction extends Action {
 		if (!sel) {
 			return;
 		}
-
-		this.channelLogService.show(this.logger.id);
 
 		await this.cMakeService.ensureConfiguration();
 
@@ -149,8 +156,26 @@ export class MaixSerialUploadAction extends Action {
 			this.logger.error('==================================');
 			this.logger.error('Flash failed with error: ' + e.message);
 			loader.dispose();
+			this.channelLogService.show(this.logger.id);
 		});
 
-		await this.serialPortService.closePort(port);
+		await this.serialPortService.closePort(port, SerialPortCloseReason.FlashComplete);
+	}
+}
+
+export class MaixSerialBuildUploadAction extends Action {
+	public static readonly ID = ACTION_ID_MAIX_SERIAL_BUILD_UPLOAD;
+	public static readonly LABEL = ACTION_LABEL_MAIX_SERIAL_BUILD_UPLOAD;
+
+	constructor(
+		id: string = MaixSerialUploadAction.ID, label: string = MaixSerialUploadAction.LABEL,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
+	) {
+		super(id, label);
+	}
+
+	async run() {
+		await createActionInstance(this.instantiationService, ACTION_ID_MAIX_CMAKE_BUILD).run(false);
+		await createActionInstance(this.instantiationService, ACTION_ID_MAIX_CMAKE_RUN).run();
 	}
 }

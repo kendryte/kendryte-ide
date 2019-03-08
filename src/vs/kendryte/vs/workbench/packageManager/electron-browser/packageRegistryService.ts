@@ -361,6 +361,9 @@ export class PackageRegistryService implements IPackageRegistryService {
 
 		await rimraf(packageSaveDir);
 
+		const currentConfigFile = this.nodePathService.getPackageFile();
+		await this.nodeFileSystemService.editJsonFile(currentConfigFile, ['dependency', packageName], undefined);
+
 		this._onLocalPackageChange.fire();
 	}
 }

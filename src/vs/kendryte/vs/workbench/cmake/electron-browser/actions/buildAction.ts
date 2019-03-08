@@ -1,5 +1,4 @@
 import { Action } from 'vs/base/common/actions';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { ACTION_ID_MAIX_CMAKE_BUILD, ACTION_LABEL_MAIX_CMAKE_BUILD } from 'vs/kendryte/vs/base/common/menu/cmake';
 import { CMAKE_CHANNEL, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
@@ -20,9 +19,20 @@ export class MaixCMakeBuildAction extends Action {
 		this.outputChannel = outputService.getChannel(CMAKE_CHANNEL);
 	}
 
-	async run(): TPromise<void> {
+	async run(completeShowMessage: boolean = true) {
+		return this._run().then(() => {
+			if (completeShowMessage !== false) {
+				this.notificationService.info('Build complete.');
+			}
+		}, (e) => {
+			this.outputChannel.append('\n[ERROR] Build failed.');
+			this.outputService.showChannel(CMAKE_CHANNEL, true);
+			throw e;
+		});
+	}
+
+	async _run() {
 		this.outputChannel.clear();
-		this.outputService.showChannel(CMAKE_CHANNEL, true);
 		this.outputChannel.append('Starting build...\n');
 
 		await this.cmakeService.configure();
@@ -31,7 +41,6 @@ export class MaixCMakeBuildAction extends Action {
 
 		await this.cmakeService.build();
 
-		this.notificationService.info('Build complete.');
 		this.outputChannel.append('\nBuild complete.');
 	}
 }
