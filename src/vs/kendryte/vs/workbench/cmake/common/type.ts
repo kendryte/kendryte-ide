@@ -1,9 +1,15 @@
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { TPromise } from 'vs/base/common/winjs.base';
 import { IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
+import { Event } from 'vs/base/common/event';
 
 export const CMAKE_CHANNEL = 'maix-make-run';
 export const CMAKE_CHANNEL_TITLE = 'Build/Run';
+
+export interface ICMakeSelection {
+	variant: string;
+	target: string;
+}
 
 export interface CurrentItem extends IQuickPickItem {
 	current?: boolean;
@@ -11,6 +17,9 @@ export interface CurrentItem extends IQuickPickItem {
 
 export interface ICMakeService {
 	_serviceBrand: any;
+
+	readonly onCMakeProjectChange: Event<Error | null>;
+	readonly onCMakeSelectionChange: Event<ICMakeSelection>;
 
 	readonly isEnabled: boolean;
 	rescanCurrentFolder(): TPromise<void>;

@@ -11,7 +11,11 @@ import { array_has_diff_cb } from 'vs/kendryte/vs/base/common/utils';
 import { SerialPortBaseBinding } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
 import { ninvoke, timeout } from 'vs/base/common/async';
 import { CancellationToken } from 'vs/base/common/cancellation';
-import { setImmediate } from 'vs/base/common/platform';
+import { IQuickInputService, IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
+import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
+import { IKendryteStatusControllerService } from 'vs/kendryte/vs/workbench/bottomBar/common/type';
+
+const SELECT_STORAGE_KEY = 'serial-port.last-selected';
 
 interface SerialPortEvent {
 	_beforeClose: Emitter<SerialPortCloseReason>;
@@ -25,21 +29,30 @@ function testSame(a: SerialPortItem, b: SerialPortItem) {
 
 class SerialPortService implements ISerialPortService {
 	_serviceBrand: any;
-	private devicesListChange = new Emitter<SerialPortItem[]>();
+	private readonly _devicesListChange = new Emitter<SerialPortItem[]>();
+	public readonly onChange: Event<SerialPortItem[]> = this._devicesListChange.event;
+
+	private readonly _defaultDeviceChanged = new Emitter<void>();
+	public readonly onDefaultDeviceChanged = this._defaultDeviceChanged.event;
 
 	private memSerialDevices: SerialPortItem[];
 
 	private cachedPromise: TPromise<void>;
 	private openedPorts = new Map<string, SerialPortInternalType>();
 
-	public readonly onChange: Event<SerialPortItem[]> = this.devicesListChange.event;
+	private _lastSelected: string;
 
 	constructor(
 		@IInstantiationService instantiationService: IInstantiationService,
 		@ILifecycleService lifecycleService: ILifecycleService,
 		@ILogService private logService: ILogService,
+		@IStorageService private storageService: IStorageService,
+		@IQuickInputService private quickInputService: IQuickInputService,
+		@IKendryteStatusControllerService kendryteStatusControllerService: IKendryteStatusControllerService,
 	) {
 		this._handlePromise = this._handlePromise.bind(this);
+
+		this._lastSelected = storageService.get(SELECT_STORAGE_KEY, StorageScope.WORKSPACE, '');
 
 		Object.assign(global, { serialPortService: this });
 		this.refreshDevices();
@@ -71,7 +84,7 @@ class SerialPortService implements ISerialPortService {
 		this.logService.info('COM device list: ', this.memSerialDevices);
 
 		if (!last || array_has_diff_cb(this.memSerialDevices, last, testSame)) {
-			this.devicesListChange.fire(this.memSerialDevices);
+			this._devicesListChange.fire(this.memSerialDevices);
 		}
 	}
 
@@ -171,6 +184,33 @@ class SerialPortService implements ISerialPortService {
 		);
 	}
 
+	get lastSelect() {
+		return this._lastSelected;
+	}
+
+	public async quickOpenDevice(): Promise<string> {
+		const devices = await this.getValues();
+
+		const pickMap = devices.map((item): IQuickPickItem => {
+			return {
+				id: item.comName,
+				label: item.manufacturer ? `${item.comName}: ${item.manufacturer}` : item.comName,
+				description: item.serialNumber || item.productId,
+				detail: item.pnpId,
+				picked: item.comName === this._lastSelected,
+			};
+		});
+
+		const picked = await this.quickInputService.pick(TPromise.as(pickMap), { canPickMany: false });
+		if (picked && picked.id) { // id is like /dev/ttyUSB0
+			this._lastSelected = picked.id;
+			this._defaultDeviceChanged.fire();
+			this.storageService.store(SELECT_STORAGE_KEY, picked.id, StorageScope.WORKSPACE);
+			return picked.id;
+		}
+		return void 0;
+	}
+
 	private _handlePromise<T>(what: string, action: (cb: (e: Error, data?: T) => void) => void): Promise<T> {
 		return new Promise<T>((resolve, reject) => {
 			action((err: Error, data: T) => {
@@ -262,6 +302,8 @@ class SerialPortService implements ISerialPortService {
 export interface ISerialPortService extends EnumProviderService<SerialPortItem> {
 	_serviceBrand: any;
 
+	onDefaultDeviceChanged: Event<void>;
+
 	refreshDevices(): void;
 	openPort(serialDevice: string, opts?: Partial<SerialPort.OpenOptions>, exclusive?: boolean): Promise<SerialPortBaseBinding>;
 	closePort(serialDevice: string | SerialPortBaseBinding, reason: SerialPortCloseReason): TPromise<void>;
@@ -269,6 +311,8 @@ export interface ISerialPortService extends EnumProviderService<SerialPortItem> 
 	sendRebootISPKD233(serialDevice: string | SerialPortBaseBinding, cancel?: CancellationToken): TPromise<void>;
 	sendRebootISPDan(serialDevice: string | SerialPortBaseBinding, cancel?: CancellationToken): TPromise<void>;
 	sendFlowControl(port: string | SerialPortBaseBinding, cancel?: CancellationToken, ...controlSeq: SerialPort.SetOptions[]): Promise<void>;
+	quickOpenDevice(): Promise<string>;
+	readonly lastSelect: string;
 }
 
 export const ISerialPortService = createDecorator<ISerialPortService>('serialPortService');

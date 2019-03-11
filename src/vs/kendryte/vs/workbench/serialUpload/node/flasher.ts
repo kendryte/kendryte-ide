@@ -38,13 +38,22 @@ export class SerialLoader extends Disposable {
 	protected aborted: Error;
 	protected readonly abortedPromise: TPromise<never>;
 
-	protected readonly applicationStream: ReadStream;
 	protected applicationStreamSize: number;
 	protected bootLoaderStreamSize: number;
 
 	public get onError(): Event<Error> { return this.streamChain.onError; }
 
-	protected readonly bootLoaderStream: ReadStream;
+	protected get bootLoaderStream(): ReadStream {
+		return this._register(disposableStream(
+			createReadStream(this.bootLoader, { highWaterMark: 1024 }),
+		));
+	}
+
+	protected get applicationStream(): ReadStream {
+		return this._register(disposableStream(
+			createReadStream(this.application, { highWaterMark: 4096 }),
+		));
+	}
 
 	private deferred: DeferredPromise<ISPResponse>;
 	private deferredWait: ISPOperation[];
@@ -53,20 +62,13 @@ export class SerialLoader extends Disposable {
 	constructor(
 		private readonly serialPortService: ISerialPortService,
 		private readonly device: SerialPortBaseBinding,
-		application: string,
-		bootLoader: string,
+		private readonly application: string,
+		private readonly bootLoader: string,
 		protected readonly encryptionKey: Buffer,
 		protected readonly type: ChipType,
 		protected readonly logger: IChannelLogger,
 	) {
 		super();
-
-		this.applicationStream = this._register(disposableStream(
-			createReadStream(application, { highWaterMark: 4096 }),
-		));
-		this.bootLoaderStream = this._register(disposableStream(
-			createReadStream(bootLoader, { highWaterMark: 1024 }),
-		));
 
 		this.timeout = this._register(new TimeoutBuffer(5));
 
@@ -235,6 +237,10 @@ export class SerialLoader extends Disposable {
 		this.logger.info(' - Complete.');
 	}
 
+	flashRebootNormal() {
+		return this.serialPortService.sendReboot(this.device);
+	}
+
 	async flashGreeting() {
 		this.logger.info('Greeting');
 		try {
@@ -375,7 +381,7 @@ export class SerialLoader extends Disposable {
 
 	public async run(report: SubProgress) {
 		const p = this._run(report);
-		p.then(undefined, (err) => {
+		p.catch((err) => {
 			console.warn(err.stack);
 			this.logger.error(err.stack);
 		});
@@ -411,6 +417,9 @@ export class SerialLoader extends Disposable {
 
 		report.message('flashing program...');
 		await Promise.race<any>([this.abortedPromise, this.flashMain(report)]);
+
+		report.message('reboot to run the program...');
+		await Promise.race<any>([this.abortedPromise, this.flashRebootNormal()]);
 
 		this.logger.info('finished.');
 	}

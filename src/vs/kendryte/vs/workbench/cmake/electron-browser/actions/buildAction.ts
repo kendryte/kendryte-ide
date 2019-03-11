@@ -3,6 +3,7 @@ import { ACTION_ID_MAIX_CMAKE_BUILD, ACTION_LABEL_MAIX_CMAKE_BUILD } from 'vs/ke
 import { CMAKE_CHANNEL, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
 import { INotificationService } from 'vs/platform/notification/common/notification';
+import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
 
 export class MaixCMakeBuildAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_BUILD;
@@ -11,9 +12,10 @@ export class MaixCMakeBuildAction extends Action {
 
 	constructor(
 		id = MaixCMakeBuildAction.ID, label = MaixCMakeBuildAction.LABEL,
-		@ICMakeService protected cmakeService: ICMakeService,
-		@IOutputService protected outputService: IOutputService,
-		@INotificationService protected notificationService: INotificationService,
+		@ICMakeService private readonly cmakeService: ICMakeService,
+		@IOutputService private readonly outputService: IOutputService,
+		@INotificationService private readonly notificationService: INotificationService,
+		@ITextFileService private readonly textFileService: ITextFileService,
 	) {
 		super(id, label);
 		this.outputChannel = outputService.getChannel(CMAKE_CHANNEL);
@@ -34,6 +36,8 @@ export class MaixCMakeBuildAction extends Action {
 	async _run() {
 		this.outputChannel.clear();
 		this.outputChannel.append('Starting build...\n');
+
+		await this.textFileService.saveAll();
 
 		await this.cmakeService.configure();
 

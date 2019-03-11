@@ -1,0 +1,13 @@
+.monaco-workbench > .part.statusbar > .statusbar-item {
+	&[statusbar-entry-priority='5.99'], // CMake button
+	&[statusbar-entry-priority='3.99'] // Plug button
+	{
+		padding: 0 0.2em 0 0.6em;
+		background-color: rgba(128, 128, 128, 0.5);
+		
+		> * {
+			margin: auto;
+			padding: 0;
+		}
+	}
+}

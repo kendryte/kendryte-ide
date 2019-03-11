@@ -11,12 +11,13 @@ import { MaixCMakeSelectVariantAction } from 'vs/kendryte/vs/workbench/cmake/ele
 import { MaixCMakeHelloWorldAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/helloWorldAction';
 import { MaixCMakeConfigureAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/configureAction';
 import { Extensions as JSONExtensions, IJSONContributionRegistry } from 'vs/platform/jsonschemas/common/jsonContributionRegistry';
-import { registerExternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
+import { registerExternalAction, registerInternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 import { OpenLocalCmakeListAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/openLocalCmakeList';
 import { registerCMakeSchemas } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { registerCMakeConfig } from 'vs/kendryte/vs/workbench/cmake/common/configFile';
 import { MaixCMakeBuildRunAction, MaixCMakeRunAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/runAction';
 import { ACTION_CATEGORY_BUILD_DEBUG } from 'vs/kendryte/vs/base/common/menu/cmake';
+import { MaixCMakeOpenLogAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/openLogAction';
 
 registerSingleton(ICMakeService, CMakeService);
 
@@ -57,3 +58,6 @@ registerCMakeSchemas((id, schema) => {
 
 // config sections
 registerCMakeConfig();
+
+// open log
+registerInternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeOpenLogAction);

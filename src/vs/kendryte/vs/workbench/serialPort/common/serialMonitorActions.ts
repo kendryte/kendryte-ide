@@ -1,4 +1,4 @@
-import { SERIAL_MONITOR_ACTION_TOGGLE, SERIAL_PANEL_ID } from 'vs/kendryte/vs/workbench/serialPort/common/type';
+import { ACTION_ID_SERIAL_MONITOR_TOGGLE, SERIAL_PANEL_ID } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { registerExternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 import { Action } from 'vs/base/common/actions';
 import { localize } from 'vs/nls';
@@ -8,7 +8,7 @@ import { IPartService } from 'vs/workbench/services/part/common/partService';
 import { SerialPortActionCategory } from 'vs/kendryte/vs/base/common/menu/serialPort';
 
 class ToggleSerialMonitorAction extends Action {
-	public static readonly ID = SERIAL_MONITOR_ACTION_TOGGLE;
+	public static readonly ID = ACTION_ID_SERIAL_MONITOR_TOGGLE;
 	public static readonly LABEL = localize('serialport.togglePanel.title', 'Toggle Serial Monitor');
 
 	constructor(

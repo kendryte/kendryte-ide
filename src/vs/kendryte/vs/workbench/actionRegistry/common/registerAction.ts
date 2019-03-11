@@ -2,9 +2,13 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { Extensions as ActionExtensions, IWorkbenchActionRegistry } from 'vs/workbench/common/actions';
 import { MenuId, MenuRegistry, SyncActionDescriptor } from 'vs/platform/actions/common/actions';
 import { Action } from 'vs/base/common/actions';
-import { IConstructorSignature2, IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { IConstructorSignature2, IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { IKeybindings } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
+import { CommandsRegistry } from 'vs/platform/commands/common/commands';
+import { INotificationService } from 'vs/platform/notification/common/notification';
+import { TypeConstraint } from 'vs/base/common/types';
+import { always } from 'vs/base/common/async';
 
 const DescRegistry: { [id: string]: SyncActionDescriptor; } = {};
 
@@ -12,6 +16,7 @@ interface IActionToRegister extends IConstructorSignature2<string, string, Actio
 	ID: string;
 	LABEL_SHORT?: string;
 	LABEL: string;
+	ARGUMENTS?: { name: string; description?: string; constraint?: TypeConstraint; }[];
 }
 
 export function registerInternalAction(category: string, Action: IActionToRegister) {
@@ -26,6 +31,27 @@ export function registerInternalAction(category: string, Action: IActionToRegist
 			`${category}: ${Action.LABEL}`,
 			category,
 		);
+
+	CommandsRegistry.registerCommand({
+		id: Action.ID,
+		handler(access: ServicesAccessor, ...args: any[]) {
+			const actionObject = access.get(IInstantiationService).createInstance(DescRegistry[Action.ID].syncDescriptor);
+			const notificationService = access.get(INotificationService);
+			return always(
+				Promise.resolve(actionObject.run(args, null)).catch((e) => {
+					notificationService.error(`Failed to run action: ${Action.ID}\n${e.message}`);
+					throw e;
+				}),
+				() => {
+					actionObject.dispose();
+				},
+			);
+		},
+		description: {
+			description: `${category}: ${Action.LABEL}`,
+			args: Action.ARGUMENTS || [],
+		},
+	});
 }
 
 export function registerExternalAction(category: string, Action: IActionToRegister) {

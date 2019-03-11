@@ -39,7 +39,7 @@ export class MaixCMakeDebugAction extends Action {
 		@IInstantiationService private instantiationService: IInstantiationService,
 		@IFileService private fileService: IFileService,
 		@ITextModelService private textModelService: ITextModelService,
-		@IOpenOCDService protected openOCDService: IOpenOCDService,
+		@IOpenOCDService private openOCDService: IOpenOCDService,
 	) {
 		super(id, label);
 	}
@@ -134,6 +134,7 @@ export class MaixCMakeDebugAction extends Action {
 			throw e;
 		});
 
+		await this.debugService.stopSession(null);
 		await this.debugService.startDebugging(myLaunch, 'kendryte');
 	}
 }

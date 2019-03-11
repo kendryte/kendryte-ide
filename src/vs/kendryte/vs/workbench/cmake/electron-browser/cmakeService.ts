@@ -1,5 +1,5 @@
-import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE, CMakeInternalVariants, CurrentItem, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
-import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
+import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE, CMakeInternalVariants, CurrentItem, ICMakeSelection, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { ChildProcess, spawn, SpawnOptions } from 'child_process';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
@@ -34,8 +34,6 @@ import { isWindows } from 'vs/base/common/platform';
 import { LineData, LineProcess } from 'vs/base/node/processes';
 import { Executable } from 'vs/base/common/processes';
 import { cpus } from 'os';
-import { addStatusBarCmakeButtons } from 'vs/kendryte/vs/workbench/cmake/common/buttons';
-import { StatusBarController } from 'vs/kendryte/vs/workbench/cmake/common/statusBarController';
 import { CMAKE_TARGET_TYPE } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/config';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { osTempDir, resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
@@ -50,6 +48,11 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { CMakeListsCreator } from 'vs/kendryte/vs/workbench/cmake/electron-browser/listsCreator';
 import { CONFIG_KEY_MAKE_PROGRAM } from 'vs/kendryte/vs/base/common/configKeys';
+import { IKendryteStatusControllerService } from 'vs/kendryte/vs/workbench/bottomBar/common/type';
+import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
+import { CONTEXT_CMAKE_SEEMS_OK, CONTEXT_CMAKE_WORKING } from 'vs/kendryte/vs/workbench/cmake/common/contextKey';
+import { CMakeError, CMakeErrorType } from 'vs/kendryte/vs/workbench/cmake/common/errors';
+import { always } from 'vs/base/common/async';
 
 export interface IPromiseProgress<T> {
 	progress(fn: (p: T) => void): void;
@@ -119,21 +122,33 @@ export class CMakeService implements ICMakeService {
 	private readonly _onCMakeEvent = new Emitter<ICMakeProtocol>();
 	public readonly onCMakeEvent: Event<ICMakeProtocol> = this._onCMakeEvent.event;
 	private cmakeConnectionStablePromise: Deferred;
-	private statusBarController: StatusBarController;
 	private lastProcess: CMakeProcessList;
+
+	private readonly _onCMakeProjectChange = new Emitter<Error | null>();
+	public readonly onCMakeProjectChange = this._onCMakeProjectChange.event;
+	private readonly cmakeConfiguredContextKey: IContextKey<boolean>;
+	private readonly cmakeWorkingContextKey: IContextKey<boolean>;
+
+	private readonly _onCMakeSelectionChange = new Emitter<ICMakeSelection>();
+	public readonly onCMakeSelectionChange = this._onCMakeSelectionChange.event;
 
 	constructor(
 		@ILifecycleService lifecycleService: ILifecycleService,
-		@IChannelLogService private readonly channelLogService: IChannelLogService,
+		@IContextKeyService contextKeyService: IContextKeyService,
 		@ICommandService commandService: ICommandService,
+		@IChannelLogService channelLogService: IChannelLogService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@INodePathService private readonly nodePathService: INodePathService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
+		@IKendryteStatusControllerService private readonly kendryteStatusControllerService: IKendryteStatusControllerService,
 	) {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
+
+		this.cmakeConfiguredContextKey = CONTEXT_CMAKE_SEEMS_OK.bindTo(contextKeyService);
+		this.cmakeWorkingContextKey = CONTEXT_CMAKE_WORKING.bindTo(contextKeyService);
 
 		// this.installExtension('twxs.cmake');
 		lifecycleService.onWillShutdown(e => {
@@ -145,18 +160,12 @@ export class CMakeService implements ICMakeService {
 		this.localDefine = [];
 		this.localDefine.push(`-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE`);
 
-		instantiationService.invokeFunction(this.init.bind(this));
-	}
-
-	init(access: ServicesAccessor) {
 		console.log('cmake service init.');
 		if (isWindows) {
 			this.localEnv.CMAKE_MAKE_PROGRAM = 'mingw32-make.exe';
 		} else {
 			this.localEnv.CMAKE_MAKE_PROGRAM = this.configurationService.getValue<string>(CONFIG_KEY_MAKE_PROGRAM) || '/usr/bin/make';
 		}
-
-		this.statusBarController = this.instantiationService.invokeFunction(addStatusBarCmakeButtons);
 
 		this.workspaceContextService.onDidChangeWorkspaceFolders(_ => {
 			this.rescanCurrentFolder().then(undefined, (e) => {
@@ -453,15 +462,23 @@ ${JSON.stringify(payload)}
 
 	public rescanCurrentFolder(): TPromise<void> {
 		this.logger.info('rescan current folder');
-		this.statusBarController.setWorking();
-		const p = this._rescanCurrentFolder();
-		p.catch((e) => {
+
+		this.cmakeConfiguredContextKey.set(false);
+		this.cmakeWorkingContextKey.set(true);
+		this._onCMakeProjectChange.fire(null);
+
+		return this._rescanCurrentFolder().then(() => {
+			this.cmakeConfiguredContextKey.set(true);
+			this._onCMakeProjectChange.fire(null);
+			this.cmakeWorkingContextKey.set(false);
+		}, (e) => {
 			this.logger.info('rescan current folder error!');
 			this.logger.error(e.stack);
-			this.channelLogService.show(CMAKE_CHANNEL);
-			this.statusBarController.setError();
+
+			this.cmakeConfiguredContextKey.set(false);
+			this._onCMakeProjectChange.fire(e);
+			this.cmakeWorkingContextKey.set(false);
 		});
-		return p;
 	}
 
 	public async _rescanCurrentFolder(): Promise<void> {
@@ -473,13 +490,38 @@ ${JSON.stringify(payload)}
 		this.logger.info('Workspace change to: %s', currentDir);
 		this._currentFolder = currentDir;
 		// this.localEnv.INSTALL_PREFIX = resolvePath(currentDir, 'build/install');
-		await this.detectCMakeProject();
 
-		if (currentDir) {
-			this.statusBarController.setEmptyState(false, this._CMakeProjectExists);
-		} else {
-			this.statusBarController.setEmptyState(true);
+		this.logger.info('detecting project in ' + this._currentFolder);
+
+		if (!this._currentFolder) {
+			this._CMakeProjectExists = false;
+			throw new CMakeError(CMakeErrorType.NO_WORKSPACE);
 		}
+		let listSourceFile = resolvePath(this._currentFolder, CMAKE_CONFIG_FILE_NAME);
+
+		if (!await exists(listSourceFile)) {
+			this._CMakeProjectExists = false;
+			throw new CMakeError(CMakeErrorType.PROJECT_NOT_EXISTS);
+		}
+		this.logger.info('  ' + CMAKE_CONFIG_FILE_NAME + ' found.');
+
+		let createdListFile = resolvePath(this._currentFolder, 'CMakeLists.txt');
+		if (await exists(createdListFile)) {
+			this.logger.info('  CMakeLists.txt found.');
+			const content = await readFile(createdListFile, 'utf8');
+			if (content.indexOf(CMAKE_LIST_GENERATED_WARNING) === -1) {
+				this.logger.info('    - Error: this file is not created by me, refuse to delete it.');
+				throw new CMakeError(CMakeErrorType.PROJECT_NOT_EXISTS);
+			}
+			this.logger.info('    - is safe to delete it.');
+		}
+		this._CMakeProjectExists = true;
+
+		await this.generateCMakeListsFile();
+		this.logger.info('  - CMake project is exists.');
+
+		this.setTarget('');
+		this.setVariant('');
 	}
 
 	private get cmakeLists() {
@@ -524,40 +566,6 @@ ${JSON.stringify(payload)}
 		} as ICMakeProtocolSetGlobalSettings);
 	}
 
-	private async detectCMakeProject(): Promise<void> {
-		this.logger.info('detecting project in ' + this._currentFolder);
-
-		if (!this._currentFolder) {
-			this.logger.info('  - no current dir.');
-			this._CMakeProjectExists = false;
-			return;
-		}
-		let listSourceFile = resolvePath(this._currentFolder, CMAKE_CONFIG_FILE_NAME);
-
-		if (!await exists(listSourceFile)) {
-			this.logger.info('  ' + CMAKE_CONFIG_FILE_NAME + ' not found.');
-			this.logger.info('  - CMake project is NOT exists.');
-			this._CMakeProjectExists = false;
-			return;
-		}
-		this.logger.info('  ' + CMAKE_CONFIG_FILE_NAME + ' found.');
-
-		let createdListFile = resolvePath(this._currentFolder, 'CMakeLists.txt');
-		if (await exists(createdListFile)) {
-			this.logger.info('  CMakeLists.txt found.');
-			const content = await readFile(createdListFile, 'utf8');
-			if (content.indexOf(CMAKE_LIST_GENERATED_WARNING) === -1) {
-				this.logger.info('    - Error: this file is not created by me, refuse to delete it.');
-				throw new Error('CMakeLists.txt will overwrite, please remove it.');
-			}
-			this.logger.info('    - is safe to delete it.');
-		}
-		this._CMakeProjectExists = true;
-
-		await this.generateCMakeListsFile();
-		this.logger.info('  - CMake project is exists.');
-	}
-
 	public async cleanupMake(): TPromise<void> {
 		await this.shutdown();
 		this.alreadyConfigured = false;
@@ -570,11 +578,18 @@ ${JSON.stringify(payload)}
 		this.logger.info('OK.');
 	}
 
-	public async configure(): TPromise<void> {
+	public configure(): Promise<void> {
+		this.cmakeWorkingContextKey.set(true);
+		return always(this._configure(), () => {
+			this.cmakeWorkingContextKey.set(false);
+		});
+	}
+
+	private async _configure() {
 		if (!this._CMakeProjectExists) {
 			this.logger.error('refuse to configure.');
 			this.logger.error('This is not a cmake project: ' + this._currentFolder);
-			return TPromise.wrapError(new Error('This is not a cmake project: ' + this._currentFolder));
+			throw new Error('This is not a cmake project: ' + this._currentFolder);
 		}
 
 		await this.generateCMakeListsFile();
@@ -615,7 +630,14 @@ ${JSON.stringify(payload)}
 		this.logger.info('~ Configure complete! ~');
 	}
 
-	public async build(): TPromise<void> {
+	public build() {
+		this.cmakeWorkingContextKey.set(true);
+		return always(this._build(), () => {
+			this.cmakeWorkingContextKey.set(false);
+		});
+	}
+
+	public async _build() {
 		await this.ensureConfiguration();
 
 		this.logger.info('Run cmake build:');
@@ -642,7 +664,7 @@ ${JSON.stringify(payload)}
 			this.lastProcess.dispose();
 		}
 		const processors = this.lastProcess = new CMakeProcessList([
-			new CMakeBuildProgressProcessor(this.statusBarController),
+			new CMakeBuildProgressProcessor(this.kendryteStatusControllerService),
 			this.instantiationService.createInstance(CMakeBuildErrorProcessor),
 		]);
 
@@ -676,7 +698,6 @@ ${JSON.stringify(payload)}
 			throw ret.error;
 		}
 		if (ret.cmdCode !== 0) {
-			this.statusBarController.showMessage('');
 			this.logger.info('Build Error: %s exited with code %s.', make, ret.cmdCode);
 			throw new Error('make failed with code ' + ret.cmdCode);
 		} else {
@@ -687,7 +708,7 @@ ${JSON.stringify(payload)}
 
 	async ensureConfiguration(): TPromise<ICMakeProtocolCodeModel> {
 		if (!this.alreadyConfigured) {
-			await this.configure();
+			await this._configure();
 		}
 		return await this.sendRequest({ type: CMAKE_EVENT_TYPE.CODEMODEL }) as ICMakeProtocolCodeModel;
 	}
@@ -695,17 +716,25 @@ ${JSON.stringify(payload)}
 	setVariant(variant: string) {
 		this.alreadyConfigured = false;
 		this.selectedVariant = variant;
-		this.statusBarController.setSelectedVariant(variant);
+		this._onCMakeSelectionChange.fire({
+			variant: this.selectedVariant,
+			target: this.selectedTarget,
+		});
+		// this.controller.selectVariantButton.text = variant ? '[' + variant + ']' : '<Default>';
 	}
 
 	setTarget(target: string) {
 		this.selectedTarget = target;
-		this.statusBarController.setSelectedTargetTitle(target);
+		this._onCMakeSelectionChange.fire({
+			variant: this.selectedVariant,
+			target: this.selectedTarget,
+		});
+		// this.controller.selectTargetButton.text = target ? '[' + target + ']' : '<All>';
 	}
 
 	async getVariantList(): TPromise<CurrentItem[]> {
 		const variants = CMakeInternalVariants();
-		const vids = variants.map(e => e.id);
+		const vids: string[] = variants.map(e => e.id);
 
 		try {
 			const codeModel = await this.ensureConfiguration();

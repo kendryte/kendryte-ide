@@ -1,5 +1,6 @@
 import { TPromise } from 'vs/base/common/winjs.base';
 import { RawContextKey } from 'vs/platform/contextkey/common/contextkey';
+import { localize } from 'vs/nls';
 
 export const ConfigSerialPortActionId = 'ToggleMonitorAction';
 
@@ -8,7 +9,8 @@ export const SERIAL_PORT_HISTORY_STORAGE_KEY = 'storage.serial-port.history';
 export const SERIAL_PANEL_ID = 'workbench.panel.kendryte.serial-port';
 export const SERIAL_PANEL_OUTPUT_PANEL_ID = 'workbench.panel.kendryte.serial-port-output';
 
-export const SERIAL_MONITOR_ACTION_TOGGLE = 'workbench.action.kendryte.serial-port.toggle';
+export const ACTION_ID_SERIAL_MONITOR_TOGGLE = 'workbench.action.kendryte.serial-port.toggle';
+export const ACTION_LABEL_SERIAL_MONITOR_TOGGLE = localize('kendryte.serial.terminal.toggle', 'Toggle serial monitor visible');
 export const SERIAL_MONITOR_ACTION_REFRESH_DEVICE = 'workbench.action.kendryte.serial-port.reload-devices';
 export const SERIAL_MONITOR_ACTION_REPL_ENTER = 'serial-port.action.acceptInput';
 export const SERIAL_MONITOR_ACTION_CLEAR = 'workbench.action.kendryte.serial-port.monitor.clear';

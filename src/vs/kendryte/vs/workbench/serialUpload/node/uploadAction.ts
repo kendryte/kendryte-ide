@@ -8,8 +8,6 @@ import { IProgressService2, ProgressLocation } from 'vs/platform/progress/common
 import { SubProgress } from 'vs/kendryte/vs/platform/config/common/progress';
 import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
-import { IQuickInputService, IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
-import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import {
 	ACTION_ID_MAIX_CMAKE_BUILD,
@@ -29,9 +27,7 @@ export class MaixSerialUploadAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_SERIAL_UPLOAD;
 	public static readonly LABEL = ACTION_LABEL_MAIX_SERIAL_UPLOAD;
 
-	static lastSelected: string;
 	private readonly logger: IChannelLogger;
-	private lastSelected: string;
 
 	constructor(
 		id: string = MaixSerialUploadAction.ID, label: string = MaixSerialUploadAction.LABEL,
@@ -41,47 +37,15 @@ export class MaixSerialUploadAction extends Action {
 		@ICMakeService private cMakeService: ICMakeService,
 		@IProgressService2 private progressService: IProgressService2,
 		@IChannelLogService private channelLogService: IChannelLogService,
-		@IStorageService private storageService: IStorageService,
-		@IQuickInputService protected quickInputService: IQuickInputService,
 		@IConfigurationService private configurationService: IConfigurationService,
 	) {
 		super(id, label);
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
-		this.lastSelected = storageService.get('serial-port.last-selected', StorageScope.WORKSPACE, '');
-	}
-
-	public async quickOpenDevice(): TPromise<string> {
-		const devices = await this.serialPortService.getValues();
-
-		const pickMap = devices.map((item): IQuickPickItem => {
-			/*{
-				"manufacturer": "Arduino LLC",
-				"pnpId": "usb-Arduino_LLC_Arduino_Micro-if00",
-				"vendorId": "2341",
-				"productId": "8037",
-				"comName": "/dev/ttyACM1"
-			}*/
-			return {
-				id: item.comName,
-				label: item.manufacturer ? `${item.comName}: ${item.manufacturer}` : item.comName,
-				description: item.serialNumber || item.productId,
-				detail: item.pnpId,
-				picked: item.comName === this.lastSelected,
-			};
-		});
-
-		const picked = await this.quickInputService.pick(TPromise.as(pickMap), { canPickMany: false });
-		if (picked && picked.id) { // id is like /dev/ttyUSB0
-			this.lastSelected = picked.id;
-			this.storageService.store('serial-port.last-selected', picked.id, StorageScope.WORKSPACE);
-			return picked.id;
-		}
-		return void 0;
 	}
 
 	async run(): TPromise<void> {
 		await this.serialPortService.refreshDevices();
-		const sel = await this.quickOpenDevice();
+		const sel = this.serialPortService.lastSelect || await this.serialPortService.quickOpenDevice();
 		if (!sel) {
 			return;
 		}
@@ -141,9 +105,8 @@ export class MaixSerialUploadAction extends Action {
 				total: 100,
 				cancellable: true,
 			},
-			async (report) => {
-				await loader.run(new SubProgress('', report));
-				await this.serialPortService.sendReboot(port);
+			(report) => {
+				return loader.run(new SubProgress('', report));
 			},
 			() => loader.abort(new Error('user cancel')),
 		);

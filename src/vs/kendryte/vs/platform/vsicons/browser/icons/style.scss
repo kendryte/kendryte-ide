@@ -1,0 +1,38 @@
+.monaco-workbench .visualstudio-icon:before {
+	content: ' ';
+	display: inline-block;
+	height: 1em;
+	width: 1em;
+}
+
+.monaco-workbench .octicon.octicon-vs {
+	font-family: initial !important;
+	
+	&:before {
+		content: ' ';
+		display: inline-block;
+		height: 1em;
+		width: 1em;
+	}
+}
+
+@mixin create($name) {
+	.monaco-workbench .visualstudio-icon.#{$name}:before {
+		background-image: url("#{$name}.svg");
+		
+		.vs-dark & {
+			background-image: url("#{$name}-dark.svg");
+		}
+	}
+	.monaco-workbench .octicon.octicon-vs.#{$name}:before {
+		background-image: url("#{$name}.svg");
+		
+		.vs-dark & {
+			background-image: url("#{$name}-dark.svg");
+		}
+	}
+}
+
+@include create('library');
+@include create('example');
+@include create('select');

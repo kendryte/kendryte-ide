@@ -32,8 +32,10 @@ import { DeferredPromise } from 'vs/base/test/common/utils';
 import { timeout } from 'vs/base/common/async';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
+import { IDebugService } from 'vs/workbench/parts/debug/common/debug';
 
 const libUsbError = /\bLIBUSB_ERROR_IO\b/;
+const libUsbDisconnect = /\bLIBUSB_ERROR_NO_DEVICE\b/;
 const TDOHigh = /\bTDO seems to be stuck high\b/;
 const startOk = /\bExamined RISCV core\b/;
 const commonError = / IR capture error; saw /;
@@ -57,6 +59,7 @@ export class OpenOCDService implements IOpenOCDService {
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IInstantiationService private readonly IInstantiationService: IInstantiationService,
+		@IDebugService private readonly debugService: IDebugService,
 	) {
 		this.logger = channelLogService.createChannel(OPENOCD_CHANNEL_TITLE, OPENOCD_CHANNEL, true);
 		this.openocd = nodePathService.getPackagesPath('openocd/openocd' + executableExtension);
@@ -168,6 +171,7 @@ export class OpenOCDService implements IOpenOCDService {
 				this.logger.info('OpenOCD process successful finished');
 			}
 			delete this.child;
+			this.debugService.stopSession(null);
 		});
 
 		this.logger.info('OpenOCD process started. waiting for output...');
@@ -271,6 +275,8 @@ export class OpenOCDService implements IOpenOCDService {
 			this.logger.warn(' * port is busy');
 			this.logger.warn(' * windows: driver not valid');
 			this.okPromise.error(new Error('Connection failed.'));
+		} else if (libUsbDisconnect.test(line)) {
+			this.stop().catch(undefined);
 		} else if (TDOHigh.test(line)) {
 			this.restart().catch(undefined);
 		} else if (this.okWait) {

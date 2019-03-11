@@ -2,6 +2,9 @@ import { localize } from 'vs/nls';
 
 export const ACTION_CATEGORY_BUILD_DEBUG = localize('and', '{0} and {1}', localize('build', 'Build'), localize('debug', 'Debug'));
 
+export const ACTION_ID_SHOW_LOG = 'workbench.action.kendryte.show-cmake-log';
+export const ACTION_LABEL_SHOW_LOG = localize('show.log.cmake', 'Click to show CMake log.');
+
 export const ACTION_ID_MAIX_CMAKE_CLEANUP = 'workbench.action.kendryte.cleanup';
 export const ACTION_LABEL_MAIX_CMAKE_CLEANUP = localize('cleanup', 'Cleanup');
 
@@ -25,3 +28,13 @@ export const ACTION_ID_MAIX_SERIAL_UPLOAD = 'workbench.action.kendryte.upload';
 export const ACTION_LABEL_MAIX_SERIAL_UPLOAD = localize('upload', 'Upload');
 export const ACTION_ID_MAIX_SERIAL_BUILD_UPLOAD = 'workbench.action.kendryte.build-upload';
 export const ACTION_LABEL_MAIX_SERIAL_BUILD_UPLOAD = localize('and', '{0} and {1}', ACTION_LABEL_MAIX_CMAKE_BUILD, ACTION_LABEL_MAIX_SERIAL_UPLOAD);
+
+export const ACTION_ID_MAIX_SERIAL_BOOT = 'workbench.action.kendryte.reboot';
+export const ACTION_LABEL_MAIX_SERIAL_BOOT = localize('reboot', 'Reboot');
+export const ACTION_LABEL_MAIX_SERIAL_BOOT_ISP = localize('reboot.to.ISP.mode', 'Reboot to ISP mode');
+
+export const ACTION_ID_MAIX_SERIAL_SELECT_DEFAULT = 'workbench.action.kendryte.default-serial-port';
+export const ACTION_LABEL_MAIX_SERIAL_SELECT_DEFAULT = localize('kendryte.serial-port.default', 'Click to select default serial port for flasher');
+
+
+

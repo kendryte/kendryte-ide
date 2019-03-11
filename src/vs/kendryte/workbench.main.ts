@@ -41,6 +41,9 @@ import 'vs/kendryte/vs/workbench/topMenu/electron-browser/kendryteMenuContributi
 import 'vs/kendryte/vs/workbench/topMenu/node/shortcutsContribution';
 // cmake
 import 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeContribution';
+// bottom buttons
+import 'vs/kendryte/vs/workbench/bottomBar/electron-browser/statusBarContribution';
+import 'vs/kendryte/vs/workbench/bottomBar/common/kendryteButtonContribution';
 // Package Manager
 import 'vs/kendryte/vs/workbench/packageManager/browser/actionsContribution';
 import 'vs/kendryte/vs/workbench/packageManager/electron-browser/mainPanelContribution';

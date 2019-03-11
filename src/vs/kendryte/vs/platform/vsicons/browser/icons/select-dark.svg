@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 16 16"
+   version="1.1"
+   id="svg12"
+   sodipodi:docname="select-dark.svg"
+   inkscape:version="0.92.4 (unknown)">
+  <metadata
+     id="metadata18">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs16" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="640"
+     inkscape:window-height="480"
+     id="namedview14"
+     showgrid="false"
+     inkscape:zoom="14.75"
+     inkscape:cx="8"
+     inkscape:cy="8"
+     inkscape:window-x="8"
+     inkscape:window-y="31"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg12" />
+  <style
+     id="style2">.st0{opacity:0}.st0,.st1{fill:#f6f6f6}.st2{fill:#424242}</style>
+  <g
+     id="icon_x5F_bg"
+     style="fill:#ffffff">
+    <path
+       class="st2"
+       d="M7 2.571V1H6v1.571c.161-.042.326-.071.5-.071s.339.029.5.071zM10 5V4H8.429c.042.16.071.326.071.5s-.029.34-.071.5H10zM4.5 4.5c0-.174.029-.34.071-.5H3v1h1.571a1.96 1.96 0 0 1-.071-.5zM8.218 3.49l1.111-1.111-.708-.708-1.11 1.111c.292.173.534.415.707.708zM4.782 5.51L3.671 6.621l.708.707 1.11-1.111a1.995 1.995 0 0 1-.707-.707zM3.671 2.379L4.782 3.49c.173-.292.415-.535.707-.707l-1.11-1.111-.708.707zM10.65 14.673l1.465-.66-1.579-3.614 2.778.141-6.105-5.695v8.365l1.845-2.18z"
+       id="path9"
+       style="fill:#ffffff" />
+  </g>
+</svg>

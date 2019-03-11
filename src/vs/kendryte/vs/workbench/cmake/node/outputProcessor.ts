@@ -2,7 +2,6 @@ import { Severity } from 'vs/platform/notification/common/notification';
 import { IMarkerData, IMarkerService, MarkerSeverity } from 'vs/platform/markers/common/markers';
 import { URI } from 'vs/base/common/uri';
 import { TextProgressBar } from 'vs/kendryte/vs/base/common/textProgressBar';
-import { StatusBarController } from 'vs/kendryte/vs/workbench/cmake/common/statusBarController';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { normalize } from 'path';
@@ -10,8 +9,9 @@ import { isAbsolute } from 'vs/base/common/paths';
 import { isWindows } from 'vs/base/common/platform';
 import { escapeRegExpCharacters } from 'vs/base/common/strings';
 import { normalizePosixPath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { IKendryteStatusControllerService } from 'vs/kendryte/vs/workbench/bottomBar/common/type';
 
-const regGCCError = /^(.*?):(\d+):(\d+):\s+(\w*)(?:\sfatale)?\s?:\s+(.*)/;
+const regGCCError = /^(.*?):(\d+):(\d+):\s+(\w*)(?:\serror|warning)?:\s+(.*)/;
 const regCMakeProgress = /^\[\s*(\d+)%]/;
 
 export class CMakeProcessList implements IDisposable {
@@ -77,6 +77,7 @@ export class CMakeBuildErrorProcessor extends CMakeProcessor {
 	}
 
 	protected diagnostic(_severity: string, message: string, file: string, _line: string, _column: string) {
+		message = 'CMake: ' + message;
 		let severity = MarkerSeverity.fromSeverity(Severity.fromValue(_severity)) || MarkerSeverity.Info;
 		if (severity === MarkerSeverity.Hint) {
 			severity = MarkerSeverity.Info;
@@ -140,9 +141,10 @@ export class CMakeBuildErrorProcessor extends CMakeProcessor {
 
 export class CMakeBuildProgressProcessor extends CMakeProcessor {
 	private bar: TextProgressBar;
+	private readonly CMAKE_PROGRESS = 'cmake.progress';
 
 	constructor(
-		protected statusBarController: StatusBarController,
+		protected statusBarController: IKendryteStatusControllerService,
 	) {
 		super();
 		this.bar = new TextProgressBar(20);
@@ -153,16 +155,18 @@ export class CMakeBuildProgressProcessor extends CMakeProcessor {
 		const m1 = regCMakeProgress.exec(line);
 		if (m1) {
 			this.bar.percent(parseInt(m1[1]));
-			this.statusBarController.showMessage(this.bar.toString());
+			this.statusBarController.showMessage(this.CMAKE_PROGRESS).text = this.bar.toString();
 		}
 		return !!m1;
 	}
 
 	finalize(): void {
 		this.bar.dispose();
+		delete this.bar;
+		this.statusBarController.resolveMessage(this.CMAKE_PROGRESS);
 	}
 
 	dispose(): void {
-		this.statusBarController.showMessage('');
+		// nothing to do
 	}
 }

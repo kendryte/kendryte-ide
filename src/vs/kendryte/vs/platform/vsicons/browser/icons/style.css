@@ -1,22 +1,45 @@
 .monaco-workbench .visualstudio-icon:before {
-	content: ' ';
-	display: inline-block;
-	height: 1em;
-	width: 1em;
-}
+  content: ' ';
+  display: inline-block;
+  height: 1em;
+  width: 1em; }
+
+.monaco-workbench .octicon.octicon-vs {
+  font-family: initial !important; }
+  .monaco-workbench .octicon.octicon-vs:before {
+    content: ' ';
+    display: inline-block;
+    height: 1em;
+    width: 1em; }
 
 .monaco-workbench .visualstudio-icon.library:before {
-	background-image: url('library.svg');
-}
+  background-image: url("library.svg"); }
+  .vs-dark .monaco-workbench .visualstudio-icon.library:before {
+    background-image: url("library-dark.svg"); }
 
-.vs-dark > .monaco-workbench .visualstudio-icon.library:before {
-	background-image: url('library-dark.svg');
-}
+.monaco-workbench .octicon.octicon-vs.library:before {
+  background-image: url("library.svg"); }
+  .vs-dark .monaco-workbench .octicon.octicon-vs.library:before {
+    background-image: url("library-dark.svg"); }
 
 .monaco-workbench .visualstudio-icon.example:before {
-	background-image: url('example.svg');
-}
+  background-image: url("example.svg"); }
+  .vs-dark .monaco-workbench .visualstudio-icon.example:before {
+    background-image: url("example-dark.svg"); }
 
-.vs-dark > .monaco-workbench .visualstudio-icon.example:before {
-	background-image: url('example-dark.svg');
-}
+.monaco-workbench .octicon.octicon-vs.example:before {
+  background-image: url("example.svg"); }
+  .vs-dark .monaco-workbench .octicon.octicon-vs.example:before {
+    background-image: url("example-dark.svg"); }
+
+.monaco-workbench .visualstudio-icon.select:before {
+  background-image: url("select.svg"); }
+  .vs-dark .monaco-workbench .visualstudio-icon.select:before {
+    background-image: url("select-dark.svg"); }
+
+.monaco-workbench .octicon.octicon-vs.select:before {
+  background-image: url("select.svg"); }
+  .vs-dark .monaco-workbench .octicon.octicon-vs.select:before {
+    background-image: url("select-dark.svg"); }
+
+/*# sourceMappingURL=style.css.map */

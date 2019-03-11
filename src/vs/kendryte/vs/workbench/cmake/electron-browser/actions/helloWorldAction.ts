@@ -1,9 +1,8 @@
 import { Action } from 'vs/base/common/actions';
 import { TPromise } from 'vs/base/common/winjs.base';
-import { localize } from 'vs/nls';
 import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
+import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD, ACTION_LABEL_MAIX_CMAKE_HELLO_WORLD } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { CMAKE_CHANNEL, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
@@ -15,7 +14,7 @@ import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 
 export class MaixCMakeHelloWorldAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_HELLO_WORLD;
-	public static readonly LABEL = localize('HelloWorld', 'Hello World');
+	public static readonly LABEL = ACTION_LABEL_MAIX_CMAKE_HELLO_WORLD;
 	protected outputChannel: IOutputChannel;
 
 	constructor(

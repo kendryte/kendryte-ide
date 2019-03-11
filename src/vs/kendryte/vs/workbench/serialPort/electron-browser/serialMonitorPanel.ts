@@ -16,7 +16,7 @@ import { SerialReplInput } from 'vs/kendryte/vs/workbench/serialPort/electron-br
 import { IAction } from 'vs/base/common/actions';
 import { OutputXTerminal } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/outputWindow';
 import { SerialScope } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/serialScope';
-import { isMacintosh, setImmediate } from 'vs/base/common/platform';
+import { isMacintosh } from 'vs/base/common/platform';
 import { SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
 import { CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';

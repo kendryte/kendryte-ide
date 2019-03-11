@@ -1,5 +1,5 @@
 import { Duplex } from 'stream';
-import { Disposable } from 'vs/base/common/lifecycle';
+import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { garbageEvent } from 'vs/kendryte/vs/workbench/serialUpload/node/bufferConsts';
 import { Emitter, Event } from 'vs/base/common/event';
 import { addDisposableEventEmitterListener } from 'vs/kendryte/vs/base/node/disposableEvents';
@@ -61,6 +61,9 @@ export class StreamChain<IT, OT> extends Disposable implements NodeJS.WritableSt
 		streams.forEach((parser) => {
 			if (last) {
 				last.pipe(parser);
+				this._register(toDisposable(() => {
+					last.unpipe(parser);
+				}));
 			}
 			this._register(
 				addDisposableEventEmitterListener(parser, garbageEvent, (data) => {
