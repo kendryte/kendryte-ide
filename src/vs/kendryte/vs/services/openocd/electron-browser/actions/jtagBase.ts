@@ -46,7 +46,7 @@ export class InstallJTagDriverAction extends Action {
 	async run() {
 		if (isWindows) {
 			this.channelLogService.show(OPENOCD_CHANNEL);
-			const zadigExe = normalize(this.nodePathService.getPackagesPath('openocd/zadig-2.4.exe'));
+			const zadigExe = normalize(this.nodePathService.getPackagesPath('jlink/zadig-2.4.exe'));
 			const tempScriptFile = osTempDir('execzadig.bat');
 			this.logger.info(`zadig: ${zadigExe}`);
 
@@ -126,7 +126,7 @@ export class InstallJTagOfficialDriverAction extends Action {
 	async run() {
 		if (isWindows) {
 			this.channelLogService.show(OPENOCD_CHANNEL);
-			const dpinst_x64 = normalize(this.nodePathService.getPackagesPath('openocd/x64/dpinst_x64.exe'));
+			const dpinst_x64 = normalize(this.nodePathService.getPackagesPath('jlink/x64/dpinst_x64.exe'));
 			this.logger.info(`dpinst_x64: ${dpinst_x64}`);
 
 			const command = `${dpinst_x64} /S /C /F`;

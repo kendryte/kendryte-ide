@@ -71,11 +71,11 @@ export class DetectJTagIdAction extends Action {
 
 	jlinkExe(): string {
 		if (isWindows) {
-			return this.nodePathService.getPackagesPath('openocd/JLink.exe');
+			return this.nodePathService.getPackagesPath('jlink/JLink.exe');
 		} else if (isLinux) {
-			return this.nodePathService.getPackagesPath('openocd/JLinkExe');
+			return this.nodePathService.getPackagesPath('jlink/JLinkExe');
 		} else {
-			return this.nodePathService.getPackagesPath('openocd/JLinkExe');
+			return this.nodePathService.getPackagesPath('jlink/JLinkExe');
 		}
 	}
 
