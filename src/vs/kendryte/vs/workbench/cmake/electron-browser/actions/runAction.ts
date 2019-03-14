@@ -65,7 +65,15 @@ export class MaixCMakeBuildRunAction extends Action {
 		super(id, label);
 	}
 
-	async run() {
+	run() {
+		return this._run().catch((e) => {
+			if (!e) {
+				throw new Error('Unknown error, see log.');
+			}
+		});
+	}
+
+	async _run() {
 		await createActionInstance(this.instantiationService, ACTION_ID_MAIX_CMAKE_BUILD).run(false);
 		await createActionInstance(this.instantiationService, ACTION_ID_MAIX_CMAKE_RUN).run();
 	}

@@ -75,6 +75,9 @@ export class MaixSerialRebootAction extends Action {
 			ChipType.InChip,
 			this.logger,
 		);
+		loader.abortedPromise.catch((e) => {
+			console.log('flasher output: %s', e ? e.message || e : e);
+		});
 
 		return this.progressService.withProgress(
 			{

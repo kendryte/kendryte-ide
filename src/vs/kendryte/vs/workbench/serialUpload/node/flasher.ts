@@ -36,23 +36,31 @@ export class SerialLoader extends Disposable {
 	protected readonly token: CancellationToken;
 
 	protected aborted: Error;
-	protected readonly abortedPromise: TPromise<never>;
+	public readonly abortedPromise: Promise<never>;
 
 	protected applicationStreamSize: number;
 	protected bootLoaderStreamSize: number;
 
 	public get onError(): Event<Error> { return this.streamChain.onError; }
 
+	private _bootLoaderStream: ReadStream;
 	protected get bootLoaderStream(): ReadStream {
-		return this._register(disposableStream(
-			createReadStream(this.bootLoader, { highWaterMark: 1024 }),
-		));
+		if (!this._bootLoaderStream) {
+			this._bootLoaderStream = this._register(disposableStream(
+				createReadStream(this.bootLoader, { highWaterMark: 1024 }),
+			));
+		}
+		return this._bootLoaderStream;
 	}
 
+	private _applicationStream: ReadStream;
 	protected get applicationStream(): ReadStream {
-		return this._register(disposableStream(
-			createReadStream(this.application, { highWaterMark: 4096 }),
-		));
+		if (!this._applicationStream) {
+			this._applicationStream = this._register(disposableStream(
+				createReadStream(this.application, { highWaterMark: 4096 }),
+			));
+		}
+		return this._applicationStream;
 	}
 
 	private deferred: DeferredPromise<ISPResponse>;
@@ -94,7 +102,7 @@ export class SerialLoader extends Disposable {
 			addDisposableEventEmitterListener(device, 'close', () => this.handleError(new Error('Broken pipe'))),
 		);
 
-		this.abortedPromise = new TPromise<never>((resolve, reject) => {
+		this.abortedPromise = new Promise<never>((resolve, reject) => {
 			this._register(this.cancel.token.onCancellationRequested(() => {
 				reject(this.aborted);
 			}));
