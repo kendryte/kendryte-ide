@@ -30,10 +30,8 @@ import {
 } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
 import { CONTEXT_CMAKE_SEEMS_OK, CONTEXT_CMAKE_WORKING } from 'vs/kendryte/vs/workbench/cmake/common/contextKey';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
-import { themeColorFromId } from 'vs/platform/theme/common/themeService';
 import { CMakeError, CMakeErrorType } from 'vs/kendryte/vs/workbench/cmake/common/errors';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
-import { inputValidationErrorForeground, inputValidationWarningForeground } from 'vs/platform/theme/common/colorRegistry';
 import { ACTION_ID_SERIAL_MONITOR_TOGGLE, ACTION_LABEL_SERIAL_MONITOR_TOGGLE } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import 'vs/css!./buttonSize';
 import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
@@ -108,17 +106,14 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 					btn.text = '$(plus) ' + e.message;
 					btn.command = ACTION_ID_MAIX_CMAKE_HELLO_WORLD;
 					btn.tooltip = ACTION_LABEL_MAIX_CMAKE_HELLO_WORLD;
-					btn.color = themeColorFromId(inputValidationErrorForeground);
 					break;
 				case CMakeErrorType.LISTS_TXT_EXISTS:
 					btn.text = '$(alert) ' + e.message;
-					btn.color = themeColorFromId(inputValidationWarningForeground);
 					break;
 				default:
 					btn.text = '$(alert) ' + e.message;
 					btn.command = ACTION_ID_SHOW_LOG;
 					btn.tooltip = ACTION_LABEL_SHOW_LOG;
-					btn.color = themeColorFromId(inputValidationWarningForeground);
 			}
 		});
 	}

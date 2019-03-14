@@ -11,7 +11,6 @@ import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import {
 	ACTION_ID_MAIX_CMAKE_BUILD,
-	ACTION_ID_MAIX_CMAKE_RUN,
 	ACTION_ID_MAIX_SERIAL_BUILD_UPLOAD,
 	ACTION_ID_MAIX_SERIAL_UPLOAD,
 	ACTION_LABEL_MAIX_SERIAL_BUILD_UPLOAD,
@@ -139,6 +138,6 @@ export class MaixSerialBuildUploadAction extends Action {
 
 	async run() {
 		await createActionInstance(this.instantiationService, ACTION_ID_MAIX_CMAKE_BUILD).run(false);
-		await createActionInstance(this.instantiationService, ACTION_ID_MAIX_CMAKE_RUN).run();
+		await createActionInstance(this.instantiationService, ACTION_ID_MAIX_SERIAL_UPLOAD).run();
 	}
 }
