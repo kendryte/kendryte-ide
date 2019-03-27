@@ -2,6 +2,7 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { Extensions, IConfigCategoryRegistry } from 'vs/kendryte/vs/platform/config/common/category';
 import { commonlyUsedData } from 'vs/workbench/parts/preferences/browser/settingsLayout';
 import { CONFIG_CATEGORY } from 'vs/kendryte/vs/base/common/configKeys';
+import { openModeSettingKey } from 'vs/platform/list/browser/listService';
 
 const CategoryRegistry = Registry.as<IConfigCategoryRegistry>(Extensions.ConfigCategory);
 if (!CategoryRegistry) {
@@ -16,7 +17,7 @@ for (const object of Object.values(CONFIG_CATEGORY)) {
 commonlyUsedData.settings = [
 	'window.titleBarStyle',
 	'workbench.colorTheme',
-	'workbench.editor.showIcons',
+	openModeSettingKey,
 	'workbench.iconTheme',
 	'editor.fontFamily',
 	'editor.fontSize',

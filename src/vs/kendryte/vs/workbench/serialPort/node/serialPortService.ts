@@ -231,7 +231,7 @@ class SerialPortService implements ISerialPortService {
 			const exists = this.openedPorts.get(serialDevice);
 			if (exclusive) {
 				await this.closePort(serialDevice, SerialPortCloseReason.Exclusive);
-
+				this.openedPorts.delete(serialDevice);
 				return this.openPort(serialDevice, opts, exclusive);
 			} else {
 				await this._handlePromise('update serial port', (cb) => {

@@ -140,7 +140,7 @@ export class CMakeListsCreator {
 		this.logger.info('reading file: ' + file);
 		const { json: current, warnings }: IJSONResult<ICompileInfo> = await this.nodeFileSystemService.readJsonFile<ICompileInfo>(file).catch((e) => {
 			this.logger.error(e);
-			throw new Error(`parsing dependencies, please check. invalid JSON file "${file}".`);
+			throw new Error(`Failed to parse dependency, did you installed them?`);
 		});
 		if (warnings.length) {
 			this.logger.warn(`(${warnings.length}) warning(s) during parse json`);

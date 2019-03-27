@@ -136,6 +136,7 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 		console.log('onTypeChange: ', value);
 		const display = (sections: (keyof IControlList)[], show: boolean) => {
 			for (const secName of sections) {
+				console.log('display: ', sections, show);
 				this.controls[secName].section.style.display = show ? 'flex' : 'none';
 				const set = this.controls[secName].widget.set as Function;
 				if (!show) {
@@ -146,8 +147,8 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 		};
 		switch (value) {
 			case CMakeProjectTypes.library:
-				display(['source', 'c_flags', 'cpp_flags', 'c_cpp_flags', 'link_flags', 'ld_file', 'entry', 'definitions', 'header', 'include', 'exampleSource'], true);
-				display(['prebuilt'], false);
+				display(['source', 'c_flags', 'cpp_flags', 'c_cpp_flags', 'link_flags', 'ld_file', 'definitions', 'header', 'include', 'exampleSource'], true);
+				display(['entry', 'prebuilt'], false);
 				break;
 			case CMakeProjectTypes.prebuiltLibrary:
 				display(['include', 'exampleSource', 'prebuilt'], true);
