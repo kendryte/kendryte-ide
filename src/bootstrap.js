@@ -183,7 +183,7 @@ exports.configurePortable = function () {
 		}
 
 		if (process.platform === 'darwin') {
-			return path.dirname(path.dirname(path.dirname(appRoot)));
+			// return path.dirname(path.dirname(path.dirname(appRoot)));
 		}
 
 		return path.dirname(path.dirname(appRoot));
@@ -194,12 +194,7 @@ exports.configurePortable = function () {
 			return process.env['VSCODE_PORTABLE'];
 		}
 
-		if (process.platform === 'win32' || process.platform === 'linux') {
-			return path.join(getApplicationPath(), 'data');
-		}
-
-		const portableDataName = product.portable || `${product.applicationName}-portable-data`;
-		return path.join(getApplicationPath(), portableDataName);
+		return path.join(path.dirname(path.dirname(getApplicationPath())), 'UserData/latest');
 	}
 	
 	debugger;
