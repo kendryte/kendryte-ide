@@ -16,6 +16,8 @@
 	"win32AppUserModelId": "CanaanCreative.KendryteIDE",
 	"win32ShellNameShort": "K&endryte IDE",
 	"darwinBundleIdentifier": "io.canaan.kendryte.ide",
+	"linuxIconName": "com.visualstudio.code.oss",
+	"licenseFileName": "LICENSE.txt",
 	"urlProtocol": "kendryte",
 	"commit": "0.1.0",
 	"quality": "beta",
