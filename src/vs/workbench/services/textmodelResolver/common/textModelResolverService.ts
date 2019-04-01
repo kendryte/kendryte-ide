@@ -12,10 +12,11 @@ import { IModelService } from 'vs/editor/common/services/modelService';
 import { ResourceEditorModel } from 'vs/workbench/common/editor/resourceEditorModel';
 import { ITextFileService, LoadReason } from 'vs/workbench/services/textfile/common/textfiles';
 import * as network from 'vs/base/common/network';
-import { ITextModelService, ITextModelContentProvider, ITextEditorModel } from 'vs/editor/common/services/resolverService';
+import { ITextModelService, ITextModelContentProvider, ITextEditorModel, IResolvedTextEditorModel } from 'vs/editor/common/services/resolverService';
 import { IUntitledEditorService } from 'vs/workbench/services/untitled/common/untitledEditorService';
 import { TextFileEditorModel } from 'vs/workbench/services/textfile/common/textFileEditorModel';
 import { IFileService } from 'vs/platform/files/common/files';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 
 class ResourceModelCollection extends ReferenceCollection<Promise<ITextEditorModel>> {
 
@@ -23,9 +24,9 @@ class ResourceModelCollection extends ReferenceCollection<Promise<ITextEditorMod
 	private modelsToDispose = new Set<string>();
 
 	constructor(
-		@IInstantiationService private instantiationService: IInstantiationService,
-		@ITextFileService private textFileService: ITextFileService,
-		@IFileService private fileService: IFileService
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
+		@ITextFileService private readonly textFileService: ITextFileService,
+		@IFileService private readonly fileService: IFileService
 	) {
 		super();
 	}
@@ -96,6 +97,10 @@ class ResourceModelCollection extends ReferenceCollection<Promise<ITextEditorMod
 		});
 	}
 
+	hasTextModelContentProvider(scheme: string): boolean {
+		return this.providers[scheme] !== undefined;
+	}
+
 	private resolveTextModelContent(key: string): Promise<ITextModel> {
 		const resource = URI.parse(key);
 		const providers = this.providers[resource.scheme] || [];
@@ -118,22 +123,22 @@ export class TextModelResolverService implements ITextModelService {
 	private resourceModelCollection: ResourceModelCollection;
 
 	constructor(
-		@IUntitledEditorService private untitledEditorService: IUntitledEditorService,
-		@IInstantiationService private instantiationService: IInstantiationService,
-		@IModelService private modelService: IModelService
+		@IUntitledEditorService private readonly untitledEditorService: IUntitledEditorService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
+		@IModelService private readonly modelService: IModelService
 	) {
 		this.resourceModelCollection = instantiationService.createInstance(ResourceModelCollection);
 	}
 
-	createModelReference(resource: URI): Promise<IReference<ITextEditorModel>> {
+	createModelReference(resource: URI): Promise<IReference<IResolvedTextEditorModel>> {
 		return this._createModelReference(resource);
 	}
 
-	private _createModelReference(resource: URI): Promise<IReference<ITextEditorModel>> {
+	private _createModelReference(resource: URI): Promise<IReference<IResolvedTextEditorModel>> {
 
 		// Untitled Schema: go through cached input
 		if (resource.scheme === network.Schemas.untitled) {
-			return this.untitledEditorService.loadOrCreate({ resource }).then(model => new ImmortalReference(model));
+			return this.untitledEditorService.loadOrCreate({ resource }).then(model => new ImmortalReference(model as IResolvedTextEditorModel));
 		}
 
 		// InMemory Schema: go through model service cache
@@ -144,7 +149,7 @@ export class TextModelResolverService implements ITextModelService {
 				return Promise.reject(new Error('Cant resolve inmemory resource'));
 			}
 
-			return Promise.resolve(new ImmortalReference(this.instantiationService.createInstance(ResourceEditorModel, resource)));
+			return Promise.resolve(new ImmortalReference(this.instantiationService.createInstance(ResourceEditorModel, resource) as IResolvedTextEditorModel));
 		}
 
 		const ref = this.resourceModelCollection.acquire(resource.toString());
@@ -162,4 +167,10 @@ export class TextModelResolverService implements ITextModelService {
 	registerTextModelContentProvider(scheme: string, provider: ITextModelContentProvider): IDisposable {
 		return this.resourceModelCollection.registerTextModelContentProvider(scheme, provider);
 	}
+
+	hasTextModelContentProvider(scheme: string): boolean {
+		return this.resourceModelCollection.hasTextModelContentProvider(scheme);
+	}
 }
+
+registerSingleton(ITextModelService, TextModelResolverService, true);

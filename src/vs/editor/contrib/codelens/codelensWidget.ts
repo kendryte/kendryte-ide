@@ -25,8 +25,8 @@ class CodeLensViewZone implements editorBrowser.IViewZone {
 
 	afterLineNumber: number;
 
-	private _lastHeight: number;
-	private _onHeight: Function;
+	private _lastHeight?: number;
+	private readonly _onHeight: Function;
 
 	constructor(afterLineNumber: number, onHeight: Function) {
 		this.afterLineNumber = afterLineNumber;
@@ -83,8 +83,8 @@ class CodeLensContentWidget implements editorBrowser.IContentWidget {
 		const { fontInfo, lineHeight } = this._editor.getConfiguration();
 		this._domNode.style.height = `${Math.round(lineHeight * 1.1)}px`;
 		this._domNode.style.lineHeight = `${lineHeight}px`;
-		this._domNode.style.fontSize = `${Math.round(fontInfo.fontSize * .9)}px`;
-		this._domNode.style.paddingRight = `${Math.round(fontInfo.fontSize * .45)}px`;
+		this._domNode.style.fontSize = `${Math.round(fontInfo.fontSize * 0.9)}px`;
+		this._domNode.style.paddingRight = `${Math.round(fontInfo.fontSize * 0.45)}px`;
 		this._domNode.innerHTML = '&nbsp;';
 	}
 
@@ -99,7 +99,7 @@ class CodeLensContentWidget implements editorBrowser.IContentWidget {
 		this._commands = Object.create(null);
 		const symbols = coalesce(inSymbols);
 		if (isFalsyOrEmpty(symbols)) {
-			this._domNode.innerHTML = 'no commands';
+			this._domNode.innerHTML = '<span>no commands</span>';
 			return;
 		}
 
@@ -164,9 +164,9 @@ export interface IDecorationIdCallback {
 
 export class CodeLensHelper {
 
-	private _removeDecorations: string[];
-	private _addDecorations: IModelDeltaDecoration[];
-	private _addDecorationsCallbacks: IDecorationIdCallback[];
+	private readonly _removeDecorations: string[];
+	private readonly _addDecorations: IModelDeltaDecoration[];
+	private readonly _addDecorationsCallbacks: IDecorationIdCallback[];
 
 	constructor() {
 		this._removeDecorations = [];
@@ -290,6 +290,13 @@ export class CodeLens {
 
 	updateCommands(symbols: Array<ICodeLensSymbol | undefined | null>): void {
 		this._contentWidget.withCommands(symbols);
+		for (let i = 0; i < this._data.length; i++) {
+			const resolved = symbols[i];
+			if (resolved) {
+				const { symbol } = this._data[i];
+				symbol.command = resolved.command || symbol.command;
+			}
+		}
 	}
 
 	updateHeight(): void {

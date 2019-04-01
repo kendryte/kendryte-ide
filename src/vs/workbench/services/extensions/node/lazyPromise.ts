@@ -82,4 +82,8 @@ export class LazyPromise implements Promise<any> {
 	public catch(error: any): any {
 		return this._ensureActual().then(undefined, error);
 	}
+
+	public finally(callback: () => void): any {
+		return this._ensureActual().finally(callback);
+	}
 }

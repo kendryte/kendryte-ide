@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
+import { IInstantiationService, ServicesAccessor, ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 import { IResourceInput, ITextEditorOptions, IEditorOptions } from 'vs/platform/editor/common/editor';
 import { IEditorInput, IEditor, GroupIdentifier, IFileEditorInput, IUntitledResourceInput, IResourceDiffInput, IResourceSideBySideInput, IEditorInputFactoryRegistry, Extensions as EditorExtensions, IFileInputFactory, EditorInput, SideBySideEditorInput, IEditorInputWithOptions, isEditorInputWithOptions, EditorOptions, TextEditorOptions, IEditorIdentifier, IEditorCloseEvent, ITextEditor, ITextDiffEditor, ITextSideBySideEditor, toResource } from 'vs/workbench/common/editor';
 import { ResourceEditorInput } from 'vs/workbench/common/editor/resourceEditorInput';
@@ -15,38 +15,40 @@ import { IFileService } from 'vs/platform/files/common/files';
 import { Schemas } from 'vs/base/common/network';
 import { Event, Emitter } from 'vs/base/common/event';
 import { URI } from 'vs/base/common/uri';
-import { basename } from 'vs/base/common/paths';
+import { basename } from 'vs/base/common/resources';
 import { DiffEditorInput } from 'vs/workbench/common/editor/diffEditorInput';
 import { localize } from 'vs/nls';
-import { IEditorGroupsService, IEditorGroup, GroupsOrder, IEditorReplacement, GroupChangeKind, preferredSideBySideGroupDirection } from 'vs/workbench/services/group/common/editorGroupsService';
-import { IResourceEditor, ACTIVE_GROUP_TYPE, SIDE_GROUP_TYPE, SIDE_GROUP, IResourceEditorReplacement, IOpenEditorOverrideHandler } from 'vs/workbench/services/editor/common/editorService';
+import { IEditorGroupsService, IEditorGroup, GroupsOrder, IEditorReplacement, GroupChangeKind, preferredSideBySideGroupDirection } from 'vs/workbench/services/editor/common/editorGroupsService';
+import { IResourceEditor, ACTIVE_GROUP_TYPE, SIDE_GROUP_TYPE, SIDE_GROUP, IResourceEditorReplacement, IOpenEditorOverrideHandler, IVisibleEditor, IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { Disposable, IDisposable, dispose, toDisposable } from 'vs/base/common/lifecycle';
 import { coalesce } from 'vs/base/common/arrays';
 import { isCodeEditor, isDiffEditor, ICodeEditor, IDiffEditor } from 'vs/editor/browser/editorBrowser';
-import { IEditorGroupView, IEditorOpeningEvent, EditorGroupsServiceImpl, EditorServiceImpl } from 'vs/workbench/browser/parts/editor/editor';
+import { IEditorGroupView, IEditorOpeningEvent, EditorServiceImpl } from 'vs/workbench/browser/parts/editor/editor';
 import { ILabelService } from 'vs/platform/label/common/label';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { withNullAsUndefined, withUndefinedAsNull } from 'vs/base/common/types';
 
 type ICachedEditorInput = ResourceEditorInput | IFileEditorInput | DataUriEditorInput;
 
 export class EditorService extends Disposable implements EditorServiceImpl {
 
-	_serviceBrand: any;
+	_serviceBrand: ServiceIdentifier<any>;
 
 	private static CACHE: ResourceMap<ICachedEditorInput> = new ResourceMap<ICachedEditorInput>();
 
 	//#region events
 
-	private _onDidActiveEditorChange: Emitter<void> = this._register(new Emitter<void>());
+	private readonly _onDidActiveEditorChange: Emitter<void> = this._register(new Emitter<void>());
 	get onDidActiveEditorChange(): Event<void> { return this._onDidActiveEditorChange.event; }
 
-	private _onDidVisibleEditorsChange: Emitter<void> = this._register(new Emitter<void>());
+	private readonly _onDidVisibleEditorsChange: Emitter<void> = this._register(new Emitter<void>());
 	get onDidVisibleEditorsChange(): Event<void> { return this._onDidVisibleEditorsChange.event; }
 
-	private _onDidCloseEditor: Emitter<IEditorCloseEvent> = this._register(new Emitter<IEditorCloseEvent>());
+	private readonly _onDidCloseEditor: Emitter<IEditorCloseEvent> = this._register(new Emitter<IEditorCloseEvent>());
 	get onDidCloseEditor(): Event<IEditorCloseEvent> { return this._onDidCloseEditor.event; }
 
-	private _onDidOpenEditorFail: Emitter<IEditorIdentifier> = this._register(new Emitter<IEditorIdentifier>());
+	private readonly _onDidOpenEditorFail: Emitter<IEditorIdentifier> = this._register(new Emitter<IEditorIdentifier>());
 	get onDidOpenEditorFail(): Event<IEditorIdentifier> { return this._onDidOpenEditorFail.event; }
 
 	//#endregion
@@ -54,16 +56,16 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 	private fileInputFactory: IFileInputFactory;
 	private openEditorHandlers: IOpenEditorOverrideHandler[] = [];
 
-	private lastActiveEditor: IEditorInput;
+	private lastActiveEditor: IEditorInput | null;
 	private lastActiveGroupId: GroupIdentifier;
 
 	constructor(
-		@IEditorGroupsService private editorGroupService: EditorGroupsServiceImpl,
-		@IUntitledEditorService private untitledEditorService: IUntitledEditorService,
-		@IInstantiationService private instantiationService: IInstantiationService,
-		@ILabelService private labelService: ILabelService,
-		@IFileService private fileService: IFileService,
-		@IConfigurationService private configurationService: IConfigurationService
+		@IEditorGroupsService private readonly editorGroupService: IEditorGroupsService,
+		@IUntitledEditorService private readonly untitledEditorService: IUntitledEditorService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
+		@ILabelService private readonly labelService: ILabelService,
+		@IFileService private readonly fileService: IFileService,
+		@IConfigurationService private readonly configurationService: IConfigurationService
 	) {
 		super();
 
@@ -143,23 +145,22 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 	}
 
 	private onGroupWillOpenEditor(group: IEditorGroup, event: IEditorOpeningEvent): void {
-		for (let i = 0; i < this.openEditorHandlers.length; i++) {
-			const handler = this.openEditorHandlers[i];
+		for (const handler of this.openEditorHandlers) {
 			const result = handler(event.editor, event.options, group);
 			if (result && result.override) {
-				event.prevent((() => result.override));
+				event.prevent((() => result.override!.then(editor => withNullAsUndefined(editor))));
 				break;
 			}
 		}
 	}
 
-	get activeControl(): IEditor {
+	get activeControl(): IVisibleEditor | undefined {
 		const activeGroup = this.editorGroupService.activeGroup;
 
-		return activeGroup ? activeGroup.activeControl : void 0;
+		return activeGroup ? activeGroup.activeControl : undefined;
 	}
 
-	get activeTextEditorWidget(): ICodeEditor | IDiffEditor {
+	get activeTextEditorWidget(): ICodeEditor | IDiffEditor | undefined {
 		const activeControl = this.activeControl;
 		if (activeControl) {
 			const activeControlWidget = activeControl.getControl();
@@ -168,7 +169,7 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 			}
 		}
 
-		return void 0;
+		return undefined;
 	}
 
 	get editors(): IEditorInput[] {
@@ -180,13 +181,13 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 		return editors;
 	}
 
-	get activeEditor(): IEditorInput {
+	get activeEditor(): IEditorInput | undefined {
 		const activeGroup = this.editorGroupService.activeGroup;
 
-		return activeGroup ? activeGroup.activeEditor : void 0;
+		return activeGroup ? withNullAsUndefined(activeGroup.activeEditor) : undefined;
 	}
 
-	get visibleControls(): IEditor[] {
+	get visibleControls(): IVisibleEditor[] {
 		return coalesce(this.editorGroupService.groups.map(group => group.activeControl));
 	}
 
@@ -215,11 +216,11 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 
 	//#region openEditor()
 
-	openEditor(editor: IEditorInput, options?: IEditorOptions | ITextEditorOptions, group?: IEditorGroup | GroupIdentifier | SIDE_GROUP_TYPE | ACTIVE_GROUP_TYPE): Promise<IEditor>;
-	openEditor(editor: IResourceInput | IUntitledResourceInput, group?: IEditorGroup | GroupIdentifier | SIDE_GROUP_TYPE | ACTIVE_GROUP_TYPE): Promise<ITextEditor>;
-	openEditor(editor: IResourceDiffInput, group?: IEditorGroup | GroupIdentifier | SIDE_GROUP_TYPE | ACTIVE_GROUP_TYPE): Promise<ITextDiffEditor>;
-	openEditor(editor: IResourceSideBySideInput, group?: IEditorGroup | GroupIdentifier | SIDE_GROUP_TYPE | ACTIVE_GROUP_TYPE): Promise<ITextSideBySideEditor>;
-	openEditor(editor: IEditorInput | IResourceEditor, optionsOrGroup?: IEditorOptions | ITextEditorOptions | IEditorGroup | GroupIdentifier | SIDE_GROUP_TYPE | ACTIVE_GROUP_TYPE, group?: GroupIdentifier): Promise<IEditor> {
+	openEditor(editor: IEditorInput, options?: IEditorOptions | ITextEditorOptions, group?: IEditorGroup | GroupIdentifier | SIDE_GROUP_TYPE | ACTIVE_GROUP_TYPE): Promise<IEditor | null>;
+	openEditor(editor: IResourceInput | IUntitledResourceInput, group?: IEditorGroup | GroupIdentifier | SIDE_GROUP_TYPE | ACTIVE_GROUP_TYPE): Promise<ITextEditor | null>;
+	openEditor(editor: IResourceDiffInput, group?: IEditorGroup | GroupIdentifier | SIDE_GROUP_TYPE | ACTIVE_GROUP_TYPE): Promise<ITextDiffEditor | null>;
+	openEditor(editor: IResourceSideBySideInput, group?: IEditorGroup | GroupIdentifier | SIDE_GROUP_TYPE | ACTIVE_GROUP_TYPE): Promise<ITextSideBySideEditor | null>;
+	openEditor(editor: IEditorInput | IResourceEditor, optionsOrGroup?: IEditorOptions | ITextEditorOptions | IEditorGroup | GroupIdentifier | SIDE_GROUP_TYPE | ACTIVE_GROUP_TYPE, group?: GroupIdentifier): Promise<IEditor | null> {
 
 		// Typed Editor Support
 		if (editor instanceof EditorInput) {
@@ -242,12 +243,12 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 		return Promise.resolve(null);
 	}
 
-	protected doOpenEditor(group: IEditorGroup, editor: IEditorInput, options?: IEditorOptions): Promise<IEditor> {
+	protected doOpenEditor(group: IEditorGroup, editor: IEditorInput, options?: IEditorOptions): Promise<IEditor | null> {
 		return group.openEditor(editor, options);
 	}
 
 	private findTargetGroup(input: IEditorInput, options?: IEditorOptions, group?: IEditorGroup | GroupIdentifier | SIDE_GROUP_TYPE | ACTIVE_GROUP_TYPE): IEditorGroup {
-		let targetGroup: IEditorGroup;
+		let targetGroup: IEditorGroup | undefined;
 
 		// Group: Instance of Group
 		if (group && typeof group !== 'number') {
@@ -270,8 +271,7 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 
 			// Respect option to reveal an editor if it is already visible in any group
 			if (options && options.revealIfVisible) {
-				for (let i = 0; i < groupsByLastActive.length; i++) {
-					const group = groupsByLastActive[i];
+				for (const group of groupsByLastActive) {
 					if (input.matches(group.activeEditor)) {
 						targetGroup = group;
 						break;
@@ -281,8 +281,7 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 
 			// Respect option to reveal an editor if it is open (not necessarily visible)
 			if ((options && options.revealIfOpened) || this.configurationService.getValue<boolean>('workbench.editor.revealIfOpen')) {
-				for (let i = 0; i < groupsByLastActive.length; i++) {
-					const group = groupsByLastActive[i];
+				for (const group of groupsByLastActive) {
 					if (group.isOpened(input)) {
 						targetGroup = group;
 						break;
@@ -360,12 +359,12 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 		}
 
 		// Open in targets
-		const result: Promise<IEditor>[] = [];
+		const result: Promise<IEditor | null>[] = [];
 		mapGroupToEditors.forEach((editorsWithOptions, group) => {
 			result.push(group.openEditors(editorsWithOptions));
 		});
 
-		return Promise.all(result);
+		return Promise.all(result).then(editors => coalesce(editors));
 	}
 
 	//#endregion
@@ -380,21 +379,24 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 
 	//#region getOpend()
 
-	getOpened(editor: IResourceInput | IUntitledResourceInput, group?: IEditorGroup | GroupIdentifier): IEditorInput {
+	getOpened(editor: IResourceInput | IUntitledResourceInput, group?: IEditorGroup | GroupIdentifier): IEditorInput | undefined {
 		return this.doGetOpened(editor);
 	}
 
-	private doGetOpened(editor: IEditorInput | IResourceInput | IUntitledResourceInput, group?: IEditorGroup | GroupIdentifier): IEditorInput {
+	private doGetOpened(editor: IEditorInput | IResourceInput | IUntitledResourceInput, group?: IEditorGroup | GroupIdentifier): IEditorInput | undefined {
 		if (!(editor instanceof EditorInput)) {
 			const resourceInput = editor as IResourceInput | IUntitledResourceInput;
 			if (!resourceInput.resource) {
-				return void 0; // we need a resource at least
+				return undefined; // we need a resource at least
 			}
 		}
 
 		let groups: IEditorGroup[] = [];
 		if (typeof group === 'number') {
-			groups.push(this.editorGroupService.getGroup(group));
+			const groupView = this.editorGroupService.getGroup(group);
+			if (groupView) {
+				groups.push(groupView);
+			}
 		} else if (group) {
 			groups.push(group);
 		} else {
@@ -402,8 +404,7 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 		}
 
 		// For each editor group
-		for (let i = 0; i < groups.length; i++) {
-			const group = groups[i];
+		for (const group of groups) {
 
 			// Typed editor
 			if (editor instanceof EditorInput) {
@@ -414,22 +415,21 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 
 			// Resource editor
 			else {
-				for (let j = 0; j < group.editors.length; j++) {
-					const editorInGroup = group.editors[j];
+				for (const editorInGroup of group.editors) {
 					const resource = toResource(editorInGroup, { supportSideBySide: true });
 					if (!resource) {
 						continue; // need a resource to compare with
 					}
 
 					const resourceInput = editor as IResourceInput | IUntitledResourceInput;
-					if (resource.toString() === resourceInput.resource.toString()) {
+					if (resourceInput.resource && resource.toString() === resourceInput.resource.toString()) {
 						return editorInGroup;
 					}
 				}
 			}
 		}
 
-		return void 0;
+		return undefined;
 	}
 
 	//#endregion
@@ -458,7 +458,11 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 		});
 
 		const targetGroup = typeof group === 'number' ? this.editorGroupService.getGroup(group) : group;
-		return targetGroup.replaceEditors(typedEditors);
+		if (targetGroup) {
+			return targetGroup.replaceEditors(typedEditors);
+		}
+
+		return Promise.resolve();
 	}
 
 	//#endregion
@@ -501,9 +505,10 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 		if (resourceSideBySideInput.masterResource && resourceSideBySideInput.detailResource) {
 			const masterInput = this.createInput({ resource: resourceSideBySideInput.masterResource, forceFile: resourceSideBySideInput.forceFile });
 			const detailInput = this.createInput({ resource: resourceSideBySideInput.detailResource, forceFile: resourceSideBySideInput.forceFile });
+			const label = resourceSideBySideInput.label || masterInput.getName() || localize('sideBySideLabels', "{0} - {1}", this.toDiffLabel(masterInput), this.toDiffLabel(detailInput));
 
 			return new SideBySideEditorInput(
-				resourceSideBySideInput.label || masterInput.getName(),
+				label,
 				typeof resourceSideBySideInput.description === 'string' ? resourceSideBySideInput.description : masterInput.getDescription(),
 				detailInput,
 				masterInput
@@ -517,7 +522,7 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 			const rightInput = this.createInput({ resource: resourceDiffInput.rightResource, forceFile: resourceDiffInput.forceFile });
 			const label = resourceDiffInput.label || localize('compareLabels', "{0} ↔ {1}", this.toDiffLabel(leftInput), this.toDiffLabel(rightInput));
 
-			return new DiffEditorInput(label, resourceDiffInput.description, leftInput, rightInput);
+			return new DiffEditorInput(label, withUndefinedAsNull(resourceDiffInput.description), leftInput, rightInput);
 		}
 
 		// Untitled file support
@@ -536,23 +541,30 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 		if (resourceInput.resource instanceof URI) {
 			let label = resourceInput.label;
 			if (!label && resourceInput.resource.scheme !== Schemas.data) {
-				label = basename(resourceInput.resource.fsPath); // derive the label from the path (but not for data URIs)
+				label = basename(resourceInput.resource); // derive the label from the path (but not for data URIs)
 			}
 
 			return this.createOrGet(resourceInput.resource, this.instantiationService, label, resourceInput.description, resourceInput.encoding, resourceInput.forceFile) as EditorInput;
 		}
 
-		return null;
+		throw new Error('Unknown input type');
 	}
 
-	private createOrGet(resource: URI, instantiationService: IInstantiationService, label: string, description: string, encoding?: string, forceFile?: boolean): ICachedEditorInput {
+	private createOrGet(resource: URI, instantiationService: IInstantiationService, label: string | undefined, description: string | undefined, encoding: string | undefined, forceFile: boolean | undefined): ICachedEditorInput {
 		if (EditorService.CACHE.has(resource)) {
-			const input = EditorService.CACHE.get(resource);
+			const input = EditorService.CACHE.get(resource)!;
 			if (input instanceof ResourceEditorInput) {
-				input.setName(label);
-				input.setDescription(description);
+				if (label) {
+					input.setName(label);
+				}
+
+				if (description) {
+					input.setDescription(description);
+				}
 			} else if (!(input instanceof DataUriEditorInput)) {
-				input.setPreferredEncoding(encoding);
+				if (encoding) {
+					input.setPreferredEncoding(encoding);
+				}
 			}
 
 			return input;
@@ -583,8 +595,11 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 		return input;
 	}
 
-	private toDiffLabel(input: EditorInput): string {
+	private toDiffLabel(input: EditorInput): string | null {
 		const res = input.getResource();
+		if (!res) {
+			return null;
+		}
 
 		// Do not try to extract any paths from simple untitled editors
 		if (res.scheme === Schemas.untitled && !this.untitledEditorService.hasAssociatedFilePath(res)) {
@@ -599,7 +614,7 @@ export class EditorService extends Disposable implements EditorServiceImpl {
 }
 
 export interface IEditorOpenHandler {
-	(group: IEditorGroup, editor: IEditorInput, options?: IEditorOptions | ITextEditorOptions): Promise<IEditor>;
+	(group: IEditorGroup, editor: IEditorInput, options?: IEditorOptions | ITextEditorOptions): Promise<IEditor | null>;
 }
 
 /**
@@ -610,7 +625,7 @@ export class DelegatingEditorService extends EditorService {
 	private editorOpenHandler: IEditorOpenHandler;
 
 	constructor(
-		@IEditorGroupsService editorGroupService: EditorGroupsServiceImpl,
+		@IEditorGroupsService editorGroupService: IEditorGroupsService,
 		@IUntitledEditorService untitledEditorService: IUntitledEditorService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@ILabelService labelService: ILabelService,
@@ -631,7 +646,7 @@ export class DelegatingEditorService extends EditorService {
 		this.editorOpenHandler = handler;
 	}
 
-	protected doOpenEditor(group: IEditorGroup, editor: IEditorInput, options?: IEditorOptions): Promise<IEditor> {
+	protected doOpenEditor(group: IEditorGroup, editor: IEditorInput, options?: IEditorOptions): Promise<IEditor | null> {
 		if (!this.editorOpenHandler) {
 			return super.doOpenEditor(group, editor, options);
 		}
@@ -645,3 +660,5 @@ export class DelegatingEditorService extends EditorService {
 		});
 	}
 }
+
+registerSingleton(IEditorService, EditorService);

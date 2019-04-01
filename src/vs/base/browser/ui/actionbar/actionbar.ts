@@ -16,6 +16,7 @@ import { StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
 import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
 import { IContextViewProvider } from 'vs/base/browser/ui/contextview/contextview';
 import { Event, Emitter } from 'vs/base/common/event';
+import { asArray } from 'vs/base/common/arrays';
 
 export interface IActionItem {
 	actionRunner: IActionRunner;
@@ -60,24 +61,24 @@ export class BaseActionItem extends Disposable implements IActionItem {
 	}
 
 	private handleActionChangeEvent(event: IActionChangeEvent): void {
-		if (event.enabled !== void 0) {
+		if (event.enabled !== undefined) {
 			this.updateEnabled();
 		}
 
-		if (event.checked !== void 0) {
+		if (event.checked !== undefined) {
 			this.updateChecked();
 		}
 
-		if (event.class !== void 0) {
+		if (event.class !== undefined) {
 			this.updateClass();
 		}
 
-		if (event.label !== void 0) {
+		if (event.label !== undefined) {
 			this.updateLabel();
 			this.updateTooltip();
 		}
 
-		if (event.tooltip !== void 0) {
+		if (event.tooltip !== undefined) {
 			this.updateTooltip();
 		}
 	}
@@ -363,7 +364,7 @@ export interface ActionTrigger {
 }
 
 export interface IActionItemProvider {
-	(action: IAction): IActionItem | null;
+	(action: IAction): IActionItem | undefined;
 }
 
 export interface IActionBarOptions {
@@ -593,7 +594,7 @@ export class ActionBar extends Disposable implements IActionRunner {
 	}
 
 	push(arg: IAction | IAction[], options: IActionOptions = {}): void {
-		const actions: IAction[] = !Array.isArray(arg) ? [arg] : arg;
+		const actions: IAction[] = asArray(arg);
 
 		let index = types.isNumber(options.index) ? options.index : null;
 
@@ -608,7 +609,7 @@ export class ActionBar extends Disposable implements IActionRunner {
 				e.stopPropagation();
 			}));
 
-			let item: IActionItem | null = null;
+			let item: IActionItem | undefined;
 
 			if (this.options.actionItemProvider) {
 				item = this.options.actionItemProvider(action);
@@ -677,9 +678,9 @@ export class ActionBar extends Disposable implements IActionRunner {
 
 	focus(index?: number): void;
 	focus(selectFirst?: boolean): void;
-	focus(arg?: any): void {
+	focus(arg?: number | boolean): void {
 		let selectFirst: boolean = false;
-		let index: number | undefined = void 0;
+		let index: number | undefined = undefined;
 		if (arg === undefined) {
 			selectFirst = true;
 		} else if (typeof arg === 'number') {
@@ -701,7 +702,7 @@ export class ActionBar extends Disposable implements IActionRunner {
 		}
 	}
 
-	private focusNext(): void {
+	protected focusNext(): void {
 		if (typeof this.focusedItem === 'undefined') {
 			this.focusedItem = this.items.length - 1;
 		}
@@ -721,7 +722,7 @@ export class ActionBar extends Disposable implements IActionRunner {
 		this.updateFocus();
 	}
 
-	private focusPrevious(): void {
+	protected focusPrevious(): void {
 		if (typeof this.focusedItem === 'undefined') {
 			this.focusedItem = 0;
 		}

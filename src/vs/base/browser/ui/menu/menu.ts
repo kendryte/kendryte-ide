@@ -8,25 +8,40 @@ import * as nls from 'vs/nls';
 import * as strings from 'vs/base/common/strings';
 import { IActionRunner, IAction, Action } from 'vs/base/common/actions';
 import { ActionBar, IActionItemProvider, ActionsOrientation, Separator, ActionItem, IActionItemOptions, BaseActionItem } from 'vs/base/browser/ui/actionbar/actionbar';
-import { ResolvedKeybinding, KeyCode, KeyCodeUtils } from 'vs/base/common/keyCodes';
+import { ResolvedKeybinding, KeyCode } from 'vs/base/common/keyCodes';
 import { addClass, EventType, EventHelper, EventLike, removeTabIndexAndUpdateFocus, isAncestor, hasClass, addDisposableListener, removeClass, append, $, addClasses, removeClasses } from 'vs/base/browser/dom';
 import { StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
 import { RunOnceScheduler } from 'vs/base/common/async';
 import { IDisposable, dispose } from 'vs/base/common/lifecycle';
 import { Color } from 'vs/base/common/color';
 import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
-import { ScrollbarVisibility } from 'vs/base/common/scrollable';
+import { ScrollbarVisibility, ScrollEvent } from 'vs/base/common/scrollable';
 import { Event, Emitter } from 'vs/base/common/event';
 import { AnchorAlignment } from 'vs/base/browser/ui/contextview/contextview';
+import { isLinux } from 'vs/base/common/platform';
 
-export const MENU_MNEMONIC_REGEX: RegExp = /\(&{1,2}(.)\)|&{1,2}(.)/;
-export const MENU_ESCAPED_MNEMONIC_REGEX: RegExp = /(?:&amp;){1,2}(.)/;
+function createMenuMnemonicRegExp() {
+	try {
+		return new RegExp('\\(&([^\\s&])\\)|(?<!&)&([^\\s&])');
+	} catch (err) {
+		return new RegExp('\uFFFF'); // never match please
+	}
+}
+export const MENU_MNEMONIC_REGEX = createMenuMnemonicRegExp();
+function createMenuEscapedMnemonicRegExp() {
+	try {
+		return new RegExp('(?<!&amp;)(?:&amp;)([^\\s&])');
+	} catch (err) {
+		return new RegExp('\uFFFF'); // never match please
+	}
+}
+export const MENU_ESCAPED_MNEMONIC_REGEX: RegExp = createMenuEscapedMnemonicRegExp();
 
 export interface IMenuOptions {
 	context?: any;
 	actionItemProvider?: IActionItemProvider;
 	actionRunner?: IActionRunner;
-	getKeyBinding?: (action: IAction) => ResolvedKeybinding | null;
+	getKeyBinding?: (action: IAction) => ResolvedKeybinding | undefined;
 	ariaLabel?: string;
 	enableMnemonics?: boolean;
 	anchorAlignment?: AnchorAlignment;
@@ -55,10 +70,11 @@ interface ISubMenuData {
 }
 
 export class Menu extends ActionBar {
-	private mnemonics: Map<KeyCode, Array<MenuActionItem>>;
+	private mnemonics: Map<string, Array<MenuActionItem>>;
 	private menuDisposables: IDisposable[];
 	private scrollableElement: DomScrollableElement;
 	private menuElement: HTMLElement;
+	private scrollTopHold: number | undefined;
 
 	private readonly _onScroll: Emitter<void>;
 
@@ -91,10 +107,10 @@ export class Menu extends ActionBar {
 
 		if (options.enableMnemonics) {
 			this.menuDisposables.push(addDisposableListener(menuElement, EventType.KEY_DOWN, (e) => {
-				const key = KeyCodeUtils.fromString(e.key);
+				const key = e.key.toLocaleLowerCase();
 				if (this.mnemonics.has(key)) {
 					EventHelper.stop(e, true);
-					const actions = this.mnemonics.get(key);
+					const actions = this.mnemonics.get(key)!;
 
 					if (actions.length === 1) {
 						if (actions[0] instanceof SubmenuActionItem) {
@@ -117,10 +133,27 @@ export class Menu extends ActionBar {
 			}));
 		}
 
+		if (isLinux) {
+			this._register(addDisposableListener(menuElement, EventType.KEY_DOWN, e => {
+				const event = new StandardKeyboardEvent(e);
+
+				if (event.equals(KeyCode.Home) || event.equals(KeyCode.PageUp)) {
+					this.focusedItem = this.items.length - 1;
+					this.focusNext();
+					EventHelper.stop(e, true);
+				} else if (event.equals(KeyCode.End) || event.equals(KeyCode.PageDown)) {
+					this.focusedItem = 0;
+					this.focusPrevious();
+					EventHelper.stop(e, true);
+				}
+			}));
+		}
+
 		this._register(addDisposableListener(this.domNode, EventType.MOUSE_OUT, e => {
 			let relatedTarget = e.relatedTarget as HTMLElement;
 			if (!isAncestor(relatedTarget, this.domNode)) {
 				this.focusedItem = undefined;
+				this.scrollTopHold = this.menuElement.scrollTop;
 				this.updateFocus();
 				e.stopPropagation();
 			}
@@ -143,6 +176,7 @@ export class Menu extends ActionBar {
 
 			if (hasClass(target, 'action-item')) {
 				const lastFocusedItem = this.focusedItem;
+				this.scrollTopHold = this.menuElement.scrollTop;
 				this.setFocusedItem(target);
 
 				if (lastFocusedItem !== this.focusedItem) {
@@ -155,7 +189,7 @@ export class Menu extends ActionBar {
 			parent: this
 		};
 
-		this.mnemonics = new Map<KeyCode, Array<MenuActionItem>>();
+		this.mnemonics = new Map<string, Array<MenuActionItem>>();
 
 		this.push(actions, { icon: true, label: true, isMenu: true });
 
@@ -178,7 +212,11 @@ export class Menu extends ActionBar {
 			this._onScroll.fire();
 		}, this, this.menuDisposables);
 
-		this._register(addDisposableListener(this.menuElement, EventType.SCROLL, (e) => {
+		this._register(addDisposableListener(this.menuElement, EventType.SCROLL, (e: ScrollEvent) => {
+			if (this.scrollTopHold !== undefined) {
+				this.menuElement.scrollTop = this.scrollTopHold;
+				this.scrollTopHold = undefined;
+			}
 			this.scrollableElement.scanDomNode();
 		}));
 
@@ -268,7 +306,7 @@ export class Menu extends ActionBar {
 				if (mnemonic && menuActionItem.isEnabled()) {
 					let actionItems: MenuActionItem[] = [];
 					if (this.mnemonics.has(mnemonic)) {
-						actionItems = this.mnemonics.get(mnemonic);
+						actionItems = this.mnemonics.get(mnemonic)!;
 					}
 
 					actionItems.push(menuActionItem);
@@ -298,7 +336,7 @@ export class Menu extends ActionBar {
 				if (mnemonic && menuActionItem.isEnabled()) {
 					let actionItems: MenuActionItem[] = [];
 					if (this.mnemonics.has(mnemonic)) {
-						actionItems = this.mnemonics.get(mnemonic);
+						actionItems = this.mnemonics.get(mnemonic)!;
 					}
 
 					actionItems.push(menuActionItem);
@@ -325,7 +363,7 @@ class MenuActionItem extends BaseActionItem {
 
 	private label: HTMLElement;
 	private check: HTMLElement;
-	private mnemonic: KeyCode;
+	private mnemonic: string;
 	private cssClass: string;
 	protected menuStyle: IMenuStyles;
 
@@ -344,7 +382,7 @@ class MenuActionItem extends BaseActionItem {
 			if (label) {
 				let matches = MENU_MNEMONIC_REGEX.exec(label);
 				if (matches) {
-					this.mnemonic = KeyCodeUtils.fromString((!!matches[1] ? matches[1] : matches[2]).toLocaleLowerCase());
+					this.mnemonic = (!!matches[1] ? matches[1] : matches[2]).toLocaleLowerCase();
 				}
 			}
 		}
@@ -416,13 +454,16 @@ class MenuActionItem extends BaseActionItem {
 					label = cleanLabel;
 				}
 
-				this.label.setAttribute('aria-label', cleanLabel);
+				this.label.setAttribute('aria-label', cleanLabel.replace(/&&/g, '&'));
 
 				const matches = MENU_MNEMONIC_REGEX.exec(label);
 
 				if (matches) {
 					label = strings.escape(label).replace(MENU_ESCAPED_MNEMONIC_REGEX, '<u aria-hidden="true">$1</u>');
+					label = label.replace(/&amp;&amp;/g, '&amp;');
 					this.item.setAttribute('aria-keyshortcuts', (!!matches[1] ? matches[1] : matches[2]).toLocaleLowerCase());
+				} else {
+					label = label.replace(/&&/g, '&');
 				}
 			}
 
@@ -495,7 +536,7 @@ class MenuActionItem extends BaseActionItem {
 		}
 	}
 
-	getMnemonic(): KeyCode {
+	getMnemonic(): string {
 		return this.mnemonic;
 	}
 

@@ -8,7 +8,7 @@ import { LRUCache, TernarySearchTree } from 'vs/base/common/map';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { ITextModel } from 'vs/editor/common/model';
 import { IPosition } from 'vs/editor/common/core/position';
-import { CompletionItemKind, completionKindFromLegacyString } from 'vs/editor/common/modes';
+import { CompletionItemKind, completionKindFromString } from 'vs/editor/common/modes';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { RunOnceScheduler } from 'vs/base/common/async';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
@@ -67,7 +67,7 @@ export interface MemItem {
 
 export class LRUMemory extends Memory {
 
-	private _cache = new LRUCache<string, MemItem>(300, .66);
+	private _cache = new LRUCache<string, MemItem>(300, 0.66);
 	private _seq = 0;
 
 	memorize(model: ITextModel, pos: IPosition, item: CompletionItem): void {
@@ -124,7 +124,7 @@ export class LRUMemory extends Memory {
 		let seq = 0;
 		for (const [key, value] of data) {
 			value.touch = seq;
-			value.type = typeof value.type === 'number' ? value.type : completionKindFromLegacyString(value.type);
+			value.type = typeof value.type === 'number' ? value.type : completionKindFromString(value.type);
 			this._cache.set(key, value);
 		}
 		this._seq = this._cache.size;
@@ -188,7 +188,7 @@ export class PrefixMemory extends Memory {
 		if (data.length > 0) {
 			this._seq = data[0][1].touch + 1;
 			for (const [key, value] of data) {
-				value.type = typeof value.type === 'number' ? value.type : completionKindFromLegacyString(value.type);
+				value.type = typeof value.type === 'number' ? value.type : completionKindFromString(value.type);
 				this._trie.set(key, value);
 			}
 		}
@@ -197,7 +197,7 @@ export class PrefixMemory extends Memory {
 
 export type MemMode = 'first' | 'recentlyUsed' | 'recentlyUsedByPrefix';
 
-class SuggestMemoryService extends Disposable implements ISuggestMemoryService {
+export class SuggestMemoryService extends Disposable implements ISuggestMemoryService {
 
 	readonly _serviceBrand: any;
 

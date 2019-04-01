@@ -157,10 +157,10 @@ export class StringBuffer {
  * 2. TreeNode/Buffers normalization should not happen during snapshot reading.
  */
 class PieceTreeSnapshot implements ITextSnapshot {
-	private _pieces: Piece[];
+	private readonly _pieces: Piece[];
 	private _index: number;
-	private _tree: PieceTreeBase;
-	private _BOM: string;
+	private readonly _tree: PieceTreeBase;
+	private readonly _BOM: string;
 
 	constructor(tree: PieceTreeBase, BOM: string) {
 		this._pieces = [];
@@ -205,7 +205,7 @@ interface CacheEntry {
 }
 
 class PieceTreeSearchCache {
-	private _limit: number;
+	private readonly _limit: number;
 	private _cache: CacheEntry[];
 
 	constructor(limit: number) {
@@ -254,8 +254,7 @@ class PieceTreeSearchCache {
 
 		if (hasInvalidVal) {
 			let newArr: CacheEntry[] = [];
-			for (let i = 0; i < tmp.length; i++) {
-				const entry = tmp[i];
+			for (const entry of tmp) {
 				if (entry !== null) {
 					newArr.push(entry);
 				}
@@ -1042,7 +1041,7 @@ export class PieceTreeBase {
 			while (text.length > AverageBufferSize) {
 				const lastChar = text.charCodeAt(AverageBufferSize - 1);
 				let splitText;
-				if (lastChar === CharCode.CarriageReturn || (lastChar >= 0xd800 && lastChar <= 0xdbff)) {
+				if (lastChar === CharCode.CarriageReturn || (lastChar >= 0xD800 && lastChar <= 0xDBFF)) {
 					// last character is \r or a high surrogate => keep it back
 					splitText = text.substring(0, AverageBufferSize - 1);
 					text = text.substring(AverageBufferSize - 1);

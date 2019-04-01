@@ -7,12 +7,12 @@ import * as chokidar from 'vscode-chokidar';
 import * as fs from 'fs';
 import * as gracefulFs from 'graceful-fs';
 gracefulFs.gracefulify(fs);
-import * as paths from 'vs/base/common/paths';
+import * as extpath from 'vs/base/common/extpath';
 import * as glob from 'vs/base/common/glob';
 import { FileChangeType } from 'vs/platform/files/common/files';
 import { ThrottledDelayer } from 'vs/base/common/async';
 import { normalizeNFC } from 'vs/base/common/normalization';
-import { realcaseSync } from 'vs/base/node/extfs';
+import { realcaseSync } from 'vs/base/node/extpath';
 import { isMacintosh } from 'vs/base/common/platform';
 import * as watcherCommon from 'vs/workbench/services/files/node/watcher/common';
 import { IWatcherRequest, IWatcherService, IWatcherOptions, IWatchError } from 'vs/workbench/services/files/node/watcher/unix/watcher';
@@ -242,12 +242,12 @@ export class ChokidarWatcherService implements IWatcherService {
 						});
 					}
 
-					return Promise.resolve();
+					return Promise.resolve(undefined);
 				});
 			}
 		});
 
-		chokidarWatcher.on('error', (error: Error) => {
+		chokidarWatcher.on('error', (error: NodeJS.ErrnoException) => {
 			if (error) {
 
 				// Specially handle ENOSPC errors that can happen when
@@ -255,7 +255,7 @@ export class ChokidarWatcherService implements IWatcherService {
 				// we are running into a limit. We only want to warn
 				// once in this case to avoid log spam.
 				// See https://github.com/Microsoft/vscode/issues/7950
-				if ((<any>error).code === 'ENOSPC') {
+				if (error.code === 'ENOSPC') {
 					if (!this.enospcErrorLogged) {
 						this.enospcErrorLogged = true;
 						this.stop();
@@ -284,7 +284,7 @@ function isIgnored(path: string, requests: ExtendedWatcherRequest[]): boolean {
 		if (request.basePath === path) {
 			return false;
 		}
-		if (paths.isEqualOrParent(path, request.basePath)) {
+		if (extpath.isEqualOrParent(path, request.basePath)) {
 			if (!request.parsedPattern) {
 				if (request.ignored && request.ignored.length > 0) {
 					let pattern = `{${request.ignored.join(',')}}`;
@@ -313,7 +313,7 @@ export function normalizeRoots(requests: IWatcherRequest[]): { [basePath: string
 	for (let request of requests) {
 		let basePath = request.basePath;
 		let ignored = (request.ignored || []).sort();
-		if (prevRequest && (paths.isEqualOrParent(basePath, prevRequest.basePath))) {
+		if (prevRequest && (extpath.isEqualOrParent(basePath, prevRequest.basePath))) {
 			if (!isEqualIgnore(ignored, prevRequest.ignored)) {
 				result[prevRequest.basePath].push({ basePath, ignored });
 			}

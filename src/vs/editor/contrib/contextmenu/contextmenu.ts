@@ -32,7 +32,7 @@ export class ContextMenuController implements IEditorContribution {
 
 	private _toDispose: IDisposable[] = [];
 	private _contextMenuIsBeingShownCount: number = 0;
-	private _editor: ICodeEditor;
+	private readonly _editor: ICodeEditor;
 
 	constructor(
 		editor: ICodeEditor,
@@ -46,7 +46,7 @@ export class ContextMenuController implements IEditorContribution {
 
 		this._toDispose.push(this._editor.onContextMenu((e: IEditorMouseEvent) => this._onContextMenu(e)));
 		this._toDispose.push(this._editor.onDidScrollChange((e: IScrollEvent) => {
-			if (this._contextMenuIsBeingShownCount > 0) {
+			if (this._contextMenuIsBeingShownCount > 0 && e.scrollTopChanged) {
 				this._contextViewService.hideContextView();
 			}
 		}));
@@ -189,7 +189,7 @@ export class ContextMenuController implements IEditorContribution {
 				return new ActionItem(action, action, { icon: true, label: true, isMenu: true });
 			},
 
-			getKeyBinding: (action): ResolvedKeybinding | null => {
+			getKeyBinding: (action): ResolvedKeybinding | undefined => {
 				return this._keybindingFor(action);
 			},
 
@@ -203,7 +203,7 @@ export class ContextMenuController implements IEditorContribution {
 		});
 	}
 
-	private _keybindingFor(action: IAction): ResolvedKeybinding | null {
+	private _keybindingFor(action: IAction): ResolvedKeybinding | undefined {
 		return this._keybindingService.lookupKeybinding(action.id);
 	}
 

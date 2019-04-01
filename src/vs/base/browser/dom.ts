@@ -11,7 +11,7 @@ import { TimeoutTimer } from 'vs/base/common/async';
 import { CharCode } from 'vs/base/common/charCode';
 import { onUnexpectedError } from 'vs/base/common/errors';
 import { Emitter, Event } from 'vs/base/common/event';
-import { Disposable, IDisposable, dispose } from 'vs/base/common/lifecycle';
+import { Disposable, IDisposable, dispose, toDisposable } from 'vs/base/common/lifecycle';
 import * as platform from 'vs/base/common/platform';
 import { coalesce } from 'vs/base/common/arrays';
 
@@ -147,10 +147,10 @@ const _manualClassList = new class implements IDomClassList {
 
 	toggleClass(node: HTMLElement, className: string, shouldHaveIt?: boolean): void {
 		this._findClassName(node, className);
-		if (this._lastStart !== -1 && (shouldHaveIt === void 0 || !shouldHaveIt)) {
+		if (this._lastStart !== -1 && (shouldHaveIt === undefined || !shouldHaveIt)) {
 			this.removeClass(node, className);
 		}
-		if (this._lastStart === -1 && (shouldHaveIt === void 0 || shouldHaveIt)) {
+		if (this._lastStart === -1 && (shouldHaveIt === undefined || shouldHaveIt)) {
 			this.addClass(node, className);
 		}
 	}
@@ -615,7 +615,7 @@ export interface IDomNodePagePosition {
 	height: number;
 }
 
-export function size(element: HTMLElement, width: number, height: number): void {
+export function size(element: HTMLElement, width: number | null, height: number | null): void {
 	if (typeof width === 'number') {
 		element.style.width = `${width}px`;
 	}
@@ -1156,4 +1156,14 @@ export function windowOpenNoOpener(url: string): void {
 			newTab.location.href = url;
 		}
 	}
+}
+
+export function animate(fn: () => void): IDisposable {
+	const step = () => {
+		fn();
+		stepDisposable = scheduleAtNextAnimationFrame(step);
+	};
+
+	let stepDisposable = scheduleAtNextAnimationFrame(step);
+	return toDisposable(() => stepDisposable.dispose());
 }
