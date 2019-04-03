@@ -13,6 +13,7 @@ import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUpdateService, StateType } from 'vs/platform/update/common/update';
 import product from 'vs/platform/product/node/product';
 import { RunOnceScheduler } from 'vs/base/common/async';
+import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { mnemonicMenuLabel as baseMnemonicLabel } from 'vs/base/common/labels';
 import { IWindowsMainService, IWindowsCountChangedEvent } from 'vs/platform/windows/electron-main/windows';
 import { IHistoryMainService } from 'vs/platform/history/common/history';
@@ -60,6 +61,7 @@ export class Menubar {
 
 	constructor(
 		@IUpdateService private readonly updateService: IUpdateService,
+		@IInstantiationService instantiationService: IInstantiationService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IWindowsMainService private readonly windowsMainService: IWindowsMainService,
 		@IEnvironmentService private readonly environmentService: IEnvironmentService,

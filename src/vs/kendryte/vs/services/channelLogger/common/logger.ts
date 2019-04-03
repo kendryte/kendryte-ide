@@ -1,7 +1,7 @@
 import { IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { format } from 'util';
 import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
-import { Extensions, IOutputChannel, IOutputChannelRegistry } from 'vs/workbench/parts/output/common/output';
+import { Extensions, IOutputChannel, IOutputChannelRegistry } from 'vs/workbench/contrib/output/common/output';
 import { AbstractLogService, ILogService, LogLevel } from 'vs/platform/log/common/log';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { Emitter } from 'vs/base/common/event';
@@ -71,7 +71,7 @@ export class ChannelLogger extends AbstractLogService implements IChannelLogger,
 	warn(message: string | Error, ...args: any[]): void {
 		if (this.getLevel() <= LogLevel.Warning) {
 			if (message instanceof Error) {
-				message = message.stack;
+				message = message.stack || '* no error stack';
 			}
 			this.println(' WARN', 'color: #993', message, ...args);
 		}

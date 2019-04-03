@@ -19,16 +19,16 @@ export interface IStatusButtonData {
 	showBeak: boolean;
 	align: StatusbarAlignment;
 	position: number;
-	contextKey: ContextKeyExpr;
+	contextKey: ContextKeyExpr | null;
 }
 
 export interface IStatusButtonMethod extends IMyDisposable {
 	reload(): void;
-	show();
-	hide();
+	show(): void;
+	hide(): void;
 	isVisible(): boolean;
 	sleep(): IStatusButtonData;
-	wakeup(data: IStatusButtonData);
+	wakeup(data: IStatusButtonData): void;
 }
 
 export type IPublicStatusButton = IStatusButtonMethod & IStatusButtonData;

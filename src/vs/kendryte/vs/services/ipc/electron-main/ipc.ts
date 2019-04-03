@@ -1,5 +1,5 @@
-import { IServerChannel } from 'vs/base/parts/ipc/node/ipc';
-import { createChannelDecorator } from 'vs/kendryte/vs/platform/instantiation/node/ipcExtensions';
+import { IServerChannel } from 'vs/base/parts/ipc/common/ipc';
+import { createChannelDecorator } from 'vs/kendryte/vs/platform/instantiation/common/ipcExtensions';
 
 export interface IKendryteMainIpcChannel extends IServerChannel {
 	_serviceBrand: any;

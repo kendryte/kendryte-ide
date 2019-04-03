@@ -1,6 +1,6 @@
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { SerialReplHistory } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/serialReplHistory';
-import { createAndBindHistoryNavigationWidgetScopedContextKeyService } from 'vs/platform/widget/browser/contextScopedHistoryWidget';
+import { createAndBindHistoryNavigationWidgetScopedContextKeyService } from 'vs/platform/browser/contextScopedHistoryWidget';
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { CONTEXT_IN_SERIAL_PORT_REPL } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -12,7 +12,7 @@ import { ISerialPrivateReplService } from 'vs/kendryte/vs/workbench/serialPort/e
 import { OutputXTerminal } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/outputWindow';
 import { ISerialMonitorControlService } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/outputWindowControlService';
 import { ILogService } from 'vs/platform/log/common/log';
-import { IDebugSession } from 'vs/workbench/parts/debug/common/debug';
+import { IDebugSession } from 'vs/workbench/contrib/debug/common/debug';
 import { UserLineInputStream, UserTypeInputStream } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/iobuffers/input';
 
 export class SerialScope extends Disposable implements ISerialPrivateReplService {

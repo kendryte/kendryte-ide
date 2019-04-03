@@ -1,25 +1,24 @@
-import product from 'vs/platform/node/product';
+import product from 'vs/platform/product/node/product';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { isLinux, isMacintosh, isWindows } from 'vs/base/common/platform';
+import { isLinux, isWindows } from 'vs/base/common/platform';
 import { lstatSync } from 'fs';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { createLinuxDesktopShortcut, ensureLinkEquals } from 'vs/kendryte/vs/platform/createShortcut/node/shortcuts';
 import { IShortcutOptions } from 'windows-shortcuts';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { tmpdir } from 'os';
 import { mkdirp } from 'vs/base/node/pfs';
 import { optional } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
 import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { memoize } from 'vs/base/common/decorators';
-import { basename } from 'vs/base/common/paths';
+import { basename } from 'vs/base/common/path';
 
 export class NodePathService implements INodePathService {
 	_serviceBrand: any;
 
-	private toolchainPathExists: boolean;
+	private toolchainPathExists: boolean | undefined;
 
 	constructor(
 		@optional(IWorkspaceContextService) protected workspaceContextService: IWorkspaceContextService,
@@ -53,15 +52,11 @@ export class NodePathService implements INodePathService {
 			// when dev, source code is always version control root
 			return resolvePath(this.environmentService.appRoot);
 		}
-		if (isMacintosh) {
-			// Mac has a Contents folder, other platform do not have
-			return resolvePath(this.environmentService.appRoot, '../../..');
-		}
 
 		return resolvePath(this.environmentService.appRoot, '../..');
 	}
 
-	createAppLink(): TPromise<void> {
+	createAppLink(): Promise<void> {
 		if (!this.environmentService.isBuilt) {
 			return Promise.reject(new Error('development mode do not support create link'));
 		}
@@ -102,13 +97,13 @@ export class NodePathService implements INodePathService {
 		}
 	}
 
-	async ensureTempDir(name?: string): TPromise<string> {
+	async ensureTempDir(name?: string): Promise<string> {
 		const tmp = this.tempDir(name);
 		await mkdirp(tmp);
 		return tmp;
 	}
 
-	createUserLink(linkFile: string, existsFile: string, windowsOptions?: Partial<IShortcutOptions>): TPromise<void> {
+	createUserLink(linkFile: string, existsFile: string, windowsOptions?: Partial<IShortcutOptions>): Promise<void> {
 		this.logger.info('create user link if not: %s -> %s', linkFile, existsFile);
 		return ensureLinkEquals(linkFile, existsFile, windowsOptions);
 	}
@@ -129,8 +124,8 @@ export class NodePathService implements INodePathService {
 
 	@memoize
 	private getDataPath() {
-		if (process.env['KENDRYTE_IDE_LOCAL_PACKAGE_DIR']) {
-			return resolvePath(process.env['KENDRYTE_IDE_LOCAL_PACKAGE_DIR']);
+		if (process.env.KENDRYTE_IDE_LOCAL_PACKAGE_DIR) {
+			return resolvePath(process.env.KENDRYTE_IDE_LOCAL_PACKAGE_DIR);
 		}
 		if (this.environmentService.isBuilt) {
 			return resolvePath(this.getSelfControllingRoot(), '../../LocalPackage');

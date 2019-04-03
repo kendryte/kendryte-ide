@@ -5,8 +5,8 @@ import { Button } from 'vs/base/browser/ui/button/button';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { SettingsTreeSettingElement } from 'vs/workbench/parts/preferences/browser/settingsTreeModels';
 import { ISettingItemTemplate } from 'vs/kendryte/vs/workbench/config/common/type';
+import { SettingsTreeSettingElement } from 'vs/workbench/contrib/preferences/browser/settingsTreeModels';
 
 interface Template {
 	button: Button;
@@ -39,11 +39,11 @@ export class ButtonInject extends FieldInject<string, Template> {
 		};
 	}
 
-	_entry(tree, element: SettingsTreeSettingElement, template: FieldTemplate<string, Template>): void {
+	_entry(tree: ITree, element: SettingsTreeSettingElement, template: FieldTemplate<string, Template>): void {
 		template.button.label = element.description;
 	}
 
-	_detect(element) {
+	_detect(element: SettingsTreeSettingElement) {
 		return element.setting.type === 'button';
 	}
 }

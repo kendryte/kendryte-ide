@@ -2,7 +2,6 @@ import { INatureProgressStatus } from 'vs/kendryte/vs/platform/config/common/pro
 import { IRequestService } from 'vs/platform/request/node/request';
 import { Event } from 'vs/base/common/event';
 import { DownloadID, IDownloadTargetInfo, INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
 import { DownloadTask, loadIdFromResumeFile } from 'vs/kendryte/vs/services/download/electron-main/downloadTask';
 import { doubleExtname } from 'vs/kendryte/vs/base/common/doubleExtname';
@@ -23,15 +22,20 @@ export class NodeDownloadService implements INodeDownloadService {
 	}
 
 	private getTask(download: DownloadID): DownloadTask {
-		if (typeof download === 'string') {
-			return this.downloading.get(download);
+		let ret: DownloadTask | undefined;
+		if (typeof (download as any) === 'string') {
+			ret = this.downloading.get(download as any);
 		} else if (download) {
-			return this.downloading.get(download.__id);
+			ret = this.downloading.get(download.__id);
 		}
-		return null;
+		if (ret) {
+			return ret;
+		} else {
+			throw new Error('Failed to find download with id: ' + download);
+		}
 	}
 
-	public async getStatus(download: DownloadID): TPromise<IDownloadTargetInfo> {
+	public async getStatus(download: DownloadID): Promise<IDownloadTargetInfo> {
 		return download && this.getTask(download).getInfo();
 	}
 
@@ -48,7 +52,7 @@ export class NodeDownloadService implements INodeDownloadService {
 		return this.getTask(download).progressEvent;
 	}
 
-	public async download(url: string, target: string, start = true, logger: ILogService = defaultConsoleLogger): TPromise<DownloadID> {
+	public async download(url: string, target: string, start = true, logger: ILogService = defaultConsoleLogger): Promise<DownloadID> {
 		if (!logger) {
 			logger = defaultConsoleLogger;
 			defaultConsoleLogger.warn('download file without a logger.');
@@ -59,7 +63,7 @@ export class NodeDownloadService implements INodeDownloadService {
 
 		let id = await loadIdFromResumeFile(target, logger);
 
-		if (this.hasTask(id)) {
+		if (id && this.hasTask(id)) {
 			logger.info('Download task exists: ' + id);
 		} else {
 			const task = new DownloadTask(url, target, this.requestService);
@@ -91,7 +95,7 @@ export class NodeDownloadService implements INodeDownloadService {
 		return id;
 	}
 
-	public start(download: DownloadID, logger?: ILogService): TPromise<void> {
+	public start(download: DownloadID, logger?: ILogService): Promise<void> {
 		const task = this.getTask(download);
 		if (logger) {
 			task.addLogTarget(logger);
@@ -99,26 +103,26 @@ export class NodeDownloadService implements INodeDownloadService {
 		return task.start();
 	}
 
-	public async cancel(download: DownloadID): TPromise<void> {
+	public async cancel(download: DownloadID): Promise<void> {
 		// console.log('cancel called');
 		await this.getTask(download).stop();
 		return this.wait(download);
 	}
 
-	public async progress(download: DownloadID): TPromise<INatureProgressStatus> {
+	public async progress(download: DownloadID): Promise<INatureProgressStatus> {
 		// console.log('progress called');
 		return this.getTask(download).getProgress();
 	}
 
-	public async destroy(download: DownloadID): TPromise<void> {
+	public async destroy(download: DownloadID): Promise<void> {
 		// console.log('destroy called');
 		return this.getTask(download).destroy();
 	}
 
-	public async wait(download: DownloadID): TPromise<void> {
+	public async wait(download: DownloadID): Promise<void> {
 		// console.log('### wait called');
 		const task = this.getTask(download);
-		return new TPromise((resolve, reject) => {
+		return new Promise((resolve, reject) => {
 			task.finishEvent(([file, error]) => {
 				// console.log('### download dispose', task.getInfo().id.__id, this.downloading.size);
 				task.dispose();
@@ -134,10 +138,10 @@ export class NodeDownloadService implements INodeDownloadService {
 		});
 	}
 
-	public waitResultFile(download: DownloadID): TPromise<string> {
+	public waitResultFile(download: DownloadID): Promise<string> {
 		// console.log('### waitResultFile called');
 		const d = this.getTask(download);
-		return new TPromise((resolve, reject) => {
+		return new Promise((resolve, reject) => {
 			d.finishEvent(([file, error]) => {
 				d.dispose();
 				if (error) {
@@ -150,7 +154,7 @@ export class NodeDownloadService implements INodeDownloadService {
 		});
 	}
 
-	public downloadTemp(url: string, start = true, logger?: ILogService): TPromise<DownloadID> {
+	public downloadTemp(url: string, start = true, logger?: ILogService): Promise<DownloadID> {
 		return this.download(url, osTempDir(`download/file${hash(url)}${doubleExtname(url)}`), start, logger);
 	}
 }

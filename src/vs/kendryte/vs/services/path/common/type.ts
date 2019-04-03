@@ -1,4 +1,3 @@
-import { TPromise } from 'vs/base/common/winjs.base';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 
 export interface INodePathService {
@@ -13,10 +12,10 @@ export interface INodePathService {
 	/** @deprecated*/
 	rawToolchainPath(): string;
 	workspaceFilePath(s?: string): string;
-	createUserLink(existsFile: string, linkFile: string): TPromise<void>;
-	ensureTempDir(name?: string): TPromise<string>;
+	createUserLink(existsFile: string, linkFile: string): Promise<void>;
+	ensureTempDir(name?: string): Promise<string>;
 	/** @deprecated osTempDir */tempDir(name?: string): string;
-	createAppLink(): TPromise<void>;
+	createAppLink(): Promise<void>;
 	getPackageFile(): string;
 }
 

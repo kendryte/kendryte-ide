@@ -1,12 +1,14 @@
-import { create as createWindows, IShortcutOptions, query as queryWindows } from 'windows-shortcuts';
+import { create as createWindowsAsync, IShortcutOptions, IShortcutValue, query as queryWindowsAsync } from 'windows-shortcuts';
 import { isWindows } from 'vs/base/common/platform';
 import { lstat, mkdirp, readlink, rimraf, symlink, writeFile } from 'vs/base/node/pfs';
-import { nfcall } from 'vs/base/common/async';
-import { TPromise } from 'vs/base/common/winjs.base';
 import * as fs from 'fs';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { dirname, posix } from 'path';
-import product from 'vs/platform/node/product';
+import { promisify } from 'util';
+import product from 'vs/platform/product/node/product';
+
+const queryWindows = promisify<string, IShortcutValue>(queryWindowsAsync);
+const createWindows = promisify<string, IShortcutOptions>(createWindowsAsync);
 
 export async function createUserLink(linkFile: string, existsFile: string, windowsOptions?: Partial<IShortcutOptions>) {
 	linkFile = lnk(linkFile);
@@ -14,12 +16,10 @@ export async function createUserLink(linkFile: string, existsFile: string, windo
 	await mkdirp(dirname(linkFile));
 
 	if (isWindows) {
-		if (!windowsOptions) {
-			windowsOptions = { target: existsFile };
-		} else {
-			windowsOptions.target = existsFile;
-		}
-		await nfcall(createWindows, linkFile, windowsOptions);
+		const options: IShortcutOptions = Object.assign({}, windowsOptions, {
+			target: existsFile,
+		});
+		await createWindows(linkFile, options);
 	} else {
 		await symlink(existsFile, linkFile);
 	}
@@ -34,7 +34,7 @@ export interface IUserLinkStat {
 	stat: fs.Stats;
 }
 
-export async function readUserLink(linkFile: string): TPromise<IUserLinkStat> {
+export async function readUserLink(linkFile: string): Promise<IUserLinkStat> {
 	linkFile = lnk(linkFile);
 	const ret: IUserLinkStat = {} as any;
 	ret.exists = await lstat(linkFile).then((stat) => {
@@ -50,7 +50,7 @@ export async function readUserLink(linkFile: string): TPromise<IUserLinkStat> {
 	}
 
 	if (ret.isLink) {
-		ret.value = isWindows ? await nfcall(queryWindows, linkFile) : await readlink(linkFile);
+		ret.value = isWindows ? await queryWindows(linkFile) : await readlink(linkFile);
 	}
 
 	return ret;
@@ -87,15 +87,15 @@ export enum LinkTarget {
 	IDE_DATA,
 }
 
-export function pathResolve(windows, linux, ...paths: string[]) {
+export function pathResolve(windows: string, linux: string, ...paths: string[]) {
 	return isWindows ? `^%${windows}^%${posix.resolve('/', ...paths)}` : resolvePath(linux, ...paths);
 }
 
-export function pathResolveNow(windows, linux, ...paths: string[]) {
+export function pathResolveNow(windows: string, linux: string, ...paths: string[]) {
 	return isWindows ? `%${windows}%${posix.resolve('/', ...paths)}` : resolvePath(linux, ...paths);
 }
 
-function lnk(f) {
+function lnk(f: string) {
 	if (isWindows && !/\.lnk$/i.test(f)) {
 		return `${f}.lnk`;
 	} else {
@@ -103,7 +103,7 @@ function lnk(f) {
 	}
 }
 
-export async function ensureLinkEquals(linkFile: string, existsFile: string, windowsOptions?: Partial<IShortcutOptions>): TPromise<any> {
+export async function ensureLinkEquals(linkFile: string, existsFile: string, windowsOptions?: Partial<IShortcutOptions>): Promise<any> {
 	linkFile = lnk(linkFile);
 	const stat = await readUserLink(linkFile);
 	if (isUserLinkSame(stat, linkFile, windowsOptions)) {
@@ -117,7 +117,7 @@ export async function ensureLinkEquals(linkFile: string, existsFile: string, win
 	await createUserLink(linkFile, existsFile, windowsOptions);
 }
 
-export async function createLinuxDesktopShortcut(installPath: string, appPath: string): TPromise<void> {
+export async function createLinuxDesktopShortcut(installPath: string, appPath: string): Promise<void> {
 	const content: string = `#!/usr/bin/env xdg-open
 [Desktop Entry]
 Name=${product.nameLong}
@@ -138,7 +138,10 @@ Name=New Empty Window
 Exec=${appPath} --new-window %F
 Icon=${installPath}/icon.png
 `;
-	const desktop = process.env.XDG_DESKTOP_DIR || resolvePath(process.env.HOME, 'Desktop');
+	const desktop = process.env.XDG_DESKTOP_DIR || resolvePath(process.env.HOME || process.env.HOMEPATH || '/', 'Desktop');
+	if (!desktop || desktop === '/Desktop') {
+		throw new Error('Cannot find desktop path to create shortcut.');
+	}
 	await mkdirp(desktop);
 	await writeFile(`${desktop}/${product.applicationName}.desktop`, content);
 

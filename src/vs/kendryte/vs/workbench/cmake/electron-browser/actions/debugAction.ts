@@ -1,7 +1,6 @@
 import { Action } from 'vs/base/common/actions';
-import { TPromise } from 'vs/base/common/winjs.base';
+import { IDebugService, ILaunch } from 'vs/workbench/contrib/debug/common/debug';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
-import { IDebugService, ILaunch } from 'vs/workbench/parts/debug/common/debug';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { ILogService } from 'vs/platform/log/common/log';
@@ -52,7 +51,7 @@ export class MaixCMakeDebugAction extends Action {
 
 	protected async saveToLaunchJson(config: ILaunch) {
 		const resource = config.uri;
-		const exists = await this.fileService.existsFile(resource);
+		const exists = await this.fileService.exists(resource);
 		if (!exists) {
 			await this.fileService.updateContent(resource, `{
     // Use IntelliSense to learn about possible attributes.
@@ -106,7 +105,7 @@ export class MaixCMakeDebugAction extends Action {
 		textModelRef.dispose();
 	}
 
-	async run(): TPromise<void> {
+	async run(): Promise<void> {
 		await this.openOCDService.start();
 		const port = this.openOCDService.getCurrentPort();
 		if (!port) {
@@ -134,7 +133,7 @@ export class MaixCMakeDebugAction extends Action {
 			throw e;
 		});
 
-		await this.debugService.stopSession(null);
+		await this.debugService.stopSession(undefined);
 		await this.debugService.startDebugging(myLaunch, 'kendryte');
 	}
 }

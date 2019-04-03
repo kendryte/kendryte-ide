@@ -275,20 +275,15 @@ exports.avoidMonkeyPatchFromAppInsights = function () {
 //#endregion
 
 function kendryteExtend(){
-	try {
-		// @ts-ignore
-		require('source-map-support/register');
-	} catch (e) {
-		process.stderr.isTTY && console.error('ignored:', e.message);
-	}
+	process.stderr.isTTY && console.error('bootstrap: kendryte-extend');
+	
 	try {
 		// @ts-ignore
 		global.electron = require('electron');
 	} catch (e) {
-		process.stderr.isTTY && console.error('ignored:', e.message);
+		process.stderr.isTTY && console.error('failed to set global.electron for debug:', e.message);
 	}
 	
-	process.stderr.isTTY && console.error('bootstrap: kendryte-extend');
 	if (process.type === 'render') {
 		require('electron').app.once('ready', () => {
 			setTimeout(() => {
@@ -297,5 +292,12 @@ function kendryteExtend(){
 				process.title = title || 'KendryteIDE-render';
 			}, 1000);
 		});
+	} else {
+		try {
+			// @ts-ignore
+			require('source-map-support/register');
+		} catch (e) {
+			process.stderr.isTTY && console.error('ignored:', e.message);
+		}
 	}
 }

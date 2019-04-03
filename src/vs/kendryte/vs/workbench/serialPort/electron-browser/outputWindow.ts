@@ -1,10 +1,7 @@
-import { TerminalWidgetManager } from 'vs/workbench/parts/terminal/browser/terminalWidgetManager';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { Terminal as XTermTerminal } from 'vscode-xterm';
-import { TerminalConfigHelper } from 'vs/workbench/parts/terminal/electron-browser/terminalConfigHelper';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
-import { TerminalInstance } from 'vs/workbench/parts/terminal/electron-browser/terminalInstance';
 import { IEditorOptions } from 'vs/editor/common/config/editorOptions';
 import { IConfigurationChangeEvent, IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import * as nls from 'vs/nls';
@@ -28,6 +25,11 @@ import { Separator } from 'vs/base/browser/ui/actionbar/actionbar';
 import { SerialPortShowFindAction } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/actions/find';
 import { XtermScrollbackBuffer } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/iobuffers/output';
 import { EscapeStringClearScreen } from 'vs/kendryte/vs/base/node/terminalConst';
+import { TerminalWidgetManager } from 'vs/workbench/contrib/terminal/browser/terminalWidgetManager';
+import { TerminalConfigHelper } from 'vs/workbench/contrib/terminal/browser/terminalConfigHelper';
+import { TerminalInstance } from 'vs/workbench/contrib/terminal/browser/terminalInstance';
+import { linuxDistro } from 'vs/workbench/contrib/terminal/node/terminal';
+import { ExtendMap } from 'vs/kendryte/vs/base/common/extendMap';
 
 let Terminal: typeof XTermTerminal;
 
@@ -40,8 +42,8 @@ export class OutputXTerminal extends Disposable {
 	protected _isVisible = true;
 	protected _wrapperElement: HTMLElement;
 
-	protected scrollbackList = new Map<NodeJS.WritableStream, XtermScrollbackBuffer>();
-	private currentInstance: NodeJS.WritableStream;
+	protected scrollbackList = new ExtendMap<NodeJS.WritableStream, XtermScrollbackBuffer>();
+	private currentInstance?: NodeJS.WritableStream;
 
 	private last: XtermScrollbackBuffer;
 	private encoding: ILocalOptions['outputCharset'];
@@ -70,7 +72,7 @@ export class OutputXTerminal extends Disposable {
 	) {
 		super();
 
-		this._configHelper = instantiationService.createInstance(TerminalConfigHelper);
+		this._configHelper = instantiationService.createInstance(TerminalConfigHelper, linuxDistro);
 		Object.assign(this, {
 			_getDimension: TerminalInstance.prototype['_getDimension'],
 			_safeSetOption: TerminalInstance.prototype['_safeSetOption'],
@@ -191,8 +193,12 @@ export class OutputXTerminal extends Disposable {
 
 	}
 
-	handleSerialIncoming(instance: SerialPortBaseBinding) {
-		this.currentInstance = instance;
+	handleSerialIncoming(instance: SerialPortBaseBinding | undefined) {
+		if (instance) {
+			this.currentInstance = instance;
+		} else {
+			delete this.currentInstance;
+		}
 		if (this.last) {
 			this.last.deletePipe();
 		}
@@ -201,13 +207,11 @@ export class OutputXTerminal extends Disposable {
 			return;
 		}
 
-		if (!this.scrollbackList.has(instance)) {
+		const buff = this.scrollbackList.entry(instance, () => {
 			const scrollbackBuffer = new XtermScrollbackBuffer(this.encoding, this.translateLineFeed, this.hexLineFeed);
-			this.scrollbackList.set(instance, scrollbackBuffer);
 			instance.pipe(scrollbackBuffer);
-		}
-
-		const buff = this.scrollbackList.get(instance);
+			return scrollbackBuffer;
+		});
 		buff.pipeTo(this._xterm);
 		this.last = buff;
 	}
@@ -217,7 +221,7 @@ export class OutputXTerminal extends Disposable {
 			return;
 		}
 
-		const buff = this.scrollbackList.get(instance);
+		const buff = this.scrollbackList.getReq(instance);
 		buff.destroy();
 		this.scrollbackList.delete(instance);
 
@@ -233,8 +237,8 @@ export class OutputXTerminal extends Disposable {
 
 	public setOptions(options: ILocalOptions = {} as any) {
 		this.encoding = options.outputCharset || defaultConfig.outputCharset;
-		this.translateLineFeed = serialPortLF.get(options.translateLineFeed || defaultConfig.translateLineFeed);
-		this.hexLineFeed = (typeof options.hexLineFeed === 'boolean') ? options.hexLineFeed : defaultConfig.hexLineFeed;
+		this.translateLineFeed = serialPortLF.getReq(options.translateLineFeed || defaultConfig.translateLineFeed);
+		this.hexLineFeed = (typeof options.hexLineFeed === 'boolean') ? options.hexLineFeed : defaultConfig.hexLineFeed || false;
 	}
 
 	writeUser(instance: NodeJS.WritableStream, message: string) {
@@ -379,11 +383,11 @@ export class OutputXTerminal extends Disposable {
 			this._xterm.clear();
 		}
 
-		if (!this.scrollbackList.has(instance)) {
+		if (!instance || !this.scrollbackList.has(instance)) {
 			return;
 		}
 
-		const buff = this.scrollbackList.get(instance);
+		const buff = this.scrollbackList.getReq(instance);
 		buff.flush();
 	}
 

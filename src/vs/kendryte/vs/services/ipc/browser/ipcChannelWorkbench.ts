@@ -1,15 +1,15 @@
-import { IKendryteMainIpcChannel, IKendryteMainIpcChannelClient, IKendryteServiceRunnerChannel } from 'vs/kendryte/vs/services/ipc/node/ipc';
-import { IKendryteClientService, symbolIpcObj } from 'vs/kendryte/vs/services/ipc/electron-browser/ipcType';
+import { IKendryteMainIpcChannel, IKendryteMainIpcChannelClient, IKendryteServiceRunnerChannel } from 'vs/kendryte/vs/services/ipc/browser/ipc';
+import { IKendryteClientService, symbolIpcObj } from 'vs/kendryte/vs/services/ipc/common/ipcType';
 import { ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 import { Event } from 'vs/base/common/event';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { ILogService } from 'vs/platform/log/common/log';
 import { URI } from 'vs/base/common/uri';
-import { ChannelLogger } from 'vs/kendryte/vs/services/channelLogger/electron-browser/logger';
+import { ChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/logger';
 import { LogEvent } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { IPC_ID_IS_ME_FIRST, IPC_ID_STOP_LOG_EVENT } from 'vs/kendryte/vs/base/common/ipcIds';
 import { IWindowService } from 'vs/platform/windows/common/windows';
+import { registerChannelClient } from 'vs/kendryte/vs/platform/instantiation/common/ipcExtensions';
 
 const symbolMethod = Symbol('ipc-method-mark');
 const symbolEventMethod = Symbol('ipc-event-method-mark');
@@ -103,7 +103,7 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 			Object.defineProperty(proxy, method, {
 				configurable: false,
 				enumerable: true,
-				value: (...arg) => this._callService(id, method, arg),
+				value: (...arg: any[]) => this._callService(id, method, arg),
 				writable: false,
 			});
 		}
@@ -118,14 +118,14 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 			Object.defineProperty(proxy, em, {
 				configurable: false,
 				enumerable: true,
-				value: (...arg) => this._listenService(id, em, arg),
+				value: (...arg: any[]) => this._listenService(id, em, arg),
 			});
 		}
 		Object.freeze(proxy);
 		return proxy;
 	}
 
-	private _callService(id: string, method: string, args: any[]): TPromise<any> {
+	private _callService(id: string, method: string, args: any[]): Promise<any> {
 		this.logService.info(`callService(${id}, ${method},`, args, ');');
 
 		return this.runnerChannel.call(`${id}:${method}`, this.serializeArg(args));
@@ -175,3 +175,6 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 }
 
 registerSingleton(IKendryteClientService, KendryteIPCWorkbenchService);
+
+registerChannelClient(IKendryteMainIpcChannel);
+registerChannelClient(IKendryteServiceRunnerChannel);

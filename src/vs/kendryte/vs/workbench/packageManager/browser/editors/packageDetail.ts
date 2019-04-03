@@ -6,12 +6,12 @@ import { IStorageService } from 'vs/platform/storage/common/storage';
 import { EditorOptions } from 'vs/workbench/common/editor';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IPackageLocalRemoteInfo, PackageDetailCompletionInput } from 'vs/kendryte/vs/workbench/packageManager/common/editors/packageDetailInput';
-import { WebviewElement } from 'vs/workbench/parts/webview/electron-browser/webviewElement';
-import { IPartService, Parts } from 'vs/workbench/services/part/common/partService';
+import { WebviewElement } from 'vs/workbench/contrib/webview/electron-browser/webviewElement';
+import { IWorkbenchLayoutService, Parts } from 'vs/workbench/services/layout/browser/layoutService';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { localize } from 'vs/nls';
 import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
-import { chain } from 'vs/base/common/event';
+import { Event } from 'vs/base/common/event';
 import { isPromiseCanceledError } from 'vs/base/common/errors';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { vsiconClass } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
@@ -20,11 +20,12 @@ import { InstallSingleDependencyAction } from 'vs/kendryte/vs/workbench/packageM
 import { IRequestService } from 'vs/platform/request/node/request';
 import { asText } from 'vs/base/node/request';
 import * as marked from 'vs/base/common/marked/marked';
-import { ShowCurrentReleaseNotesAction } from 'vs/workbench/parts/update/electron-browser/update';
+import { ShowCurrentReleaseNotesAction } from 'vs/workbench/contrib/update/electron-browser/update';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import 'vs/css!vs/kendryte/vs/workbench/packageManager/browser/editors/detailPage';
 import { DeleteDependencyAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/deleteDependencyAction';
 import { OpenUrlAction } from 'vs/kendryte/vs/platform/open/common/openUrlAction';
+import { assertNotNull } from 'vs/kendryte/vs/base/common/assertNotNull';
 
 const githubUrlReg = /^https?:\/\/github.com\/([^\/]+)\/([^\/]+)/;
 
@@ -47,7 +48,7 @@ export class PackageDetailEditor extends BaseEditor {
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@IPartService private readonly partService: IPartService,
+		@IWorkbenchLayoutService private layoutService: IWorkbenchLayoutService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@IRequestService private readonly requestService: IRequestService,
 		@IOpenerService private readonly openerService: IOpenerService,
@@ -74,15 +75,21 @@ export class PackageDetailEditor extends BaseEditor {
 		});
 		this._register(this.actionsBar);
 
-		chain(this.actionsBar.onDidRun)
+		Event.chain(this.actionsBar.onDidRun)
 			.map(({ error }) => error)
 			.filter(error => !!error)
 			.on(this.onError, this, this._toDispose);
 
-		this.webviewElement = this.instantiationService.createInstance(WebviewElement, this.partService.getContainer(Parts.EDITOR_PART), {
-			allowScripts: false,
-			allowSvgs: false,
-		});
+		this.webviewElement = this.instantiationService.createInstance(
+			WebviewElement,
+			this.layoutService.getContainer(Parts.EDITOR_PART),
+			{
+				allowSvgs: false,
+			},
+			{
+				allowScripts: false,
+			},
+		);
 		this._register(this.webviewElement);
 
 		append(root, $('hr'));
@@ -119,14 +126,14 @@ export class PackageDetailEditor extends BaseEditor {
 				this.icon.src = data.remote.icon;
 				this.icon.style.display = 'initial';
 			} else {
-				this.iconDisable.className = 'icon no ' + vsiconClass(data.local.type);
+				this.iconDisable.className = 'icon no ' + vsiconClass(assertNotNull(data.local).type);
 				this.iconDisable.style.display = 'initial';
 			}
 
 			this.name.innerText = data.remote.name;
 			this.description.innerText = data.remote.description || localize('no.description', 'No description');
 			this.version.innerText = data.local ? data.local.version : localize('not.install', 'Not Installed');
-		} else {
+		} else if (data.local) {
 			this.iconDisable.className = 'icon no ' + vsiconClass(data.local.type);
 			this.iconDisable.style.display = 'initial';
 			this.name.innerText = data.local.name;
@@ -153,7 +160,7 @@ export class PackageDetailEditor extends BaseEditor {
 			this.actionsBar.push(eraseAction);
 		}
 
-		if (data.remote.homepage) {
+		if (data.remote && data.remote.homepage) {
 			const openHome = this.instantiationService.createInstance(OpenUrlAction, localize('open.homepage', 'Open homepage'), data.remote.homepage);
 			this.elementDisposables.push(openHome);
 			this.actionsBar.push(openHome);

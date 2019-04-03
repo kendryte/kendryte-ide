@@ -3,14 +3,14 @@ import { ISetting } from 'vs/workbench/services/preferences/common/preferences';
 import { EnumProviderConfig } from 'vs/kendryte/vs/platform/config/common/dynamicEnum';
 
 export function isDynamicEnum(setting: ISetting): boolean {
-	return setting && setting.enumDescriptions && '__dyn_enum' in setting.enumDescriptions;
+	return setting && setting.enumDescriptions && '__dyn_enum' in setting.enumDescriptions || false;
 }
 
-export function getDynamicEnum<T>(setting: ISetting): EnumProviderConfig<T> {
+export function getDynamicEnum<T>(setting: ISetting): EnumProviderConfig<T> | void {
 	if (isDynamicEnum(setting)) {
 		return setting.enumDescriptions as any as EnumProviderConfig<T>;
 	} else {
-		return null;
+		return;
 	}
 }
 

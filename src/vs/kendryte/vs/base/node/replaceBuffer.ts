@@ -23,7 +23,7 @@ export function replaceBuffer(source: Buffer, from: Buffer, to: Buffer): Buffer 
 	let newView: Buffer;
 	let cur = 0;
 	if (length >= to.length) {
-		cur = idxList.shift();
+		cur = idxList.shift() || NaN;
 		itr = cur + from.length;
 		newView = source;
 	} else {
@@ -32,7 +32,7 @@ export function replaceBuffer(source: Buffer, from: Buffer, to: Buffer): Buffer 
 	}
 
 	while (idxList.length > 0) {
-		const next = idxList.length ? idxList.shift() : source.length;
+		const next = idxList.length ? idxList.shift() || NaN : source.length;
 		cur += source.copy(newView, cur, itr, next);
 		cur += source.copy(to, cur);
 		itr = next + length;

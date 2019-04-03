@@ -29,7 +29,7 @@ export abstract class AbstractTableRender<T extends CellRender> extends Disposab
 
 	protected abstract createTableTemplate(): IterableIterator<T>;
 
-	protected abstract frameStyle(colors: ColorMap);
+	protected abstract frameStyle(colors: ColorMap): void;
 
 	constructor(chip: IChipPackagingCalculated, protected themeService: IThemeService) {
 		super();
@@ -104,7 +104,7 @@ export abstract class AbstractTableRender<T extends CellRender> extends Disposab
 
 		if (this._cellList) {
 			this._cellList.forEach(e => e.dispose());
-			this._cellList = null;
+			delete this._cellList;
 		}
 	}
 }

@@ -1,6 +1,5 @@
 import { ISPError, ISPOperation } from 'vs/kendryte/vs/workbench/serialUpload/node/bufferConsts';
 import { Transform } from 'stream';
-import { TPromise } from 'vs/base/common/winjs.base';
 
 export class ISPFlashPacker extends Transform {
 	private _currentAddress: number;
@@ -9,7 +8,7 @@ export class ISPFlashPacker extends Transform {
 	constructor(
 		protected readonly baseAddress: number,
 		protected readonly length: number,
-		protected readonly callback: (readBytes: number) => TPromise<any>,
+		protected readonly callback: (readBytes: number) => Promise<any>,
 	) {
 		super({ objectMode: true });
 		this._currentAddress = baseAddress;
@@ -62,7 +61,7 @@ export class ISPFlashPacker extends Transform {
 	public finishPromise() {
 		return new Promise((resolve, reject) => {
 			this.once('error', err => reject(err));
-			this.once('close', _ => resolve());
+			this.once('close', () => resolve());
 		});
 	}
 }

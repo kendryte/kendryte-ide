@@ -1,4 +1,3 @@
-import { TPromise } from 'vs/base/common/winjs.base';
 import { Action } from 'vs/base/common/actions';
 import { IPackageRegistryService } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -19,9 +18,9 @@ export class DeleteDependencyAction extends Action {
 		);
 	}
 
-	public run(event?: any): TPromise<void> {
+	public run(event?: any): Promise<void> {
 		if (!this.instantiationService.invokeFunction(assumeWorkbench)) {
-			return TPromise.as(null);
+			return Promise.resolve();
 		}
 		return this.packageRegistryService.erasePackage(this.packageName).then(() => {
 			this.notificationService.info('Package removed.');

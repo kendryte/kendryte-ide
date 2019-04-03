@@ -6,9 +6,7 @@ import 'vs/kendryte/vs/workbench/config/electron-browser/pathSettingsContributio
 import 'vs/kendryte/vs/workbench/config/common/flashSettingsContribution';
 import 'vs/kendryte/vs/workbench/config/browser/internalSettingsCategoryContribution';
 // ipc channel (client)
-import 'vs/kendryte/vs/services/ipc/electron-browser/ipcChannelWorkbench';
-// bootstrap
-import 'vs/kendryte/vs/workbench/bootstrap/electron-browser/kendryteBootstrap';
+import 'vs/kendryte/vs/services/ipc/browser/ipcChannelWorkbench';
 // Logger
 import 'vs/kendryte/vs/services/channelLogger/electron-browser/service';
 // Misc Services
@@ -58,3 +56,5 @@ import 'vs/kendryte/vs/services/openocd/electron-browser/openOCDService';
 import 'vs/kendryte/vs/platform/sudo/electron-browser/register';
 // updater
 import 'vs/kendryte/vs/code/electron-browser/updater/register';
+// bootstrap
+import 'vs/kendryte/vs/workbench/bootstrap/common/kendryteBootstrap';

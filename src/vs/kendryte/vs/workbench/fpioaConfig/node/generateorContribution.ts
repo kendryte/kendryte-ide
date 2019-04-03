@@ -1,6 +1,5 @@
 import { Action } from 'vs/base/common/actions';
 import { localize } from 'vs/nls';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { IFuncIOMap, ISavedJson } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
 import { getChipPackaging } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingRegistry';
 import { IChipGeneratorConfig } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingTypes';
@@ -39,8 +38,13 @@ export class GenerateFpioaFilesAction extends Action {
 		this.generators.push(new HeaderGenerator());
 	}
 
-	async run(event, { selectedChip, funcPinMap, configFile }: ISavedJson & { configFile: string }): TPromise<void> {
-		const { generator, geometry } = getChipPackaging(selectedChip);
+	async run(event: any, { selectedChip, funcPinMap, configFile }: ISavedJson & { configFile: string }): Promise<void> {
+		const ret = getChipPackaging(selectedChip);
+		if (!ret) {
+			throw new Error('Unknown chip type: ' + selectedChip);
+		}
+
+		const { generator, geometry } = ret;
 
 		const mapper: IFuncIOMap = new Map();
 		for (const funcId of Object.keys(funcPinMap)) {
@@ -74,15 +78,15 @@ CommandsRegistry.registerCommand({
 					return void 0;
 				}
 
-				return TPromise.as(actionInstance.run(undefined, ...args)).then(() => {
+				return Promise.resolve(actionInstance.run(undefined, ...args)).then(() => {
 					actionInstance.dispose();
 				}, (err) => {
 					actionInstance.dispose();
-					return TPromise.wrapError(err);
+					return Promise.reject(err);
 				});
 			} catch (err) {
 				actionInstance.dispose();
-				return TPromise.wrapError(err);
+				return Promise.reject(err);
 			}
 		}).then(undefined, (e) => {
 			notificationService.error(e);

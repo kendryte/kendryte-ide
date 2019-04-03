@@ -9,6 +9,7 @@ import { IOPinPlacement } from 'vs/kendryte/vs/workbench/fpioaConfig/common/pack
 import { attachSelectBoxStyler } from 'vs/platform/theme/common/styler';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { PinFuncSetEvent } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
+import { selectBoxNames } from 'vs/kendryte/vs/base/browser/ui/selectBox';
 
 export interface IFuncMapTemplate {
 	input: SelectBox;
@@ -69,12 +70,12 @@ export class FuncMapListItemRender implements IListRenderer<IListFuncMapEntry, I
 		const $input = append($header, $('div.select')) as HTMLDivElement;
 		const $desc = append(parent, $('div.desc')) as HTMLDivElement;
 
-		const input = new SelectBox(['--'].concat(Object.keys(this.ioToPin)), 0, this.contextViewService);
+		const input = new SelectBox(['--'].concat(Object.keys(this.ioToPin)).map(selectBoxNames), 0, this.contextViewService);
 		input.render($input);
 		const styler = attachSelectBoxStyler(input, this.themeService);
 
 		const setOptions = this._firePinMapChange.event((ioplace: IOPinPlacement) => {
-			input.setOptions(['--'].concat(Object.keys(this.ioToPin)));
+			input.setOptions(['--'].concat(Object.keys(this.ioToPin)).map(selectBoxNames));
 		});
 
 		return {
@@ -131,7 +132,7 @@ export class FuncMapListItemRender implements IListRenderer<IListFuncMapEntry, I
 
 	public disposeElement(entry: IListFuncMapEntry, index: number, templateData: IFuncMapTemplate): void {
 		dispose(entry.selectEvent);
-		entry.selectEvent = null;
+		delete entry.selectEvent;
 		templateData.input.select(0);
 	}
 

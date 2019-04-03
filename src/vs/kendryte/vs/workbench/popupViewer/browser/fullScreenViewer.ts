@@ -1,6 +1,5 @@
 import { $, addDisposableListener, append, Dimension, EventType, getClientArea, hide, show } from 'vs/base/browser/dom';
 import { IDisposable } from 'vs/base/common/lifecycle';
-import { assign } from 'vs/base/common/objects';
 import { isWindows } from 'vs/base/common/platform';
 import { localize } from 'vs/nls';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
@@ -10,6 +9,7 @@ import { Composite } from 'vs/workbench/browser/composite';
 import { BaseEditor } from 'vs/workbench/browser/parts/editor/baseEditor';
 import 'vs/css!vs/kendryte/vs/workbench/popupViewer/browser/frame';
 import { IStorageService } from 'vs/platform/storage/common/storage';
+import { querySelector } from 'vs/kendryte/vs/base/browser/dom';
 
 const zIndex = 998;
 
@@ -46,11 +46,11 @@ export class FullScreenEditor extends Composite {
 		this.$root.classList.add('monaco-workbench');
 		this.$root.innerHTML = fakeRoot;
 
-		this.$dialog = this.$root.querySelector('.part.editor');
+		this.$dialog = querySelector(this.$root, '.part.editor');
 
-		this.$dialogInner = this.$dialog.querySelector('div.content');
-		this.$content = this.$dialogInner.querySelector('div.main-fake-container');
-		this.$title = this.$dialogInner.querySelector('div.one-editor-silo');
+		this.$dialogInner = querySelector(this.$dialog, 'div.content');
+		this.$content = querySelector(this.$dialogInner, 'div.main-fake-container');
+		this.$title = querySelector(this.$dialogInner, 'div.one-editor-silo');
 
 		$editor.create(this.$content);
 
@@ -62,15 +62,19 @@ export class FullScreenEditor extends Composite {
 	}
 
 	changeTheme(theme: ITheme): any {
-		assign(this.$dialog.style, {
-			backgroundColor: theme.getColor(editorBackground).toString(),
-			borderColor: theme.getColor(editorWidgetBorder).toString(),
-		} as Partial<CSSStyleDeclaration>);
-		const tab: HTMLDivElement = this.$dialogInner.querySelector('.tab.has-icon-theme');
-		tab.style.backgroundColor = theme.getColor(editorBackground).toString();
+		Object.assign(this.$dialog.style, {
+			backgroundColor: theme.getColor(editorBackground),
+			borderColor: theme.getColor(editorWidgetBorder),
+		});
+		const tab = querySelector(this.$dialogInner, '.tab.has-icon-theme');
+		Object.assign(tab.style, {
+			backgroundColor: theme.getColor(editorBackground),
+		});
 
-		const lbl: HTMLDivElement = this.$dialogInner.querySelector('.monaco-icon-label');
-		lbl.style.color = theme.getColor(editorForeground).toString();
+		const lbl = querySelector(this.$dialogInner, '.monaco-icon-label');
+		Object.assign(lbl.style, {
+			color: theme.getColor(editorForeground),
+		});
 	}
 
 	async create() {

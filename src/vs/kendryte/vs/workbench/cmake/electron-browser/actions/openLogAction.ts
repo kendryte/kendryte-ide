@@ -1,5 +1,4 @@
 import { Action } from 'vs/base/common/actions';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ACTION_ID_SHOW_LOG, ACTION_LABEL_SHOW_LOG } from 'vs/kendryte/vs/base/common/menu/cmake';
@@ -19,7 +18,7 @@ export class MaixCMakeOpenLogAction extends Action {
 		super(id, label);
 	}
 
-	async run(): TPromise<void> {
+	async run(): Promise<void> {
 		const logger = this.channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 		logger.clear();
 		this.channelLogService.show(logger.id);

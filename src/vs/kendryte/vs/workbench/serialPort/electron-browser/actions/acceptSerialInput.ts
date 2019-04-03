@@ -1,5 +1,4 @@
 import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { EditorAction, registerEditorAction, ServicesAccessor } from 'vs/editor/browser/editorExtensions';
 import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { EditorContextKeys } from 'vs/editor/common/editorContextKeys';
@@ -30,7 +29,7 @@ class AcceptReplInputAction extends EditorAction {
 		});
 	}
 
-	public run(accessor: ServicesAccessor, editor: ICodeEditor): void | TPromise<void> {
+	public run(accessor: ServicesAccessor, editor: ICodeEditor): void | Promise<void> {
 		accessor.get<ISerialPrivateReplService>(ISerialPrivateReplService).acceptReplInput();
 	}
 }

@@ -1219,7 +1219,7 @@ export class SettingsTreeFilter implements ITreeFilter<SettingsTreeElement> {
 	}
 }
 
-class SettingsTreeDelegate implements IListVirtualDelegate<SettingsTreeGroupChild> {
+export class SettingsTreeDelegate implements IListVirtualDelegate<SettingsTreeGroupChild> {
 
 	private heightCache = new WeakMap<SettingsTreeGroupChild, number>();
 

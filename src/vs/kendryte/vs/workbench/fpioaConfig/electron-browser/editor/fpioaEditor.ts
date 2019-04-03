@@ -6,7 +6,6 @@ import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { EditorOptions } from 'vs/workbench/common/editor';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { FpioaModel } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaModel';
 import { Orientation } from 'vs/base/browser/ui/sash/sash';
 import { FpioaLeftPanel } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/leftPanel';
@@ -15,9 +14,9 @@ import { SplitView } from 'vs/base/browser/ui/splitview/splitview';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { SAVE_FILE_COMMAND_ID } from 'vs/workbench/parts/files/electron-browser/fileCommands';
+import { SAVE_FILE_COMMAND_ID } from 'vs/workbench/contrib/files/browser/fileCommands';
 import { CancellationToken } from 'vs/base/common/cancellation';
-import { IEditorGroup } from 'vs/workbench/services/group/common/editorGroupsService';
+import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 
 export class FpioaEditor extends BaseEditor {
@@ -53,7 +52,13 @@ export class FpioaEditor extends BaseEditor {
 		splitViewMain.addView(leftPan, 300);
 		splitViewMain.addView(rightPan, 300);
 
-		this._register(leftPan.onChipChange((newChip) => this.input.selectChip(newChip)));
+		this._register(leftPan.onChipChange((newChip) => {
+			if (newChip) {
+				this.input.selectChip(newChip);
+			} else {
+				this.input.unSelectChip();
+			}
+		}));
 		this._register(leftPan.onSetPinFunc((map) => {
 			this.input.mapPinFunc(map).catch((e) => {
 				this.notifyService.error(e);
@@ -66,7 +71,7 @@ export class FpioaEditor extends BaseEditor {
 		}));
 	}
 
-	public async setInput(input: FpioaEditorInput, options: EditorOptions, token: CancellationToken): TPromise<void> {
+	public async setInput(input: FpioaEditorInput, options: EditorOptions, token: CancellationToken): Promise<void> {
 		if (this.inputDispose.length) {
 			dispose(this.inputDispose);
 			this.inputDispose.length = 0;
@@ -101,7 +106,7 @@ export class FpioaEditor extends BaseEditor {
 		}
 	}
 
-	private applyChip(chipName: string) {
+	private applyChip(chipName: string | undefined) {
 		this.leftPan.setCurrentChip(chipName);
 		this.rightPan.drawChip(chipName);
 	}

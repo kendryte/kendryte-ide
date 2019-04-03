@@ -4,7 +4,7 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { getMainServices } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
 import { getMainIPCs } from 'vs/kendryte/vs/platform/instantiation/electron-main/mainIpcExtensions';
 
-export function _kendrite_main_hookInstantiationService(
+export function _kendryte_main_hookInstantiationService(
 	serviceCollection: ServiceCollection,
 	electronIpcServer: ElectronIPCServer,
 	instantiationService: IInstantiationService,

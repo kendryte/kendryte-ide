@@ -1,4 +1,3 @@
-import { TPromise } from 'vs/base/common/winjs.base';
 import { RawContextKey } from 'vs/platform/contextkey/common/contextkey';
 import { localize } from 'vs/nls';
 
@@ -23,15 +22,6 @@ export const CONTEXT_IN_SERIAL_PORT_OUTPUT = new RawContextKey<boolean>('inSeria
 export const CONTEXT_SERIAL_PORT_FIND_WIDGET_INPUT_FOCUSED = new RawContextKey<boolean>('inSerialPortFindInput', false);
 export const CONTEXT_SERIAL_PORT_FIND_WIDGET_FOCUSED = new RawContextKey<boolean>('inSerialPortFind', false);
 export const CONTEXT_SERIAL_PORT_HAS_SELECT = new RawContextKey<boolean>('serialOutputTextSelected', undefined);
-
-export interface ISerialFlasher {
-	flash(firmware: Buffer, bootLoader?: Buffer): TPromise<void>;
-}
-
-export interface ISerialFlasherConfig {
-	devicePath: string;
-	// chip
-}
 
 export interface SerialPortItem { // copy out from serial port package
 	comName: string;

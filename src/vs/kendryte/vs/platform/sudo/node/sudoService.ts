@@ -1,9 +1,9 @@
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { exec } from 'sudo-prompt';
 import { isMacintosh } from 'vs/base/common/platform';
-import product from 'vs/platform/node/product';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { dirname, join } from 'vs/base/common/paths';
+import { dirname, join } from 'vs/base/common/path';
+import product from 'vs/platform/product/node/product';
 
 export interface Options {
 	name?: string;
@@ -29,13 +29,15 @@ export const ISudoService = createDecorator<ISudoService>('sudoService');
 export class SudoService implements ISudoService {
 	_serviceBrand: any;
 	private readonly defaultTitle: string;
-	private readonly defaultICNS: string;
+	private readonly defaultICNS?: string;
 
 	constructor(
 		@IEnvironmentService private readonly environmentService: IEnvironmentService,
 	) {
 		this.defaultTitle = 'KendryteIDEWorkerProcess';
-		this.defaultICNS = (isMacintosh && this.environmentService.isBuilt) ? join(dirname(this.environmentService.appRoot), `${product.nameShort}.icns`) : void 0;
+		if (isMacintosh && this.environmentService.isBuilt) {
+			this.defaultICNS = join(dirname(this.environmentService.appRoot), `${product.nameShort}.icns`);
+		}
 	}
 
 	exec(cmd: string, options: Options = {}): Promise<Result> {

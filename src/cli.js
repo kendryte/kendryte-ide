@@ -6,16 +6,6 @@
 //@ts-check
 'use strict';
 
-try{
-	// @ts-ignore
-	require('source-map-support/register');
-	// @ts-ignore
-	global.electron = require('electron');
-} catch (e) {
-	// @ts-ignore
-	console.error('ignored:',e.message);
-}
-
 const bootstrap = require('./bootstrap');
 
 // Avoid Monkey Patches from Application Insights

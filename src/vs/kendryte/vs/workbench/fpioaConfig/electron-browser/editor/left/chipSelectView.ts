@@ -1,15 +1,16 @@
 import { IListRenderer } from 'vs/base/browser/ui/list/list';
 import { IListChipSelectEntry, TEMPLATE_ID } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/left/ids';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
-import { ISelectData, SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
+import { ISelectData, ISelectOptionItem, SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { getChipPackaging } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingRegistry';
-import { Emitter, Event } from 'vs/base/common/event';
+import { Emitter } from 'vs/base/common/event';
 import { attachSelectBoxStyler } from 'vs/platform/theme/common/styler';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { addClass } from 'vs/base/browser/dom';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { localize } from 'vs/nls';
+import { selectBoxFindIndex, selectBoxNames, selectBoxSplitter } from 'vs/kendryte/vs/base/browser/ui/selectBox';
 
 export interface IChipSelectTemplate {
 	parent: HTMLElement;
@@ -18,10 +19,10 @@ export interface IChipSelectTemplate {
 }
 
 export class ChipSelectRenderer implements IListRenderer<IListChipSelectEntry, IChipSelectTemplate> {
-	private names: string[];
+	private readonly names: ISelectOptionItem[];
 
-	private readonly _onDidChange = new Emitter<string>();
-	readonly onDidChange: Event<string> = this._onDidChange.event;
+	private readonly _onDidChange = new Emitter<string | undefined>();
+	readonly onDidChange = this._onDidChange.event;
 	private firing: boolean;
 	private lastSelect: number = 0;
 
@@ -30,8 +31,8 @@ export class ChipSelectRenderer implements IListRenderer<IListChipSelectEntry, I
 		@IThemeService protected themeService: IThemeService,
 		@IDialogService protected dialogService: IDialogService,
 	) {
-		this.names = getChipPackaging().map(item => item.name);
-		this.names.unshift('--');
+		this.names = getChipPackaging().map(item => item.name).map(selectBoxNames);
+		this.names.unshift(selectBoxSplitter);
 	}
 
 	get templateId(): string {
@@ -39,12 +40,12 @@ export class ChipSelectRenderer implements IListRenderer<IListChipSelectEntry, I
 	}
 
 	renderTemplate(parent: HTMLElement): IChipSelectTemplate {
-		const input = new SelectBox(this.names, undefined, this.contextViewService);
+		const input = new SelectBox(this.names, 0, this.contextViewService);
 		parent.innerHTML = '<h3>Select Chip Packaging:</h3>';
 		input.render(parent);
 
 		const toDispose = [
-			input.onDidSelect(index => this.handleChange(input, index)),
+			input.onDidSelect((index: ISelectData) => this.handleChange(input, index)),
 			attachSelectBoxStyler(input, this.themeService),
 		];
 
@@ -58,7 +59,7 @@ export class ChipSelectRenderer implements IListRenderer<IListChipSelectEntry, I
 	}
 
 	renderElement(element: IListChipSelectEntry, index: number, template: IChipSelectTemplate): void {
-		this.lastSelect = this.names.indexOf(element.selected);
+		this.lastSelect = selectBoxFindIndex(this.names, element.selected);
 		if (this.lastSelect === -1) {
 			this.lastSelect = 0;
 		}
@@ -99,7 +100,7 @@ export class ChipSelectRenderer implements IListRenderer<IListChipSelectEntry, I
 			if (confirmed) {
 				this.lastSelect = selected.index;
 				if (selected.index === 0) {
-					this._onDidChange.fire(undefined);
+					this._onDidChange.fire(void 0);
 				} else {
 					this._onDidChange.fire(selected.selected);
 				}

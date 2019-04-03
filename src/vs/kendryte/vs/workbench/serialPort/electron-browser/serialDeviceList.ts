@@ -38,8 +38,6 @@ export class SerialDeviceList extends Disposable {
 			{
 				identityProvider: SimpleIdProvider<IStatusWithSelect>(),
 				ariaLabel: localize('settingsListLabel', 'Settings'),
-				focusOnMouseDown: false,
-				selectOnMouseDown: false,
 				keyboardSupport: false,
 				mouseSupport: false,
 			},
@@ -135,7 +133,7 @@ interface ISerialPortItemTemplate {
 	dis: IDisposable;
 	parent: HTMLElement;
 	icon: OcticonLabel;
-	current: IStatusWithSelect;
+	current?: IStatusWithSelect;
 }
 
 class SerialPortItemRenderer implements IListRenderer<IStatusWithSelect, ISerialPortItemTemplate> {
@@ -155,11 +153,10 @@ class SerialPortItemRenderer implements IListRenderer<IStatusWithSelect, ISerial
 			}
 		});
 
-		const ret = {
+		const ret: ISerialPortItemTemplate = {
 			dis: listen,
 			parent,
 			icon: new OcticonLabel(parent),
-			current: null,
 		};
 
 		return ret;

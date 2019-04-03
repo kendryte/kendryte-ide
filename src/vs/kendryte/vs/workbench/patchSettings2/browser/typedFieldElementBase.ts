@@ -1,5 +1,4 @@
-import { SettingsRenderer, } from 'vs/workbench/parts/preferences/browser/settingsTree';
-import { SettingsTreeElement, SettingsTreeSettingElement } from 'vs/workbench/parts/preferences/browser/settingsTreeModels';
+import { SettingsTreeElement, SettingsTreeSettingElement } from 'vs/workbench/contrib/preferences/browser/settingsTreeModels';
 import { ITree } from 'vs/base/parts/tree/browser/tree';
 import { dispose } from 'vs/base/common/lifecycle';
 import { IInstantiationService, ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
@@ -11,6 +10,9 @@ export interface FieldContext {
 }
 
 export type FieldTemplate<T, EX = void> = ISettingItemTemplate<T> & EX & FieldContext;
+
+class SettingsRenderer {
+}
 
 export abstract class FieldInject<T, EX extends object> {
 	constructor(
@@ -40,7 +42,7 @@ export abstract class FieldInject<T, EX extends object> {
 
 	protected fireChangeEvent(template: FieldContext, event: { value: T, type: SettingValueType }) {
 		this.ref['_onDidChangeSetting'].fire({
-			key: template.context.setting.key,
+			key: template.context ? template.context.setting.key : undefined,
 			value: event.value,
 			type: event.type,
 		});

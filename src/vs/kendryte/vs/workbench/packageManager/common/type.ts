@@ -2,7 +2,6 @@ import { IViewlet } from 'vs/workbench/common/viewlet';
 import { Extensions as ViewContainerExtensions, IViewContainersRegistry, ViewContainer } from 'vs/workbench/common/views';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { IRemotePackageInfo } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
 import { localize } from 'vs/nls';
 import { IPager } from 'vs/base/common/paging';
@@ -28,15 +27,15 @@ export interface IPackageRegistryService {
 	_serviceBrand: any;
 	onLocalPackageChange: Event<void>;
 
-	listLocal(): TPromise<ILibraryProject[]>;
-	openBrowser(sideByside?: boolean): TPromise<any>;
-	queryPackageVersions(type: CMakeProjectTypes, packageName: string): TPromise<IRemotePackageInfo>;
-	queryPackages(type: CMakeProjectTypes, search: string, page: number): TPromise<IPager<IRemotePackageInfo>>;
-	installDependency(packageInfo: IRemotePackageInfo, selectedVersion?: string): TPromise<void>;
-	installExample(currentElement: IRemotePackageInfo, selectedVersion: string, targetPath: string): TPromise<string>;
-	installAll(): TPromise<void>;
-	getPackageInfoLocal(packageType: CMakeProjectTypes, packageName: string): Promise<ILibraryProject>;
-	getPackageInfoRegistry(packageType: CMakeProjectTypes, packageName: string): Promise<IRemotePackageInfo>;
+	listLocal(): Promise<ILibraryProject[]>;
+	openBrowser(): Promise<any>;
+	queryPackageVersions(type: CMakeProjectTypes, packageName: string): Promise<IRemotePackageInfo | undefined>;
+	queryPackages(type: CMakeProjectTypes, search: string, page: number): Promise<IPager<IRemotePackageInfo>>;
+	installDependency(packageInfo: IRemotePackageInfo, selectedVersion?: string): Promise<void>;
+	installExample(currentElement: IRemotePackageInfo, selectedVersion: string, targetPath: string): Promise<string>;
+	installAll(): Promise<void>;
+	getPackageInfoLocal(packageType: CMakeProjectTypes, packageName: string): Promise<ILibraryProject | undefined>;
+	getPackageInfoRegistry(packageType: CMakeProjectTypes, packageName: string): Promise<IRemotePackageInfo | undefined>;
 	erasePackage(packageName: string): Promise<void>;
 }
 

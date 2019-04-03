@@ -1,11 +1,11 @@
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { EnablementState, IExtensionEnablementService, IExtensionGalleryService, IExtensionManagementService } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { IProgress, IProgressService2, IProgressStep, ProgressLocation } from 'vs/platform/progress/common/progress';
+import { CancellationToken } from 'vs/base/common/cancellation';
 
 // TODO: need change to action
-export function MaixBuildSystemPrepare(access: ServicesAccessor): TPromise<boolean> {
+export function MaixBuildSystemPrepare(access: ServicesAccessor): Promise<boolean> {
 	const extensionManagementService: IExtensionManagementService = access.get(IExtensionManagementService);
 	const extensionGalleryService: IExtensionGalleryService = access.get(IExtensionGalleryService);
 	const extensionEnablementService: IExtensionEnablementService = access.get(IExtensionEnablementService);
@@ -20,14 +20,14 @@ export function MaixBuildSystemPrepare(access: ServicesAccessor): TPromise<boole
 		return changed.length > 0;
 	});
 
-	function _installExtension(id: string, reporter: IProgress<IProgressStep>): TPromise<boolean> {
+	function _installExtension(id: string, reporter: IProgress<IProgressStep>): Promise<boolean> {
 		reporter.report({ message: id });
-		return extensionGalleryService.query({ names: [id], source: 'install-recommendation', pageSize: 1 }).then(pager => {
+		return extensionGalleryService.query({ names: [id], source: 'install-recommendation', pageSize: 1 }, CancellationToken.None).then(pager => {
 			if (pager && pager.firstPage && pager.firstPage.length) {
 				reporter.report({ message: id });
 				return extensionManagementService.installFromGallery(pager.firstPage[0]);
 			}
-			return TPromise.wrapError(new Error('Not Found'));
+			return Promise.reject(new Error('Not Found'));
 		}).then(() => {
 			return true;
 		}, (e) => {
@@ -36,21 +36,21 @@ export function MaixBuildSystemPrepare(access: ServicesAccessor): TPromise<boole
 		});
 	}
 
-	async function installExtension(...ids: string[]): TPromise<string[]> {
+	async function installExtension(...ids: string[]): Promise<string[]> {
 		let changed: string[] = [];
 		const list = await extensionManagementService.getInstalled();
 
 		for (const item of list) {
-			const alreadyExists = ids.indexOf(item.galleryIdentifier.id);
+			const alreadyExists = ids.indexOf(item.identifier.id);
 			if (alreadyExists !== -1) {
 				ids.splice(alreadyExists, 1);
 				if (extensionEnablementService.isEnabled(item)) {
 					console.log('extension is already install and enabled: %s', item.identifier.id);
 				} else {
 					console.log('set extension enabled: %s', item.identifier.id);
-					const enableSuccess = await extensionEnablementService.setEnablement(item, EnablementState.Enabled);
+					const enableSuccess = await extensionEnablementService.setEnablement([item], EnablementState.Enabled);
 					if (enableSuccess) {
-						changed.push(item.galleryIdentifier.id);
+						changed.push(item.identifier.id);
 					} else {
 						notificationService.error(`Cannot enable extension: ${alreadyExists}`);
 					}

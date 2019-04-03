@@ -2,7 +2,6 @@ import 'vs/css!vs/kendryte/vs/workbench/packageManager/browser/viewletPanels/sid
 import { IViewletPanelOptions, ViewletPanel } from 'vs/workbench/browser/parts/views/panelViewlet';
 import { WorkbenchList } from 'vs/platform/list/browser/listService';
 import { localize } from 'vs/nls';
-import { IExtension } from 'vs/workbench/parts/extensions/common/extensions';
 import { IListVirtualDelegate } from 'vs/base/browser/ui/list/list';
 import { IPagedRenderer } from 'vs/base/browser/ui/list/listPaging';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -25,7 +24,7 @@ import { isUndefinedOrNull } from 'vs/base/common/types';
 
 const templateId = 'local-package-tree';
 
-class Delegate implements IListVirtualDelegate<IExtension> {
+class Delegate implements IListVirtualDelegate<IConfigSection> {
 	getHeight() { return 32; }
 
 	getTemplateId() { return templateId; }

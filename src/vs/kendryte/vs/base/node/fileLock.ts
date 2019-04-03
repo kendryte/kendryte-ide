@@ -1,30 +1,21 @@
 import { hash } from 'vs/base/common/hash';
 import { lock as rawLock, unlock as rawUnlock } from 'proper-lockfile';
 import { fileExists, mkdirp, unlink, writeFile } from 'vs/base/node/pfs';
-import { dirname } from 'vs/base/common/paths';
 import { ICommonLogger } from 'vs/kendryte/vs/base/common/log';
 import { osTempDir } from 'vs/kendryte/vs/base/node/resolvePath';
+import { dirname } from 'vs/base/common/path';
 
-export async function wrapActionWithFileLock<T>(fileToLock: string, logger: ICommonLogger, action: () => Thenable<T>): Promise<T> {
-	await doLockFile(fileToLock, logger).catch((e) => {
+export function wrapActionWithFileLock<T>(fileToLock: string, logger: ICommonLogger, action: () => Thenable<T>): Promise<T> {
+	return doLockFile(fileToLock, logger).then(() => {
+		return Promise.resolve(action()).finally(() => {
+			return doUnlockFile(fileToLock, logger).catch((e) => {
+				logger.error(`Cannot unlock file ${fileToLock}: ${e.message}`);
+			});
+		});
+	}, (e) => {
 		logger.error(`Cannot lock file ${fileToLock}: ${e.message}`);
 		throw e;
 	});
-	let err: Error;
-	const ret = await action().then(undefined, (e) => {
-		err = e;
-		return null;
-	});
-
-	await doUnlockFile(fileToLock, logger).catch((e) => {
-		logger.error(`Cannot unlock file ${fileToLock}: ${e.message}`);
-	});
-
-	if (err) {
-		throw err;
-	} else {
-		return ret;
-	}
 }
 
 async function doLockFile(f: string, logger: ICommonLogger): Promise<void> {

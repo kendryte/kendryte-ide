@@ -1,16 +1,16 @@
 import { Action } from 'vs/base/common/actions';
-import { TPromise } from 'vs/base/common/winjs.base';
-import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
+import { IOutputChannel, IOutputService } from 'vs/workbench/contrib/output/common/output';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD, ACTION_LABEL_MAIX_CMAKE_HELLO_WORLD } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { CMAKE_CHANNEL, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
-import { copy, fileExists, mkdirp, unlinkIgnoreError } from 'vs/base/node/pfs';
+import { copy, fileExists, mkdirp, unlink } from 'vs/base/node/pfs';
 import { ACTIVE_GROUP, IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { CMAKE_CONFIG_FILE_NAME, IExecutableProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { assertNotNull } from 'vs/kendryte/vs/base/common/assertNotNull';
 
 export class MaixCMakeHelloWorldAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_HELLO_WORLD;
@@ -28,10 +28,10 @@ export class MaixCMakeHelloWorldAction extends Action {
 		@INodeFileSystemService protected nodeFileSystemService: INodeFileSystemService,
 	) {
 		super(id, label);
-		this.outputChannel = outputService.getChannel(CMAKE_CHANNEL);
+		this.outputChannel = assertNotNull(outputService.getChannel(CMAKE_CHANNEL));
 	}
 
-	_run(): TPromise<void> {
+	_run(): Promise<void> {
 		const p = this.run();
 		p.then(undefined, (e) => {
 			this.outputChannel.append(`${e.stack}\n`);
@@ -40,7 +40,7 @@ export class MaixCMakeHelloWorldAction extends Action {
 		return p;
 	}
 
-	async run(): TPromise<void> {
+	async run(): Promise<void> {
 		this.outputChannel.clear();
 
 		await this.cmakeService.rescanCurrentFolder();
@@ -57,7 +57,7 @@ export class MaixCMakeHelloWorldAction extends Action {
 
 		const installOkFile = resolvePath(target, '.install-ok');
 		if (await fileExists(installOkFile)) {
-			await unlinkIgnoreError(installOkFile);
+			await unlink(installOkFile).catch();
 		}
 
 		// this is official package, just ignore any error
@@ -67,10 +67,10 @@ export class MaixCMakeHelloWorldAction extends Action {
 		const resolver = this.workspaceContextService.getWorkspace().folders[0];
 
 		const i1 = this.editorService.createInput({ resource: resolver.toResource(CMAKE_CONFIG_FILE_NAME) });
-		await this.editorService.openEditor(i1, { pinned: true }, ACTIVE_GROUP);
+		await this.editorService.openEditor(assertNotNull(i1), { pinned: true }, ACTIVE_GROUP);
 		if (packageData.entry) {
 			const i2 = this.editorService.createInput({ resource: resolver.toResource(packageData.entry) });
-			await this.editorService.openEditor(i2, { pinned: true }, ACTIVE_GROUP);
+			await this.editorService.openEditor(assertNotNull(i2), { pinned: true }, ACTIVE_GROUP);
 		}
 
 		await this.cmakeService.rescanCurrentFolder();

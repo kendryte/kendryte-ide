@@ -16,7 +16,7 @@ export const IGithubService = createDecorator<IGithubService>('githubService');
 
 type XPath = { xpath: string };
 
-function pathInvoke(self: object, parent: XPath, current: string, p: Thenable<void>) {
+function pathInvoke(self: object, parent: XPath | null, current: string, p: Thenable<void>): any {
 	const xpath = parent ? parent.xpath + '.' + current : current;
 
 	return new Proxy(Object.assign(() => void 0, { xpath }), {
@@ -40,10 +40,8 @@ class GithubService implements IGithubService {
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@ILogService private readonly logService: ILogService,
 	) {
-		const self = this;
-
 		const p = this.configure();
-		this.octokit = pathInvoke(self, null, 'octokit', p);
+		this.octokit = pathInvoke(this, null, 'octokit', p);
 		p.catch(e => this.logService.error(e));
 
 		configurationService.onDidChangeConfiguration(() => {

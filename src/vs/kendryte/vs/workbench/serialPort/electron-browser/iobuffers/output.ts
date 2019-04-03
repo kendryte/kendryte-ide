@@ -28,7 +28,7 @@ export class XtermScrollbackBuffer extends Writable {
 			this.encoder = createEncoder(encoding);
 			linefeed = '';
 		} else {
-			this.encoder = createEncoder(encoding);
+			this.encoder = createEncoder(encoding || '');
 		}
 
 		if (linefeed) {

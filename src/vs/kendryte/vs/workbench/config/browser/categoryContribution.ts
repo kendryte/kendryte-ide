@@ -5,13 +5,13 @@
  */
 
 import { Registry } from 'vs/platform/registry/common/platform';
-import { ITOCEntry, tocData } from 'vs/workbench/parts/preferences/browser/settingsLayout';
+import { ITOCEntry, tocData } from 'vs/workbench/contrib/preferences/browser/settingsLayout';
 import { Extensions, ICategoryConfig, IConfigCategoryRegistry } from 'vs/kendryte/vs/platform/config/common/category';
 
 Registry.add(Extensions.ConfigCategory, new class implements IConfigCategoryRegistry {
 	private map: { [id: string]: ITOCEntry } = {};
 	private root: ITOCEntry = tocData;
-	private internalCategoryCount = tocData.children.length;
+	private internalCategoryCount = tocData.children ? tocData.children.length : 0;
 	private toRegister: [string, string[]][] = [];
 	private _inited: boolean = false;
 
@@ -34,7 +34,7 @@ Registry.add(Extensions.ConfigCategory, new class implements IConfigCategoryRegi
 				parent.children = [];
 			}
 			parent.children.push(newItem);
-		} else {
+		} else if (this.root.children) { // always true
 			this.root.children.splice(this.root.children.length - this.internalCategoryCount, 0, newItem);
 		}
 		return this;

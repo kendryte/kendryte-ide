@@ -73,7 +73,7 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 		this.$table.innerHTML = '<h1 style="text-align:center;">Select a chip to start.</h1>';
 	}
 
-	drawChip(chipName: string) {
+	drawChip(chipName: string | undefined) {
 		if (!chipName) {
 			this.destroyTable();
 			return;
@@ -85,7 +85,11 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 
 		this.disposeTable();
 
-		this.table = chipRenderFactory(getChipPackaging(chipName), this.themeService);
+		const chip = getChipPackaging(chipName);
+		if (!chip) {
+			return;
+		}
+		this.table = chipRenderFactory(chip, this.themeService);
 		this.funcSetActions = this.instantiationService.createInstance(ContextSubMenuSelector, chipName);
 
 		this.contextEvent = this.table.onContextMenu((data: ContextMenuData) => {

@@ -1,10 +1,10 @@
 import { Action } from 'vs/base/common/actions';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
 import { CMAKE_CHANNEL, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
-import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
+import { IOutputChannel, IOutputService } from 'vs/workbench/contrib/output/common/output';
 import { IQuickInputService } from 'vs/platform/quickinput/common/quickInput';
 import { ACTION_ID_MAIX_CMAKE_SELECT_TARGET } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
+import { assertNotNull } from 'vs/kendryte/vs/base/common/assertNotNull';
 
 export class MaixCMakeSelectTargetAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_SELECT_TARGET;
@@ -18,21 +18,20 @@ export class MaixCMakeSelectTargetAction extends Action {
 		@IQuickInputService protected quickInputService: IQuickInputService,
 	) {
 		super(id, label);
-		this.outputChannel = outputService.getChannel(CMAKE_CHANNEL);
+		this.outputChannel = assertNotNull(outputService.getChannel(CMAKE_CHANNEL));
 	}
 
-	async run(): TPromise<void> {
+	async run(): Promise<void> {
 		const selections = await this.cmakeService.getTargetList();
 		const selected = selections.findIndex((item) => {
-			return item.current;
+			return !!item.current;
 		});
 		const item = await this.quickInputService.pick(selections, {
 			placeHolder: 'select build target:',
 			activeItem: selections[selected],
 		});
-		if (!item) {
-			return;
+		if (item && item.id) {
+			this.cmakeService.setTarget(item.id);
 		}
-		this.cmakeService.setTarget(item.id);
 	}
 }

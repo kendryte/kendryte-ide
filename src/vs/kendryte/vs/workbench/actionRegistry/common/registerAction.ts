@@ -8,7 +8,6 @@ import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
 import { CommandsRegistry } from 'vs/platform/commands/common/commands';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { TypeConstraint } from 'vs/base/common/types';
-import { always } from 'vs/base/common/async';
 
 const DescRegistry: { [id: string]: SyncActionDescriptor; } = {};
 
@@ -37,15 +36,12 @@ export function registerInternalAction(category: string, Action: IActionToRegist
 		handler(access: ServicesAccessor, ...args: any[]) {
 			const actionObject = access.get(IInstantiationService).createInstance(DescRegistry[Action.ID].syncDescriptor);
 			const notificationService = access.get(INotificationService);
-			return always(
-				Promise.resolve(actionObject.run(args, null)).catch((e) => {
-					notificationService.error(`Failed to run action: ${Action.ID}\n${e.message}`);
-					throw e;
-				}),
-				() => {
-					actionObject.dispose();
-				},
-			);
+			Promise.resolve(actionObject.run(args, undefined)).catch((e) => {
+				notificationService.error(`Failed to run action: ${Action.ID}\n${e.message}`);
+				throw e;
+			}).finally(() => {
+				actionObject.dispose();
+			});
 		},
 		description: {
 			description: `${category}: ${Action.LABEL}`,

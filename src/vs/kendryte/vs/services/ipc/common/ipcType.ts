@@ -4,11 +4,11 @@ export interface IKendryteClientService {
 	_serviceBrand: any;
 
 	/** @deprecated */
-	markEvents<T>(service: ServiceIdentifier<T>, events: (keyof T)[]);
+	markEvents<T>(service: ServiceIdentifier<T>, events: (keyof T)[]): void;
 	/** @deprecated */
-	markMethod<T>(service: ServiceIdentifier<T>, methods: (keyof T)[]);
+	markMethod<T>(service: ServiceIdentifier<T>, methods: (keyof T)[]): void;
 	/** @deprecated */
-	markEventMethod<T>(service: ServiceIdentifier<T>, ems: (keyof T)[]);
+	markEventMethod<T>(service: ServiceIdentifier<T>, ems: (keyof T)[]): void;
 	/** @deprecated */
 	as<T>(service: ServiceIdentifier<T>): T;
 

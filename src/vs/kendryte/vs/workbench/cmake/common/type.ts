@@ -1,5 +1,4 @@
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
 import { Event } from 'vs/base/common/event';
 
@@ -22,17 +21,17 @@ export interface ICMakeService {
 	readonly onCMakeSelectionChange: Event<ICMakeSelection>;
 
 	readonly isEnabled: boolean;
-	rescanCurrentFolder(): TPromise<void>;
-	cleanupMake(): TPromise<void>;
-	getOutputFile(): TPromise<string>;
-	configure(): TPromise<void>;
-	build(): TPromise<void>;
-	setVariant(variant: string);
-	setTarget(target: string);
-	getTargetList(): TPromise<CurrentItem[]>;
-	getVariantList(): TPromise<CurrentItem[]>;
-	ensureConfiguration(): TPromise<any>;
-	shutdown(force?: boolean): TPromise<void>;
+	rescanCurrentFolder(): Promise<void>;
+	cleanupMake(): Promise<void>;
+	getOutputFile(): Promise<string>;
+	configure(): Promise<void>;
+	build(): Promise<void>;
+	setVariant(variant: string): void;
+	setTarget(target: string): void;
+	getTargetList(): Promise<CurrentItem[]>;
+	getVariantList(): Promise<CurrentItem[]>;
+	ensureConfiguration(): Promise<any>;
+	shutdown(force?: boolean): Promise<void>;
 }
 
 export const ICMakeService = createDecorator<ICMakeService>('ICMakeService');
@@ -40,9 +39,9 @@ export const ICMakeService = createDecorator<ICMakeService>('ICMakeService');
 export interface IBuildPackageService {
 	_serviceBrand: any;
 
-	upgradeEverything(): TPromise<void>;
+	upgradeEverything(): Promise<void>;
 
-	downloadOrUpdate(version: VersionMatrix): TPromise<void>;
+	downloadOrUpdate(version: VersionMatrix): Promise<void>;
 }
 
 export interface ArchVersion {

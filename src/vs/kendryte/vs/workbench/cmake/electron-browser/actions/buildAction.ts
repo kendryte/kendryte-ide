@@ -1,9 +1,10 @@
 import { Action } from 'vs/base/common/actions';
 import { ACTION_ID_MAIX_CMAKE_BUILD, ACTION_LABEL_MAIX_CMAKE_BUILD } from 'vs/kendryte/vs/base/common/menu/cmake';
 import { CMAKE_CHANNEL, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
-import { IOutputChannel, IOutputService } from 'vs/workbench/parts/output/common/output';
+import { IOutputChannel, IOutputService } from 'vs/workbench/contrib/output/common/output';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
+import { assertNotNull } from 'vs/kendryte/vs/base/common/assertNotNull';
 
 export class MaixCMakeBuildAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_BUILD;
@@ -18,7 +19,7 @@ export class MaixCMakeBuildAction extends Action {
 		@ITextFileService private readonly textFileService: ITextFileService,
 	) {
 		super(id, label);
-		this.outputChannel = outputService.getChannel(CMAKE_CHANNEL);
+		this.outputChannel = assertNotNull(outputService.getChannel(CMAKE_CHANNEL));
 	}
 
 	async run(completeShowMessage: boolean = true) {
@@ -27,7 +28,10 @@ export class MaixCMakeBuildAction extends Action {
 				this.notificationService.info('Build complete.');
 			}
 		}, (e) => {
-			this.outputChannel.append('\n[ERROR] Build failed.');
+			debugger;
+			this.outputChannel.append('\n[ERROR] Build failed.\n');
+			this.outputChannel.append(`${e.stack || e.message}\n`);
+			this.outputChannel.append('[ERROR] Build failed.\n');
 			this.outputService.showChannel(CMAKE_CHANNEL, true);
 			throw e;
 		});

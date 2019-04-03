@@ -1,5 +1,4 @@
 import { URI } from 'vs/base/common/uri';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { FileOperationResult, IContent, IFileService, IFileStat } from 'vs/platform/files/common/files';
 import { getChipPackaging } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingRegistry';
 import { ILoadOptions, ISaveOptions } from 'vs/workbench/services/textfile/common/textfiles';
@@ -11,7 +10,7 @@ export class FpioaModel extends EditorModel {
 	private content: ISavedJson;
 	private contentHash: string;
 	private dirty: boolean = false;
-	private saveOnGoing: TPromise<boolean>;
+	private saveOnGoing: Promise<boolean>;
 
 	constructor(
 		protected uri: URI,
@@ -26,12 +25,12 @@ export class FpioaModel extends EditorModel {
 		return this.uri;
 	}
 
-	save(options: ISaveOptions = {}): TPromise<boolean> {
+	save(options: ISaveOptions = {}): Promise<boolean> {
 		if (this.saveOnGoing) {
 			return this.saveOnGoing;
 		}
 
-		this.saveOnGoing = TPromise.as(void 0).then(() => {
+		this.saveOnGoing = Promise.resolve(void 0).then(() => {
 			// console.log(JSON.stringify(this.content));
 			return this.fileService.updateContent(this.uri, this.binary(), {
 				encoding: 'utf8',
@@ -40,7 +39,11 @@ export class FpioaModel extends EditorModel {
 			});
 		}).then((result: IFileStat) => {
 			delete this.saveOnGoing;
-			this.contentHash = result.etag;
+			if (result.etag) {
+				this.contentHash = result.etag;
+			} else {
+				delete this.contentHash;
+			}
 			this.dirty = false;
 			return true;
 		}, (e) => {
@@ -55,10 +58,10 @@ export class FpioaModel extends EditorModel {
 		return this.saveOnGoing;
 	}
 
-	public async load(options: ILoadOptions = {}): TPromise<this> {
+	public async load(options: ILoadOptions = {}): Promise<this> {
 		// console.log('---------------- load', options);
-		if (await this.fileService.existsFile(this.uri)) {
-			let data: IContent;
+		if (await this.fileService.exists(this.uri)) {
+			let data: IContent | undefined;
 			await this.fileService.resolveContent(this.uri, {
 				etag: options.forceReadFromDisk ? '' : this.contentHash,
 				encoding: 'utf8',
@@ -120,7 +123,7 @@ export class FpioaModel extends EditorModel {
 		return this.dirty;
 	}
 
-	setChip(name: string) {
+	setChip(name: string | undefined) {
 		if (this.content.selectedChip === name) {
 			return false;
 		}
@@ -133,7 +136,7 @@ export class FpioaModel extends EditorModel {
 		return this.content.funcPinMap[funcId];
 	}
 
-	getPinFunc(ioPin: string) {
+	getPinFunc(ioPin: string | undefined) {
 		for (const fn of Object.keys(this.content.funcPinMap)) {
 			if (ioPin === this.content.funcPinMap[fn]) {
 				return fn;
@@ -149,13 +152,17 @@ export class FpioaModel extends EditorModel {
 		}
 	}
 
-	setPinFunc(funcId: string, ioPin: string) {
+	setPinFunc(funcId: string, ioPin: string | undefined) {
 		console.log('[model] set io[%s] to func[%s]', ioPin, funcId);
 		if (this.content.funcPinMap[funcId] === ioPin) {
 			return false;
 		}
 		this.dirty = true;
-		this.content.funcPinMap[funcId] = ioPin;
+		if (ioPin) {
+			this.content.funcPinMap[funcId] = ioPin;
+		} else {
+			delete this.content.funcPinMap[funcId];
+		}
 		return true;
 	}
 
@@ -164,7 +171,7 @@ export class FpioaModel extends EditorModel {
 		return String.fromCharCode(12, 21, 8, 0) + JSON.stringify(this.content);
 	}
 
-	private parse(buff) {
+	private parse(buff: string) {
 		// first 4 byte already skip by fs read.
 		return JSON.parse(buff);
 	}

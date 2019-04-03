@@ -17,7 +17,7 @@ export class CellRender extends Disposable {
 	private $h3: HTMLElement;
 	private $fnContainer: HTMLElement;
 	private functionBadge: CountBadge;
-	private _funcId: string = ID_NO_FUNCTION;
+	private _funcId: string | null = ID_NO_FUNCTION;
 	private _pinName: string;
 
 	private readonly _onContextMenu = new Emitter<ContextMenuData>();
@@ -47,7 +47,7 @@ export class CellRender extends Disposable {
 		return this._pinName;
 	}
 
-	assignPinName(v) {
+	assignPinName(v: string) {
 		if (this._pinName) {
 			throw new TypeError('re-assign pin name');
 		}
@@ -62,7 +62,7 @@ export class CellRender extends Disposable {
 		return this.$h3.innerText;
 	}
 
-	assignFunctionId(funcId: string) {
+	assignFunctionId(funcId: string | null) {
 		if (!funcId) {
 			funcId = ID_NO_FUNCTION;
 		}

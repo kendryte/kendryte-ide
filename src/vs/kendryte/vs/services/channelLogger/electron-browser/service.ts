@@ -1,8 +1,8 @@
 import { Disposable } from 'vs/base/common/lifecycle';
-import { Extensions, IOutputChannelRegistry, IOutputService } from 'vs/workbench/parts/output/common/output';
+import { Extensions, IOutputChannel, IOutputChannelRegistry, IOutputService } from 'vs/workbench/contrib/output/common/output';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { ChannelLogger } from 'vs/kendryte/vs/services/channelLogger/electron-browser/logger';
+import { ChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/logger';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { IWindowService } from 'vs/platform/windows/common/windows';
 import { URI } from 'vs/base/common/uri';
@@ -43,7 +43,7 @@ class ChannelLogService extends Disposable implements IChannelLogService {
 			log,
 			file,
 		});
-		const newItem = new ChannelLogger(this.windowService.getCurrentWindowId(), this.outputService.getChannel(id));
+		const newItem = new ChannelLogger(this.windowService.getCurrentWindowId(), this.outputService.getChannel(id) as IOutputChannel);
 		this._register(newItem);
 
 		this.map.set(id, newItem);

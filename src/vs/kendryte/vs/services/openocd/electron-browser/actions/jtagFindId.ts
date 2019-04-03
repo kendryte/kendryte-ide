@@ -1,7 +1,6 @@
 import { Action } from 'vs/base/common/actions';
 import { ACTION_ID_JTAG_GET_ID, ACTION_LABEL_JTAG_GET_ID } from 'vs/kendryte/vs/base/common/menu/openocd';
 
-import { TPromise } from 'vs/base/common/winjs.base';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { spawn } from 'child_process';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
@@ -21,7 +20,7 @@ const snReg = /^S\/N: (\d+)/m;
 export class MatchingStream extends Writable {
 	private buffer = '';
 	private found = false;
-	private foundDfd = new DeferredPromise();
+	private foundDfd = new DeferredPromise<void>();
 	private result: string;
 
 	_write(chunk: Buffer, encoding: string, callback: (error?: Error | null) => void): void {
@@ -41,7 +40,7 @@ export class MatchingStream extends Writable {
 			this.found = true;
 			delete this.buffer;
 			this.result = m[1];
-			this.foundDfd.complete(void 0);
+			this.foundDfd.complete();
 		}
 		callback();
 	}
@@ -79,7 +78,7 @@ export class DetectJTagIdAction extends Action {
 		}
 	}
 
-	async run(event?: any): TPromise<number> {
+	async run(event?: any): Promise<number> {
 		const exe = this.jlinkExe();
 		this.logService.info('run command: ' + exe);
 		const cp = spawn(exe, [], {

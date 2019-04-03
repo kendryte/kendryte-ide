@@ -1,6 +1,5 @@
 import { Action } from 'vs/base/common/actions';
 import { ACTION_ID_MAIX_SERIAL_SELECT_DEFAULT, ACTION_LABEL_MAIX_SERIAL_SELECT_DEFAULT } from 'vs/kendryte/vs/base/common/menu/cmake';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
 
 export class MaixSerialSelectDefaultAction extends Action {
@@ -14,7 +13,7 @@ export class MaixSerialSelectDefaultAction extends Action {
 		super(id, label);
 	}
 
-	async run(): TPromise<void> {
+	async run(): Promise<void> {
 		await this.serialPortService.quickOpenDevice();
 	}
 }

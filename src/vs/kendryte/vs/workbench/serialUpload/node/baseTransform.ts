@@ -20,5 +20,5 @@ export abstract class BaseTransformStream<F, T> extends Transform {
 		return super.push(chunk, 'binary');
 	}
 
-	protected abstract transform(chunk: F);
+	protected abstract transform(chunk: F): void;
 }

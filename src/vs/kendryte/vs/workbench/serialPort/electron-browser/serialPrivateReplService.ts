@@ -1,4 +1,4 @@
-import { IPrivateReplService } from 'vs/workbench/parts/debug/electron-browser/repl';
+import { IPrivateReplService } from 'vs/workbench/contrib/debug/browser/repl';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 
 export interface ISerialPrivateReplService extends IPrivateReplService {

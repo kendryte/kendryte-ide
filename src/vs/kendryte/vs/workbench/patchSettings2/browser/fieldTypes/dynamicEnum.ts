@@ -5,8 +5,9 @@ import { ITree } from 'vs/base/parts/tree/browser/tree';
 import { attachEditableSelectBoxStyler, EditableSelectBox } from 'vs/kendryte/vs/workbench/patchSettings2/browser/ui/editableSelect';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
-import { SettingsTreeSettingElement } from 'vs/workbench/parts/preferences/browser/settingsTreeModels';
+import { SettingsTreeSettingElement } from 'vs/workbench/contrib/preferences/browser/settingsTreeModels';
 import { EnumProviderService } from 'vs/kendryte/vs/platform/config/common/dynamicEnum';
+import { SettingValueType } from 'vs/workbench/services/preferences/common/preferences';
 
 interface Template {
 	input: EditableSelectBox;
@@ -28,7 +29,10 @@ export class DynamicEnumInject extends FieldInject<string, Template> {
 		template.toDispose.push(attachEditableSelectBoxStyler(input, this.themeService));
 
 		template.toDispose.push(input.onDidChange(e => {
-			this.fireChangeEvent(template, { value: e, type: template.context.valueType });
+			this.fireChangeEvent(template, {
+				value: e,
+				type: template.context ? template.context.valueType : SettingValueType.Null,
+			});
 		}));
 
 		return {
@@ -36,7 +40,7 @@ export class DynamicEnumInject extends FieldInject<string, Template> {
 		};
 	}
 
-	protected _entry(tree, element: SettingsTreeSettingElement, template: FieldTemplate<string, Template>): void {
+	protected _entry(tree: ITree, element: SettingsTreeSettingElement, template: FieldTemplate<string, Template>): void {
 		const enumDef = getDynamicEnum(element.setting);
 		if (!enumDef) {
 			throw new TypeError('impossible');
@@ -54,7 +58,7 @@ export class DynamicEnumInject extends FieldInject<string, Template> {
 		template.input.registerEnum(service.getValues());
 	}
 
-	_detect(element) {
+	_detect(element: SettingsTreeSettingElement) {
 		return isDynamicEnum(element.setting);
 	}
 }

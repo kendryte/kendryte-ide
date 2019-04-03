@@ -19,28 +19,32 @@ class StorageMainService extends Disposable implements IStorageService {
 		super();
 	}
 
+	public get(key: string, scope: StorageScope, fallbackValue: string): string;
 	public get(key: string, scope: StorageScope, fallbackValue?: string): string | undefined {
 		return this._store.get(key) || fallbackValue;
 	}
 
+	public getBoolean(key: string, scope: StorageScope, fallbackValue: boolean): boolean;
 	public getBoolean(key: string, scope: StorageScope, fallbackValue?: boolean): boolean | undefined {
 		return this._store.has(key) ? !!this._store.get(key) : fallbackValue;
 	}
 
-	public getInteger(key: string, scope: StorageScope, fallbackValue?: number): number | undefined {
-		return this._store.has(key) ? parseInt(this._store.get(key), 10) : fallbackValue;
-	}
-
 	public store(key: string, value: any, scope: StorageScope): void {
 		if (isUndefinedOrNull(value)) {
-			return this.remove(key, null);
+			return this.remove(key);
 		}
 		const valueStr = String(value);
 		this._store.set(key, valueStr);
 	}
 
-	public remove(key: string, scope: StorageScope): void {
+	public remove(key: string): void {
 		this._store.delete(key);
+	}
+
+	public getNumber(key: string, scope: StorageScope, fallbackValue: number): number;
+	public getNumber(key: string, scope: StorageScope, fallbackValue?: number): number | undefined;
+	public getNumber(key: string, scope: StorageScope, fallbackValue?: number): number | undefined {
+		return this._store.has(key) ? parseFloat(this._store.get(key)) : fallbackValue;
 	}
 }
 

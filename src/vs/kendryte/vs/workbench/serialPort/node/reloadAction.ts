@@ -1,5 +1,4 @@
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { Action } from 'vs/base/common/actions';
 import { localize } from 'vs/nls';
 import { SERIAL_MONITOR_ACTION_REFRESH_DEVICE } from 'vs/kendryte/vs/workbench/serialPort/common/type';
@@ -21,7 +20,7 @@ class ReloadSerialPortDevicesAction extends Action {
 		super(id, label, 'terminal-action octicon octicon-repo-sync');
 	}
 
-	public async run(event?: any): TPromise<string[]> {
+	public async run(event?: any): Promise<string[]> {
 		await this.serialPortService.refreshDevices();
 		const devices = await this.serialPortService.getValues();
 		this.notificationService.notify({

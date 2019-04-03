@@ -14,7 +14,7 @@ import { localize } from 'vs/nls';
 import { OpenUrlAction } from 'vs/kendryte/vs/platform/open/common/openUrlAction';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
-import { dirname, normalize } from 'vs/base/common/paths';
+import { dirname, normalize } from 'vs/base/common/path';
 import { writeFile } from 'vs/base/node/pfs';
 import { osTempDir } from 'vs/kendryte/vs/base/node/resolvePath';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';

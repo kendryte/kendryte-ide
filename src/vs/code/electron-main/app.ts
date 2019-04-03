@@ -81,7 +81,7 @@ import { URLService } from 'vs/platform/url/common/urlService';
 import { WorkspacesMainService } from 'vs/platform/workspaces/electron-main/workspacesMainService';
 import { RemoteAgentConnectionContext } from 'vs/platform/remote/common/remoteAgentEnvironment';
 import { nodeWebSocketFactory } from 'vs/platform/remote/node/nodeWebSocketFactory';
-import { _kendrite_main_hookInstantiationService } from 'vs/kendryte/vs/code/electron-main/createServices.injection';
+import { _kendryte_main_hookInstantiationService } from 'vs/kendryte/vs/code/electron-main/createServices.injection';
 
 export class CodeApplication extends Disposable {
 
@@ -461,9 +461,9 @@ export class CodeApplication extends Disposable {
 			services.set(ITelemetryService, NullTelemetryService);
 		}
 
-		_kendrite_main_hookInstantiationService(services, this.electronIpcServer, this.instantiationService.createChild(services));
-
 		const appInstantiationService = this.instantiationService.createChild(services);
+
+		_kendryte_main_hookInstantiationService(services, this.electronIpcServer, appInstantiationService);
 
 		// Init services that require it
 		return appInstantiationService.invokeFunction(accessor => Promise.all([

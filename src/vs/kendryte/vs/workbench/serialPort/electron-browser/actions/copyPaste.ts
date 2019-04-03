@@ -1,6 +1,5 @@
-import { TPromise } from 'vs/base/common/winjs.base';
 import { Action } from 'vs/base/common/actions';
-import { CopyTerminalSelectionAction, TerminalPasteAction } from 'vs/workbench/parts/terminal/electron-browser/terminalActions';
+import { CopyTerminalSelectionAction, TerminalPasteAction } from 'vs/workbench/contrib/terminal/browser/terminalActions';
 import {
 	CONTEXT_IN_SERIAL_PORT_OUTPUT,
 	CONTEXT_SERIAL_PORT_HAS_SELECT,
@@ -25,10 +24,10 @@ export class SerialPortCopyAction extends Action {
 		super(id, label, 'terminal-action octicon octicon-copy');
 	}
 
-	public run(event?: any): TPromise<void> {
+	public run(event?: any): Promise<void> {
 		// console.log('SerialPortCopyAction');
 		this.serialMonitorControlService.copySelection();
-		return TPromise.as(void 0);
+		return Promise.resolve(void 0);
 	}
 }
 
@@ -49,10 +48,10 @@ export class SerialPortPasteAction extends Action {
 		super(id, label, 'terminal-action octicon octicon-paste');
 	}
 
-	public run(event?: any): TPromise<void> {
+	public run(event?: any): Promise<void> {
 		// console.log('SerialPortPasteAction');
 		this.serialMonitorControlService.paste();
-		return TPromise.as(void 0);
+		return Promise.resolve(void 0);
 	}
 }
 

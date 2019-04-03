@@ -1,12 +1,12 @@
 import { Disposable } from 'vs/base/common/lifecycle';
 import { addClass, addStandardDisposableListener, Dimension, EventType, removeClass } from 'vs/base/browser/dom';
-import { getSimpleEditorOptions } from 'vs/workbench/parts/codeEditor/browser/simpleEditorOptions';
+import { getSimpleCodeEditorWidgetOptions, getSimpleEditorOptions } from 'vs/workbench/contrib/codeEditor/browser/simpleEditorOptions';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { CodeEditorWidget } from 'vs/editor/browser/widget/codeEditorWidget';
-import { getSimpleCodeEditorWidgetOptions } from 'vs/workbench/parts/codeEditor/electron-browser/simpleEditorOptions';
 import { Emitter, Event } from 'vs/base/common/event';
 import { IPosition } from 'vs/editor/common/core/position';
 import { EndOfLinePreference, ITextModel } from 'vs/editor/common/model';
+import { assertNotNull } from 'vs/kendryte/vs/base/common/assertNotNull';
 
 export class SerialReplInput extends Disposable {
 	private readonly replInput: CodeEditorWidget;
@@ -37,7 +37,7 @@ export class SerialReplInput extends Disposable {
 			this._onHeightChange.fire(this.replInputHeight);
 		}));
 		this._register(this.replInput.onDidChangeModelContent(() => {
-			this._onValueChange.fire(this.replInput.getModel().getValue(EndOfLinePreference.LF, false));
+			this._onValueChange.fire(assertNotNull(this.replInput.getModel()).getValue(EndOfLinePreference.LF, false));
 		}));
 
 		this._register(addStandardDisposableListener(this.replInputContainer, EventType.FOCUS, () => addClass(this.replInputContainer, 'synthetic-focus')));
@@ -66,7 +66,7 @@ export class SerialReplInput extends Disposable {
 		this.replInput.setPosition(param);
 	}
 
-	setModel(model: ITextModel = null) {
+	setModel(model: null | ITextModel = null) {
 		if (this.replInput.getModel() === model) {
 			return false;
 		}

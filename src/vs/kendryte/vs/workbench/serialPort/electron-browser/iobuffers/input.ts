@@ -58,7 +58,7 @@ abstract class UserInputStream extends Transform {
 			console.warn('duplicate unpipe');
 			return this;
 		}
-		this.instance = null;
+		delete this.instance;
 		return super.unpipe();
 	}
 }
@@ -78,8 +78,12 @@ export class UserTypeInputStream extends UserInputStream {
 	}
 
 	setOptions(options: ILocalOptions = {} as any) {
-		this.encoding = options.inputCharset;
-		this.ending = serialPortEOL.get(options.lineEnding);
+		if (options.inputCharset) {
+			this.encoding = options.inputCharset;
+		}
+		if (options.lineEnding) {
+			this.ending = serialPortEOL.getReq(options.lineEnding);
+		}
 		if (isUndefinedOrNull(this.ending)) {
 			this.ending = '\n';
 		}
@@ -125,13 +129,21 @@ export class UserLineInputStream extends UserInputStream {
 	}
 
 	setOptions(options: ILocalOptions = {} as any) {
-		this.encoding = options.inputCharset;
-		this.ending = serialPortEOL.get(options.lineEnding);
+		if (options.inputCharset) {
+			this.encoding = options.inputCharset;
+		}
+		if (options.lineEnding) {
+			this.ending = serialPortEOL.getReq(options.lineEnding);
+		}
 		if (isUndefinedOrNull(this.ending)) {
 			this.ending = '\n';
 		}
-		this.escape = options.escape;
-		this.echo = options.echo;
+		if (options.escape) {
+			this.escape = options.escape;
+		}
+		if (options.echo) {
+			this.echo = options.echo;
+		}
 		console.log(`encoding=${this.encoding} | ending=${Buffer.from(this.ending).toString('hex')} | escape=${this.escape} | echo=${this.echo}`);
 	}
 }

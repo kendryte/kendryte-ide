@@ -3,7 +3,7 @@ import { IDisposable } from 'vs/base/common/lifecycle';
 export class TextProgressBar implements IDisposable {
 	protected readonly bar: string[];
 	protected readonly speed: number = 200;
-	protected ti: NodeJS.Timer;
+	protected ti?: NodeJS.Timer;
 
 	private direction = 1;
 	private current = 0;
@@ -49,7 +49,7 @@ export class TextProgressBar implements IDisposable {
 	dispose() {
 		if (this.ti) {
 			clearTimeout(this.ti);
-			this.ti = null;
+			delete this.ti;
 			this.bar[this.current] = this.barEmpty;
 			this.current = 0;
 		}

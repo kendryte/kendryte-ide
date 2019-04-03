@@ -10,7 +10,8 @@ import { IContextViewService } from 'vs/platform/contextview/browser/contextView
 import { IWindowsService } from 'vs/platform/windows/common/windows';
 import 'vs/css!vs/kendryte/vs/workbench/patchSettings2/browser/ui/fileSelect';
 import { ISettingItemTemplate } from 'vs/kendryte/vs/workbench/config/common/type';
-import { SettingsTreeSettingElement } from 'vs/workbench/parts/preferences/browser/settingsTreeModels';
+import { SettingsTreeSettingElement } from 'vs/workbench/contrib/preferences/browser/settingsTreeModels';
+import { SettingValueType } from 'vs/workbench/services/preferences/common/preferences';
 
 interface Template {
 	$input: InputBox;
@@ -67,7 +68,7 @@ export class FileInject extends FieldInject<string, Template> {
 			$input.onDidChange(e => {
 				this.fireChangeEvent(template, {
 					value: e,
-					type: template.context.valueType,
+					type: template.context ? template.context.valueType : SettingValueType.Null,
 				});
 			}));
 
@@ -76,7 +77,7 @@ export class FileInject extends FieldInject<string, Template> {
 		};
 	}
 
-	_entry(tree, element: SettingsTreeSettingElement, template: FieldTemplate<string, Template>): void {
+	_entry(tree: ITree, element: SettingsTreeSettingElement, template: FieldTemplate<string, Template>): void {
 		if (!template.context) {
 			template.$input.setEnabled(false);
 		} else {
@@ -86,7 +87,7 @@ export class FileInject extends FieldInject<string, Template> {
 		}
 	}
 
-	_detect(element) {
+	_detect(element: SettingsTreeSettingElement) {
 		return element.setting.type === 'file' || element.setting.type === 'folder';
 	}
 }

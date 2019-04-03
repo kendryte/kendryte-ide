@@ -1,12 +1,9 @@
-import { registerInternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
-import { Action } from 'vs/base/common/actions';
 import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { localize } from 'vs/nls';
-import { KENDRYTE_ACTIONID_BOOTSTRAP } from 'vs/kendryte/vs/platform/vscode/common/actionId';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { OpenDevToolsAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/openDevToolsAction';
 import { IWindowService, IWindowsService } from 'vs/platform/windows/common/windows';
-import { IKendryteClientService } from 'vs/kendryte/vs/services/ipc/electron-browser/ipcType';
+import { IKendryteClientService } from 'vs/kendryte/vs/services/ipc/common/ipcType';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
@@ -18,14 +15,16 @@ import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClo
 import * as electron from 'electron';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IRelaunchService } from 'vs/kendryte/vs/platform/vscode/common/relaunchService';
-import Remote = Electron.Remote;
+import { kendryteConfigRegisterSerialPort } from 'vs/kendryte/vs/workbench/serialPort/common/configContribution';
+import { kendryteConfigRegisterOpenOCD } from 'vs/kendryte/vs/platform/openocd/common/openocd';
+import { kendryteConfigRegisterJTag } from 'vs/kendryte/vs/platform/openocd/common/jtag';
+import { kendryteConfigRegisterFTDI } from 'vs/kendryte/vs/platform/openocd/common/ftdi';
+import { kendryteConfigRegisterOCDCustom } from 'vs/kendryte/vs/platform/openocd/common/custom';
+import { Registry } from 'vs/platform/registry/common/platform';
+import { Extensions as WorkbenchExtensions, IWorkbenchContribution, IWorkbenchContributionsRegistry } from 'vs/workbench/common/contributions';
 
-class KendryteBootstrapAction extends Action {
-	public static readonly ID = KENDRYTE_ACTIONID_BOOTSTRAP;
-	public static readonly LABEL = localize('internal.action', 'Internal Action');
-
+class KendryteContribution implements IWorkbenchContribution {
 	constructor(
-		id: string = KendryteBootstrapAction.ID, label: string = KendryteBootstrapAction.LABEL,
 		@IEnvironmentService environmentService: IEnvironmentService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@ILogService private readonly logService: ILogService,
@@ -38,15 +37,21 @@ class KendryteBootstrapAction extends Action {
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IRelaunchService private readonly relaunchService: IRelaunchService,
 	) {
-		super(KENDRYTE_ACTIONID_BOOTSTRAP);
-
 		if (!environmentService.isBuilt) {
-			((electron as any).remote as Remote).getCurrentWebContents().openDevTools({ mode: 'detach' });
+			((electron as any).remote as Electron.Remote).getCurrentWebContents().openDevTools({ mode: 'detach' });
 		}
 
 		if (!process.env['VSCODE_PORTABLE']) { // for safe
 			throw new Error('----- ERROR -----\n bootstrap.js is not ok. VSCODE_PORTABLE not set.\n----- ERROR -----');
 		}
+	}
+
+	async systemSettings() {
+		kendryteConfigRegisterSerialPort();
+		kendryteConfigRegisterOpenOCD();
+		kendryteConfigRegisterJTag();
+		kendryteConfigRegisterFTDI();
+		kendryteConfigRegisterOCDCustom();
 	}
 
 	async extensions() {
@@ -66,6 +71,8 @@ class KendryteBootstrapAction extends Action {
 
 	async _run() {
 		await this.lifecycleService.when(LifecyclePhase.Ready);
+
+		await this.systemSettings();
 
 		const hasPermInPackages = await this.nodeFileSystemService.tryWriteInFolder(this.nodePathService.getPackagesPath('test-perm'));
 		const installingRoot = this.nodePathService.getSelfControllingRoot();
@@ -124,7 +131,7 @@ class KendryteBootstrapAction extends Action {
 			console.error(e);
 			this.notificationService.notify({
 				severity: Severity.Error,
-				message: `Something goes wrong when starting IDE: ${e.message}`,
+				message: localize('bootstrap.kendryte.fatal', 'Something goes wrong when starting Kendryte IDE: {0}', e.message),
 				actions: {
 					primary: [
 						new OpenDevToolsAction(OpenDevToolsAction.ID, OpenDevToolsAction.LABEL, this.windowService),
@@ -135,4 +142,4 @@ class KendryteBootstrapAction extends Action {
 	}
 }
 
-registerInternalAction('internal', KendryteBootstrapAction);
+Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(KendryteContribution, LifecyclePhase.Starting);

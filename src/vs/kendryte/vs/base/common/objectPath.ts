@@ -11,9 +11,9 @@ export function objectPath(obj: any, path: string, value?: any): any {
 		if (!path) {
 			throw new Error('path cannot be empty when set value');
 		}
-		const lastName = pathArr.pop();
+		const lastName = pathArr.pop() || '';
 		while (pathArr.length > 0) {
-			name = pathArr.shift();
+			name = pathArr.shift() || '';
 
 			if (obj.hasOwnProperty(name)) {
 				if (typeof obj[name] === 'object' && obj[name]) {
@@ -28,7 +28,7 @@ export function objectPath(obj: any, path: string, value?: any): any {
 		obj[lastName] = value;
 	} else {
 		while (pathArr.length > 0) {
-			name = pathArr.shift();
+			name = pathArr.shift() || '';
 			obj = obj[name];
 			if (obj === undefined) {
 				return;

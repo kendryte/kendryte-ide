@@ -64,8 +64,7 @@ function hexascEncoder() {
 		}
 
 		const views = chunkBuffer(data, LineMax);
-		const last = views.pop();
-
+		const last = views.pop() as Buffer;
 		for (const view of views) {
 			ret.push(hexdump(view));
 		}

@@ -1,13 +1,13 @@
 import { Transform } from 'stream';
 
 export class TimeoutBuffer extends Transform {
-	private to: NodeJS.Timer;
+	private to?: NodeJS.Timer;
 	private _enabled: boolean;
 
 	constructor(private readonly timeoutSeconds: number) {
 		super({ objectMode: true });
-		this.on('close', _ => this.disable());
-		this.once('pipe', _ => this.enable());
+		this.on('close', () => this.disable());
+		this.once('pipe', () => this.enable());
 	}
 
 	_transform(chunk: Buffer, encoding: string, callback: Function): void {
@@ -18,8 +18,10 @@ export class TimeoutBuffer extends Transform {
 		callback();
 	}
 
-	_destroy(err: Error, callback: (error?: Error) => void) {
-		clearTimeout(this.to);
+	_destroy(err: Error, callback: (error: Error | null) => void) {
+		if (this.to) {
+			clearTimeout(this.to);
+		}
 		if (err) {
 			this.emit('error', err);
 		}
@@ -30,7 +32,7 @@ export class TimeoutBuffer extends Transform {
 		this._enabled = false;
 		if (this.to) {
 			clearTimeout(this.to);
-			this.to = null;
+			delete this.to;
 		}
 	}
 
@@ -52,7 +54,7 @@ export class TimeoutBuffer extends Transform {
 		this._enabled = true;
 		if (this.to) {
 			clearTimeout(this.to);
-			this.to = null;
+			delete this.to;
 		}
 		this.to = setTimeout(() => {
 			console.error('a buffer has timeout');

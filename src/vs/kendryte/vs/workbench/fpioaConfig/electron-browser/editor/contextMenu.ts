@@ -1,6 +1,5 @@
 import { ICommandAction } from 'vs/platform/actions/common/actions';
 import { Action, IAction } from 'vs/base/common/actions';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
 import { IFunc, IFuncPin } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingTypes';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -8,27 +7,39 @@ import { ContextSubMenu } from 'vs/base/browser/contextmenu';
 import { getChipPackaging } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingRegistry';
 import { Separator } from 'vs/base/browser/ui/actionbar/actionbar';
 import { ContextMenuData, ID_NO_FUNCTION, PinFuncSetEventEmitter } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
+import { assertNotNull } from 'vs/kendryte/vs/base/common/assertNotNull';
 
 class SetPinFunctionAction extends Action implements ICommandAction {
 	public static readonly ID = 'fpioaEditor.action.setPinFunc';
 	public static readonly LABEL = localize('KendryteIOEditorSetPinFunc', 'assign function to selected io pin');
 
-	constructor(protected readonly pinFunc: IFuncPin | null) {
-		super(SetPinFunctionAction.ID, pinFunc ? pinFunc.description : MENU_TITLE_UNSET_FUNC);
+	private readonly _pinDescription: string;
+	private readonly _pinId: string;
+	private readonly _pinIdFull: string;
+
+	constructor(pinFunc: IFuncPin | null) {
+		const desc: string = pinFunc ? assertNotNull(pinFunc.description) : MENU_TITLE_UNSET_FUNC;
+		super(SetPinFunctionAction.ID, desc);
+
+		this._pinDescription = desc;
+		if (pinFunc) {
+			this._id = pinFunc.funcId;
+			this._pinIdFull = pinFunc.funcIdFull;
+		}
 	}
 
-	async run([data, callback]: [ContextMenuData, PinFuncSetEventEmitter]): TPromise<any> {
-		if (data.currentFunctionId !== this.pinFunc.funcId) {
+	async run([data, callback]: [ContextMenuData, PinFuncSetEventEmitter]): Promise<any> {
+		if (data.currentFunctionId !== this._pinId) {
 			callback({
 				pin: data.pinName,
-				func: this.pinFunc.funcIdFull,
+				func: this._pinIdFull,
 				triggerBy: 'pin',
 			});
 		}
 	}
 
 	get title() {
-		return this.pinFunc.description;
+		return this._pinDescription;
 	}
 }
 
@@ -36,7 +47,7 @@ const MENU_TITLE_SET_FUNC = localize('KendryteIOEditorSetPinFuncShort', 'Assign 
 const MENU_TITLE_UNSET_FUNC = localize('KendryteIOEditorUnsetPinFunc', 'No Function');
 
 export class ContextSubMenuSelector extends ContextSubMenu {
-	private actionList: Map<string, SetPinFunctionAction>;
+	private actionList: Map<string | null, SetPinFunctionAction>;
 	private lastActive: SetPinFunctionAction;
 
 	constructor(
@@ -56,14 +67,14 @@ export class ContextSubMenuSelector extends ContextSubMenu {
 			new Separator(),
 		);
 
-		const fnList = getChipPackaging(chipName).usableFunctions;
+		const fnList = assertNotNull(getChipPackaging(chipName)).usableFunctions;
 		for (const func of fnList) {
 			const fnMenu = this.createFunctionEntry(instantiationService, func);
 			this.entries.push(fnMenu);
 		}
 	}
 
-	select(currentFunction: string) {
+	select(currentFunction: string | null) {
 		const newActive = this.actionList.get(currentFunction || ID_NO_FUNCTION);
 		if (newActive && this.lastActive !== newActive) {
 			this.lastActive.checked = false;
@@ -77,7 +88,7 @@ export class ContextSubMenuSelector extends ContextSubMenu {
 		const entries = func.ios.map((io) => {
 			return this.createFinalMenu(instantiationService, baseId, io);
 		});
-		return new ContextSubMenu(func.description, entries);
+		return new ContextSubMenu(func.description || '*no desc*', entries);
 	}
 
 	protected createFinalMenu(instantiationService: IInstantiationService, baseId: string, pin: IFuncPin): IAction {

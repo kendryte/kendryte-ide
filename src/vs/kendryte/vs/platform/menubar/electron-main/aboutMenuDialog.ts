@@ -1,10 +1,9 @@
 import * as wss from 'vs/platform/windows/electron-main/windowsService';
 import { isLinux } from 'vs/base/common/platform';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { app, clipboard } from 'electron';
 import { mnemonicButtonLabel } from 'vs/base/common/labels';
 import * as nls from 'vs/nls';
-import product from 'vs/platform/node/product';
+import product from 'vs/platform/product/node/product';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IWindowsMainService } from 'vs/platform/windows/electron-main/windows';
 import { exists, readFile } from 'vs/base/node/pfs';
@@ -12,8 +11,36 @@ import { IEnvironmentService } from 'vs/platform/environment/common/environment'
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { IDECurrentPatchVersion } from 'vs/kendryte/vs/platform/vscode/node/myVersion';
 
+class TinyNodePathService {
+	constructor(
+		private readonly environmentService: IEnvironmentService,
+	) {
+	}
+
+	getDataPath() {
+		if (process.env.KENDRYTE_IDE_LOCAL_PACKAGE_DIR) {
+			return resolvePath(process.env.KENDRYTE_IDE_LOCAL_PACKAGE_DIR);
+		}
+		if (this.environmentService.isBuilt) {
+			return resolvePath(this.getSelfControllingRoot(), '../../LocalPackage');
+		} else {
+			return resolvePath(this.getSelfControllingRoot(), '../kendryte-ide-shell/build/DebugContents/LocalPackage');
+		}
+	}
+
+	getSelfControllingRoot() {
+		if (!this.environmentService.isBuilt) {
+			// when dev, source code is always version control root
+			return resolvePath(this.environmentService.appRoot);
+		}
+
+		return resolvePath(this.environmentService.appRoot, '../..');
+	}
+}
+
 class WrappedWindowsService extends wss.WindowsService {
-	async openAboutDialog(): TPromise<void> {
+
+	async openAboutDialog(): Promise<void> {
 		const windowsMainService = (this as any).windowsMainService as IWindowsMainService;
 		const logService = (this as any).logService as ILogService;
 		const environmentService = (this as any).environmentService as IEnvironmentService;
@@ -27,12 +54,13 @@ class WrappedWindowsService extends wss.WindowsService {
 			version = `${version} (${product.target} setup)`;
 		}
 
-		const versionsFile = resolvePath(process.env.KENDRYTE_IDE_LOCAL_PACKAGE_DIR, 'bundled-versions.json');
-
-		console.log(`versionsFile=${versionsFile}`);
-
 		let patchVersion = IDECurrentPatchVersion();
 		let packagesVersions = '';
+
+		const nodePathService = new TinyNodePathService(environmentService);
+		const versionsFile = resolvePath(nodePathService.getDataPath(), 'bundled-versions.json');
+		console.log(`versionsFile=${versionsFile}`);
+
 		if (await exists(versionsFile)) {
 			packagesVersions = '';
 			const updateInfo = JSON.parse(await readFile(versionsFile, 'utf8'));

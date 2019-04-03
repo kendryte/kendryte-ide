@@ -11,7 +11,7 @@ import {
 	CONFIG_KEY_FTDI_LAYOUT,
 	CONFIG_KEY_FTDI_SPEED,
 	CONFIG_KEY_FTDI_TDO_FE,
-	CONFIG_KEY_FTDI_VIDPID,
+	CONFIG_KEY_FTDI_VID_PID,
 	CONFIG_KEY_JTAG_ID,
 	CONFIG_KEY_JTAG_SPEED,
 	CONFIG_KEY_OPENOCD_CORE,
@@ -32,7 +32,7 @@ import { DeferredPromise } from 'vs/base/test/common/utils';
 import { timeout } from 'vs/base/common/async';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
-import { IDebugService } from 'vs/workbench/parts/debug/common/debug';
+import { IDebugService } from 'vs/workbench/contrib/debug/common/debug';
 
 const libUsbError = /\bLIBUSB_ERROR_IO\b/;
 const libUsbDisconnect = /\bLIBUSB_ERROR_NO_DEVICE\b/;
@@ -75,7 +75,7 @@ export class OpenOCDService implements IOpenOCDService {
 		if (this.child) {
 			return this.configurationService.getValue<number>(CONFIG_KEY_OPENOCD_PORT);
 		} else {
-			return null;
+			return 0;
 		}
 	}
 
@@ -171,7 +171,7 @@ export class OpenOCDService implements IOpenOCDService {
 				this.logger.info('OpenOCD process successful finished');
 			}
 			delete this.child;
-			this.debugService.stopSession(null);
+			this.debugService.stopSession(undefined);
 		});
 
 		this.logger.info('OpenOCD process started. waiting for output...');
@@ -211,7 +211,7 @@ export class OpenOCDService implements IOpenOCDService {
 		let port = this.configurationService.getValue<number>(CONFIG_KEY_OPENOCD_PORT);
 		if (port === 0) {
 			port = await this.findPort();
-			await this.configurationService.updateValue(CONFIG_KEY_OPENOCD_PORT, port, ConfigurationTarget.USER);
+			await this.configurationService.updateValue(CONFIG_KEY_OPENOCD_PORT, port, ConfigurationTarget.WORKSPACE);
 		}
 		this.logger.info('port=' + port);
 
@@ -232,8 +232,8 @@ export class OpenOCDService implements IOpenOCDService {
 			case ConfigOpenOCDTypes.ftdi:
 				return await createDefaultFtdiConfig(port, {
 					speed: this.configurationService.getValue<number>(CONFIG_KEY_FTDI_SPEED),
-					layoutInit: this.configurationService.getValue<[string, string]>(CONFIG_KEY_FTDI_LAYOUT),
-					vidPid: this.configurationService.getValue<[string, string]>(CONFIG_KEY_FTDI_VIDPID),
+					layoutInit: this.configurationService.getValue<string>(CONFIG_KEY_FTDI_LAYOUT),
+					vidPid: this.configurationService.getValue<string>(CONFIG_KEY_FTDI_VID_PID),
 					tdoSampleFallingEdge: this.configurationService.getValue<boolean>(CONFIG_KEY_FTDI_TDO_FE),
 					extra: this.configurationService.getValue<string>(CONFIG_KEY_FTDI_EXTRA),
 				});

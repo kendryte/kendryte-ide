@@ -4,7 +4,6 @@ import {
 	IConfigurationNode,
 	IConfigurationPropertySchema,
 	IConfigurationRegistry,
-	IDefaultConfigurationExtension,
 } from 'vs/platform/configuration/common/configurationRegistry';
 import { Extensions as CategoryExtensions, IConfigCategoryRegistry } from 'vs/kendryte/vs/platform/config/common/category';
 
@@ -21,7 +20,7 @@ export interface IExtendConfigurationNode extends IConfigurationNode {
 
 export interface ICategoryConfigurationRegistry extends IConfigurationRegistry {
 	registerConfiguration(configuration: IExtendConfigurationNode): void;
-	registerConfigurations(configurations: IExtendConfigurationNode[], defaultConfigurations: IDefaultConfigurationExtension[], validate?: boolean): void;
+	registerConfigurations(configurations: IExtendConfigurationNode[], validate?: boolean): void;
 	notifyConfigurationSchemaUpdated(configuration: IExtendConfigurationNode): void;
 	getConfigurations(): IExtendConfigurationNode[];
 	getConfigurationProperties(): { [qualifiedKey: string]: IExtendConfigurationPropertySchema };
@@ -39,7 +38,7 @@ if (!configRegistry) {
 }
 
 Object.keys(configRegistry.getConfigurationProperties()).forEach((key: string) => checkAndAssignCategory(key));
-configRegistry.onDidRegisterConfiguration((keys: string[]) => keys.forEach(checkAndAssignCategory));
+configRegistry.onDidUpdateConfiguration((keys: string[]) => keys.forEach(checkAndAssignCategory));
 
 function checkAndAssignCategory(key: string) {
 	const schema = configRegistry.getConfigurationProperties()[key];
@@ -50,10 +49,10 @@ function checkAndAssignCategory(key: string) {
 }
 
 export function registerConfiguration(configuration: IExtendConfigurationNode, validate: boolean = true): void {
-	return registerConfigurations([configuration], [], validate);
+	return registerConfigurations([configuration], validate);
 }
 
-export function registerConfigurations(configurations: IExtendConfigurationNode[], defaultConfigurations: IDefaultConfigurationExtension[], validate?: boolean): void {
+export function registerConfigurations(configurations: IExtendConfigurationNode[], validate?: boolean): void {
 	configurations.forEach((configuration) => {
 		if (configuration.category && configuration.properties) {
 			for (const item of Object.values(configuration.properties)) {
@@ -63,5 +62,5 @@ export function registerConfigurations(configurations: IExtendConfigurationNode[
 			}
 		}
 	});
-	return configRegistry.registerConfigurations(configurations, defaultConfigurations, validate);
+	return configRegistry.registerConfigurations(configurations, validate);
 }

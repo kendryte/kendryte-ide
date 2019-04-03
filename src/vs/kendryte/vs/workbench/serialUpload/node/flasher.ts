@@ -7,7 +7,6 @@ import { createReadStream, ReadStream } from 'fs';
 import { GarbageData, StreamChain } from 'vs/kendryte/vs/workbench/serialUpload/node/streamChain';
 import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
 import { Event } from 'vs/base/common/event';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { DeferredPromise } from 'vs/base/test/common/utils';
 import { ISPMemoryPacker } from 'vs/kendryte/vs/workbench/serialUpload/node/ispMemoryPacker';
 import { addDisposableEventEmitterListener } from 'vs/kendryte/vs/base/node/disposableEvents';
@@ -23,8 +22,11 @@ import { drainStream } from 'vs/kendryte/vs/base/common/drainStream';
 import { SerialPortBaseBinding } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
 import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
+import { throwNull } from 'vs/kendryte/vs/base/common/assertNotNull';
+import { CHIP_BAUDRATE, PROGRAM_BASE } from 'vs/kendryte/vs/workbench/serialUpload/common/chipDefine';
+import { memoize } from 'vs/base/common/decorators';
 
-export enum ChipType {
+export enum FlashTargetType {
 	OnBoard = 0,
 	InChip = 1,
 }
@@ -35,6 +37,12 @@ export class SerialLoader extends Disposable {
 	protected readonly cancel: CancellationTokenSource;
 	protected readonly token: CancellationToken;
 
+	private _application: string | undefined;
+	private _bootLoader: string | undefined;
+	private _baudRate: number = CHIP_BAUDRATE;
+	private _encryptionKey: Buffer | undefined;
+	private _targetType: FlashTargetType;
+
 	protected aborted: Error;
 	public readonly abortedPromise: Promise<never>;
 
@@ -43,26 +51,6 @@ export class SerialLoader extends Disposable {
 
 	public get onError(): Event<Error> { return this.streamChain.onError; }
 
-	private _bootLoaderStream: ReadStream;
-	protected get bootLoaderStream(): ReadStream {
-		if (!this._bootLoaderStream) {
-			this._bootLoaderStream = this._register(disposableStream(
-				createReadStream(this.bootLoader, { highWaterMark: 1024 }),
-			));
-		}
-		return this._bootLoaderStream;
-	}
-
-	private _applicationStream: ReadStream;
-	protected get applicationStream(): ReadStream {
-		if (!this._applicationStream) {
-			this._applicationStream = this._register(disposableStream(
-				createReadStream(this.application, { highWaterMark: 4096 }),
-			));
-		}
-		return this._applicationStream;
-	}
-
 	private deferred: DeferredPromise<ISPResponse>;
 	private deferredWait: ISPOperation[];
 	private deferredReturn: ISPError;
@@ -70,10 +58,6 @@ export class SerialLoader extends Disposable {
 	constructor(
 		private readonly serialPortService: ISerialPortService,
 		private readonly device: SerialPortBaseBinding,
-		private readonly application: string,
-		private readonly bootLoader: string,
-		protected readonly encryptionKey: Buffer,
-		protected readonly type: ChipType,
 		protected readonly logger: IChannelLogger,
 	) {
 		super();
@@ -120,8 +104,39 @@ export class SerialLoader extends Disposable {
 		this._register(this.streamChain.onData(data => this.handleData(data)));
 	}
 
+	public setFlashTarget(target: FlashTargetType) {
+		this._targetType = target;
+	}
+
+	public setBootLoader(loader: string) {
+		this._bootLoader = loader;
+	}
+
+	public setProgram(application: string, encryptionKey?: Buffer) {
+		this._application = application;
+		this._encryptionKey = encryptionKey;
+	}
+
+	public setBaudRate(br: number) {
+		this._baudRate = br;
+	}
+
+	@memoize
+	protected get bootLoaderStream(): ReadStream {
+		return this._register(disposableStream(
+			createReadStream(throwNull(this._bootLoader), { highWaterMark: 1024 }),
+		));
+	}
+
+	@memoize
+	protected get applicationStream(): ReadStream {
+		return this._register(disposableStream(
+			createReadStream(throwNull(this._application), { highWaterMark: 4096 }),
+		));
+	}
+
 	protected async writeMemoryChunks(content: ReadStream, baseAddress: number, length: number, report?: SubProgress) {
-		const packedData = new ISPMemoryPacker(baseAddress, length, async (bytesProcessed: number): TPromise<void> => {
+		const packedData = new ISPMemoryPacker(baseAddress, length, async (bytesProcessed: number): Promise<void> => {
 			const op = await this.expect(ISPOperation.ISP_MEMORY_WRITE);
 			if (op.op === ISPOperation.ISP_DEBUG_INFO) {
 				this.logger.info(op.text);
@@ -147,9 +162,9 @@ export class SerialLoader extends Disposable {
 
 		let contentBuffer: Buffer;
 		const headerSize = headerIsEncryptSize + headerDataLenSize; // isEncrypt(1bit) + appLen(4bit) + appCode
-		if (this.encryptionKey) {
-			const aesType = `aes-${this.encryptionKey.length}-cbc`;
-			const encrypt = createCipheriv(aesType, this.encryptionKey, Buffer.allocUnsafe(16));
+		if (this._encryptionKey) {
+			const aesType = `aes-${this._encryptionKey.length}-cbc`;
+			const encrypt = createCipheriv(aesType, this._encryptionKey, Buffer.allocUnsafe(16));
 			contentBuffer = await drainStream(content.pipe(encrypt), length + AES_MAX_LARGER_SIZE, headerSize, shaSize);
 		} else {
 			contentBuffer = await drainStream(content, length, headerSize, shaSize);
@@ -161,7 +176,7 @@ export class SerialLoader extends Disposable {
 
 		// appendFileSync('X:/test-js.txt', '==' + length + '\n\n');
 
-		if (this.encryptionKey) {
+		if (this._encryptionKey) {
 			contentBuffer.writeUInt8(1, 0);
 		} else {
 			contentBuffer.writeUInt8(0, 0);
@@ -175,7 +190,7 @@ export class SerialLoader extends Disposable {
 		// appendFileSync('X:/test-js.txt', '==' + contentBuffer.length + '\n\n');
 		// writeFileSync('X:/js-buffer.txt', contentBuffer);
 
-		const packedData = new ISPFlashPacker(baseAddress, length, async (bytesProcessed: number): TPromise<void> => {
+		const packedData = new ISPFlashPacker(baseAddress, length, async (bytesProcessed: number): Promise<void> => {
 			const op = await this.expect(ISPOperation.ISP_FLASH_WRITE);
 			if (op.op === ISPOperation.ISP_FLASH_WRITE && op.err === ISPError.ISP_RET_OK) {
 				if (report) {
@@ -196,21 +211,13 @@ export class SerialLoader extends Disposable {
 		await packedData.finishPromise();
 	}
 
-	async flashBoot(address = 0x80000000) {
-		this.logger.info('Boot from memory: 0x%s.', address.toString(16));
-		const buff = Buffer.allocUnsafe(8);
-		buff.writeUInt32LE(address, 0);
-		buff.writeUInt32LE(0, 4);
-		this.send(ISPOperation.ISP_MEMORY_BOOT, buff);
-		this.logger.info('  boot command sent');
+	private async flashBootGreeting() {
+		let received = false;
 
-		const p = this.expect(ISPOperation.ISP_NOP).then(() => {
-			received = true;
-		}, () => {
+		const p = this.expect(ISPOperation.ISP_NOP).finally(() => {
 			received = true;
 		});
 
-		let received = false;
 		while (!received) {
 			this.send(ISPOperation.ISP_FLASH_GREETING, Buffer.alloc(3));
 			await timeout(300);
@@ -219,11 +226,22 @@ export class SerialLoader extends Disposable {
 		return p;
 	}
 
+	async flashBoot(address = PROGRAM_BASE) {
+		this.logger.info('Boot from memory: 0x%s.', address.toString(16));
+		const buff = Buffer.allocUnsafe(8);
+		buff.writeUInt32LE(address, 0);
+		buff.writeUInt32LE(0, 4);
+		this.send(ISPOperation.ISP_MEMORY_BOOT, buff);
+		this.logger.info('  boot command sent');
+
+		await this.flashBootGreeting();
+	}
+
 	async flashInitFlash() {
-		this.logger.info('Select flash: %s', ChipType[this.type]);
+		this.logger.info('Select flash: %s', FlashTargetType[this._targetType]);
 
 		const buff = Buffer.allocUnsafe(8);
-		buff.writeUInt32LE(this.type, 0);
+		buff.writeUInt32LE(this._targetType, 0);
 		buff.writeUInt32LE(0, 4);
 
 		this.send(ISPOperation.ISP_FLASH_SELECT, buff);
@@ -233,9 +251,23 @@ export class SerialLoader extends Disposable {
 	}
 
 	async flashBootLoader(report: SubProgress) {
-		const blAddress = 0x80000000;
-		this.logger.info('Writing boot loader to memory (at 0x%s)', blAddress.toString(16));
-		await this.writeMemoryChunks(this.bootLoaderStream, blAddress, this.bootLoaderStreamSize, report);
+		this.logger.info('Writing boot loader to memory (at 0x%s)', PROGRAM_BASE.toString(16));
+		await this.writeMemoryChunks(this.bootLoaderStream, PROGRAM_BASE, this.bootLoaderStreamSize, report);
+		this.logger.info(' - Complete.');
+	}
+
+	async changeBaudRate(br = this._baudRate) {
+		this.logger.info('Change baud rate to ', br);
+
+		const buff = Buffer.allocUnsafe(12);
+		buff.writeUInt32LE(0, 0);
+		buff.writeUInt32LE(4, 4);
+		buff.writeUInt32LE(br, 8);
+
+		await this.send(ISPOperation.ISP_DEBUG_CHANGE_BAUD_RATE, buff);
+
+		await this.flashBootGreeting();
+
 		this.logger.info(' - Complete.');
 	}
 
@@ -313,7 +345,7 @@ export class SerialLoader extends Disposable {
 		});
 	}
 
-	protected expect(what: ISPOperation | ISPOperation[], ret: ISPError = ISPError.ISP_RET_OK) {
+	protected expect(what: ISPOperation | ISPOperation[], ret: ISPError = ISPError.ISP_RET_OK): Promise<any> {
 		if (this.deferred) {
 			console.warn('deferred already exists: ', this.deferredWait.map(e => ISPOperation[e]));
 			throw new Error('program error: expect.');
@@ -417,6 +449,9 @@ export class SerialLoader extends Disposable {
 
 		report.message('booting up bootloader...');
 		await Promise.race<any>([this.abortedPromise, this.flashBoot()]);
+		if (this._baudRate !== CHIP_BAUDRATE) {
+			await Promise.race<any>([this.abortedPromise, this.changeBaudRate()]);
+		}
 		report.next();
 
 		report.message('flashing program init...');

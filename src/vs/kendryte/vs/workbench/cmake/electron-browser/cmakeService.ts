@@ -1,11 +1,10 @@
 import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE, CMakeInternalVariants, CurrentItem, ICMakeSelection, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
-import { ChildProcess, spawn, SpawnOptions } from 'child_process';
+import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
+import { ChildProcess, spawn } from 'child_process';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { exists, fileExists, mkdirp, readFile, rename, rimraf, writeFile } from 'vs/base/node/pfs';
-import { createConnection, Socket } from 'net';
-import { TPromise } from 'vs/base/common/winjs.base';
+import { createConnection } from 'net';
 import * as split2 from 'split2';
 import {
 	CMAKE_EVENT_TYPE,
@@ -32,11 +31,10 @@ import {
 import { CMakeCache } from 'vs/kendryte/vs/workbench/cmake/node/cmakeCache';
 import { isWindows } from 'vs/base/common/platform';
 import { LineData, LineProcess } from 'vs/base/node/processes';
-import { Executable } from 'vs/base/common/processes';
 import { cpus } from 'os';
 import { CMAKE_TARGET_TYPE } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/config';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { osTempDir, resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { DebugScript, getEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
 import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { CMakeBuildErrorProcessor, CMakeBuildProgressProcessor, CMakeProcessList } from 'vs/kendryte/vs/workbench/cmake/node/outputProcessor';
@@ -44,58 +42,16 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIST_GENERATED_WARNING } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
-import { ILogService } from 'vs/platform/log/common/log';
+import { ILogService, LogLevel } from 'vs/platform/log/common/log';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { CMakeListsCreator } from 'vs/kendryte/vs/workbench/cmake/electron-browser/listsCreator';
-import { CONFIG_KEY_MAKE_PROGRAM } from 'vs/kendryte/vs/base/common/configKeys';
+import { CONFIG_KEY_CMAKE_DEBUG, CONFIG_KEY_MAKE_PROGRAM } from 'vs/kendryte/vs/base/common/configKeys';
 import { IKendryteStatusControllerService } from 'vs/kendryte/vs/workbench/bottomBar/common/type';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { CONTEXT_CMAKE_SEEMS_OK, CONTEXT_CMAKE_WORKING } from 'vs/kendryte/vs/workbench/cmake/common/contextKey';
 import { CMakeError, CMakeErrorType } from 'vs/kendryte/vs/workbench/cmake/common/errors';
-import { always } from 'vs/base/common/async';
-
-export interface IPromiseProgress<T> {
-	progress(fn: (p: T) => void): void;
-}
-
-export class Deferred extends TPromise<ICMakeResponse> implements IPromiseProgress<ICMakeProtocolProgress> {
-	private _resolver: (value: ICMakeResponse) => void;
-	private _rejecter: (value: Error | ICMakeProtocolError) => void;
-	private cbList: Function[];
-
-	constructor() {
-		let _resolver, _rejecter;
-		super((resolve, reject) => {
-			_resolver = resolve;
-			_rejecter = reject;
-		});
-		this._resolver = _resolver;
-		this._rejecter = _rejecter;
-		this.cbList = [];
-	}
-
-	resolvePath(response: ICMakeResponse): void {
-		this._resolver(response);
-	}
-
-	reject(err: ICMakeProtocolError | Error): void {
-		this._rejecter(err);
-	}
-
-	notify(progress: ICMakeProtocolProgress): void {
-		for (const cb of this.cbList) {
-			cb(progress);
-		}
-	}
-
-	progress(cb: (e: ICMakeProtocolProgress) => void): void {
-		this.cbList.push(cb);
-	}
-
-	promise(): TPromise<ICMakeResponse> & IPromiseProgress<ICMakeProtocolProgress> {
-		return this;
-	}
-}
+import { DeferredPromise } from 'vs/kendryte/vs/base/common/deferredPromise';
+import { registerCMakeConfig } from 'vs/kendryte/vs/workbench/cmake/common/configFile';
 
 export class CMakeService implements ICMakeService {
 	_serviceBrand: any;
@@ -110,18 +66,18 @@ export class CMakeService implements ICMakeService {
 	protected selectedVariant: string;
 
 	protected cmakeProcess: ChildProcess;
-	private cmakeEndPromise: TPromise<any>;
-	private cmakePipe: Socket;
+	private cmakeEndPromise: Promise<any>;
+	private cmakePipe: NodeJS.ReadWriteStream; // Socket
 	private cmakePipeFile: string;
 
 	protected _currentFolder: string;
 	protected _CMakeProjectExists: boolean;
 
-	private cmakeRequests: { [cookie: string]: Deferred } = {};
+	private cmakeRequests: { [cookie: string]: DeferredPromise<ICMakeResponse> } = {};
 
 	private readonly _onCMakeEvent = new Emitter<ICMakeProtocol>();
 	public readonly onCMakeEvent: Event<ICMakeProtocol> = this._onCMakeEvent.event;
-	private cmakeConnectionStablePromise: Deferred;
+	private cmakeConnectionStablePromise: DeferredPromise<void>;
 	private lastProcess: CMakeProcessList;
 
 	private readonly _onCMakeProjectChange = new Emitter<Error | null>();
@@ -131,6 +87,7 @@ export class CMakeService implements ICMakeService {
 
 	private readonly _onCMakeSelectionChange = new Emitter<ICMakeSelection>();
 	public readonly onCMakeSelectionChange = this._onCMakeSelectionChange.event;
+	private verbose: boolean;
 
 	constructor(
 		@ILifecycleService lifecycleService: ILifecycleService,
@@ -150,10 +107,20 @@ export class CMakeService implements ICMakeService {
 		this.cmakeConfiguredContextKey = CONTEXT_CMAKE_SEEMS_OK.bindTo(contextKeyService);
 		this.cmakeWorkingContextKey = CONTEXT_CMAKE_WORKING.bindTo(contextKeyService);
 
-		// this.installExtension('twxs.cmake');
 		lifecycleService.onWillShutdown(e => {
 			return e.join(this.shutdown(true));
 		});
+		lifecycleService.when(LifecyclePhase.Ready).then(() => {
+			registerCMakeConfig();
+		});
+
+		this.reloadSettings();
+		configurationService.onDidChangeConfiguration((e) => {
+			if (e.affectsConfiguration(CONFIG_KEY_CMAKE_DEBUG)) {
+				this.reloadSettings();
+			}
+		});
+
 		this.localEnv = {};
 		this.localEnv.KENDRYTE_IDE = 'yes';
 
@@ -167,7 +134,7 @@ export class CMakeService implements ICMakeService {
 			this.localEnv.CMAKE_MAKE_PROGRAM = this.configurationService.getValue<string>(CONFIG_KEY_MAKE_PROGRAM) || '/usr/bin/make';
 		}
 
-		this.workspaceContextService.onDidChangeWorkspaceFolders(_ => {
+		this.workspaceContextService.onDidChangeWorkspaceFolders(() => {
 			this.rescanCurrentFolder().then(undefined, (e) => {
 				this.notificationService.error(e);
 				console.log(e);
@@ -176,6 +143,17 @@ export class CMakeService implements ICMakeService {
 		});
 
 		this.rescanCurrentFolder();
+	}
+
+	private reloadSettings() {
+		this.verbose = this.configurationService.getValue<boolean>(CONFIG_KEY_CMAKE_DEBUG);
+		if (this.verbose) {
+			this.logger.setLevel(LogLevel.Trace);
+			this.logger.info('Verbose log is ON');
+		} else {
+			this.logger.setLevel(LogLevel.Info);
+			this.logger.info('Verbose log is OFF');
+		}
 	}
 
 	get readyState() {
@@ -208,7 +186,7 @@ export class CMakeService implements ICMakeService {
 		const cmakePath = this.getCMakeToRun();
 		await mkdirp(this.buildPath);
 
-		const options: SpawnOptions = {
+		const options = {
 			env: await this.getCMakeEnv(),
 			cwd: this.buildPath,
 		};
@@ -249,18 +227,12 @@ export class CMakeService implements ICMakeService {
 		this.logger.info('_currentFolder=%s', this._currentFolder);
 		await mkdirp(resolvePath(this._currentFolder, '.vscode'));
 
-		let pidFilePath: string;
+		const pipeFilePath: string = await this.nodeFileSystemService.prepareSocketFile('cmake_server_pipe');
+		this.logger.info('pipeFilePath=%s', pipeFilePath);
+		this.cmakePipeFile = pipeFilePath;
 
-		if (process.platform === 'win32') {
-			pidFilePath = `\\\\?\\pipe\\kide-cms-${(Date.now()).toFixed(0)}`;
-		} else {
-			pidFilePath = osTempDir(`./${(Date.now()).toFixed(0)}_cmake_server_pipe.sock`);
-		}
-		this.logger.info('pidFilePath=%s', pidFilePath);
-		this.cmakePipeFile = pidFilePath;
-
-		const args = ['-E', 'server', '--experimental', '--pipe=' + pidFilePath];
-		const options: SpawnOptions = {
+		const args = ['-E', 'server', '--experimental', '--pipe=' + pipeFilePath];
+		const options = {
 			env: await this.getCMakeEnv(),
 			cwd: cmakePath.bins,
 		};
@@ -273,7 +245,7 @@ export class CMakeService implements ICMakeService {
 
 		const child = this.cmakeProcess = spawn(cmakePath.cmake, args, options);
 
-		const pExit = new TPromise<void>((resolve, reject) => {
+		const pExit = new Promise<void>((resolve, reject) => {
 			child.on('exit', resolve);
 			child.on('error', reject);
 		});
@@ -282,25 +254,26 @@ export class CMakeService implements ICMakeService {
 		child.stdout.on('data', data => this.handleOutput(data.toString()));
 		child.stderr.on('data', data => this.handleOutput(data.toString()));
 
-		await new TPromise((resolve) => {
+		await new Promise((resolve) => {
 			setTimeout(resolve, 1000);
 		});
 
-		console.log('CMake connect: %s', pidFilePath);
+		this.logger.info('CMake connect: %s', pipeFilePath);
 		try {
-			this.cmakePipe = createConnection(pidFilePath);
+			this.cmakePipe = createConnection(pipeFilePath);
 		} catch (e) {
 			await this.shutdown(true);
 			throw e;
 		}
 		const pipe = this.cmakePipe;
 
-		this.cmakeConnectionStablePromise = new Deferred();
+		this.cmakeConnectionStablePromise = new DeferredPromise();
 		pipe.pipe(split2()).on('data', (line: Buffer) => {
-			this.handleProtocol(line.toString('utf8'));
+			const l = line.toString('utf8').trim();
+			this.handleProtocol(l);
 		});
 
-		const pEnd = new TPromise<void>((resolve, reject) => {
+		const pEnd = new Promise<void>((resolve, reject) => {
 			pipe.on('error', e => {
 				this.logger.info('CMake server error:\n' + e.stack);
 				debugger;
@@ -314,7 +287,7 @@ export class CMakeService implements ICMakeService {
 
 		this.cmakeEndPromise = Promise.race([pEnd, pExit]);
 		this.cmakeEndPromise.then(() => this.shutdownClean(), (e) => {
-			this.cmakeConnectionStablePromise.reject(e);
+			this.cmakeConnectionStablePromise.error(e);
 			this.shutdownClean();
 		});
 
@@ -324,25 +297,25 @@ export class CMakeService implements ICMakeService {
 			}
 		});
 
-		await this.cmakeConnectionStablePromise;
+		await this.cmakeConnectionStablePromise.p;
 	}
 
 	private shutdownClean() {
 		this.alreadyConfigured = false;
 		this.selectedTarget = '';
 		this.selectedVariant = '';
-		this.cmakeProcess = null;
-		this.cmakeEndPromise = null;
-		this.cmakePipe = null;
-		this.cmakeConnectionStablePromise.reject(new Error('exit too earlly'));
-		this.cmakeConnectionStablePromise = null;
+		delete this.cmakeProcess;
+		delete this.cmakeEndPromise;
+		delete this.cmakePipe;
+		this.cmakeConnectionStablePromise.error(new Error('exit too earlly'));
+		delete this.cmakeConnectionStablePromise;
 		try {
 			unlinkSync(this.cmakePipeFile);
 		} catch (e) {
 		}
 	}
 
-	async shutdown(force: boolean = false): TPromise<void> {
+	async shutdown(force: boolean = false): Promise<void> {
 		if (this.cmakeProcess) {
 			this.logger.info('shutdown CMake server...');
 
@@ -376,19 +349,23 @@ export class CMakeService implements ICMakeService {
 			this._cmakeLineState = false;
 			const msg = this._cmakeLineCache.join('\n').trim();
 			this._cmakeLineCache.length = 0;
+
+			if (this.verbose && msg.length) {
+				this.logger.trace('>>> ' + msg);
+			}
+
 			this.handleProtocolInput(msg);
 		} else if (this._cmakeLineState) {
 			// this.logger.info(`Protocol: ${line}`);
 			this._cmakeLineCache.push(line);
 		} else if (line) {
-			this.logger.info('Protocol: ??? ' + line);
+			this.logger.error('Protocol: ??? ' + line);
 		}
 	}
 
 	private handleProtocolInput(msg: string) {
 		const protocolData: ICMakeProtocol & ICMakeProtocolAny = JSON.parse(msg);
 		this._onCMakeEvent.fire(protocolData);
-		// console.log('cmake <<< %O', protocolData);
 
 		if (protocolData.cookie) {
 			const dfd = this.cmakeRequests[protocolData.cookie];
@@ -397,11 +374,11 @@ export class CMakeService implements ICMakeService {
 			}
 			switch (protocolData.type) {
 				case CMAKE_EVENT_TYPE.REPLY:
-					dfd.resolvePath(protocolData as ICMakeProtocolReply);
+					dfd.complete(protocolData as ICMakeProtocolReply);
 					return;
 				case CMAKE_EVENT_TYPE.ERROR:
 					const err = protocolData as ICMakeProtocolError;
-					dfd.reject({ ...err, message: err.errorMessage } as any);
+					dfd.error({ ...err, message: err.errorMessage } as any);
 					return;
 				case CMAKE_EVENT_TYPE.PROGRESS:
 					dfd.notify(protocolData as ICMakeProtocolProgress);
@@ -412,9 +389,9 @@ export class CMakeService implements ICMakeService {
 		switch (protocolData.type) {
 			case CMAKE_EVENT_TYPE.HELLO:
 				this.initBaseConfigWhenHello(protocolData as ICMakeProtocolHello).then(() => {
-					this.cmakeConnectionStablePromise.resolvePath(void 0);
+					this.cmakeConnectionStablePromise.complete();
 				}, (e) => {
-					this.cmakeConnectionStablePromise.reject(e);
+					this.cmakeConnectionStablePromise.error(e);
 				});
 				return;
 			case CMAKE_EVENT_TYPE.MESSAGE:
@@ -444,23 +421,22 @@ export class CMakeService implements ICMakeService {
 			payload.cookie = Date.now().toString() + ':' + Math.random().toString();
 		}
 
-		this.cmakeRequests[payload.cookie] = new Deferred();
+		this.cmakeRequests[payload.cookie] = new DeferredPromise();
+		const data = JSON.stringify(payload);
 
-		// console.log('cmake >>> %O', payload);
-		this.cmakePipe.write(`
-[== "CMake Server" ==[
-${JSON.stringify(payload)}
-]== "CMake Server" ==]
-`);
+		if (this.verbose) {
+			this.logger.trace('<<< ' + data);
+		}
+		this.cmakePipe.write(`[== "CMake Server" ==[\n${data}\n]== "CMake Server" ==]\n`);
 
-		return await this.cmakeRequests[payload.cookie].promise();
+		return await this.cmakeRequests[payload.cookie].p;
 	}
 
 	get isEnabled(): boolean {
 		return !!(this._currentFolder && this._CMakeProjectExists);
 	}
 
-	public rescanCurrentFolder(): TPromise<void> {
+	public rescanCurrentFolder(): Promise<void> {
 		this.logger.info('rescan current folder');
 
 		this.cmakeConfiguredContextKey.set(false);
@@ -566,7 +542,7 @@ ${JSON.stringify(payload)}
 		} as ICMakeProtocolSetGlobalSettings);
 	}
 
-	public async cleanupMake(): TPromise<void> {
+	public async cleanupMake(): Promise<void> {
 		await this.shutdown();
 		this.alreadyConfigured = false;
 		this.logger.info('Run Clean');
@@ -580,7 +556,7 @@ ${JSON.stringify(payload)}
 
 	public configure(): Promise<void> {
 		this.cmakeWorkingContextKey.set(true);
-		return always(this._configure(), () => {
+		return this._configure().finally(() => {
 			this.cmakeWorkingContextKey.set(false);
 		});
 	}
@@ -632,7 +608,7 @@ ${JSON.stringify(payload)}
 
 	public build() {
 		this.cmakeWorkingContextKey.set(true);
-		return always(this._build(), () => {
+		return this._build().finally(() => {
 			this.cmakeWorkingContextKey.set(false);
 		});
 	}
@@ -668,7 +644,7 @@ ${JSON.stringify(payload)}
 			this.instantiationService.createInstance(CMakeBuildErrorProcessor),
 		]);
 
-		const exe: Executable = {
+		const exe = {
 			command: make,
 			isShellCommand: false,
 			args,
@@ -706,7 +682,7 @@ ${JSON.stringify(payload)}
 		}
 	}
 
-	async ensureConfiguration(): TPromise<ICMakeProtocolCodeModel> {
+	async ensureConfiguration(): Promise<ICMakeProtocolCodeModel> {
 		if (!this.alreadyConfigured) {
 			await this._configure();
 		}
@@ -732,9 +708,9 @@ ${JSON.stringify(payload)}
 		// this.controller.selectTargetButton.text = target ? '[' + target + ']' : '<All>';
 	}
 
-	async getVariantList(): TPromise<CurrentItem[]> {
+	async getVariantList(): Promise<CurrentItem[]> {
 		const variants = CMakeInternalVariants();
-		const vids: string[] = variants.map(e => e.id);
+		const vids: string[] = variants.map(e => e.id) as string[];
 
 		try {
 			const codeModel = await this.ensureConfiguration();
@@ -782,7 +758,7 @@ ${JSON.stringify(payload)}
 		return null;
 	}
 
-	async getTargetList(): TPromise<CurrentItem[]> {
+	async getTargetList(): Promise<CurrentItem[]> {
 		let ret: CurrentItem[] = [
 			{
 				id: '',
@@ -818,6 +794,9 @@ ${JSON.stringify(payload)}
 
 	private async getCurrentProject() {
 		const variant = await this.getCurrentVariant();
+		if (!variant) {
+			return null;
+		}
 		for (const proj of variant.projects) {
 			if (this.selectedTarget === proj.name) {
 				return proj;
@@ -831,8 +810,11 @@ ${JSON.stringify(payload)}
 		});
 	}
 
-	public async getOutputFile(): TPromise<string> {
+	public async getOutputFile(): Promise<string> {
 		const proj = await this.getCurrentProject();
+		if (!proj) {
+			throw new Error('Error: can not find an executable item, please select one.');
+		}
 		for (const item of proj.targets) {
 			if (item.type === CMAKE_TARGET_TYPE.EXECUTABLE) {
 				return item.artifacts[0];
@@ -870,7 +852,7 @@ ${JSON.stringify(payload)}
 		if (!content.configurations) {
 			content.configurations = [];
 		}
-		const index = content.configurations.findIndex(e => e.name === 'Default');
+		const index = content.configurations.findIndex((e: any) => e.name === 'Default');
 		if (index !== -1) {
 			content.configurations.splice(content.configurations, 1);
 		}

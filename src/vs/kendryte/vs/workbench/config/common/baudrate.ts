@@ -10,3 +10,7 @@ export const standardParity = [
 export const standardStopBits = [
 	1, 2,
 ];
+
+export const flashBaudRate = [
+	115200, 256000, 2000000, 2560000,
+];

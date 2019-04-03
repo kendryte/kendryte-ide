@@ -1,12 +1,11 @@
 import { Action } from 'vs/base/common/actions';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IProgressService2, ProgressLocation } from 'vs/platform/progress/common/progress';
 import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
 import { ACTION_ID_MAIX_SERIAL_BOOT, ACTION_LABEL_MAIX_SERIAL_BOOT } from 'vs/kendryte/vs/base/common/menu/cmake';
 import { CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { ChipType, SerialLoader } from 'vs/kendryte/vs/workbench/serialUpload/node/flasher';
+import { SerialLoader } from 'vs/kendryte/vs/workbench/serialUpload/node/flasher';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE } from 'vs/kendryte/vs/workbench/cmake/common/type';
 
@@ -38,7 +37,7 @@ export class MaixSerialRebootAction extends Action {
 		}
 	}
 
-	async run(event: string[]): TPromise<void> {
+	async run(event: string[]): Promise<void> {
 		if (!Array.isArray(event)) {
 			throw new Error('Cannot run this action from here.');
 		}
@@ -69,10 +68,6 @@ export class MaixSerialRebootAction extends Action {
 		const loader = this.loader = new SerialLoader(
 			this.serialPortService,
 			port,
-			undefined,
-			undefined,
-			null,
-			ChipType.InChip,
 			this.logger,
 		);
 		loader.abortedPromise.catch((e) => {

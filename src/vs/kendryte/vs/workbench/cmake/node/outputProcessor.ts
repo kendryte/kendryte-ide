@@ -5,11 +5,12 @@ import { TextProgressBar } from 'vs/kendryte/vs/base/common/textProgressBar';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { normalize } from 'path';
-import { isAbsolute } from 'vs/base/common/paths';
+import { isAbsolute } from 'vs/base/common/path';
 import { isWindows } from 'vs/base/common/platform';
 import { escapeRegExpCharacters } from 'vs/base/common/strings';
 import { normalizePosixPath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { IKendryteStatusControllerService } from 'vs/kendryte/vs/workbench/bottomBar/common/type';
+import { ExtendMap } from 'vs/kendryte/vs/base/common/extendMap';
 
 const regGCCError = /^(.*?):(\d+):(\d+):\s+(\w*)(?:\serror|warning)?:\s+(.*)/;
 const regCMakeProgress = /^\[\s*(\d+)%]/;
@@ -57,7 +58,7 @@ interface MarkerStore {
 }
 
 export class CMakeBuildErrorProcessor extends CMakeProcessor {
-	private readonly errorMarkers: Map<string, MarkerStore> = new Map();
+	private readonly errorMarkers = new ExtendMap<string, MarkerStore>();
 	private cwd: IWorkspaceFolder;
 
 	constructor(
@@ -104,7 +105,7 @@ export class CMakeBuildErrorProcessor extends CMakeProcessor {
 		}
 		file = normalizePosixPath(file);
 
-		if (!errorMarkers.has(file)) {
+		const entry = errorMarkers.entry(file, () => {
 			let fileRes: URI;
 
 			if (isAbsolute(file)) {
@@ -115,9 +116,10 @@ export class CMakeBuildErrorProcessor extends CMakeProcessor {
 			} else {
 				fileRes = this.cwd.toResource(file);
 			}
-			errorMarkers.set(file, { uri: fileRes, markers: [] });
-		}
-		errorMarkers.get(file).markers.push({
+			return { uri: fileRes, markers: [] };
+		});
+
+		entry.markers.push({
 			message,
 			severity,
 			file,

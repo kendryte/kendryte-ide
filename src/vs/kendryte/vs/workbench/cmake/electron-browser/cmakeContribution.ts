@@ -14,7 +14,6 @@ import { Extensions as JSONExtensions, IJSONContributionRegistry } from 'vs/plat
 import { registerExternalAction, registerInternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 import { OpenLocalCmakeListAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/openLocalCmakeList';
 import { registerCMakeSchemas } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
-import { registerCMakeConfig } from 'vs/kendryte/vs/workbench/cmake/common/configFile';
 import { MaixCMakeBuildRunAction, MaixCMakeRunAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/runAction';
 import { ACTION_CATEGORY_BUILD_DEBUG } from 'vs/kendryte/vs/base/common/menu/cmake';
 import { MaixCMakeOpenLogAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/openLogAction';
@@ -55,9 +54,6 @@ registerExternalAction(category, OpenLocalCmakeListAction);
 registerCMakeSchemas((id, schema) => {
 	Registry.as<IJSONContributionRegistry>(JSONExtensions.JSONContribution).registerSchema(id, schema);
 });
-
-// config sections
-registerCMakeConfig();
 
 // open log
 registerInternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeOpenLogAction);

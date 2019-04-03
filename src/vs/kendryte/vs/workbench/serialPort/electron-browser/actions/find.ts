@@ -1,8 +1,7 @@
 import { ISerialMonitorControlService } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/outputWindowControlService';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { CONTEXT_IN_SERIAL_PORT_OUTPUT, SERIAL_MONITOR_ACTION_FOCUS_FIND_WIDGET } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { registerActionWithKey } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
-import { FocusTerminalFindWidgetAction } from 'vs/workbench/parts/terminal/electron-browser/terminalActions';
+import { FocusTerminalFindWidgetAction } from 'vs/workbench/contrib/terminal/browser/terminalActions';
 import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
 import { Action } from 'vs/base/common/actions';
 import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
@@ -20,10 +19,10 @@ export class SerialPortShowFindAction extends Action {
 		super(id, label, 'terminal-action octicon octicon-find');
 	}
 
-	public run(event?: any): TPromise<void> {
+	public run(event?: any): Promise<void> {
 		// console.log('!!! SerialPortShowFindAction');
 		this.serialMonitorControlService.focusFindWidget();
-		return TPromise.as(void 0);
+		return Promise.resolve(void 0);
 	}
 }
 

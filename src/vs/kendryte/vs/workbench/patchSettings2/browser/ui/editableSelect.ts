@@ -10,7 +10,8 @@ import { attachStyler, IInputBoxStyleOverrides, ISelectBoxStyleOverrides, IThema
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import * as ColorRegistry from 'vs/platform/theme/common/colorRegistry';
 import { Color } from 'vs/base/common/color';
-import { TPromise } from 'vs/base/common/winjs.base';
+import { selectBoxNames } from 'vs/kendryte/vs/base/browser/ui/selectBox';
+import { querySelector } from 'vs/kendryte/vs/base/browser/dom';
 
 export type SelectStyle =
 	'selectBackground' |
@@ -142,7 +143,7 @@ export class EditableSelectBox extends Widget implements IThemable {
 		}
 		dispose(this.input);
 		this.$input.innerHTML = '';
-		this.input = null;
+		delete this.input;
 	}
 
 	private disableInput(disable: boolean) {
@@ -155,7 +156,7 @@ export class EditableSelectBox extends Widget implements IThemable {
 
 	private createSelect() {
 		if (!this.select) {
-			this.select = new SelectBox(this.enum, undefined, this.contextViewService);
+			this.select = new SelectBox(this.enum.map(selectBoxNames), 0, this.contextViewService);
 			if (this.styleCache) {
 				this.select.style(this.styleCache);
 			}
@@ -175,10 +176,10 @@ export class EditableSelectBox extends Widget implements IThemable {
 				}
 			});
 			this.selectPlaceHolderEvent = addDisposableListener(this.$selectPlaceHolder, 'click', () => {
-				this.$select.querySelector('select').click();
+				querySelector(this.$select, 'select').click();
 			});
 		} else {
-			this.select.setOptions(this.enum);
+			this.select.setOptions(this.enum.map(selectBoxNames));
 		}
 		this.selectValue();
 	}
@@ -193,9 +194,9 @@ export class EditableSelectBox extends Widget implements IThemable {
 		this.$selectPlaceHolder.remove();
 
 		this.$select.innerHTML = '';
-		this.select = null;
-		this.$selectPlaceHolder = null;
-		this.selectPlaceHolderEvent = null;
+		delete this.select;
+		delete this.$selectPlaceHolder;
+		delete this.selectPlaceHolderEvent;
 	}
 
 	private selectValue() {
@@ -203,14 +204,10 @@ export class EditableSelectBox extends Widget implements IThemable {
 			return;
 		}
 		const selected = this.enum.indexOf(this._value);
-		if (selected === -1) {
-			this.select.select(undefined);
-		} else {
-			this.select.select(selected);
-		}
+		this.select.select(selected);
 	}
 
-	registerEnum(list: string[] | TPromise<string[]>) {
+	registerEnum(list: string[] | Promise<string[]>) {
 		if (Array.isArray(list)) {
 			this.enum = list.map(item => '' + item);
 

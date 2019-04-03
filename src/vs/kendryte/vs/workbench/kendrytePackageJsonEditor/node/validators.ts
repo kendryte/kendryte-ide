@@ -3,42 +3,42 @@ import { localize } from 'vs/nls';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { lstatSync } from 'fs';
 
-function msg(content: string, type: MessageType = MessageType.ERROR): IMessage {
+function msg(content: string, type: MessageType = MessageType.ERROR): IMessage | null {
 	return { content, type };
 }
 
-export function validateRequired(value: string): IMessage {
+export function validateRequired(value: string): IMessage | null {
 	if (!value) {
 		return msg(localize('error.empty', 'This is required'));
 	}
-	return undefined;
+	return null;
 }
 
-export function validateProjectName(value: string): IMessage {
+export function validateProjectName(value: string): IMessage | null {
 	if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
 		return msg(localize('error.project-name.invalid', 'Invalid project name'));
 	}
-	return undefined;
+	return null;
 }
 
-export function validateVersionString(value: string): IMessage {
+export function validateVersionString(value: string): IMessage | null {
 	if (!/^[0-9]+\.[0-9]+\.[0-9]+(?:-[a-z]+)?$/.test(value)) {
 		return msg(localize('error.version.invalid', 'Invalid version string, must be: x.y.z[-aaa]'));
 	}
-	return undefined;
+	return null;
 }
 
-export function validateUrl(value: string): IMessage {
+export function validateUrl(value: string): IMessage | null {
 	if (!value) {
-		return undefined;
+		return null;
 	}
 	if (!/^https?:\/\//.test(value)) {
 		return msg(localize('error.url.invalid', 'Invalid homepage url, must start with http(s)://'));
 	}
-	return undefined;
+	return null;
 }
 
-export function validateFolders(relativeTo: string, value: string): IMessage {
+export function validateFolders(relativeTo: string, value: string): IMessage | null {
 	const folders = value.split(/\n/g).filter(e => e.length > 0).map(p => p.trim().replace(/^[.\/\\]+/, ''));
 
 	for (const line of folders) {
@@ -52,18 +52,18 @@ export function validateFolders(relativeTo: string, value: string): IMessage {
 		}
 	}
 
-	return undefined;
+	return null;
 }
 
-export function validateSources(relativeTo: string, alue: string): IMessage {
+export function validateSources(relativeTo: string, alue: string): IMessage | null {
 	// const lines = value.split(/\n/g).filter(e => e.length > 0).map(p => p.trim().replace(/^[.\/\\]+/, ''));
 	// todo: uni match
-	return undefined;
+	return null;
 }
 
-export function validateFile(relativeTo: string, value: string): IMessage {
+export function validateFile(relativeTo: string, value: string): IMessage | null {
 	if (!value) {
-		return undefined;
+		return null;
 	}
 	const file = resolvePath(relativeTo, value);
 	try {
@@ -74,16 +74,16 @@ export function validateFile(relativeTo: string, value: string): IMessage {
 		return msg(localize('error.file.nf', 'Not found file: {0}', file), MessageType.WARNING);
 	}
 
-	return undefined;
+	return null;
 }
 
 const regDefs = /^[a-zA-Z_][a-zA-Z0-9_]+:(?:str|raw)=/;
 
-export function validateArgList(value: string): IMessage {
-	return undefined;
+export function validateArgList(value: string): IMessage | null {
+	return null;
 }
 
-export function validateDefinitions(value: string): IMessage {
+export function validateDefinitions(value: string): IMessage | null {
 	const lines = value.split(/\n/g).filter(e => e.length > 0);
 
 	for (const line of lines) {
@@ -91,12 +91,12 @@ export function validateDefinitions(value: string): IMessage {
 			return msg(localize('error.arg.list', 'Invalid line: {0}. Must match: {1}', line, regDefs.toString()));
 		}
 	}
-	return undefined;
+	return null;
 }
 
 const regKvs = /^[a-zA-Z0-9_]+=/;
 
-export function validateKeyValue(value: string): IMessage {
+export function validateKeyValue(value: string): IMessage | null {
 	const lines = value.split(/\n/g).filter(e => e.length > 0);
 
 	for (const line of lines) {
@@ -104,7 +104,7 @@ export function validateKeyValue(value: string): IMessage {
 			return msg(localize('error.arg.list', 'Invalid line: {0}. Must match: {1}', line, regKvs.toString()));
 		}
 	}
-	return undefined;
+	return null;
 }
 
 export function combineValidation(validation: (IInputValidator | IInputValidator[])): IInputValidator {
@@ -116,7 +116,7 @@ export function combineValidation(validation: (IInputValidator | IInputValidator
 					return ret;
 				}
 			}
-			return undefined;
+			return null;
 		};
 	} else {
 		return validation;

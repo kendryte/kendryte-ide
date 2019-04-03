@@ -2,16 +2,15 @@ import { createDecorator } from 'vs/platform/instantiation/common/instantiation'
 import { OutputXTerminal } from 'vs/kendryte/vs/workbench/serialPort/electron-browser/outputWindow';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IPanelService } from 'vs/workbench/services/panel/common/panelService';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { SERIAL_PANEL_ID } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 
 export interface ISerialMonitorControlService {
 	_serviceBrand: any;
 
-	copySelection();
+	copySelection(): void;
 
-	paste();
+	paste(): void;
 
 	clearScreen(): void;
 
@@ -60,9 +59,9 @@ class SerialMonitorControlService implements ISerialMonitorControlService {
 		});
 	}
 
-	private async ensure(): TPromise<void> {
+	private async ensure(): Promise<void> {
 		if (this.xterm) {
-			return TPromise.as(void 0);
+			return Promise.resolve(void 0);
 		}
 		try {
 			this.panelService.openPanel(SERIAL_PANEL_ID);
