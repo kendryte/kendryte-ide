@@ -51,7 +51,7 @@ export class SerialMonitorUIConfig {
 			...this.defaults,
 			...this._settings,
 		};
-		console.log('[serial][get] %O', ret);
+		// console.log('[serial][get] %O', ret);
 		return ret;
 	}
 

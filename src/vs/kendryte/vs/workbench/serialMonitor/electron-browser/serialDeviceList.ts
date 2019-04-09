@@ -103,6 +103,7 @@ export class SerialDeviceList extends Disposable {
 	updateList(list: SerialPortItem[]) {
 		list.forEach((item) => {
 			const entry = this.listData.entry(item.comName, (id) => {
+				// console.log('[serial][list] device attached: %s', id);
 				return new SerialMonitorData(id);
 			});
 
@@ -117,6 +118,7 @@ export class SerialDeviceList extends Disposable {
 			if (this.listData.getForce(key).hasOpen) {
 				continue;
 			}
+			// console.log('[serial][list] device removed: %s', key);
 			this.listData.delete(key);
 		}
 		this.refreshList();
@@ -131,7 +133,21 @@ export class SerialDeviceList extends Disposable {
 	}
 
 	private refreshList() {
-		this.listDataArray = Array.from(this.listData.values());
+		const matchPortName = /^([^0-9]+)([0-9]+)$/;
+		this.listDataArray = Array.from(this.listData.values()).sort((a, b) => {
+			const m1 = matchPortName.exec(a.id);
+			const m2 = matchPortName.exec(b.id);
+			if (!m1 || !m2) {
+				return a.id > b.id ? 1 : -1;
+			}
+			if (m1[1] > m2[1]) {
+				return 1;
+			} else if (m1[1] < m2[1]) {
+				return -1;
+			} else {
+				return parseInt(m1[2]) - parseInt(m2[2]);
+			}
+		});
 
 		if (this._currentSelect) {
 			const index = this.listDataArray.indexOf(this._currentSelect);
@@ -149,7 +165,7 @@ export class SerialDeviceList extends Disposable {
 
 	public async openPort(id: string, config: ISerialMonitorSettings) {
 		const portData = this.listData.getReq(id);
-		console.log('[serial] open port: ', config);
+		// console.log('[serial] open port: ', config);
 
 		portData.loadOptions(config);
 

@@ -230,10 +230,12 @@ export class SerialLoader extends Disposable {
 
 		return p.then(() => {
 			this.logger.info('   - got hello.');
+		}, (e) => {
+			this.logger.error('   - no hello:' + (e ? e.message || e : 'no message'));
 		});
 	}
 
-	async flashBoot(address = PROGRAM_BASE) {
+	async executeProgram(address = PROGRAM_BASE) {
 		this.logger.info('Boot from memory: 0x%s.', address.toString(16));
 		const buff = Buffer.allocUnsafe(8);
 		buff.writeUInt32LE(address, 0);
@@ -244,7 +246,7 @@ export class SerialLoader extends Disposable {
 		await this.flashBootGreeting();
 	}
 
-	async flashInitFlash() {
+	async selectFlashTarget() {
 		this.logger.info('Select flash: %s', FlashTargetType[this._targetType]);
 
 		const buff = Buffer.allocUnsafe(8);
@@ -278,17 +280,17 @@ export class SerialLoader extends Disposable {
 		this.logger.info(' - Complete.');
 	}
 
-	async flashMain(report: SubProgress) {
+	async flashMainProgram(report: SubProgress) {
 		this.logger.info('Downloading program to flash');
 		await this.writeFlashChunks(this.applicationStream, 0, this.applicationStreamSize, report);
 		this.logger.info(' - Complete.');
 	}
 
-	flashRebootNormal() {
+	rebootNormalMode() {
 		return this.serialPortService.sendReboot(this.device);
 	}
 
-	async flashGreeting() {
+	async rebootISPMode() {
 		this.logger.info('Greeting');
 		try {
 			this.logger.info('try reboot as KD233');
@@ -447,7 +449,7 @@ export class SerialLoader extends Disposable {
 		]);
 
 		report.message('greeting...');
-		await Promise.race<any>([this.abortedPromise, this.flashGreeting()]);
+		await Promise.race<any>([this.abortedPromise, this.rebootISPMode()]);
 		report.next();
 
 		report.message('flashing bootloader...');
@@ -455,7 +457,7 @@ export class SerialLoader extends Disposable {
 		report.next();
 
 		report.message('booting up bootloader...');
-		await Promise.race<any>([this.abortedPromise, this.flashBoot()]);
+		await Promise.race<any>([this.abortedPromise, this.executeProgram()]);
 		report.message('update baudrate...');
 		if (this._baudRate !== CHIP_BAUDRATE) {
 			await Promise.race<any>([this.abortedPromise, this.changeBaudRate()]);
@@ -463,14 +465,14 @@ export class SerialLoader extends Disposable {
 		report.next();
 
 		report.message('flashing program init...');
-		await Promise.race<any>([this.abortedPromise, this.flashInitFlash()]);
+		await Promise.race<any>([this.abortedPromise, this.selectFlashTarget()]);
 		report.next();
 
 		report.message('flashing program...');
-		await Promise.race<any>([this.abortedPromise, this.flashMain(report)]);
+		await Promise.race<any>([this.abortedPromise, this.flashMainProgram(report)]);
 
 		report.message('reboot to run the program...');
-		await Promise.race<any>([this.abortedPromise, this.flashRebootNormal()]);
+		await Promise.race<any>([this.abortedPromise, this.rebootNormalMode()]);
 
 		this.logger.info('finished.');
 	}

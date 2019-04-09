@@ -83,9 +83,9 @@ export class MaixSerialRebootAction extends Action {
 			},
 			(report) => {
 				if (target === 'isp') {
-					return loader.flashGreeting();
+					return loader.rebootISPMode();
 				} else {
-					return loader.flashRebootNormal();
+					return loader.rebootNormalMode();
 				}
 			},
 			() => loader.abort(new Error('user cancel')),

@@ -48,7 +48,7 @@ abstract class UserInputStream extends Transform {
 			}
 			super.unpipe();
 		}
-		// console.warn('pipe to ', instance);
+		// console.warn('[%s] pipe to ', this.constructor.name, instance);
 		this.instance = instance;
 		return super.pipe(instance);
 	}
@@ -58,6 +58,7 @@ abstract class UserInputStream extends Transform {
 			console.warn('duplicate unpipe');
 			return this;
 		}
+		// console.warn('[%s] unpipe to ', this.constructor.name, destination);
 		delete this.instance;
 		return super.unpipe();
 	}
@@ -71,7 +72,7 @@ export class UserTypeInputStream extends UserInputStream {
 		data = data.replace(/\r/g, this.ending);
 
 		const buff = Buffer.from(data, this.encoding);
-		// console.log('transform type: %s (%s)', buff, this.encoding);
+		console.log('transform type: %s (%s)', buff, this.encoding);
 		this.push(buff);
 
 		callback();
@@ -122,7 +123,7 @@ export class UserLineInputStream extends UserInputStream {
 		}
 
 		const buff = Buffer.from(data + this.ending, this.encoding);
-		// console.log('transform string: %s (%s)', buff, this.encoding);
+		console.log('transform string: %s (%s)', buff, this.encoding);
 		this.push(buff);
 
 		callback();

@@ -36,6 +36,7 @@ import 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaContribution'
 import 'vs/kendryte/vs/workbench/fpioaConfig/common/packagings/includeAllContribution';
 // Serial Devices
 import 'vs/kendryte/vs/services/serialPort/node/serialPortService';
+import 'vs/kendryte/vs/services/serialPort/common/configContribution';
 import 'vs/kendryte/vs/services/serialPort/common/reloadAction';
 // Serial Upload
 import 'vs/kendryte/vs/workbench/serialUpload/node/uploadContribution';

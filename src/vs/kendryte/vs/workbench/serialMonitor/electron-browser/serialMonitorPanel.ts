@@ -296,6 +296,7 @@ class SerialMonitorPanel extends Panel {
 	}
 
 	private render() {
+		this.list.refreshCurrent();
 		const current = this.list.currentSelect;
 
 		this._updateEnable(current.hasOpen);

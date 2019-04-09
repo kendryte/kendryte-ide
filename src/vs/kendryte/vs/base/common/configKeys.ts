@@ -2,6 +2,7 @@ import { localize } from 'vs/nls';
 import { ACTION_CATEGORY_BUILD_DEBUG } from 'vs/kendryte/vs/base/common/menu/cmake';
 
 export const CONFIG_CATEGORY = {
+	KENDRYTE: { id: 'kendryte', category: localize('kendryte', 'Kendryte') },
 	MAIN: { id: 'build-deploy', category: ACTION_CATEGORY_BUILD_DEBUG },
 	BUILD: { id: 'build', category: localize('build', 'Build'), parent: 'build-deploy' },
 	ID_DEBUG: { id: 'debug', category: localize('debug', 'Debug'), parent: 'build-deploy' },
@@ -65,3 +66,7 @@ export const CONFIG_DESCRIPTION_CUSTOM = localize('debug.custom.desc', 'custom o
 //
 export const CONFIG_KEY_DEFAULT_SERIAL_BAUDRATE = 'serialport.monitor.baudrate';
 export const CONFIG_KEY_FLASH_SERIAL_BAUDRATE = 'serialport.flash.baudrate';
+
+//
+export const CONFIG_KEY_FILTER_EMPTY_DEVICES = 'serialport.common.filter-empty';
+export const CONFIG_DESCRIPTION_FILTER_EMPTY_DEVICES = localize('debug.common.filter-empty.desc', 'Filter out device without productID');

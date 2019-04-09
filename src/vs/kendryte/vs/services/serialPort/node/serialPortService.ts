@@ -14,6 +14,8 @@ import { IStorageService, StorageScope } from 'vs/platform/storage/common/storag
 import { IKendryteStatusControllerService } from 'vs/kendryte/vs/workbench/bottomBar/common/type';
 import { promisify } from 'util';
 import { ExtendMap } from 'vs/kendryte/vs/base/common/extendMap';
+import { CONFIG_KEY_FILTER_EMPTY_DEVICES } from 'vs/kendryte/vs/base/common/configKeys';
+import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 
 const SELECT_STORAGE_KEY = 'serial-port.last-selected';
 
@@ -45,6 +47,7 @@ class SerialPortService implements ISerialPortService {
 	constructor(
 		@IInstantiationService instantiationService: IInstantiationService,
 		@ILifecycleService lifecycleService: ILifecycleService,
+		@IConfigurationService private configurationService: IConfigurationService,
 		@ILogService private logService: ILogService,
 		@IStorageService private storageService: IStorageService,
 		@IQuickInputService private quickInputService: IQuickInputService,
@@ -80,6 +83,12 @@ class SerialPortService implements ISerialPortService {
 		this.logService.debug('Refreshing COM device list...');
 		const last = this.memSerialDevices;
 		this.memSerialDevices = await SerialPort.list();
+		const filter = this.configurationService.getValue<boolean>(CONFIG_KEY_FILTER_EMPTY_DEVICES) || false;
+		if (filter) {
+			this.memSerialDevices = this.memSerialDevices.filter((e) => {
+				return !!e.productId;
+			});
+		}
 		Object.freeze(this.memSerialDevices);
 		this.logService.trace('COM device list: ', this.memSerialDevices);
 

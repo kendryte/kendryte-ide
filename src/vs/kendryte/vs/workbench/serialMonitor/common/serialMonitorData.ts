@@ -25,7 +25,7 @@ export class SerialMonitorData {
 	public loadOptions(optData: ISerialMonitorSettings) {
 		limitedExtend(this._localOptions, optData);
 		limitedExtend(this._portOptions, optData);
-		console.log('[serial] loadOptions(%O) -> %O %O', optData, this._localOptions, this._portOptions);
+		// console.log('[serial] loadOptions(%O) -> %O %O', optData, this._localOptions, this._portOptions);
 	}
 
 	public dumpOptions(): ISerialMonitorSettings {
