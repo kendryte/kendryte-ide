@@ -1,6 +1,6 @@
 import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE, CMakeInternalVariants, CurrentItem, ICMakeSelection, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
+import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { ChildProcess, spawn } from 'child_process';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { exists, fileExists, mkdirp, readFile, rename, rimraf, writeFile } from 'vs/base/node/pfs';
@@ -51,7 +51,6 @@ import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/c
 import { CONTEXT_CMAKE_SEEMS_OK, CONTEXT_CMAKE_WORKING } from 'vs/kendryte/vs/workbench/cmake/common/contextKey';
 import { CMakeError, CMakeErrorType } from 'vs/kendryte/vs/workbench/cmake/common/errors';
 import { DeferredPromise } from 'vs/kendryte/vs/base/common/deferredPromise';
-import { registerCMakeConfig } from 'vs/kendryte/vs/workbench/cmake/common/configFile';
 
 export class CMakeService implements ICMakeService {
 	_serviceBrand: any;
@@ -109,9 +108,6 @@ export class CMakeService implements ICMakeService {
 
 		lifecycleService.onWillShutdown(e => {
 			return e.join(this.shutdown(true));
-		});
-		lifecycleService.when(LifecyclePhase.Ready).then(() => {
-			registerCMakeConfig();
 		});
 
 		this.reloadSettings();
@@ -493,11 +489,11 @@ export class CMakeService implements ICMakeService {
 		}
 		this._CMakeProjectExists = true;
 
-		await this.generateCMakeListsFile();
-		this.logger.info('  - CMake project is exists.');
-
 		this.setTarget('');
 		this.setVariant('');
+
+		await this.generateCMakeListsFile();
+		this.logger.info('  - CMake project is exists.');
 	}
 
 	private get cmakeLists() {
@@ -556,7 +552,12 @@ export class CMakeService implements ICMakeService {
 
 	public configure(): Promise<void> {
 		this.cmakeWorkingContextKey.set(true);
-		return this._configure().finally(() => {
+		return this._configure().then(() => {
+			this._onCMakeProjectChange.fire(null);
+		}, (e) => {
+			this._onCMakeProjectChange.fire(e);
+			throw e;
+		}).finally(() => {
 			this.cmakeWorkingContextKey.set(false);
 		});
 	}

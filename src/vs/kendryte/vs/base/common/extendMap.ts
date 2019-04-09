@@ -4,11 +4,10 @@ export interface MapLike<V> {
 
 export class ExtendMap<K, V> extends Map<K, V> {
 	public getReq(id: K): V {
-		const v = this.get(id);
-		if (v) {
-			return v;
+		if (this.has(id)) {
+			return this.get(id) as V;
 		} else {
-			throw new Error(`Unknown key ${id} in map.`);
+			throw new Error(`Unknown key {${id}} in map.`);
 		}
 	}
 
@@ -25,5 +24,9 @@ export class ExtendMap<K, V> extends Map<K, V> {
 			this.set(id, nv);
 			return nv;
 		}
+	}
+
+	public getForce(key: K) {
+		return this.get(key) as V;
 	}
 }

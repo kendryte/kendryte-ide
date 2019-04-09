@@ -1,7 +1,7 @@
 import { Action } from 'vs/base/common/actions';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IProgressService2, ProgressLocation } from 'vs/platform/progress/common/progress';
-import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
+import { ISerialPortService } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { ACTION_ID_MAIX_SERIAL_BOOT, ACTION_LABEL_MAIX_SERIAL_BOOT } from 'vs/kendryte/vs/base/common/menu/cmake';
 import { CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';

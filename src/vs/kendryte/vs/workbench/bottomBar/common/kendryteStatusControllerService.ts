@@ -5,7 +5,7 @@ import { MyStatusBarItem } from 'vs/kendryte/vs/workbench/bottomBar/common/mySta
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { DisposableSet } from 'vs/kendryte/vs/base/common/lifecycle/disposableSet';
 import { StackArray } from 'vs/kendryte/vs/base/common/lifecycle/stackArray';
-import { IDisposable } from 'vs/base/common/lifecycle';
+import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 
 interface DisposeStatusBarItem extends MyStatusBarItem {
 	__originalDispose: Function;
@@ -17,6 +17,7 @@ export class KendryteStatusControllerService implements IDisposable, IKendryteSt
 	private readonly instanceList: DisposableSet<MyStatusBarItem>;
 	private readonly messageButtonMap = new Map<string, MyStatusBarItem>();
 	private readonly messageIdStack = new StackArray<string>();
+	private readonly toDispose: IDisposable[];
 
 	constructor(
 		@ILifecycleService lifecycleService: ILifecycleService,
@@ -39,9 +40,10 @@ export class KendryteStatusControllerService implements IDisposable, IKendryteSt
 			});
 		});
 
+		this.toDispose = [changeEvent];
+
 		lifecycleService.onShutdown(() => {
-			this.instanceList.dispose();
-			changeEvent.dispose();
+			this.dispose();
 		});
 
 		lifecycleService.when(LifecyclePhase.Ready).then(() => {
@@ -124,5 +126,6 @@ export class KendryteStatusControllerService implements IDisposable, IKendryteSt
 	dispose() {
 		this.instanceList.dispose();
 		this.counter.clear();
+		dispose(this.toDispose);
 	}
 }

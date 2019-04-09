@@ -1,68 +1,68 @@
 import * as st from 'vs/workbench/contrib/preferences/browser/settingsTree';
-import {
-	SettingsTreeGroupChild,
-	SettingsTreeGroupElement,
-	SettingsTreeNewExtensionsElement,
-	SettingsTreeSettingElement,
-} from 'vs/workbench/contrib/preferences/browser/settingsTreeModels';
-import { IDisposable } from 'vs/base/common/lifecycle';
-import { FieldInject } from 'vs/kendryte/vs/workbench/patchSettings2/browser/typedFieldElementBase';
-import { ITree } from 'vs/base/parts/tree/browser/tree';
+import { SETTINGS_COMPLEX_TEMPLATE_ID } from 'vs/workbench/contrib/preferences/browser/settingsTree';
+import { SettingsTreeGroupChild } from 'vs/workbench/contrib/preferences/browser/settingsTreeModels';
+import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { IContextMenuService, IContextViewService } from 'vs/platform/contextview/browser/contextView';
+import { getSettingsExtendTypes, SettingsElementTypes } from 'vs/kendryte/vs/workbench/patchSettings2/browser/typedFieldElementBase';
 
-const OriginalClass = st.SettingsTreeDelegate;
+const OriginalSettingsTreeDelegate = st.SettingsTreeDelegate;
+const OriginalSettingTreeRenderers = st.SettingTreeRenderers;
 
-interface IDisposableTemplate {
-	toDispose: IDisposable[];
+class SettingTreeRenderersPatch extends OriginalSettingTreeRenderers {
+	constructor(
+		@IInstantiationService _instantiationService: IInstantiationService,
+		@IContextMenuService _contextMenuService: IContextMenuService,
+		@IContextViewService _contextViewService: IContextViewService,
+	) {
+		super(_instantiationService, _contextMenuService, _contextViewService);
+		for (const item of getSettingsExtendTypes().values()) {
+			this.allRenderers.push(item.renderer(_instantiationService, this.settingActions));
+		}
+	}
 }
 
-class SettingsTreeDelegatePatch extends OriginalClass {
-	protected injectors: FieldInject<any, any>[];
-
-	getTemplateId(element: SettingsTreeGroupElement | SettingsTreeSettingElement | SettingsTreeNewExtensionsElement): string {
-		for (const item of this.injectors) {
-			const id = item.detect(element);
-			if (id) {
-				return id;
-			}
-		}
-		return super.getTemplateId(element);
+class SettingsTreeDelegatePatch extends OriginalSettingsTreeDelegate {
+	constructor() {
+		super();
+		debugger;
 	}
 
-	renderTemplate(tree: ITree, templateId: string, parent: HTMLElement): any {
-		for (const item of this.injectors) {
-			const template = item.template(tree, templateId, parent);
-			if (template) {
-				return template;
-			}
-		}
-		// return super.renderTemplate(tree, templateId, parent);
-	}
+	getTemplateId(element: SettingsElementTypes): string {
+		const id = super.getTemplateId(element);
 
-	renderElement(tree: ITree, element: SettingsTreeSettingElement, templateId: string, template: any): void {
-		for (const item of this.injectors) {
-			const hit = item.entry(tree, element, templateId, template);
-			if (hit) {
-				return;
+		if (id === SETTINGS_COMPLEX_TEMPLATE_ID) {
+			const newId = this.getExtendedTemplate(element);
+			if (newId) {
+				return newId;
 			}
 		}
-		// super.renderElement(tree, element, templateId, template);
-	}
 
-	disposeTemplate(tree: ITree, templateId: string, template: IDisposableTemplate): void {
-		for (const item of this.injectors) {
-			const hit = item.dispose(tree, templateId, template);
-			if (hit) {
-				return;
-			}
-		}
-		// return super.disposeTemplate(tree, templateId, template);
+		return id;
 	}
 
 	getHeight(element: SettingsTreeGroupChild): number {
 		return super.getHeight(element);
 	}
+
+	hasDynamicHeight(element: SettingsElementTypes): boolean {
+		return super.hasDynamicHeight(element);
+	}
+
+	setDynamicHeight(element: SettingsTreeGroupChild, height: number): void {
+		return super.setDynamicHeight(element, height);
+	}
+
+	private getExtendedTemplate(element: SettingsElementTypes): string | void {
+		debugger;
+		for (const item of getSettingsExtendTypes().values()) {
+			if (item.is(element)) {
+				return item.templateId;
+			}
+		}
+	}
 }
 
 Object['assign'](st, {
 	SettingsTreeDelegate: SettingsTreeDelegatePatch,
+	SettingTreeRenderers: SettingTreeRenderersPatch,
 });

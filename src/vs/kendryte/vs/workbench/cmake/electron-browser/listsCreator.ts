@@ -15,6 +15,7 @@ import { normalizeArray } from 'vs/kendryte/vs/base/common/normalizeArray';
 import { resolve } from 'path';
 import { async as fastGlobAsync, EntryItem } from 'fast-glob';
 import { ExtendMap } from 'vs/kendryte/vs/base/common/extendMap';
+import { localize } from 'vs/nls';
 
 export const CMAKE_LIST_GENERATED_WARNING = '# [NEVER REMOVE THIS LINE] WARNING: this file is generated, please edit ' + CMAKE_CONFIG_FILE_NAME + ' file instead.';
 const iternalSourceCodeFiles: string[] = [
@@ -141,7 +142,7 @@ export class CMakeListsCreator {
 		this.logger.info('reading file: ' + file);
 		const { json: current, warnings }: IJSONResult<ICompileInfo> = await this.nodeFileSystemService.readJsonFile<ICompileInfo>(file).catch((e) => {
 			this.logger.error(e);
-			throw new Error(`Failed to parse dependency, did you installed them?`);
+			throw new Error(localize('cmake.dependency', 'Failed to parse dependency, did you installed them?'));
 		});
 		if (warnings.length) {
 			this.logger.warn(`(${warnings.length}) warning(s) during parse json`);

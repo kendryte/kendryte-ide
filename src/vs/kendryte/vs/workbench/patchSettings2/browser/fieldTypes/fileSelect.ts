@@ -1,24 +1,19 @@
-import { FieldContext, FieldInject, FieldTemplate } from 'vs/kendryte/vs/workbench/patchSettings2/browser/typedFieldElementBase';
-import { ITree } from 'vs/base/parts/tree/browser/tree';
-import { attachButtonStyler, attachInputBoxStyler } from 'vs/platform/theme/common/styler';
-import { Button } from 'vs/base/browser/ui/button/button';
-import { IThemeService } from 'vs/platform/theme/common/themeService';
-import { ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
-import { $, append } from 'vs/base/browser/dom';
-import { InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
-import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
-import { IWindowsService } from 'vs/platform/windows/common/windows';
 import 'vs/css!vs/kendryte/vs/workbench/patchSettings2/browser/ui/fileSelect';
-import { ISettingItemTemplate } from 'vs/kendryte/vs/workbench/config/common/type';
-import { SettingsTreeSettingElement } from 'vs/workbench/contrib/preferences/browser/settingsTreeModels';
-import { SettingValueType } from 'vs/workbench/services/preferences/common/preferences';
+import { ISettingItemTemplate } from 'vs/workbench/contrib/preferences/browser/settingsTree';
+import { SettingsTreeElement, SettingsTreeSettingElement } from 'vs/workbench/contrib/preferences/browser/settingsTreeModels';
+import { AbstractSettingRenderer } from 'vs/workbench/contrib/preferences/browser/settingsTree';
+import { ITreeNode } from 'vs/base/browser/ui/tree/tree';
+import { Event } from 'vs/base/common/event';
+import { SettingsElementTypes, SettingsExtendType } from 'vs/kendryte/vs/workbench/patchSettings2/browser/typedFieldElementBase';
+import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
 
+/*
 interface Template {
 	$input: InputBox;
 }
 
-export class FileInject extends FieldInject<string, Template> {
-	ID = 'settings.file.template';
+export class FileInject implements ISettingsExtendType {
+	public readonly templateId = 'settings.file.template';
 
 	private contextViewService: IContextViewService;
 	private themeService: IThemeService;
@@ -89,5 +84,36 @@ export class FileInject extends FieldInject<string, Template> {
 
 	_detect(element: SettingsTreeSettingElement) {
 		return element.setting.type === 'file' || element.setting.type === 'folder';
+	}
+
+	public is(element: SettingsElementTypes): boolean {
+		return false;
+	}
+}
+*/
+export class FileInject extends SettingsExtendType {
+	ctor = new SyncDescriptor<FileSelectRenderer>(FileSelectRenderer).ctor;
+	templateId = 'settings.file.template';
+
+	public is(element: SettingsElementTypes): boolean {
+		debugger;
+		return element.valueType as any === 'file';
+	}
+}
+
+class FileSelectRenderer extends AbstractSettingRenderer {
+	onDidChangeTwistieState: Event<SettingsTreeElement>;
+
+	disposeElement(element: ITreeNode<SettingsTreeElement, never>, index: number, templateData: any, dynamicHeightProbing?: boolean): void {
+	}
+
+	renderTwistie(element: SettingsTreeElement, twistieElement: HTMLElement): void {
+	}
+
+	renderValue(dataElement: SettingsTreeSettingElement, template: ISettingItemTemplate, onChange: (value: any) => void): void {
+	}
+
+	get templateId(): string {
+		return '';
 	}
 }

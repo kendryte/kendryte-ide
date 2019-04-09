@@ -19,9 +19,8 @@ import { ISPFlashPacker } from 'vs/kendryte/vs/workbench/serialUpload/node/ispFl
 import { ChunkBuffer } from 'vs/kendryte/vs/workbench/serialUpload/node/chunkBuffer';
 import { createCipheriv, createHash } from 'crypto';
 import { drainStream } from 'vs/kendryte/vs/base/common/drainStream';
-import { SerialPortBaseBinding } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortType';
+import { ISerialPortService, SerialPortBaseBinding } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
-import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
 import { throwNull } from 'vs/kendryte/vs/base/common/assertNotNull';
 import { CHIP_BAUDRATE, PROGRAM_BASE } from 'vs/kendryte/vs/workbench/serialUpload/common/chipDefine';
 import { memoize } from 'vs/base/common/decorators';
@@ -218,12 +217,20 @@ export class SerialLoader extends Disposable {
 			received = true;
 		});
 
+		let i = 0;
 		while (!received) {
+			this.logger.info(' - Greeting %s.', ++i);
 			this.send(ISPOperation.ISP_FLASH_GREETING, Buffer.alloc(3));
 			await timeout(300);
+
+			if (i === 20) {
+				throw new Error('ISP application no response.');
+			}
 		}
 
-		return p;
+		return p.then(() => {
+			this.logger.info('   - got hello.');
+		});
 	}
 
 	async flashBoot(address = PROGRAM_BASE) {
@@ -449,6 +456,7 @@ export class SerialLoader extends Disposable {
 
 		report.message('booting up bootloader...');
 		await Promise.race<any>([this.abortedPromise, this.flashBoot()]);
+		report.message('update baudrate...');
 		if (this._baudRate !== CHIP_BAUDRATE) {
 			await Promise.race<any>([this.abortedPromise, this.changeBaudRate()]);
 		}

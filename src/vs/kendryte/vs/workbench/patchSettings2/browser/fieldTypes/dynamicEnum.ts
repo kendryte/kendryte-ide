@@ -1,8 +1,8 @@
-import { FieldContext, FieldInject, FieldTemplate } from 'vs/kendryte/vs/workbench/patchSettings2/browser/typedFieldElementBase';
+import { FieldContext, FieldInjectBak, FieldTemplate } from 'vs/kendryte/vs/workbench/patchSettings2/browser/typedFieldElementBase';
 import { createDecorator, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { getDynamicEnum, isDynamicEnum, ISettingItemTemplate } from 'vs/kendryte/vs/workbench/config/common/type';
 import { ITree } from 'vs/base/parts/tree/browser/tree';
-import { attachEditableSelectBoxStyler, EditableSelectBox } from 'vs/kendryte/vs/workbench/patchSettings2/browser/ui/editableSelect';
+import { attachEditableSelectBoxStyler, EditableSelectBox } from 'vs/kendryte/vs/base/browser/ui/editableSelect';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { SettingsTreeSettingElement } from 'vs/workbench/contrib/preferences/browser/settingsTreeModels';
@@ -13,7 +13,7 @@ interface Template {
 	input: EditableSelectBox;
 }
 
-export class DynamicEnumInject extends FieldInject<string, Template> {
+export class DynamicEnumInject extends FieldInjectBak<string, Template> {
 	ID = 'settings.dynamic-enum.template';
 
 	private contextViewService: IContextViewService;
@@ -55,7 +55,7 @@ export class DynamicEnumInject extends FieldInject<string, Template> {
 		}) as EnumProviderService<string>;
 
 		template.input.value = element.value;
-		template.input.registerEnum(service.getValues());
+		template.input.registerEnum(service.getDynamicEnum());
 	}
 
 	_detect(element: SettingsTreeSettingElement) {

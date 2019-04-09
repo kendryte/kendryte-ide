@@ -4,7 +4,34 @@ import { dispose } from 'vs/base/common/lifecycle';
 import { IInstantiationService, ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 import { ISettingItemTemplate } from 'vs/kendryte/vs/workbench/config/common/type';
 import { SettingValueType } from 'vs/workbench/services/preferences/common/preferences';
+import { IAction } from 'vs/base/common/actions';
+import { AbstractSettingRenderer } from 'vs/workbench/contrib/preferences/browser/settingsTree';
+import { SyncDescriptor1 } from 'vs/platform/instantiation/common/descriptors';
 
+export type SettingsElementTypes = SettingsTreeSettingElement;
+const settingsExtendType = new Map<string, SettingsExtendType>();
+
+export function getSettingsExtendTypes() {
+	return settingsExtendType;
+}
+
+export function registerSettingsExtendType(ctor: new() => SettingsExtendType) {
+	const item = new ctor();
+	settingsExtendType.set(item.templateId, item);
+}
+
+export abstract class SettingsExtendType {
+	abstract readonly templateId: string;
+	protected abstract readonly ctor: SyncDescriptor1<IAction[], AbstractSettingRenderer>;
+
+	abstract is(element: SettingsElementTypes): boolean;
+
+	public renderer(instantiationService: IInstantiationService, settingActions: IAction[]) {
+		return instantiationService.createInstance(this.ctor, settingActions);
+	}
+}
+
+///////////////////
 export interface FieldContext {
 	context?: SettingsTreeSettingElement;
 }
@@ -14,7 +41,7 @@ export type FieldTemplate<T, EX = void> = ISettingItemTemplate<T> & EX & FieldCo
 class SettingsRenderer {
 }
 
-export abstract class FieldInject<T, EX extends object> {
+export abstract class FieldInjectBak<T, EX extends object> {
 	constructor(
 		protected ref: SettingsRenderer,
 		@IInstantiationService protected instantiationService: IInstantiationService,

@@ -1,4 +1,3 @@
-import { Duplex } from 'stream';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { garbageEvent } from 'vs/kendryte/vs/workbench/serialUpload/node/bufferConsts';
 import { Emitter } from 'vs/base/common/event';
@@ -50,14 +49,14 @@ export class StreamChain<IT, OT> extends Disposable implements NodeJS.WritableSt
 	private readonly _onData: Emitter<OT> = new Emitter<OT>();
 	public readonly onData = this._onData.event;
 
-	protected readonly _lastChild: Duplex;
+	protected readonly _lastChild: NodeJS.ReadWriteStream;
 
 	constructor(
-		protected streams: Duplex[],
+		protected streams: NodeJS.ReadWriteStream[],
 	) {
 		super();
 
-		let prev: Duplex;
+		let prev: NodeJS.ReadWriteStream;
 		streams.forEach((parser) => {
 			if (prev) {
 				prev.pipe(parser);
@@ -97,7 +96,7 @@ export class StreamChain<IT, OT> extends Disposable implements NodeJS.WritableSt
 	}
 
 	write(data: IT | Buffer | string) {
-		return this.streams[0].write(data, 'binary');
+		return this.streams[0].write(data as any, 'binary');
 	}
 
 	public get writable() {

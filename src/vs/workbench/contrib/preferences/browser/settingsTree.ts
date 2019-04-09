@@ -176,7 +176,7 @@ interface IDisposableTemplate {
 	toDispose: IDisposable[];
 }
 
-interface ISettingItemTemplate<T = any> extends IDisposableTemplate {
+export interface ISettingItemTemplate<T = any> extends IDisposableTemplate {
 	onChange?: (value: T) => void;
 
 	context?: SettingsTreeSettingElement;
@@ -229,7 +229,7 @@ const SETTINGS_NUMBER_TEMPLATE_ID = 'settings.number.template';
 const SETTINGS_ENUM_TEMPLATE_ID = 'settings.enum.template';
 const SETTINGS_BOOL_TEMPLATE_ID = 'settings.bool.template';
 const SETTINGS_EXCLUDE_TEMPLATE_ID = 'settings.exclude.template';
-const SETTINGS_COMPLEX_TEMPLATE_ID = 'settings.complex.template';
+export const SETTINGS_COMPLEX_TEMPLATE_ID = 'settings.complex.template';
 const SETTINGS_NEW_EXTENSIONS_TEMPLATE_ID = 'settings.newExtensions.template';
 const SETTINGS_ELEMENT_TEMPLATE_ID = 'settings.group.template';
 
@@ -1029,7 +1029,7 @@ export class SettingTreeRenderers {
 
 	readonly allRenderers: ITreeRenderer<SettingsTreeElement, never, any>[];
 
-	private readonly settingActions: IAction[];
+	protected readonly settingActions: IAction[];
 
 	constructor(
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,

@@ -15,11 +15,6 @@ import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClo
 import * as electron from 'electron';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IRelaunchService } from 'vs/kendryte/vs/platform/vscode/common/relaunchService';
-import { kendryteConfigRegisterSerialPort } from 'vs/kendryte/vs/workbench/serialPort/common/configContribution';
-import { kendryteConfigRegisterOpenOCD } from 'vs/kendryte/vs/platform/openocd/common/openocd';
-import { kendryteConfigRegisterJTag } from 'vs/kendryte/vs/platform/openocd/common/jtag';
-import { kendryteConfigRegisterFTDI } from 'vs/kendryte/vs/platform/openocd/common/ftdi';
-import { kendryteConfigRegisterOCDCustom } from 'vs/kendryte/vs/platform/openocd/common/custom';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { Extensions as WorkbenchExtensions, IWorkbenchContribution, IWorkbenchContributionsRegistry } from 'vs/workbench/common/contributions';
 
@@ -44,14 +39,8 @@ class KendryteContribution implements IWorkbenchContribution {
 		if (!process.env['VSCODE_PORTABLE']) { // for safe
 			throw new Error('----- ERROR -----\n bootstrap.js is not ok. VSCODE_PORTABLE not set.\n----- ERROR -----');
 		}
-	}
 
-	async systemSettings() {
-		kendryteConfigRegisterSerialPort();
-		kendryteConfigRegisterOpenOCD();
-		kendryteConfigRegisterJTag();
-		kendryteConfigRegisterFTDI();
-		kendryteConfigRegisterOCDCustom();
+		this.run();
 	}
 
 	async extensions() {
@@ -71,8 +60,6 @@ class KendryteContribution implements IWorkbenchContribution {
 
 	async _run() {
 		await this.lifecycleService.when(LifecyclePhase.Ready);
-
-		await this.systemSettings();
 
 		const hasPermInPackages = await this.nodeFileSystemService.tryWriteInFolder(this.nodePathService.getPackagesPath('test-perm'));
 		const installingRoot = this.nodePathService.getSelfControllingRoot();
@@ -117,7 +104,7 @@ class KendryteContribution implements IWorkbenchContribution {
 		this.logService.info('{update} active complete');
 	}
 
-	async run() {
+	run() {
 		this.lifecycleService.when(LifecyclePhase.Eventually).then(() => {
 			this.logService.info('{update} connecting to updater...');
 			this.relaunchService.connect().then(() => {
@@ -127,7 +114,7 @@ class KendryteContribution implements IWorkbenchContribution {
 			});
 		});
 
-		return this._run().catch((e) => {
+		this._run().catch((e) => {
 			console.error(e);
 			this.notificationService.notify({
 				severity: Severity.Error,

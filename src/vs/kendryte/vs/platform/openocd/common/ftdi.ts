@@ -1,4 +1,4 @@
-import { registerConfiguration } from 'vs/kendryte/vs/platform/config/common/extendWithCategory';
+import { registerConfiguration } from 'vs/kendryte/vs/platform/config/common/registry';
 import {
 	CONFIG_CATEGORY,
 	CONFIG_DESCRIPTION_FTDI_EXTRA,
@@ -29,41 +29,39 @@ const defaultValue: FtdiConfigExtra = {
 	extra: '',
 };
 
-export function kendryteConfigRegisterFTDI() {
-	registerConfiguration({
-		id: 'ftdi',
-		category: CONFIG_CATEGORY.DEBUG_FTDI.id,
-		properties: {
-			[CONFIG_KEY_FTDI_SPEED]: {
-				description: CONFIG_DESCRIPTION_FTDI_SPEED,
-				type: 'string',
-				default: defaultValue.speed,
-			},
-			[CONFIG_KEY_FTDI_VID_PID]: {
-				description: CONFIG_DESCRIPTION_FTDI_VID_PID,
-				type: 'string',
-				pattern: '^[0-9a-fA-F]{4} [0-9a-fA-F]{4}$',
-				default: defaultValue.vidPid,
-			},
-			[CONFIG_KEY_FTDI_LAYOUT]: {
-				description: CONFIG_DESCRIPTION_FTDI_LAYOUT,
-				type: 'string',
-				pattern: '^[0-9a-fA-F]{4} [0-9a-fA-F]{4}$',
-				default: defaultValue.layoutInit,
-			},
-			[CONFIG_KEY_FTDI_TDO_FE]: {
-				description: CONFIG_DESCRIPTION_FTDI_TDO_FE,
-				type: 'boolean',
-				default: defaultValue.tdoSampleFallingEdge,
-			},
-			[CONFIG_KEY_FTDI_EXTRA]: {
-				description: CONFIG_DESCRIPTION_FTDI_EXTRA,
-				type: 'string',
-				default: defaultValue.extra,
-			},
+registerConfiguration({
+	id: 'ftdi',
+	category: CONFIG_CATEGORY.DEBUG_FTDI.id,
+	properties: {
+		[CONFIG_KEY_FTDI_SPEED]: {
+			description: CONFIG_DESCRIPTION_FTDI_SPEED,
+			type: 'string',
+			default: defaultValue.speed,
 		},
-	});
-}
+		[CONFIG_KEY_FTDI_VID_PID]: {
+			description: CONFIG_DESCRIPTION_FTDI_VID_PID,
+			type: 'string',
+			pattern: '^[0-9a-fA-F]{4} [0-9a-fA-F]{4}$',
+			default: defaultValue.vidPid,
+		},
+		[CONFIG_KEY_FTDI_LAYOUT]: {
+			description: CONFIG_DESCRIPTION_FTDI_LAYOUT,
+			type: 'string',
+			pattern: '^[0-9a-fA-F]{4} [0-9a-fA-F]{4}$',
+			default: defaultValue.layoutInit,
+		},
+		[CONFIG_KEY_FTDI_TDO_FE]: {
+			description: CONFIG_DESCRIPTION_FTDI_TDO_FE,
+			type: 'boolean',
+			default: defaultValue.tdoSampleFallingEdge,
+		},
+		[CONFIG_KEY_FTDI_EXTRA]: {
+			description: CONFIG_DESCRIPTION_FTDI_EXTRA,
+			type: 'string',
+			default: defaultValue.extra,
+		},
+	},
+});
 
 export function createDefaultFtdiConfig(port: number, config: FtdiConfigExtra) {
 	const [vid1, vid2] = config.vidPid.split(/\s/);

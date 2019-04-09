@@ -3,8 +3,8 @@ import { ServiceIdentifier } from 'vs/platform/instantiation/common/instantiatio
 
 export interface EnumProviderService<T> {
 	// get enum selection list
-	getValues(): Promise<T[]> | T[];
-	onChange: Event<T[]>;
+	getDynamicEnum(): Promise<T[]> | T[];
+	onDynamicEnumChange: Event<T[]>;
 }
 
 export interface EnumProviderConfig<T> {
