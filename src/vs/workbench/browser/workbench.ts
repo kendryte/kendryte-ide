@@ -193,13 +193,16 @@ export class Workbench extends Layout {
 			// TODO@Ben legacy file service
 			const fileService = accessor.get(IFileService) as any;
 			if (typeof fileService.setLegacyService === 'function') {
-				fileService.setLegacyService(accessor.get(ILegacyFileService));
+				try {
+					fileService.setLegacyService(accessor.get(ILegacyFileService));
+				} catch (error) {
+					//ignore, legacy file service might not be registered
+				}
 			}
 
 			// TODO@Sandeep debt around cyclic dependencies
 			const configurationService = accessor.get(IConfigurationService) as any;
-			if (typeof configurationService.acquireFileService === 'function') {
-				configurationService.acquireFileService(fileService);
+			if (typeof configurationService.acquireInstantiationService === 'function') {
 				configurationService.acquireInstantiationService(instantiationService);
 			}
 
@@ -385,7 +388,7 @@ export class Workbench extends Layout {
 
 		// Restore Zen Mode
 		if (this.state.zenMode.restore) {
-			this.toggleZenMode(true, true);
+			this.toggleZenMode(false, true);
 		}
 
 		// Restore Editor Center Mode

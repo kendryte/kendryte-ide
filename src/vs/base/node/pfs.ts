@@ -15,7 +15,6 @@ import { CancellationToken } from 'vs/base/common/cancellation';
 import { isRootOrDriveLetter } from 'vs/base/common/extpath';
 import { generateUuid } from 'vs/base/common/uuid';
 import { normalizeNFC } from 'vs/base/common/normalization';
-import { toDisposable, Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { encode, encodeStream } from 'vs/base/node/encoding';
 
 export enum RimRafMode {
@@ -671,39 +670,4 @@ export async function mkdirp(path: string, mode?: number, token?: CancellationTo
 		// Any other error
 		return Promise.reject(error);
 	}
-}
-
-export function watch(path: string, onChange: (type: string, path?: string) => void, onError: (error: string) => void): IDisposable {
-	try {
-		const watcher = fs.watch(path);
-
-		watcher.on('change', (type, raw) => {
-			let file: string | undefined;
-			if (raw) { // https://github.com/Microsoft/vscode/issues/38191
-				file = raw.toString();
-				if (platform.isMacintosh) {
-					// Mac: uses NFD unicode form on disk, but we want NFC
-					// See also https://github.com/nodejs/node/issues/2165
-					file = normalizeNFC(file);
-				}
-			}
-
-			onChange(type, file);
-		});
-
-		watcher.on('error', (code: number, signal: string) => onError(`Failed to watch ${path} for changes (${code}, ${signal})`));
-
-		return toDisposable(() => {
-			watcher.removeAllListeners();
-			watcher.close();
-		});
-	} catch (error) {
-		fs.exists(path, exists => {
-			if (exists) {
-				onError(`Failed to watch ${path} for changes (${error.toString()})`);
-			}
-		});
-	}
-
-	return Disposable.None;
 }

@@ -30,7 +30,7 @@ import { endsWith } from 'vs/base/common/strings';
 
 export interface IWindowCreationOptions {
 	state: IWindowState;
-	extensionDevelopmentPath?: string;
+	extensionDevelopmentPath?: string | string[];
 	isExtensionTestHost?: boolean;
 }
 
@@ -217,9 +217,11 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 		return !!this.config.extensionTestsPath;
 	}
 
-	get extensionDevelopmentPath(): string | undefined {
+	/*
+	get extensionDevelopmentPaths(): string | string[] | undefined {
 		return this.config.extensionDevelopmentPath;
 	}
+	*/
 
 	get config(): IWindowConfiguration {
 		return this.currentConfig;
@@ -315,6 +317,9 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 		this._win.webContents.session.webRequest.onBeforeSendHeaders({ urls }, (details, cb) => {
 			this.marketplaceHeadersPromise.then(headers => {
 				const requestHeaders = objects.assign(details.requestHeaders, headers);
+				if (!this.configurationService.getValue('extensions.disableExperimentalAzureSearch')) {
+					requestHeaders['Cookie'] = `${requestHeaders['Cookie'] ? requestHeaders['Cookie'] + ';' : ''}EnableExternalSearchForVSCode=true`;
+				}
 				cb({ cancel: false, requestHeaders });
 			});
 		});
