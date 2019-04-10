@@ -5,6 +5,7 @@ import { ILoadOptions, ISaveOptions } from 'vs/workbench/services/textfile/commo
 import { EditorModel } from 'vs/workbench/common/editor';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IFuncPinMap, ISavedJson } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
+import { VSBuffer } from 'vs/base/common/buffer';
 
 export class FpioaModel extends EditorModel {
 	private content: ISavedJson;
@@ -32,11 +33,7 @@ export class FpioaModel extends EditorModel {
 
 		this.saveOnGoing = Promise.resolve(void 0).then(() => {
 			// console.log(JSON.stringify(this.content));
-			return this.fileService.updateContent(this.uri, this.binary(), {
-				encoding: 'utf8',
-				overwriteEncoding: true,
-				mkdirp: true,
-			});
+			return this.fileService.writeFile(this.uri, VSBuffer.fromString(this.binary()));
 		}).then((result: IFileStat) => {
 			delete this.saveOnGoing;
 			if (result.etag) {

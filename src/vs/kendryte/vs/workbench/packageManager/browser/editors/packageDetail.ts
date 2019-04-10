@@ -82,7 +82,6 @@ export class PackageDetailEditor extends BaseEditor {
 
 		this.webviewElement = this.instantiationService.createInstance(
 			WebviewElement,
-			this.layoutService.getContainer(Parts.EDITOR_PART),
 			{
 				allowSvgs: false,
 			},
@@ -90,6 +89,7 @@ export class PackageDetailEditor extends BaseEditor {
 				allowScripts: false,
 			},
 		);
+		this.webviewElement.mountTo(this.layoutService.getContainer(Parts.EDITOR_PART));
 		this._register(this.webviewElement);
 
 		append(root, $('hr'));

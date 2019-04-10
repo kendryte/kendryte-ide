@@ -20,12 +20,13 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { DisplayPackageDetailAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/displayPackageDetailAction';
 import { IPackageRegistryService } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { IWindowService, IWindowsService } from 'vs/platform/windows/common/windows';
+import { IWindowService } from 'vs/platform/windows/common/windows';
 import { URI } from 'vs/base/common/uri';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { CMakeProjectTypes } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { selectBoxNames } from 'vs/kendryte/vs/base/browser/ui/selectBox';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
+import { IFileDialogService } from 'vs/platform/dialogs/common/dialogs';
 
 const TEMPLATE_ID = 'remote-packages';
 
@@ -67,7 +68,7 @@ class ListRenderer implements IPagedRenderer<IRemotePackageInfo, ITemplateData> 
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IPackageRegistryService private readonly packageRegistryService: IPackageRegistryService,
 		@INotificationService private readonly notificationService: INotificationService,
-		@IWindowsService private readonly windowsService: IWindowsService,
+		@IFileDialogService private readonly fileDialogService: IFileDialogService,
 		@IWindowService private readonly windowService: IWindowService,
 		@IWorkspaceContextService private readonly workspaceService: IWorkspaceContextService,
 	) {
@@ -209,23 +210,23 @@ class ListRenderer implements IPagedRenderer<IRemotePackageInfo, ITemplateData> 
 
 	private doInstall(currentElement: MExt & IRemotePackageInfo, selectedVersion: string) {
 		if (currentElement.type === CMakeProjectTypes.example || currentElement.type === CMakeProjectTypes.executable) {
-			return this.windowsService.showOpenDialog(this.windowService.getCurrentWindowId(), {
+			return this.fileDialogService.showOpenDialog({
 				title: 'Select download location',
-				properties: ['openDirectory'],
-				message: 'a new folder called "' + currentElement.name + '" will be create',
+				canSelectFiles: false,
+				canSelectFolders: true,
+				canSelectMany: false,
 			}).then((p) => {
 				if (!p || !p[0]) {
 					return '';
 				}
 
-				return this.packageRegistryService.installExample(currentElement, selectedVersion, p[0]);
+				return this.packageRegistryService.installExample(currentElement, selectedVersion, p[0].fsPath);
 			}).then((path) => {
 				if (path) {
 					const isEmptyWorkspace = this.workspaceService.getWorkbenchState() === WorkbenchState.EMPTY;
 					this.windowService.openWindow([
 						{
-							uri: URI.file(path),
-							typeHint: 'file',
+							folderUri: URI.file(path),
 						},
 					], { forceNewWindow: !isEmptyWorkspace });
 				}

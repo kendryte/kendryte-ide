@@ -39,7 +39,7 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 	}
 
 	isMeFirst(): Thenable<boolean> {
-		const windowId = this.windowService.getCurrentWindowId();
+		const windowId = this.windowService.windowId;
 		return this.mainChannel.call<boolean>(IPC_ID_IS_ME_FIRST, windowId);
 	}
 
