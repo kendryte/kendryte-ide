@@ -24,7 +24,7 @@ export interface INativeOpenDialogOptions {
 	windowId?: number;
 	forceNewWindow?: boolean;
 
-	dialogOptions?: OpenDialogOptions;
+	defaultPath?: string;
 
 	telemetryEventName?: string;
 	telemetryExtraData?: ITelemetryData;
@@ -180,7 +180,6 @@ export interface IMessageBoxResult {
 export interface IOpenSettings {
 	forceNewWindow?: boolean;
 	forceReuseWindow?: boolean;
-	forceOpenWorkspaceAsFile?: boolean;
 	diffMode?: boolean;
 	addMode?: boolean;
 	noRecentEntry?: boolean;
@@ -188,13 +187,35 @@ export interface IOpenSettings {
 	args?: ParsedArgs;
 }
 
-export type URIType = 'file' | 'folder';
+export type IURIToOpen = IWorkspaceToOpen | IFolderToOpen | IFileToOpen;
 
-export interface IURIToOpen {
-	uri: URI;
-	typeHint?: URIType;
+export interface IWorkspaceToOpen {
+	workspaceUri: URI;
 	label?: string;
 }
+
+export interface IFolderToOpen {
+	folderUri: URI;
+	label?: string;
+}
+
+export interface IFileToOpen {
+	fileUri: URI;
+	label?: string;
+}
+
+export function isWorkspaceToOpen(uriToOpen: IURIToOpen): uriToOpen is IWorkspaceToOpen {
+	return !!uriToOpen['workspaceUri'];
+}
+
+export function isFolderToOpen(uriToOpen: IURIToOpen): uriToOpen is IFolderToOpen {
+	return !!uriToOpen['folderUri'];
+}
+
+export function isFileToOpen(uriToOpen: IURIToOpen): uriToOpen is IFileToOpen {
+	return !!uriToOpen['fileUri'];
+}
+
 
 export interface IWindowService {
 
@@ -205,8 +226,8 @@ export interface IWindowService {
 
 	readonly hasFocus: boolean;
 
-	getConfiguration(): IWindowConfiguration;
-	getCurrentWindowId(): number;
+	readonly windowId: number;
+
 	pickFileFolderAndOpen(options: INativeOpenDialogOptions): Promise<void>;
 	pickFileAndOpen(options: INativeOpenDialogOptions): Promise<void>;
 	pickFolderAndOpen(options: INativeOpenDialogOptions): Promise<void>;
