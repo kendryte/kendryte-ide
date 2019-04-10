@@ -80,12 +80,12 @@ export class BGATableRender extends AbstractTableRender<CellRender> {
 		});
 	}
 
-	private createCellData(x: number, y: number): [HTMLTableDataCellElement, CellRender] {
+	private createCellData(x: number, y: number): [HTMLTableDataCellElement, CellRender | undefined] {
 		const pinPos = stringifyPin(this.chip.ROW, { x, y });
 		const ioNum = this.chip.geometry.IOPinPlacement[pinPos];
 
 		const $td = $('td') as HTMLTableDataCellElement;
-		let cell: CellRender;
+		let cell: CellRender | undefined;
 
 		addClasses($td, grid(y, 'row'), grid(x, 'col'), 'pin');
 

@@ -1,5 +1,4 @@
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { DownloadID, INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
 import { INotificationHandle, INotificationService, Severity } from 'vs/platform/notification/common/notification';
@@ -10,9 +9,9 @@ import { ILogService } from 'vs/platform/log/common/log';
 export interface IDownloadWithProgressService {
 	_serviceBrand: any;
 
-	download(url: string, target: string, logger?: ILogService, cancel?: () => void): TPromise<string>;
-	downloadTemp(url: string, logger?: ILogService, cancel?: () => void): TPromise<string>;
-	continue(title: string, id: DownloadID, logger?: ILogService, onDidCancel?: () => void): TPromise<string>;
+	download(url: string, target: string, logger?: ILogService, cancel?: () => void): Promise<string>;
+	downloadTemp(url: string, logger?: ILogService, cancel?: () => void): Promise<string>;
+	continue(title: string, id: DownloadID, logger?: ILogService, onDidCancel?: () => void): Promise<string>;
 }
 
 export const IDownloadWithProgressService = createDecorator<IDownloadWithProgressService>('downloadWithProgressService');
@@ -26,7 +25,7 @@ class DownloadWithProgressService implements IDownloadWithProgressService {
 	) {
 	}
 
-	private async handle(title: string, onDidCancel: () => void, cb: () => Thenable<DownloadID>): TPromise<string> {
+	private async handle(title: string, cb: () => Thenable<DownloadID>, onDidCancel?: () => void): Promise<string> {
 		let handle: INotificationHandle;
 
 		if (onDidCancel) {
@@ -64,7 +63,7 @@ class DownloadWithProgressService implements IDownloadWithProgressService {
 		let last = 0;
 
 		this.nodeDownloadService.onProgress(downloadId)((v) => {
-			if (v.total) {
+			if (v.total && v.current) {
 				handle.progress.total(v.total);
 				handle.progress.worked(v.current - last);
 				last = v.current;
@@ -73,7 +72,7 @@ class DownloadWithProgressService implements IDownloadWithProgressService {
 				last = 0;
 			}
 
-			handle.updateMessage(`downloading file: ${speed(v.current)}\n${v.message} - ${title}`);
+			handle.updateMessage(`downloading file: ${speed(v.current || NaN)}\n${v.message} - ${title}`);
 		});
 
 		return await this.nodeDownloadService.waitResultFile(downloadId).then((r) => {
@@ -85,22 +84,22 @@ class DownloadWithProgressService implements IDownloadWithProgressService {
 		}, (e) => handleError(e));
 	}
 
-	download(url: string, target: string, logger?: ILogService, onDidCancel?: () => void): TPromise<string> {
-		return this.handle(url, onDidCancel, () => {
+	download(url: string, target: string, logger?: ILogService, onDidCancel?: () => void): Promise<string> {
+		return this.handle(url, () => {
 			return this.nodeDownloadService.download(url, target, true, logger);
-		});
+		}, onDidCancel);
 	}
 
-	downloadTemp(url: string, logger?: ILogService, onDidCancel?: () => void): TPromise<string> {
-		return this.handle(url, onDidCancel, () => {
+	downloadTemp(url: string, logger?: ILogService, onDidCancel?: () => void): Promise<string> {
+		return this.handle(url, () => {
 			return this.nodeDownloadService.downloadTemp(url, true, logger);
-		});
+		}, onDidCancel);
 	}
 
-	continue(title: string, id: DownloadID, logger?: ILogService, onDidCancel?: () => void): TPromise<string> {
-		return this.handle(title, onDidCancel, () => {
+	continue(title: string, id: DownloadID, logger?: ILogService, onDidCancel?: () => void): Promise<string> {
+		return this.handle(title, () => {
 			return this.nodeDownloadService.start(id, logger).then(() => id);
-		});
+		}, onDidCancel);
 	}
 }
 

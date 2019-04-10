@@ -12,12 +12,12 @@ export interface IPinFuncMap {
 export type IFuncIOMap = Map</*pinFuncID*/string, /*io*/number>;
 
 export interface ISavedJson {
-	selectedChip: string;
+	selectedChip?: string;
 	funcPinMap: IFuncPinMap;
 }
 
 export interface PinFuncSetEvent {
-	pin: string; // IPin
+	pin: string | undefined; // IPin
 	func: string; // name of func
 	triggerBy: 'pin' | 'func';
 }
@@ -44,7 +44,7 @@ export interface ContextMenuData {
 	pointer: { x: number; y: number; };
 	pinName: string;
 	ioNum?: number;
-	currentFunctionId: string;
+	currentFunctionId: string | null;
 }
 
 export const ID_NO_FUNCTION = null;

@@ -1,15 +1,7 @@
 import { deepClone } from 'vs/base/common/objects';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { BaseAny } from 'vs/kendryte/vs/workbench/fpioaConfig/common/baseAny';
-import {
-	IChipPackagingCalculated,
-	IChipPackagingDefinition,
-	IFuncPin,
-	IFunc,
-	IPin,
-	IPinRange,
-	pickKeys,
-} from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingTypes';
+import { IChipPackagingCalculated, IChipPackagingDefinition, IFunc, IFuncPin, IPin, IPinRange, pickKeys } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingTypes';
 import { normalizePin } from 'vs/kendryte/vs/workbench/fpioaConfig/common/builder';
 
 const FirstPin: IPin = 1;
@@ -21,7 +13,7 @@ export enum Extensions {
 export interface IChipPackagingRegistry {
 	addPackaging(packaging: IChipPackagingDefinition): void;
 
-	getByName(name: string): IChipPackagingCalculated;
+	getByName(name: string): IChipPackagingCalculated | undefined;
 
 	getList(): IChipPackagingCalculated[];
 }
@@ -30,7 +22,7 @@ export function registryChipPackaging(packaging: IChipPackagingDefinition) {
 	Registry.as<IChipPackagingRegistry>(Extensions.ChipPackaging).addPackaging(packaging);
 }
 
-export function getChipPackaging(name: string): IChipPackagingCalculated | null;
+export function getChipPackaging(name: string | undefined): IChipPackagingCalculated | undefined;
 export function getChipPackaging(): IChipPackagingCalculated[];
 
 export function getChipPackaging(name?: string) {

@@ -107,7 +107,7 @@ export function BGA_IO_GEOMETRY(pinMap: string): IChipGeometry {
 		}
 		lock = true;
 
-		let [, letter, line] = LineStruct.exec(allLines[row]);
+		let [, letter, line] = LineStruct.exec(allLines[row]) as string[];
 		letter = letter.toUpperCase();
 		lastLine = letter;
 

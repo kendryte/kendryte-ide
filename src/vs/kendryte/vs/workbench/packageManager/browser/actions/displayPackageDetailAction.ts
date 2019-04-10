@@ -1,5 +1,4 @@
 import { localize } from 'vs/nls';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { Action } from 'vs/base/common/actions';
 import { PACKAGE_MANAGER_ACTION_ID_OPEN_PACKAGE } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 import { IRemotePackageInfo } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
@@ -21,7 +20,7 @@ export class DisplayPackageDetailAction extends Action {
 		super(id, label);
 	}
 
-	public run(event: IRemotePackageInfo | ILibraryProject): TPromise<void> {
+	public run(event: IRemotePackageInfo | ILibraryProject): Promise<void> {
 		const input = this.instantiationService.createInstance(PackageDetailCompletionInput, event.name, event.type);
 		return this.editorService.openEditor(input, { pinned: true })
 			.then(() => void (0));

@@ -1,11 +1,10 @@
-import { TPromise } from 'vs/base/common/winjs.base';
 import { Event } from 'vs/base/common/event';
 import { ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 
 export interface EnumProviderService<T> {
 	// get enum selection list
-	getValues(): TPromise<T[]> | T[];
-	onChange: Event<T[]>;
+	getDynamicEnum(): Promise<T[]> | T[];
+	onDynamicEnumChange: Event<T[]>;
 }
 
 export interface EnumProviderConfig<T> {

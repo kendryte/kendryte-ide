@@ -72,7 +72,15 @@ exports.uriFromPath = function (_path) {
 		pathName = '/' + pathName;
 	}
 
-	return encodeURI('file://' + pathName).replace(/#/g, '%23');
+	/** @type {string} */
+	let uri;
+	if (process.platform === 'win32' && pathName.startsWith('//')) { // specially handle Windows UNC paths
+		uri = encodeURI('file:' + pathName);
+	} else {
+		uri = encodeURI('file://' + pathName);
+	}
+
+	return uri.replace(/#/g, '%23');
 };
 //#endregion
 
@@ -111,6 +119,36 @@ exports.writeFile = function (file, content) {
 			}
 			resolve();
 		});
+	});
+};
+
+/**
+ * @param {string} dir
+ * @returns {Promise<string>}
+ */
+function mkdir(dir) {
+	const fs = require('fs');
+
+	return new Promise((c, e) => fs.mkdir(dir, err => (err && err.code !== 'EEXIST') ? e(err) : c(dir)));
+}
+
+/**
+ * @param {string} dir
+ * @returns {Promise<string>}
+ */
+exports.mkdirp = function mkdirp(dir) {
+	const path = require('path');
+
+	return mkdir(dir).then(null, err => {
+		if (err && err.code === 'ENOENT') {
+			const parent = path.dirname(dir);
+
+			if (parent !== dir) { // if not arrived at root
+				return mkdirp(parent).then(() => mkdir(dir));
+			}
+		}
+
+		throw err;
 	});
 };
 //#endregion
@@ -183,7 +221,7 @@ exports.configurePortable = function () {
 		}
 
 		if (process.platform === 'darwin') {
-			return path.dirname(path.dirname(path.dirname(appRoot)));
+			// return path.dirname(path.dirname(path.dirname(appRoot)));
 		}
 
 		return path.dirname(path.dirname(appRoot));
@@ -194,12 +232,7 @@ exports.configurePortable = function () {
 			return process.env['VSCODE_PORTABLE'];
 		}
 
-		if (process.platform === 'win32' || process.platform === 'linux') {
-			return path.join(getApplicationPath(), 'data');
-		}
-
-		const portableDataName = product.portable || `${product.applicationName}-portable-data`;
-		return path.join(getApplicationPath(), portableDataName);
+		return path.join(path.dirname(path.dirname(getApplicationPath())), 'UserData/latest');
 	}
 	
 	debugger;
@@ -242,20 +275,15 @@ exports.avoidMonkeyPatchFromAppInsights = function () {
 //#endregion
 
 function kendryteExtend(){
-	try {
-		// @ts-ignore
-		require('source-map-support/register');
-	} catch (e) {
-		process.stderr.isTTY && console.error('ignored:', e.message);
-	}
+	process.stderr.isTTY && console.error('bootstrap: kendryte-extend');
+	
 	try {
 		// @ts-ignore
 		global.electron = require('electron');
 	} catch (e) {
-		process.stderr.isTTY && console.error('ignored:', e.message);
+		process.stderr.isTTY && console.error('failed to set global.electron for debug:', e.message);
 	}
 	
-	process.stderr.isTTY && console.error('bootstrap: kendryte-extend');
 	if (process.type === 'render') {
 		require('electron').app.once('ready', () => {
 			setTimeout(() => {
@@ -264,5 +292,12 @@ function kendryteExtend(){
 				process.title = title || 'KendryteIDE-render';
 			}, 1000);
 		});
+	} else {
+		try {
+			// @ts-ignore
+			require('source-map-support/register');
+		} catch (e) {
+			process.stderr.isTTY && console.error('ignored:', e.message);
+		}
 	}
 }

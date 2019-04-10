@@ -23,8 +23,8 @@ export class FpioaLeftPanel extends Disposable implements IView {
 	minimumSize: number = 280;
 	maximumSize: number = Infinity;
 
-	private readonly _onChipChange = new Emitter<string>();
-	readonly onChipChange: Event<string> = this._onChipChange.event;
+	private readonly _onChipChange = new Emitter<string | undefined>();
+	readonly onChipChange = this._onChipChange.event;
 
 	private readonly _onSetPinFunc = new Emitter<PinFuncSetEvent>();
 	readonly onSetPinFunc: Event<PinFuncSetEvent> = this._onSetPinFunc.event;
@@ -64,8 +64,6 @@ export class FpioaLeftPanel extends Disposable implements IView {
 			{
 				identityProvider: SimpleIdProvider<IFpioaLeftListEntry>(),
 				ariaLabel: localize('settingsListLabel', 'Settings'),
-				focusOnMouseDown: false,
-				selectOnMouseDown: false,
 				keyboardSupport: false,
 				mouseSupport: false,
 			},
@@ -95,16 +93,26 @@ export class FpioaLeftPanel extends Disposable implements IView {
 		});
 	}
 
-	setCurrentChip(chipName: string) {
+	setCurrentChip(chipName: string | undefined) {
 		if (this.chipName === chipName) {
 			return;
 		}
 		// console.warn('new chip selected:', chipName);
-		this.chipName = chipName;
+		if (chipName) {
+			this.chipName = chipName;
+		} else {
+			delete this.chipName;
+		}
 
 		this.list.splice(0, 1, [{ id: `##${TEMPLATE_ID.CHIP_SELECT}`, templateId: TEMPLATE_ID.CHIP_SELECT, selected: chipName }]);
 		if (chipName) {
-			this.changeList(getChipPackaging(chipName));
+			const chip = getChipPackaging(chipName);
+			if (chip) {
+				this.changeList(chip);
+			} else {
+				this.funcMapListItemRender.notifyPinMapChange({});
+				this.destroyList();
+			}
 		} else {
 			this.funcMapListItemRender.notifyPinMapChange({});
 			this.destroyList();
@@ -116,7 +124,10 @@ export class FpioaLeftPanel extends Disposable implements IView {
 		const newList: (IListGroupEntry | IListFuncMapEntry)[] = [];
 
 		chip.usableFunctions.forEach(({ funcBaseId: funName, ios, description }) => {
-			newList.push({ id: funName.toUpperCase(), templateId: TEMPLATE_ID.FUNC_MAP_GROUP, description });
+			newList.push({
+				id: funName.toUpperCase(), templateId: TEMPLATE_ID.FUNC_MAP_GROUP,
+				description: description || '',
+			});
 
 			ios.forEach(({ funcId, funcNumber, description, funcIdFull }) => {
 				let currentPin = this.getExistsFuncPin(funcIdFull);

@@ -7,8 +7,13 @@ import { Emitter } from 'vs/base/common/event';
 
 const properties = ['text', 'command', 'tooltip', 'color', 'arguments', 'showBeak', 'align', 'position', 'contextKe'];
 
+export interface IContextKeyObject {
+	expr: ContextKeyExpr;
+	list: Set<string>;
+}
+
 export class MyStatusBarItem implements IStatusButtonData, IStatusButtonMethod {
-	private _entry: IDisposable;
+	private _entry?: IDisposable;
 	private _visibleState: boolean = false;
 	private _isDisposed = false;
 
@@ -20,8 +25,7 @@ export class MyStatusBarItem implements IStatusButtonData, IStatusButtonMethod {
 	@get_set() public showBeak: boolean;
 	@get_set() public align: StatusbarAlignment;
 	@get_set() public position: number;
-	private _contextKey: ContextKeyExpr;
-	private _contextKeyList: Set<string>;
+	private _contextKey: IContextKeyObject | null;
 
 	private readonly _beforeDispose = new Emitter<void>();
 	public readonly onBeforeDispose = this._beforeDispose.event;
@@ -32,19 +36,20 @@ export class MyStatusBarItem implements IStatusButtonData, IStatusButtonMethod {
 	}
 
 	get contextKeyList() {
-		return this._contextKeyList;
+		return this._contextKey ? this._contextKey.list : null;
 	}
 
-	get contextKey(): ContextKeyExpr {
-		return this._contextKey;
+	getContextKey(): IContextKeyObject | null {
+		return this._contextKey ? this._contextKey : null;
 	}
 
-	set contextKey(v: ContextKeyExpr) {
+	set contextKey(v: ContextKeyExpr | null) {
 		if (v) {
-			this._contextKeyList = new Set(v.keys());
-			this._contextKey = v;
+			this._contextKey = {
+				expr: v,
+				list: new Set(v.keys()),
+			};
 		} else {
-			this._contextKeyList = null;
 			this._contextKey = null;
 		}
 	}
@@ -89,9 +94,9 @@ export class MyStatusBarItem implements IStatusButtonData, IStatusButtonMethod {
 				showBeak: this.showBeak,
 				arguments: this.arguments,
 			}, this.align, this.position);
-		} else {
+		} else if (this._entry) {
 			this._entry.dispose();
-			this._entry = null;
+			delete this._entry;
 		}
 
 		return lastState;

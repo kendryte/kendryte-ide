@@ -1,4 +1,3 @@
-import { TPromise } from 'vs/base/common/winjs.base';
 import { Action } from 'vs/base/common/actions';
 import { IPackageRegistryService } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 import { IRemotePackageInfo } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
@@ -26,9 +25,9 @@ export class InstallDependencyAction extends Action {
 		super(id, label);
 	}
 
-	public run(event?: any): TPromise<void> {
+	public run(event?: any): Promise<void> {
 		if (!this.instantiationService.invokeFunction(assumeWorkbench)) {
-			return TPromise.as(null);
+			return Promise.resolve();
 		}
 		return this.packageRegistryService.installAll();
 	}
@@ -50,16 +49,16 @@ export class InstallSingleDependencyAction extends Action {
 		);
 	}
 
-	public async run(event?: any): TPromise<void> {
+	public async run(event?: any): Promise<void> {
 		if (!this.instantiationService.invokeFunction(assumeWorkbench)) {
-			return TPromise.as(null);
+			return Promise.resolve();
 		}
-		let version: string;
+		let version: string | undefined = undefined;
 		if (this.selection) {
 			const sel = await this.quickInputService.pick(this.packageInfo.versions.map((v) => {
 				let relInfo: string = '';
 				try {
-					const d = new Date(v.releaseDate);
+					const d = new Date(v.releaseDate || NaN);
 					relInfo = 'Released at ' + d.toLocaleString();
 				} catch (e) {
 				}

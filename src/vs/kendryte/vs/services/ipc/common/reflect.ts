@@ -5,7 +5,7 @@ function getOwnMethods(o: any) {
 			continue;
 		}
 		const desc = Object.getOwnPropertyDescriptor(o, prop);
-		if (typeof desc.value === 'function') {
+		if (desc && typeof desc.value === 'function') {
 			ret.push(prop);
 		}
 	}

@@ -1,6 +1,6 @@
 import { ISPError, ISPOperation } from 'vs/kendryte/vs/workbench/serialUpload/node/bufferConsts';
 import { Transform } from 'stream';
-import { TPromise } from 'vs/base/common/winjs.base';
+import { DATA_LEN_WRITE_MEMORTY } from 'vs/kendryte/vs/platform/open/common/chipConst';
 
 export class ISPMemoryPacker extends Transform {
 	private _currentAddress: number;
@@ -9,7 +9,7 @@ export class ISPMemoryPacker extends Transform {
 	constructor(
 		protected readonly baseAddress: number,
 		protected readonly length: number,
-		protected readonly callback: (readBytes: number) => TPromise<any>,
+		protected readonly callback: (readBytes: number) => Promise<any>,
 	) {
 		super({ objectMode: true });
 		this._currentAddress = baseAddress;
@@ -28,6 +28,10 @@ export class ISPMemoryPacker extends Transform {
 	}
 
 	_transform(data: Buffer, encoding: string, callback: Function) {
+		if (data.length > DATA_LEN_WRITE_MEMORTY) { // TODO
+			throw new TypeError('ISP Memory can only handle ' + DATA_LEN_WRITE_MEMORTY + 'bytes chunk data.');
+		}
+
 		this.processed += data.length;
 
 		const writeHeader = Buffer.allocUnsafe(8);
@@ -58,7 +62,7 @@ export class ISPMemoryPacker extends Transform {
 	public finishPromise() {
 		return new Promise((resolve, reject) => {
 			this.once('error', err => reject(err));
-			this.once('close', _ => resolve());
+			this.once('close', () => resolve());
 		});
 	}
 }

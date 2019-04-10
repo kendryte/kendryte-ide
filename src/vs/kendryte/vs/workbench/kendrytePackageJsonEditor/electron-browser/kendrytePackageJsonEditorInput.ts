@@ -9,7 +9,6 @@ import { URI } from 'vs/base/common/uri';
 import { CMAKE_LIBRARY_FOLDER_NAME } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { localize } from 'vs/nls';
 import { KendrytePackageJsonEditorModel } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/node/kendrytePackageJsonEditorModel';
-import { TPromise } from 'vs/base/common/winjs.base';
 
 export class KendrytePackageJsonEditorInput extends EditorInput {
 	public static readonly ID: string = KENDRYTE_PACKAGE_JSON_EDITOR_INPUT_ID;
@@ -40,16 +39,16 @@ export class KendrytePackageJsonEditorInput extends EditorInput {
 		return this._dirty;
 	}
 
-	confirmSave(): TPromise<ConfirmResult> {
-		return TPromise.wrap(ConfirmResult.DONT_SAVE);
+	confirmSave(): Promise<ConfirmResult> {
+		return Promise.resolve(ConfirmResult.DONT_SAVE);
 	}
 
-	save(): TPromise<boolean> {
-		return TPromise.as(true);
+	save(): Promise<boolean> {
+		return Promise.resolve(true);
 	}
 
-	revert(options?: IRevertOptions): TPromise<boolean> {
-		return TPromise.as(true);
+	revert(options?: IRevertOptions): Promise<boolean> {
+		return Promise.resolve(true);
 	}
 
 	getName(): string {
@@ -118,10 +117,10 @@ export class KendrytePackageJsonEditorInput extends EditorInput {
 		if (parts.length === 1) {
 			return void 0;
 		}
-		const last = parts.pop();
+		const last = parts.pop() as string;
 		const m = /^[\/\\]([^\/\\]+)/.exec(last);
 
-		return m[1] || 'Unknown';
+		return (m && m[1]) || 'Unknown';
 	}
 
 	public resolve(): Promise<KendrytePackageJsonEditorModel> {

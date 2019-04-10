@@ -69,7 +69,7 @@ export class MySubMenu {
 	) { }
 }
 
-export type MyMenuElement = (MyMenu | MyMenuSeparator | MySubMenu);
+export type MyMenuElement = (MyMenu | MyMenuSeparator | MySubMenu | null);
 export type MyMenuRegistry = ReadonlyArray<MyMenuElement>;
 
 export const ApplicationMenuStructure: MyMenuRegistry = [

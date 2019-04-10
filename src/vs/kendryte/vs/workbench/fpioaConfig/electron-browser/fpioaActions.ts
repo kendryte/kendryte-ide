@@ -1,5 +1,4 @@
 import { Action } from 'vs/base/common/actions';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { FpioaEditorInput } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaEditorInput';
@@ -23,7 +22,7 @@ export class FpioaEditorAction extends Action {
 		super(id, label);
 	}
 
-	async run(switchTab: string): TPromise<any> {
+	async run(switchTab: string): Promise<any> {
 		if (this.workspaceContextService.getWorkbenchState() === WorkbenchState.EMPTY) {
 			this.notificationService.error(localize('workspace.required', 'You must open source folder to do that.'));
 			return new Error('Can not edit fpioa whithout workspace');

@@ -8,7 +8,6 @@ import { inspect } from 'util';
 import { registerMainIPC } from 'vs/kendryte/vs/platform/instantiation/electron-main/mainIpcExtensions';
 import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
 import { IKendryteServerService } from 'vs/kendryte/vs/services/ipc/electron-main/ipcType';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { URI } from 'vs/base/common/uri';
 import { IMainChannelLogService } from 'vs/kendryte/vs/services/channelLogger/electron-main/service';
 import { processErrorStack } from 'vs/kendryte/vs/base/electron-main/errorStack';
@@ -34,14 +33,14 @@ class KendryteIPCMainService implements IKendryteMainIpcChannel {
 		});
 	}
 
-	public call<T>(context: string, command: string, arg?: any, cancellationToken?: CancellationToken): Thenable<T> {
+	public call<T>(context: string, command: string, arg?: any, cancellationToken?: CancellationToken): Promise<T> {
 		this.logger.info(`[IPC] command ${command} from ${context}`);
 		// arg = this.instantiationService.invokeFunction(parseArgs, arg || []);
 		switch (command) {
 			case IPC_ID_STOP_LOG_EVENT:
-				return this.mainChannelLogService._handleStopLogEvent(arg[0], arg[1]) as Thenable<any>;
+				return this.mainChannelLogService._handleStopLogEvent(arg[0], arg[1]) as any;
 			case IPC_ID_IS_ME_FIRST:
-				return this.isFirstWindow(arg[0]) as Thenable<any>;
+				return this.isFirstWindow(arg[0]) as any;
 		}
 		throw new Error(`No command "${command}" found`);
 	}
@@ -58,7 +57,7 @@ class KendryteIPCMainService implements IKendryteMainIpcChannel {
 		}
 	}
 
-	private firstWindow: number = null;
+	private firstWindow: number | null = null;
 
 	private async isFirstWindow(windowId: number) {
 		// 明明是我先来的……
@@ -83,19 +82,19 @@ class RemoteServiceRunner implements IKendryteServiceRunnerChannel {
 	) {
 	}
 
-	public async call<T>(context: string, command: string, arg?: any): TPromise<T> {
+	public async call<T>(context: string, command: string, arg?: any): Promise<T> {
 		try {
 			arg = normalize(arg);
 			arg = this.instantiationService.invokeFunction(parseArgs, arg || []);
 
 			const [id, method] = command.split(':');
-			this.logService.info(`Service IPC Call: ${context} -> ${id}.${method}(${arg.map((v) => '' + v).join(', ')});`);
+			this.logService.info(`Service IPC Call: ${context} -> ${id}.${method}(${arg.map((v: any) => '' + v).join(', ')});`);
 
 			return await this._call(id, method, arg);
 		} catch (e) {
 			this.logService.error('Service IPC Call Error:\n' + processErrorStack(e));
 			debugger;
-			return TPromise.wrapError(e);
+			return Promise.reject(e);
 		}
 	}
 
@@ -112,7 +111,7 @@ class RemoteServiceRunner implements IKendryteServiceRunnerChannel {
 			arg = this.instantiationService.invokeFunction(parseArgs, arg || []);
 
 			const [id, method] = event.split(':');
-			this.logService.info(`Service IPC Call: ${context} -> ${id}.${method}(${arg.map((v) => '' + v).join(', ')});`);
+			this.logService.info(`Service IPC Call: ${context} -> ${id}.${method}(${arg.map((v: any) => '' + v).join(', ')});`);
 
 			return this._listen(id, method, arg);
 		} catch (e) {
@@ -121,16 +120,16 @@ class RemoteServiceRunner implements IKendryteServiceRunnerChannel {
 		}
 	}
 
-	private _listen(id: string, method: string, arg: any): Event<any> {
+	private _listen(id: string, method: string, arg: any[]): Event<any> {
 		return this.instantiationService.invokeFunction((access: ServicesAccessor) => {
 			const service = access.get(createDecorator(id));
-			this.logService.info(`Service IPC Listen: ${id}.${method}(${arg.map(e => inspect(e)).join(', ')});`);
+			this.logService.info(`Service IPC Listen: ${id}.${method}(${arg.map((e) => inspect(e)).join(', ')});`);
 			return service[method](...arg);
 		});
 	}
 }
 
-function normalize(arg: any) {
+function normalize(arg: any): any[] {
 	if (Array.isArray(arg)) {
 		return arg;
 	} else if (isUndefinedOrNull(arg)) {

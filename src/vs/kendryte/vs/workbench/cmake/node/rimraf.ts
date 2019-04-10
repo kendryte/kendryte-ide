@@ -1,12 +1,15 @@
-import { lstat, readdir, rmdir, unlink } from 'vs/base/node/pfs';
+import { lstat, readdir, unlink } from 'vs/base/node/pfs';
 import { join } from 'path';
-import { TPromise } from 'vs/base/common/winjs.base';
+import { promisify } from 'util';
+import * as fs from 'fs';
 
-export function rmRfExclude(path: string, exclude: RegExp): TPromise<void> {
-	return _rimrafExclude(path, exclude).then(_ => void 0);
+const rmdir = promisify(fs.rmdir);
+
+export function rmRfExclude(path: string, exclude: RegExp): Promise<void> {
+	return _rimrafExclude(path, exclude).then(() => void 0);
 }
 
-function _rimrafExclude(path: string, exclude: RegExp): TPromise<boolean> {
+function _rimrafExclude(path: string, exclude: RegExp): Promise<boolean> {
 	return lstat(path).then(async (stat) => {
 		if (stat.isDirectory() && !stat.isSymbolicLink()) {
 			const children = await readdir(path);
@@ -37,6 +40,6 @@ function _rimrafExclude(path: string, exclude: RegExp): TPromise<boolean> {
 			return void 0;
 		}
 
-		return TPromise.wrapError<boolean>(err);
+		return Promise.reject(err);
 	});
 }

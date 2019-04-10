@@ -1,7 +1,6 @@
 import { IViewletPanelOptions, ViewletPanel } from 'vs/workbench/browser/parts/views/panelViewlet';
 import { WorkbenchPagedList } from 'vs/platform/list/browser/listService';
 import { localize } from 'vs/nls';
-import { IExtension } from 'vs/workbench/parts/extensions/common/extensions';
 import { IPackageRegistryService } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 import { IListVirtualDelegate } from 'vs/base/browser/ui/list/list';
 import { IPagedRenderer } from 'vs/base/browser/ui/list/listPaging';
@@ -12,7 +11,6 @@ import { IContextMenuService } from 'vs/platform/contextview/browser/contextView
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { $, addDisposableListener, append } from 'vs/base/browser/dom';
 import { IPagedModel, PagedModel } from 'vs/base/common/paging';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { Button } from 'vs/base/browser/ui/button/button';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { attachButtonStyler } from 'vs/platform/theme/common/styler';
@@ -25,7 +23,7 @@ import { DeleteDependencyAction } from 'vs/kendryte/vs/workbench/packageManager/
 
 const templateId = 'local-package-list';
 
-class Delegate implements IListVirtualDelegate<IExtension> {
+class Delegate implements IListVirtualDelegate<ILibraryProject> {
 	getHeight() { return 85; }
 
 	getTemplateId() { return templateId; }
@@ -185,7 +183,7 @@ export class LocalPackagesListView extends ViewletPanel {
 		this.list.layout(size);
 	}
 
-	async show(): TPromise<IPagedModel<ILibraryProject>> {
+	async show(): Promise<IPagedModel<ILibraryProject>> {
 		const model = new PagedModel(await this.packageRegistryService.listLocal());
 		this.list.model = model;
 		return model;

@@ -1,18 +1,21 @@
 import { ISPError, ISPOperation } from 'vs/kendryte/vs/workbench/serialUpload/node/bufferConsts';
 import { Transform } from 'stream';
-import { TPromise } from 'vs/base/common/winjs.base';
+import { DATA_LEN_WRITE_FLASH } from 'vs/kendryte/vs/platform/open/common/chipConst';
+
+export interface IAnyPositionWrite {
+	position: number;
+	data: Buffer;
+}
 
 export class ISPFlashPacker extends Transform {
-	private _currentAddress: number;
 	private processed: number = 0;
 
 	constructor(
 		protected readonly baseAddress: number,
 		protected readonly length: number,
-		protected readonly callback: (readBytes: number) => TPromise<any>,
+		protected readonly callback: (readBytes: number) => Promise<any>,
 	) {
 		super({ objectMode: true });
-		this._currentAddress = baseAddress;
 
 		this.once('end', () => {
 			this.destroy();
@@ -24,29 +27,35 @@ export class ISPFlashPacker extends Transform {
 	}
 
 	public get currentAddress() {
-		return this._currentAddress;
+		return this.baseAddress + this.processed;
 	}
 
-	_transform(data: Buffer, encoding: string, callback: Function) {
-		this.processed += data.length;
+	_transform(data: Buffer | IAnyPositionWrite, encoding: string, callback: Function) {
+		let buff: Buffer;
+		if (Buffer.isBuffer(data)) {
+			buff = data;
+		} else {
+			buff = data.data;
+			this.processed = data.position;
+			console.log('write position: 0x%s, %s bytes', this.currentAddress.toString(16), buff.length);
+		}
 
-		if (data.length !== 4096) {
-			throw new TypeError('ISP Flash can only handle 4kb chunk data.');
+		if (buff.length !== DATA_LEN_WRITE_FLASH) {
+			throw new TypeError('ISP Flash can only handle ' + DATA_LEN_WRITE_FLASH + 'bytes chunk data, but got ' + buff.length + '.');
 		}
 
 		const writeHeader = Buffer.allocUnsafe(8);
-		writeHeader.writeUInt32LE(this._currentAddress, 0);
-		writeHeader.writeUInt32LE(data.length, 4);
+		writeHeader.writeUInt32LE(this.currentAddress, 0);
+		writeHeader.writeUInt32LE(buff.length, 4);
+
+		this.processed += buff.length;
 
 		// emit
 		this.push({
 			op: ISPOperation.ISP_FLASH_WRITE,
 			err: ISPError.ISP_RET_DEFAULT,
-			buffer: Buffer.concat([writeHeader, data]),
+			buffer: Buffer.concat([writeHeader, buff]),
 		});
-
-		// cursor address
-		this._currentAddress += data.length;
 
 		this.callback(this.processed).then(() => {
 			callback();
@@ -62,7 +71,7 @@ export class ISPFlashPacker extends Transform {
 	public finishPromise() {
 		return new Promise((resolve, reject) => {
 			this.once('error', err => reject(err));
-			this.once('close', _ => resolve());
+			this.once('close', () => resolve());
 		});
 	}
 }

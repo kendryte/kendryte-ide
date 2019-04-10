@@ -5,8 +5,8 @@ const escapeMap: Map<string, string> = new Map();
 escapeMap.set(escapeMark + '\xdd', escapeMark); // order is important
 escapeMap.set(escapeMark + '\xdc', quoteMark);
 
-export class EscapeBuffer extends BaseTransformStream<Buffer, string> {
-	transform(str) {
+export class EscapeBuffer extends BaseTransformStream<string | Buffer, string> {
+	transform(str: string) {
 		if (Buffer.isBuffer(str)) {
 			str = str.toString('binary');
 		}

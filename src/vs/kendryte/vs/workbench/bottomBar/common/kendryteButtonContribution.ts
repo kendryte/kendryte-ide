@@ -8,7 +8,8 @@ import {
 	ACTION_ID_MAIX_SERIAL_BOOT,
 	ACTION_ID_MAIX_SERIAL_BUILD_UPLOAD,
 	ACTION_ID_MAIX_SERIAL_SELECT_DEFAULT,
-	ACTION_ID_SHOW_LOG,
+	ACTION_ID_SHOW_CMAKE_LOG,
+	ACTION_LABEL_CMAKE_NO_ERROR,
 	ACTION_LABEL_MAIX_CMAKE_BUILD,
 	ACTION_LABEL_MAIX_CMAKE_BUILD_DEBUG,
 	ACTION_LABEL_MAIX_CMAKE_BUILD_RUN,
@@ -17,33 +18,28 @@ import {
 	ACTION_LABEL_MAIX_SERIAL_BOOT_ISP,
 	ACTION_LABEL_MAIX_SERIAL_BUILD_UPLOAD,
 	ACTION_LABEL_MAIX_SERIAL_SELECT_DEFAULT,
-	ACTION_LABEL_SHOW_LOG,
 } from 'vs/kendryte/vs/base/common/menu/cmake';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { localize } from 'vs/nls';
-import {
-	ACTION_ID_MAIX_CMAKE_HELLO_WORLD,
-	ACTION_ID_MAIX_CMAKE_SELECT_TARGET,
-	ACTION_ID_MAIX_CMAKE_SELECT_VARIANT,
-	ACTION_LABEL_MAIX_CMAKE_HELLO_WORLD,
-} from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
-import { CONTEXT_CMAKE_SEEMS_OK, CONTEXT_CMAKE_WORKING } from 'vs/kendryte/vs/workbench/cmake/common/contextKey';
+import { ACTION_ID_MAIX_CMAKE_SELECT_TARGET, ACTION_ID_MAIX_CMAKE_SELECT_VARIANT } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
+import { CONTEXT_CMAKE_WORKING } from 'vs/kendryte/vs/workbench/cmake/common/contextKey';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
-import { CMakeError, CMakeErrorType } from 'vs/kendryte/vs/workbench/cmake/common/errors';
-import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
-import { ACTION_ID_SERIAL_MONITOR_TOGGLE, ACTION_LABEL_SERIAL_MONITOR_TOGGLE } from 'vs/kendryte/vs/workbench/serialPort/common/type';
+import { ACTION_ID_SERIAL_MONITOR_TOGGLE, ACTION_LABEL_SERIAL_MONITOR_TOGGLE } from 'vs/kendryte/vs/workbench/serialMonitor/common/actionId';
 import 'vs/css!./buttonSize';
-import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
+import { ISerialPortService } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { Disposable } from 'vs/base/common/lifecycle';
-
-const CMAKE_ERROR_MESSAGE = 'cmake.error.project';
+import { IThemeService } from 'vs/platform/theme/common/themeService';
+import { errorForeground } from 'vs/platform/theme/common/colorRegistry';
 
 class KendryteButtonContribution extends Disposable implements IWorkbenchContribution {
+	private errorButton: IPublicStatusButton;
+
 	constructor(
 		@IKendryteStatusControllerService private readonly statusControl: IKendryteStatusControllerService,
 		@ICMakeService private readonly cmakeService: ICMakeService,
 		@ISerialPortService private readonly serialPortService: ISerialPortService,
+		@IThemeService private readonly themeService: IThemeService,
 	) {
 		super();
 		this.createCMakeButtons();
@@ -55,10 +51,10 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 		const plugButton = this.statusControl.createInstance(StatusBarLeftLocation.SERIAL);
 		plugButton.text = '$(plug)';
 
-		const openTerminalButton = this.statusControl.createInstance(StatusBarLeftLocation.SERIAL);
-		openTerminalButton.text = '$(terminal)';
-		openTerminalButton.tooltip = ACTION_LABEL_SERIAL_MONITOR_TOGGLE;
-		openTerminalButton.command = ACTION_ID_SERIAL_MONITOR_TOGGLE;
+		const openSerialTerminalButton = this.statusControl.createInstance(StatusBarLeftLocation.SERIAL);
+		openSerialTerminalButton.text = '$(terminal)';
+		openSerialTerminalButton.tooltip = ACTION_LABEL_SERIAL_MONITOR_TOGGLE;
+		openSerialTerminalButton.command = ACTION_ID_SERIAL_MONITOR_TOGGLE;
 
 		const rebootButton = this.statusControl.createInstance(StatusBarLeftLocation.SERIAL);
 		rebootButton.text = '$(sync)';
@@ -90,45 +86,22 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 	}
 
 	private handleCMakeContext() {
-		this.cmakeService.onCMakeProjectChange((e: Error | null) => {
-			if (!e) {
-				return this.statusControl.resolveMessage(CMAKE_ERROR_MESSAGE);
-			}
-
-			const btn = this.statusControl.showMessage(CMAKE_ERROR_MESSAGE);
-			switch ((e as CMakeError).type) {
-				case CMakeErrorType.NO_WORKSPACE:
-					btn.text = '$(file-directory) ' + e.message;
-					btn.command = 'workbench.action.files.openFolder';
-					btn.tooltip = ACTION_LABEL_SHOW_LOG;
-					break;
-				case CMakeErrorType.PROJECT_NOT_EXISTS:
-					btn.text = '$(plus) ' + e.message;
-					btn.command = ACTION_ID_MAIX_CMAKE_HELLO_WORLD;
-					btn.tooltip = ACTION_LABEL_MAIX_CMAKE_HELLO_WORLD;
-					break;
-				case CMakeErrorType.LISTS_TXT_EXISTS:
-					btn.text = '$(alert) ' + e.message;
-					break;
-				default:
-					btn.text = '$(alert) ' + e.message;
-					btn.command = ACTION_ID_SHOW_LOG;
-					btn.tooltip = ACTION_LABEL_SHOW_LOG;
-			}
-		});
 	}
 
 	private createCMakeButtons() {
-		const cmakeButtonsShow = ContextKeyExpr.and(
-			CONTEXT_CMAKE_SEEMS_OK.isEqualTo(true as any),
-			CONTEXT_CMAKE_WORKING.isEqualTo(false as any),
-		);
+		const cmakeButtonsShow = CONTEXT_CMAKE_WORKING.isEqualTo(false as any);
 
 		const cmakeButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
 		cmakeButton.text = '$(book)';
 		cmakeButton.tooltip = localize('cmake', 'CMake');
 		// cmakeButton.command = ACTION_ID_MAIX_CMAKE_CONFIGURE;
 		cmakeButton.contextKey = cmakeButtonsShow;
+
+		const errorButton = this.errorButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
+		errorButton.text = '$(alert)';
+		errorButton.tooltip = ACTION_LABEL_CMAKE_NO_ERROR;
+		// errorButton.command = ACTION_ID_SHOW_CMAKE_LOG;
+		errorButton.contextKey = cmakeButtonsShow;
 
 		const selectVariantButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
 		selectVariantButton.text = '<...>';
@@ -176,6 +149,35 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 			selectVariantButton.text = current.variant ? `[${current.variant}]` : `<All>`;
 			selectTargetButton.text = current.target ? `[${current.target}]` : `<Def>`;
 		});
+
+		this._register(this.themeService.onThemeChange(() => {
+			this.updateErrorButtonColor();
+		}));
+		this.cmakeService.onCMakeProjectChange((e) => {
+			if (e) {
+				errorButton.text = '$(alert)';
+				errorButton.command = ACTION_ID_SHOW_CMAKE_LOG;
+				errorButton.tooltip = localize('error', 'CMake Error: {0}', e.message);
+			} else {
+				errorButton.text = '$(check)';
+				errorButton.command = undefined as any;
+				errorButton.tooltip = ACTION_LABEL_CMAKE_NO_ERROR;
+			}
+			this.updateErrorButtonColor();
+		});
+	}
+
+	private updateErrorButtonColor() {
+		if (this.errorButton.command) {
+			const color = this.themeService.getTheme().getColor(errorForeground);
+			if (color) {
+				this.errorButton.color = color.toString();
+			} else {
+				this.errorButton.color = '#f00';
+			}
+		} else {
+			this.errorButton.color = undefined as any;
+		}
 	}
 }
 

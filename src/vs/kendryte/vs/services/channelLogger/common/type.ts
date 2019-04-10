@@ -1,7 +1,6 @@
 import { ILogService } from 'vs/platform/log/common/log';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { URI } from 'vs/base/common/uri';
-import { TPromise } from 'vs/base/common/winjs.base';
 
 export interface LogEvent {
 	level: keyof IChannelLogger;
@@ -14,7 +13,7 @@ export interface IChannelLogService {
 
 	closeChannel(channel: string): void;
 	createChannel(name: string, id?: string, log?: boolean, file?: URI): IChannelLogger;
-	show(channel: string, preserveFocus?: boolean): TPromise<void>;
+	show(channel: string, preserveFocus?: boolean): Promise<void>;
 }
 
 export const IChannelLogService = createDecorator<IChannelLogService>('channelLogService');

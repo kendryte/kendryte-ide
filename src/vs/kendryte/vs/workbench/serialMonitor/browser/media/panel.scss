@@ -1,0 +1,161 @@
+.monaco-workbench .panel .actions-container > .action-item > .action-label.icon {
+	&.left {
+		background-image: url('left.svg');
+		
+		.vs-dark & {
+			background-image: url('left-inverse.svg');
+		}
+	}
+	
+	&.right {
+		background-image: url('right.svg');
+		
+		.vs-dark & {
+			background-image: url('right-inverse.svg');
+		}
+	}
+}
+
+.monaco-workbench .panel.serial-monitor-panel {
+	display: flex;
+	flex-direction: row;
+	box-sizing: border-box;
+	padding: 4px;
+	
+	&.left_show {
+		> .left-panel {
+			display: flex;
+		}
+	}
+	
+	> .left-panel {
+		display: none;
+		flex-direction: column;
+		
+		> .devices-list-container {
+			overflow: hidden;
+			
+			.monaco-list-row {
+				line-height: 24px;
+				vertical-align: middle;
+				
+				&.open {
+					font-weight: bold;
+				}
+			}
+		}
+	}
+	
+	> .center-panel {
+		margin: 0 4px;
+		display: flex;
+		flex-direction: column;
+		flex-grow: 1;
+		
+		> .head {
+			> .tool-button-bar {
+				display: flex;
+				flex-direction: row;
+				margin-bottom: 2px;
+				line-height: 22.4px;
+				
+				> .monaco-button {
+					margin-right: 4px;
+					width: auto;
+					padding: 0 0.3em;
+				}
+				
+				> .spacer {
+					flex-grow: 1;
+				}
+			}
+		}
+		
+		> .repl {
+			display: flex;
+			flex-direction: column;
+			flex-grow: 1;
+			position: relative;
+			
+			textarea.xterm-helper-textarea {
+				position: absolute !important;
+				opacity: 0 !important;
+			}
+			
+			> .integrated-terminal {
+				> .terminal-outer-container > .terminal-wrapper {
+					flex-grow: 1;
+				}
+			}
+			
+			> .repl-input-wrapper {
+				position: relative;
+				
+				> .repl-placeholder {
+					position: absolute;
+					z-index: 0;
+				}
+				
+				> .monaco-editor {
+					position: relative;
+					z-index: 1;
+				}
+				
+				> .monaco-editor,
+				.monaco-editor-background {
+					background: transparent !important;
+				}
+			}
+		}
+	}
+	
+	&.right_show {
+		> .right-panel {
+			display: flex;
+		}
+	}
+	
+	.right-panel {
+		overflow-x: visible;
+		overflow-y: scroll;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		margin-right: 14px;
+		
+		.options-bar {
+			display: flex;
+			flex-direction: column;
+			flex-wrap: wrap;
+			margin-bottom: 2px;
+			
+			> span {
+				flex-basis: 0;
+				flex-shrink: 1;
+				white-space: nowrap;
+				line-height: 22.4px;
+				
+				&.title-text {
+					margin-right: 5px;
+					font-size: 14px;
+					font-weight: bold;
+				}
+			}
+			
+			> div { // for select
+				max-width: 6em;
+				margin: 0 4px 0 2px;
+			}
+		}
+	}
+	
+	> .monaco-scrollable-element {
+		display: block;
+		min-width: 13em;
+		max-width: 13em;
+		
+		&.hide {
+			display: none;
+		}
+	}
+}

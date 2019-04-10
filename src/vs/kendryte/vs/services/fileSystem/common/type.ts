@@ -25,6 +25,7 @@ export interface INodeFileSystemService {
 	editJsonFile(file: string, key: Segment[] | Segment, value: any): Promise<void>;
 	readPackageFile(): Promise<IJSONResult<ICompileInfo>>;
 	tryWriteInFolder(packagesPath: string): Promise<boolean>;
+	prepareSocketFile(s: string): Promise<string>;
 }
 
 export const INodeFileSystemService = createDecorator<INodeFileSystemService>('nodeFileSystemService');

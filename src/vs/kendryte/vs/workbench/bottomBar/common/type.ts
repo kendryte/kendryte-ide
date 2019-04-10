@@ -2,7 +2,6 @@ import { createDecorator } from 'vs/platform/instantiation/common/instantiation'
 import { ThemeColor } from 'vs/platform/theme/common/themeService';
 import { StatusbarAlignment } from 'vs/platform/statusbar/common/statusbar';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
-import { IMyDisposable } from 'vs/kendryte/vs/base/common/lifecycle/disposableSet';
 
 export enum StatusBarLeftLocation {
 	CMAKE = 5,
@@ -19,21 +18,21 @@ export interface IStatusButtonData {
 	showBeak: boolean;
 	align: StatusbarAlignment;
 	position: number;
-	contextKey: ContextKeyExpr;
+	contextKey: ContextKeyExpr | null;
 }
 
-export interface IStatusButtonMethod extends IMyDisposable {
+export interface IStatusButtonMethod { // extends IMyDisposable
 	reload(): void;
-	show();
-	hide();
+	show(): void;
+	hide(): void;
 	isVisible(): boolean;
 	sleep(): IStatusButtonData;
-	wakeup(data: IStatusButtonData);
+	wakeup(data: IStatusButtonData): void;
 }
 
 export type IPublicStatusButton = IStatusButtonMethod & IStatusButtonData;
 
-export type IPartMyStatusBarItem = Pick<IPublicStatusButton, 'text' | 'command' | 'tooltip' | 'color' | 'arguments' | 'showBeak' | keyof IMyDisposable> ;
+export type IPartMyStatusBarItem = Pick<IPublicStatusButton, 'text' | 'command' | 'tooltip' | 'color' | 'arguments' | 'showBeak'> ;
 
 export interface IKendryteStatusControllerService {
 	_serviceBrand: any;

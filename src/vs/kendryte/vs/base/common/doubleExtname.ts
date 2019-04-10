@@ -1,4 +1,4 @@
-import { basename } from 'vs/base/common/paths';
+import { basename } from 'vs/base/common/path';
 
 const tester = /(\.[^.]+)?(\.[^.]+)$/;
 const allow2nd = /^\.(tar)$/i;

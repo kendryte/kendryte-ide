@@ -1,4 +1,4 @@
-import { buffer, Emitter } from 'vs/base/common/event';
+import { Emitter, Event } from 'vs/base/common/event';
 import { IChannelLogger, LogEvent } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { LogLevel } from 'vs/platform/log/common/log';
 
@@ -6,10 +6,10 @@ export class RemoteLogger implements IChannelLogger {
 	_serviceBrand: any;
 
 	private readonly _onDidChangeLogLevel = new Emitter<LogLevel>();
-	public readonly onDidChangeLogLevel = buffer(this._onDidChangeLogLevel.event);
+	public readonly onDidChangeLogLevel = Event.buffer(this._onDidChangeLogLevel.event);
 
 	private readonly onOutput = new Emitter<LogEvent>();
-	public readonly event = buffer(this.onOutput.event);
+	public readonly event = Event.buffer(this.onOutput.event);
 	private level: LogLevel;
 
 	constructor(
@@ -62,14 +62,14 @@ export class RemoteLogger implements IChannelLogger {
 
 	public error(message: string | Error, ...args: any[]): void {
 		if (message instanceof Error) {
-			message = message.stack;
+			message = message.stack || '* no error stack';
 		}
 		this.onOutput.fire({ level: 'error', message, args });
 	}
 
 	public critical(message: string | Error, ...args: any[]): void {
 		if (message instanceof Error) {
-			message = message.stack;
+			message = message.stack || '* no error stack';
 		}
 		this.onOutput.fire({ level: 'critical', message, args });
 	}

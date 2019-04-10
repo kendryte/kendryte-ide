@@ -1,19 +1,17 @@
 import { CONFIG_CATEGORY, CONFIG_DESCRIPTION_CUSTOM, CONFIG_KEY_CUSTOM } from 'vs/kendryte/vs/base/common/configKeys';
-import { registerConfiguration } from 'vs/kendryte/vs/platform/config/common/extendWithCategory';
+import { registerConfiguration } from 'vs/kendryte/vs/platform/config/common/registry';
 
-export function kendryteConfigRegisterOCDCustom() {
-	registerConfiguration({
-		id: 'custom',
-		category: CONFIG_CATEGORY.DEBUG_CUSTOM.id,
-		properties: {
-			[CONFIG_KEY_CUSTOM]: {
-				description: CONFIG_DESCRIPTION_CUSTOM,
-				type: 'string',
-				default: '',
-			},
+registerConfiguration({
+	id: 'custom',
+	category: CONFIG_CATEGORY.DEBUG_CUSTOM.id,
+	properties: {
+		[CONFIG_KEY_CUSTOM]: {
+			description: CONFIG_DESCRIPTION_CUSTOM,
+			type: 'file',
+			default: '',
 		},
-	});
-}
+	},
+});
 
 export function createCustomConfig(port: number, content: string) {
 	return `${content}

@@ -5,7 +5,7 @@ import { MyStatusBarItem } from 'vs/kendryte/vs/workbench/bottomBar/common/mySta
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { DisposableSet } from 'vs/kendryte/vs/base/common/lifecycle/disposableSet';
 import { StackArray } from 'vs/kendryte/vs/base/common/lifecycle/stackArray';
-import { IDisposable } from 'vs/base/common/lifecycle';
+import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 
 interface DisposeStatusBarItem extends MyStatusBarItem {
 	__originalDispose: Function;
@@ -17,6 +17,7 @@ export class KendryteStatusControllerService implements IDisposable, IKendryteSt
 	private readonly instanceList: DisposableSet<MyStatusBarItem>;
 	private readonly messageButtonMap = new Map<string, MyStatusBarItem>();
 	private readonly messageIdStack = new StackArray<string>();
+	private readonly toDispose: IDisposable[];
 
 	constructor(
 		@ILifecycleService lifecycleService: ILifecycleService,
@@ -27,8 +28,9 @@ export class KendryteStatusControllerService implements IDisposable, IKendryteSt
 
 		const changeEvent = contextKeyService.onDidChangeContext((e) => {
 			this.instanceList.forEach((item) => {
-				if (item.contextKeyList && e.affectsSome(item.contextKeyList)) {
-					const willShow = item.contextKey.evaluate(contextKeyService.getContext(null));
+				const contextKey = item.getContextKey();
+				if (contextKey && e.affectsSome(contextKey.list)) {
+					const willShow = contextKey.expr.evaluate(contextKeyService.getContext(null));
 					if (willShow) {
 						item.show();
 					} else {
@@ -38,9 +40,10 @@ export class KendryteStatusControllerService implements IDisposable, IKendryteSt
 			});
 		});
 
+		this.toDispose = [changeEvent];
+
 		lifecycleService.onShutdown(() => {
-			this.instanceList.dispose();
-			changeEvent.dispose();
+			this.dispose();
 		});
 
 		lifecycleService.when(LifecyclePhase.Ready).then(() => {
@@ -69,17 +72,17 @@ export class KendryteStatusControllerService implements IDisposable, IKendryteSt
 
 	resolveMessage(id: string) {
 		if (this.messageButtonMap.has(id)) {
-			this.messageButtonMap.get(id).dispose();
+			(this.messageButtonMap.get(id) as MyStatusBarItem).dispose();
 		}
 	}
 
 	showMessage(id: string): IPartMyStatusBarItem {
 		if (this.messageButtonMap.has(id)) {
-			return this.messageButtonMap.get(id);
+			return this.messageButtonMap.get(id) as MyStatusBarItem;
 		}
 
 		if (this.messageIdStack.size()) {
-			this.messageButtonMap.get(this.messageIdStack.top()).hide();
+			(this.messageButtonMap.get(this.messageIdStack.top()) as MyStatusBarItem).hide();
 		}
 
 		const button = this.createInstance();
@@ -108,7 +111,7 @@ export class KendryteStatusControllerService implements IDisposable, IKendryteSt
 
 	private onReady() {
 		this.instanceList.forEach((item) => {
-			if (item.contextKeyList) {
+			if (item.contextKey) {
 				if (item.contextKey.evaluate(this.contextKeyService.getContext(null))) {
 					item.show();
 				} else {
@@ -123,5 +126,6 @@ export class KendryteStatusControllerService implements IDisposable, IKendryteSt
 	dispose() {
 		this.instanceList.dispose();
 		this.counter.clear();
+		dispose(this.toDispose);
 	}
 }

@@ -4,7 +4,6 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { Action } from 'vs/base/common/actions';
 import { localize } from 'vs/nls';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { ACTION_ID_CREATE_SHORTCUTS, ACTION_LABEL_CREATE_SHORTCUTS } from 'vs/kendryte/vs/base/common/menu/tools';
 import { isMacintosh, isWindows } from 'vs/base/common/platform';
@@ -21,7 +20,7 @@ export class CreateShortcutsAction extends Action {
 		super(id, label);
 	}
 
-	async run(): TPromise<void> {
+	async run(): Promise<void> {
 		console.log('create app link');
 		await this.nodePathService.createAppLink();
 		if (isWindows) {

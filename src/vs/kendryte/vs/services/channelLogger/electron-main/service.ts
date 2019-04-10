@@ -2,16 +2,16 @@ import { IChannelLogger, LogEvent } from 'vs/kendryte/vs/services/channelLogger/
 import { Disposable } from 'vs/base/common/lifecycle';
 import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { Event } from 'vs/base/common/event';
 import { RemoteLogger } from 'vs/kendryte/vs/services/channelLogger/electron-main/remoteLogger';
+import { ExtendMap } from 'vs/kendryte/vs/base/common/extendMap';
 
 export interface IMainChannelLogService {
 	_serviceBrand: any;
 
 	receive(channelId: string, windowId: number): IChannelLogger;
 	_handleLogEvent(channelId: string, windowId: number): Event<LogEvent>;
-	_handleStopLogEvent(channelId: string, windowId: number): TPromise<void>;
+	_handleStopLogEvent(channelId: string, windowId: number): Promise<void>;
 }
 
 export const IMainChannelLogService = createDecorator<IMainChannelLogService>('mainChannelLogService');
@@ -19,33 +19,28 @@ export const IMainChannelLogService = createDecorator<IMainChannelLogService>('m
 class MainChannelLogService extends Disposable implements IMainChannelLogService {
 	_serviceBrand: any;
 
-	private readonly registry = new Map<string, RemoteLogger>();
+	private readonly registry = new ExtendMap<string, RemoteLogger>();
 
 	constructor() {
 		super();
 	}
 
 	receive(channelId: string, windowId: number): RemoteLogger {
-		const id = `${windowId}:${channelId}`;
-		if (this.registry.has(id)) {
-			return this.registry.get(id);
-		}
-		const log = new RemoteLogger(id);
-		this.registry.set(id, log);
-
-		return log;
+		return this.registry.entry(`${windowId}:${channelId}`, (id) => {
+			return new RemoteLogger(id);
+		});
 	}
 
 	_handleLogEvent(channelId: string, windowId: number): Event<LogEvent> {
 		return this.receive(channelId, windowId).event;
 	}
 
-	async _handleStopLogEvent(channelId: string, windowId: number): TPromise<void> {
+	async _handleStopLogEvent(channelId: string, windowId: number): Promise<void> {
 		const id = `${windowId}:${channelId}`;
 		if (!this.registry.has(id)) {
-			return null;
+			return;
 		}
-		return this.registry.get(id).stop();
+		return this.registry.getReq(id).stop();
 	}
 }
 

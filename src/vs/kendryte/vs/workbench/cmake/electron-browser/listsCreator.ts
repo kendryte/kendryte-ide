@@ -13,10 +13,12 @@ import { CONFIG_KEY_BUILD_VERBOSE } from 'vs/kendryte/vs/base/common/configKeys'
 import { relativePath, resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { normalizeArray } from 'vs/kendryte/vs/base/common/normalizeArray';
 import { resolve } from 'path';
-import { async as fastGlobAsync } from 'fast-glob';
+import { async as fastGlobAsync, EntryItem } from 'fast-glob';
+import { ExtendMap } from 'vs/kendryte/vs/base/common/extendMap';
+import { localize } from 'vs/nls';
 
 export const CMAKE_LIST_GENERATED_WARNING = '# [NEVER REMOVE THIS LINE] WARNING: this file is generated, please edit ' + CMAKE_CONFIG_FILE_NAME + ' file instead.';
-const iternalSourceCodeFiles = [
+const iternalSourceCodeFiles: string[] = [
 	'config/fpioa-config.c',
 	'config/fpioa-config.h',
 ];
@@ -71,7 +73,7 @@ export class CMakeListsCreator {
 	private readonly isDebugMode: boolean;
 	private tree: ICompileInfo;
 	private treeCache: { [id: string]: ICompileInfo };
-	private definitionsRegistry: Map<string, DefineValue>;
+	private definitionsRegistry: ExtendMap<string, DefineValue>;
 
 	constructor(
 		private readonly currentDir: string,
@@ -140,7 +142,7 @@ export class CMakeListsCreator {
 		this.logger.info('reading file: ' + file);
 		const { json: current, warnings }: IJSONResult<ICompileInfo> = await this.nodeFileSystemService.readJsonFile<ICompileInfo>(file).catch((e) => {
 			this.logger.error(e);
-			throw new Error(`Failed to parse dependency, did you installed them?`);
+			throw new Error(localize('cmake.dependency', 'Failed to parse dependency, did you installed them?'));
 		});
 		if (warnings.length) {
 			this.logger.warn(`(${warnings.length}) warning(s) during parse json`);
@@ -180,19 +182,16 @@ export class CMakeListsCreator {
 		}
 	}
 
-	private walkConcatTree<K extends keyof CreatorCachedData, T extends CreatorCachedData[K]>(
+	private walkConcatTree<K extends keyof CreatorCachedData, T extends CreatorCachedData[K] | void>(
 		current: ICompileInfo,
 		storeKey: K | null,
 		sliceMap: (item: ICompileInfo) => T,
 		rootToLeaf: boolean = false,
-		concat?: (a: T, b: T) => T,
-		walkCache = [],
+		concat: (a: T, b: T) => T = storeKey ? defaultConcat : (a) => a,
+		walkCache: string[] = [],
 	): T {
 		if (storeKey && current[storeKey]) {
 			return current[storeKey] as any;
-		}
-		if (!concat) {
-			concat = storeKey ? defaultConcat : (a) => a;
 		}
 
 		walkCache.push(current.name);
@@ -211,7 +210,7 @@ export class CMakeListsCreator {
 		}
 
 		if (storeKey) {
-			current[storeKey] = results;
+			current[storeKey] = results as any;
 		}
 		return results;
 	}
@@ -242,7 +241,7 @@ export class CMakeListsCreator {
 	}
 
 	private findAllConstants(parent: ICompileInfo) {
-		this.definitionsRegistry = new Map();
+		this.definitionsRegistry = new ExtendMap();
 		return this.walkConcatTree(parent, null, (current: ICompileInfo) => {
 			current.definitionsWanted = [];
 			if (!current.definitions) {
@@ -250,14 +249,13 @@ export class CMakeListsCreator {
 			}
 			for (const k of Object.keys(current.definitions)) {
 				const id = k.replace(/:RAW$/, '');
-				if (!this.definitionsRegistry.has(id)) {
-					this.definitionsRegistry.set(id, {
+				const bundle = this.definitionsRegistry.entry(id, () => {
+					return {
 						id,
 						config: k,
-						value: null,
-					});
-				}
-				const bundle = this.definitionsRegistry.get(id);
+						value: '',
+					};
+				});
 				if (k.endsWith(':RAW')) {
 					bundle.value = '' + current.definitions[k];
 				} else {
@@ -271,7 +269,7 @@ export class CMakeListsCreator {
 	public async prepareConfigure() {
 		await this.readBlockFiles();
 		await this.readDependenceTree();
-		console.log('[cmake] Tree: ', this.tree);
+		// console.log('[cmake] Tree: ', this.tree);
 
 		if (this.isDebugMode) {
 			this.logger.info('=============================================');
@@ -597,7 +595,7 @@ export class CMakeListsCreator {
 	}
 
 	private async matchSourceCode(item: ICompileInfo) {
-		const sourceToMatch = [].concat(iternalSourceCodeFiles, item.source)
+		const sourceToMatch = iternalSourceCodeFiles.concat(item.source)
 			.map((fp) => {
 				// remove absolute and empty entries
 				return fp.replace(/^\.*[\/\\]*/, '').trim();
@@ -618,7 +616,7 @@ export class CMakeListsCreator {
 			this.logger.info(` - ${line}`);
 		});
 		this.logger.info(`from directory: ${item.fsPath}`);
-		const allSourceFiles = await fastGlobAsync(sourceToMatch, {
+		const allSourceFiles: EntryItem[] = await fastGlobAsync(sourceToMatch, {
 			cwd: item.fsPath,
 			ignore: ignorePattern,
 		}).catch((e) => {
@@ -636,6 +634,6 @@ export class CMakeListsCreator {
 		item.matchingSourceFiles = allSourceFiles.map((item) => {
 			return item.toString();
 		});
-		console.log(item.matchingSourceFiles);
+		// console.log(item.matchingSourceFiles);
 	}
 }

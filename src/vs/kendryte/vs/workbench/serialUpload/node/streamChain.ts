@@ -1,7 +1,6 @@
-import { Duplex } from 'stream';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { garbageEvent } from 'vs/kendryte/vs/workbench/serialUpload/node/bufferConsts';
-import { Emitter, Event } from 'vs/base/common/event';
+import { Emitter } from 'vs/base/common/event';
 import { addDisposableEventEmitterListener } from 'vs/kendryte/vs/base/node/disposableEvents';
 
 export interface GarbageData {
@@ -42,31 +41,32 @@ function overrideAllMethod(obj: any) {
  */
 export class StreamChain<IT, OT> extends Disposable implements NodeJS.WritableStream {
 	private readonly _onError: Emitter<Error> = new Emitter<Error>();
-	public get onError(): Event<Error> { return this._onError.event; }
+	public readonly onError = this._onError.event;
 
-	private readonly _onGarbage: Emitter<GarbageData> = new Emitter<GarbageData>();
-	public get onGarbage(): Event<GarbageData> { return this._onGarbage.event; }
+	private readonly _onGarbage = new Emitter<GarbageData>();
+	public readonly onGarbage = this._onGarbage.event;
 
 	private readonly _onData: Emitter<OT> = new Emitter<OT>();
-	public get onData(): Event<OT> { return this._onData.event; }
+	public readonly onData = this._onData.event;
 
-	protected readonly _lastChild: Duplex;
+	protected readonly _lastChild: NodeJS.ReadWriteStream;
 
 	constructor(
-		protected streams: Duplex[],
+		protected streams: NodeJS.ReadWriteStream[],
 	) {
 		super();
 
-		let last: Duplex;
+		let prev: NodeJS.ReadWriteStream;
 		streams.forEach((parser) => {
-			if (last) {
-				last.pipe(parser);
+			if (prev) {
+				prev.pipe(parser);
+				const pp = prev;
 				this._register(toDisposable(() => {
-					last.unpipe(parser);
+					pp.unpipe(parser);
 				}));
 			}
 			this._register(
-				addDisposableEventEmitterListener(parser, garbageEvent, (data) => {
+				addDisposableEventEmitterListener(parser, garbageEvent, (data: Buffer | string) => {
 					this._onGarbage.fire({
 						content: data,
 						source: parser.constructor['name'],
@@ -74,17 +74,17 @@ export class StreamChain<IT, OT> extends Disposable implements NodeJS.WritableSt
 				}),
 			);
 			this._register(
-				addDisposableEventEmitterListener(parser, 'error', (err) => {
-					debugger;
+				addDisposableEventEmitterListener(parser, 'error', (err: Error) => {
+					// debugger;
 					this._onError.fire(err);
 				}),
 			);
-			last = parser;
+			prev = parser;
 		});
-		this._lastChild = last;
+		this._lastChild = streams[streams.length - 1];
 
 		this._register(
-			addDisposableEventEmitterListener(last, 'data', (data) => this._onData.fire(data)),
+			addDisposableEventEmitterListener(this._lastChild, 'data', (data: OT) => this._onData.fire(data)),
 		);
 
 		this._register(this._onError);
@@ -97,7 +97,7 @@ export class StreamChain<IT, OT> extends Disposable implements NodeJS.WritableSt
 	}
 
 	write(data: IT | Buffer | string) {
-		return this.streams[0].write(data, 'binary');
+		return this.streams[0].write(data as any, 'binary');
 	}
 
 	public get writable() {
@@ -105,7 +105,7 @@ export class StreamChain<IT, OT> extends Disposable implements NodeJS.WritableSt
 	}
 
 	public abort(reason?: any): Promise<void> {
-		return undefined;
+		return Promise.resolve();
 	}
 
 	/* writable */

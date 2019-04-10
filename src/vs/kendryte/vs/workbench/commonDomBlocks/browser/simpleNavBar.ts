@@ -3,7 +3,6 @@ import { Emitter, Event } from 'vs/base/common/event';
 import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
 import { Action } from 'vs/base/common/actions';
 import { dispose } from 'vs/base/common/lifecycle';
-import { TPromise } from 'vs/base/common/winjs.base';
 import 'vs/css!./simpleNavBar';
 
 export class SimpleNavBar {
@@ -11,7 +10,7 @@ export class SimpleNavBar {
 	private _onChange = new Emitter<{ id: string, focus: boolean }>();
 	get onChange(): Event<{ id: string, focus: boolean }> { return this._onChange.event; }
 
-	private currentId: string = null;
+	private currentId: string;
 	private actions: Action[];
 	private actionbar: ActionBar;
 
@@ -43,11 +42,11 @@ export class SimpleNavBar {
 		this._update(this.currentId);
 	}
 
-	private _update(id: string = this.currentId, focus?: boolean): TPromise<void> {
+	private _update(id: string = this.currentId, focus: boolean = false): Promise<void> {
 		this.currentId = id;
 		this._onChange.fire({ id, focus });
 		this.actions.forEach(a => a.enabled = a.id !== id);
-		return TPromise.as(null);
+		return Promise.resolve();
 	}
 
 	dispose(): void {

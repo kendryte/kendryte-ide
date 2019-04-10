@@ -1,12 +1,11 @@
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { resolve as resolveNative } from 'path';
 import { CancellationToken } from 'vs/base/common/cancellation';
-import { extract as extractZip } from 'vs/platform/node/zip';
-import { TPromise } from 'vs/base/common/winjs.base';
+import { extract as extractZip } from 'vs/base/node/zip';
 import { lstat, mkdirp, readdir, rename, rimraf } from 'vs/base/node/pfs';
 import { osTempDir, resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { ILogService } from 'vs/platform/log/common/log';
-import { basename } from 'vs/base/common/paths';
+import { basename } from 'vs/base/common/path';
 import decompress = require('decompress');
 import decompressTar = require('decompress-tar');
 import decompressTarbz2 = require('decompress-tarbz2');
@@ -25,7 +24,7 @@ const plugins = [
 export interface IFileCompressService {
 	_serviceBrand: any;
 
-	extractTemp(zipFile: string, logger: ILogService): TPromise<string>;
+	extractTemp(zipFile: string, logger: ILogService): Promise<string>;
 }
 
 export class FileCompressService implements IFileCompressService {
@@ -35,22 +34,22 @@ export class FileCompressService implements IFileCompressService {
 	constructor() {
 	}
 
-	private unZip(file: string, target: string, logger: ILogService) {
-		return extractZip(file, resolveNative(target), { overwrite: true }, logger, CancellationToken.None);
+	private unZip(file: string, target: string) {
+		return extractZip(file, resolveNative(target), { overwrite: true }, CancellationToken.None);
 	}
 
 	private MicrosoftInstall(msi: string, target: string, logger: ILogService) {
 		// toWinJsPromise(import('sudo-prompt')).then(
-		return TPromise.wrapError(new Error('not impl'));
+		return Promise.reject(new Error('not impl'));
 	}
 
-	private unTar(file: string, target: string, logger: ILogService): TPromise<void> {
+	private unTar(file: string, target: string, logger: ILogService): Promise<void> {
 		return decompress(file, target, { plugins }).then(() => {
 			return void 0;
 		});
 	}
 
-	public async extractTemp(zipFile: string, logger: ILogService): TPromise<string> {
+	public async extractTemp(zipFile: string, logger: ILogService): Promise<string> {
 		const debugName = basename(zipFile);
 
 		const unzipTarget = osTempDir('packages-extract/UNZIP_' + this.runId);
@@ -65,7 +64,7 @@ export class FileCompressService implements IFileCompressService {
 			if (/\.zip$/.test(zipFile)) {
 				method = 'zip';
 				logger.info('[%s]  -> call ZIP.', debugName);
-				await this.unZip(zipFile, unzipTarget, logger);
+				await this.unZip(zipFile, unzipTarget);
 			} else if (/\.msi$/.test(zipFile)) {
 				method = 'msi';
 				logger.info('[%s]  -> call MSI.', debugName);

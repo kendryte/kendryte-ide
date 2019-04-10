@@ -12,7 +12,7 @@ export class OpenDevToolsAction extends Action {
 		super(id, label);
 	}
 
-	run(): Thenable<void> {
+	run(): Promise<void> {
 		return this.windowsService.openDevTools({
 			mode: 'detach',
 		});

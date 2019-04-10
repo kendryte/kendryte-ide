@@ -16,7 +16,7 @@ export class SubProgress {
 	protected total: number;
 	protected currentPart: number;
 
-	private scheduleTimer: NodeJS.Immediate;
+	private scheduleTimer?: NodeJS.Immediate;
 	private readonly scheduleObject: IProgressStatus;
 
 	protected readonly currentObject: IProgressStatus;
@@ -41,14 +41,14 @@ export class SubProgress {
 	protected schedule(change: Partial<IProgressStatus>) {
 		if (this.scheduleTimer) {
 			clearImmediate(this.scheduleTimer);
-			this.scheduleTimer = null;
+			delete this.scheduleTimer;
 		}
 
 		if (change.hasOwnProperty('message')) {
-			this.scheduleObject.message = change.message;
+			this.scheduleObject.message = change.message as string;
 		}
 		if (change.hasOwnProperty('percent')) {
-			this.scheduleObject.percent = change.percent;
+			this.scheduleObject.percent = change.percent as number;
 		}
 
 		// console.log('%d (schedule)', this.scheduleObject.percent);

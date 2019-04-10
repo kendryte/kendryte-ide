@@ -1,7 +1,6 @@
 import { Action } from 'vs/base/common/actions';
 import { ACTION_ID_OPEN_CMAKE_LIST_CONFIG } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
 import { localize } from 'vs/nls';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { exists, writeFile } from 'vs/base/node/pfs';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
@@ -22,7 +21,7 @@ export class OpenLocalCmakeListAction extends Action {
 		super(id, label);
 	}
 
-	async run(): TPromise<void> {
+	async run(): Promise<void> {
 		this.cMakeService.rescanCurrentFolder();
 
 		const file = this.nodePathService.workspaceFilePath(CMAKE_CONFIG_FILE_NAME);

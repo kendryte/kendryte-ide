@@ -9,7 +9,7 @@ import {
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { createActionInstance } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 import { IOpenOCDService } from 'vs/kendryte/vs/services/openocd/common/openOCDService';
-import { IDebugService } from 'vs/workbench/parts/debug/common/debug';
+import { IDebugService } from 'vs/workbench/contrib/debug/common/debug';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
@@ -35,7 +35,7 @@ export class MaixCMakeRunAction extends Action {
 	async run() {
 		await this.cMakeService.ensureConfiguration();
 
-		await this.debugService.stopSession(null);
+		await this.debugService.stopSession(undefined);
 		await this.openOCDService.start();
 
 		const port = this.openOCDService.getCurrentPort();

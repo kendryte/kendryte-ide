@@ -7,7 +7,7 @@ export class OpenUrlAction extends Action {
 	static readonly ID = 'open.url';
 
 	constructor(
-		label,
+		label: string,
 		protected readonly url: string | GetUrl,
 		@IWindowsService private readonly windowsService: IWindowsService,
 	) {

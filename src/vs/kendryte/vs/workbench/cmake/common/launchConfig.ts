@@ -1,4 +1,4 @@
-import { ICompound, ILaunch } from 'vs/workbench/parts/debug/common/debug';
+import { ICompound, ILaunch } from 'vs/workbench/contrib/debug/common/debug';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
@@ -9,7 +9,6 @@ import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { URI } from 'vs/base/common/uri';
 import { localize } from 'vs/nls';
 import { getEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { IEditor } from 'vs/workbench/common/editor';
 import { JSONVisitor } from 'vs/base/common/json';
 
@@ -45,8 +44,8 @@ export class WorkspaceMaixLaunch implements ILaunch {
 		return true;
 	}
 
-	public getCompound(name: string): ICompound {
-		return null;
+	public getCompound(name: string): ICompound | undefined {
+		return undefined;
 	}
 
 	public getConfigurationNames(includeCompounds = true): string[] {
@@ -74,10 +73,16 @@ export class WorkspaceMaixLaunch implements ILaunch {
 		};
 	}
 
-	openConfigFile(sideBySide: boolean, preserveFocus: boolean, type?: string): TPromise<{ editor: IEditor, created: boolean }> {
+	openConfigFile(sideBySide: boolean, preserveFocus: boolean, type?: string): Promise<{ editor: IEditor, created: boolean }> {
 		return this.editorService.openEditor({
 			resource: this.uri,
-		}).then(editor => ({ editor, created: false }));
+		}).then(editor => {
+			if (editor) {
+				return { editor, created: false };
+			} else {
+				throw new Error('Failed to open editor.');
+			}
+		});
 	}
 }
 
@@ -117,7 +122,7 @@ export class LaunchVisitor implements JSONVisitor {
 		}
 	}
 
-	onObjectProperty(property, offset, length) {
+	onObjectProperty(property: string, offset: number, length: number) {
 		this.lastProperty = property;
 
 		if (!this.idKendryteFound && this.depthInObject === 1 && property === 'id') { // try to find id=kendryte

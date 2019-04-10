@@ -1,9 +1,9 @@
 import { INatureProgressStatus } from 'vs/kendryte/vs/platform/config/common/progress';
-import { echo, Emitter, Event } from 'vs/base/common/event';
+import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { createDownloadId, DownloadID, IDownloadTargetInfo } from 'vs/kendryte/vs/services/download/common/download';
 import { exists, fileExists, mkdirp, readFile, truncate, unlink, writeFile } from 'vs/base/node/pfs';
-import { dirname } from 'vs/base/common/paths';
+import { dirname } from 'vs/base/common/path';
 import { IRequestService } from 'vs/platform/request/node/request';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { createWriteStream, WriteStream } from 'fs';
@@ -22,7 +22,7 @@ enum State {
 	OK,
 }
 
-export function loadIdFromResumeFile(target: string, logger?: ILogService): Promise<DownloadID> {
+export function loadIdFromResumeFile(target: string, logger: ILogService): Promise<DownloadID | null> {
 	const resumeFile = target + '.partDownloadInfo';
 	logger.info('check resume file at ' + resumeFile + '.');
 	return wrapActionWithFileLock(resumeFile, logger, async () => {
@@ -41,8 +41,8 @@ export class DownloadTask extends Disposable {
 	private readonly requestService: IRequestService;
 
 	private readonly _progressEvent = new Emitter<Partial<INatureProgressStatus>>();
-	private readonly _finishEvent = new Emitter<[string, Error]>();
-	public readonly finishEvent = echo(this._finishEvent.event);
+	private readonly _finishEvent = new Emitter<[string, Error?]>();
+	public readonly finishEvent = Event.echo(this._finishEvent.event);
 
 	private state: State = State.INIT;
 	private message = '';
@@ -197,7 +197,7 @@ export class DownloadTask extends Disposable {
 			this.updateMessage('download complete!');
 			this.state = State.OK;
 			setImmediate(() => {
-				this._finishEvent.fire([this.target, null]);
+				this._finishEvent.fire([this.target]);
 			});
 		}
 	}
@@ -207,7 +207,7 @@ export class DownloadTask extends Disposable {
 		this.updateMessage(e.message);
 		if (this.state !== State.OK && this.state !== State.ERROR) {
 			this.state = State.ERROR;
-			this._finishEvent.fire([null, e]);
+			this._finishEvent.fire(['', e]);
 		}
 	}
 

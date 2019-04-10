@@ -1,12 +1,11 @@
 import { Action } from 'vs/base/common/actions';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { exists, lstat } from 'vs/base/node/pfs';
 import { IProgressService2, ProgressLocation } from 'vs/platform/progress/common/progress';
 import { SubProgress } from 'vs/kendryte/vs/platform/config/common/progress';
-import { ISerialPortService } from 'vs/kendryte/vs/workbench/serialPort/node/serialPortService';
+import { ISerialPortService, SerialPortCloseReason } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import {
@@ -16,11 +15,12 @@ import {
 	ACTION_LABEL_MAIX_SERIAL_BUILD_UPLOAD,
 	ACTION_LABEL_MAIX_SERIAL_UPLOAD,
 } from 'vs/kendryte/vs/base/common/menu/cmake';
-import { ChipType, SerialLoader } from 'vs/kendryte/vs/workbench/serialUpload/node/flasher';
+import { FlashTargetType, SerialLoader } from 'vs/kendryte/vs/workbench/serialUpload/node/flasher';
 import { CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { SerialPortCloseReason } from 'vs/kendryte/vs/workbench/serialPort/common/type';
 import { createActionInstance } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
+import { CHIP_BAUDRATE } from 'vs/kendryte/vs/workbench/serialUpload/common/chipDefine';
+import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 
 export class MaixSerialUploadAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_SERIAL_UPLOAD;
@@ -37,12 +37,13 @@ export class MaixSerialUploadAction extends Action {
 		@IProgressService2 private progressService: IProgressService2,
 		@IChannelLogService private channelLogService: IChannelLogService,
 		@IConfigurationService private configurationService: IConfigurationService,
+		@IEnvironmentService private environmentService: IEnvironmentService,
 	) {
 		super(id, label);
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 	}
 
-	async run(): TPromise<void> {
+	async run(): Promise<void> {
 		await this.serialPortService.refreshDevices();
 		const sel = this.serialPortService.lastSelect || await this.serialPortService.quickOpenDevice();
 		if (!sel) {
@@ -63,13 +64,13 @@ export class MaixSerialUploadAction extends Action {
 
 		this.logger.info(`\t${(await lstat(app)).size} bytes`);
 
-		const br = parseInt(this.configurationService.getValue(CONFIG_KEY_FLASH_SERIAL_BAUDRATE)) || 115200;
+		const br = parseInt(this.configurationService.getValue(CONFIG_KEY_FLASH_SERIAL_BAUDRATE)) || CHIP_BAUDRATE;
 		this.logger.info(`Opening serial port ${sel}`);
 		const port = await this.serialPortService.openPort(sel, {
 			dataBits: 8,
 			parity: 'none',
 			stopBits: 1,
-			baudRate: br,
+			baudRate: CHIP_BAUDRATE,
 		}, true);
 		this.logger.info('\t - OK.');
 
@@ -90,12 +91,14 @@ export class MaixSerialUploadAction extends Action {
 		const loader = new SerialLoader(
 			this.serialPortService,
 			port,
-			app,
-			bootLoader,
-			null,
-			ChipType.InChip,
 			this.logger,
+			!this.environmentService.isBuilt,
 		);
+
+		loader.setBaudRate(br);
+		loader.setProgram(app);
+		loader.setBootLoader(bootLoader);
+		loader.setFlashTarget(FlashTargetType.InChip);
 
 		const p = this.progressService.withProgress(
 			{

@@ -1,4 +1,3 @@
-import { TPromise } from 'vs/base/common/winjs.base';
 import { EditorInput } from 'vs/workbench/common/editor';
 import { URI } from 'vs/base/common/uri';
 import { PACKAGE_MANAGER_TITLE } from 'vs/kendryte/vs/workbench/packageManager/common/type';
@@ -42,8 +41,8 @@ export class PackageBrowserInput extends EditorInput {
 		return this._query.query;
 	}
 
-	resolve(): TPromise<any> {
-		return TPromise.as(null);
+	resolve(): Promise<any> {
+		return Promise.resolve();
 	}
 
 	supportsSplitEditor(): boolean {

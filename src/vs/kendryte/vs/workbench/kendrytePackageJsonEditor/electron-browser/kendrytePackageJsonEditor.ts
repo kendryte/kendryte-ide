@@ -33,9 +33,11 @@ import {
 } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/node/validators';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { INotificationService } from 'vs/platform/notification/common/notification';
+import { selectBoxNames } from 'vs/kendryte/vs/base/browser/ui/selectBox';
+import { MapLike } from 'vs/kendryte/vs/base/common/extendMap';
 
-interface IUISectionWidget<T> {
-	get(): T;
+interface IUISectionWidget<T, TG = any> {
+	get(): TG;
 	set(val: T): void;
 }
 
@@ -49,7 +51,7 @@ interface IControlList {
 	version: IUISection<string>;
 	homepage: IUISection<string>;
 	type: IUISection<CMakeProjectTypes>;
-	properties: IUISection<object>;
+	properties: IUISection<string[] | string>;
 	header: IUISection<string[]>;
 	source: IUISection<string[]>;
 	extraList: IUISection<string>;
@@ -60,7 +62,7 @@ interface IControlList {
 	ld_file: IUISection<string>;
 	prebuilt: IUISection<string>;
 	entry: IUISection<string>;
-	definitions: IUISection<object>;
+	definitions: IUISection<string[] | string>;
 
 	// library
 	include: IUISection<string[]>;
@@ -80,7 +82,7 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 	protected _input: KendrytePackageJsonEditorInput;
 	protected _model: KendrytePackageJsonEditorModel;
 	private h1: HTMLHeadingElement;
-	private controls: Partial<IControlList> = {};
+	private controls: IControlList = {} as any;
 	private scroll: DomScrollableElement;
 	private json: HTMLDivElement;
 	private editorInited: boolean = false;
@@ -162,9 +164,9 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 	}
 
 	clearInput(): void {
-		this._input = null;
+		delete this._input;
 		this._options = null;
-		this._model = null;
+		delete this._model;
 	}
 
 	get data() {
@@ -380,13 +382,13 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 		this.scroll.scanDomNode();
 	}
 
-	private createTypeSelect(parent: HTMLElement): IUISectionWidget<CMakeProjectTypes> {
+	private createTypeSelect(parent: HTMLElement): IUISectionWidget<CMakeProjectTypes, CMakeProjectTypes> {
 		const displayNames = Object.values(typeSelections);
 		const values = Object.keys(typeSelections) as CMakeProjectTypes[];
 
 		let setting = false;
 		let value = values[0];
-		const input = this._register(new SelectBox(displayNames, 0, this.contextViewService));
+		const input = this._register(new SelectBox(displayNames.map(selectBoxNames), 0, this.contextViewService));
 		this._register(attachSelectBoxStyler(input, this.themeService));
 		this._register(input.onDidSelect((sel: ISelectData) => {
 			if (setting) {
@@ -441,7 +443,7 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 		property: ICompileInfoPossibleKeys,
 		validation: (IInputValidator | IInputValidator[]),
 		placeholder: string,
-	): IUISectionWidget<string> {
+	): IUISectionWidget<string, string> {
 		const input = this._createTextBox(parent, validation, placeholder, false);
 		let setting = false;
 		this._register(input.onDidChange((data: string) => {
@@ -465,11 +467,11 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 		property: ICompileInfoPossibleKeys,
 		validation: (IInputValidator | IInputValidator[]),
 		placeholder: string,
-	): IUISectionWidget<object> {
+	): IUISectionWidget<string | string[], MapLike<string>> {
 		const input = this._createTextBox(parent, validation, placeholder, true);
 		let setting = false;
 		const ret = {
-			get() {
+			get(): MapLike<string> {
 				const obj: any = {};
 				input.value.split('\n').filter(e => e.length > 0).forEach((line) => {
 					let f = line.indexOf('=');
@@ -480,7 +482,7 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 				});
 				return obj;
 			},
-			set(v) {
+			set(v: string | string[]) {
 				setting = true;
 				if (v) {
 					if (typeof v === 'string') {
@@ -510,12 +512,12 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 		property: ICompileInfoPossibleKeys,
 		validation: (IInputValidator | IInputValidator[]),
 		placeholder: string,
-	): IUISectionWidget<string[]> {
+	): IUISectionWidget<string[] | string, string[]> {
 		const input = this._createTextBox(parent, validation, placeholder, true);
 		let setting = false;
 		const ret = {
 			get() {return input.value.split('\n').filter(e => e.length > 0);},
-			set(v) {
+			set(v: string[] | string) {
 				setting = true;
 				if (v) {
 					input.value = Array.isArray(v) ? v.join('\n') : v;

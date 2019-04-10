@@ -24,6 +24,8 @@ import { IWindowService, IWindowsService } from 'vs/platform/windows/common/wind
 import { URI } from 'vs/base/common/uri';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { CMakeProjectTypes } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { selectBoxNames } from 'vs/kendryte/vs/base/browser/ui/selectBox';
+import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 
 const TEMPLATE_ID = 'remote-packages';
 
@@ -146,7 +148,7 @@ class ListRenderer implements IPagedRenderer<IRemotePackageInfo, ITemplateData> 
 			element.__selected = { index: 0, selected: '' };
 		}
 
-		templateData.versionsList.setOptions(element.__selections, element.__selected.index, 0);
+		templateData.versionsList.setOptions(element.__selections.map(selectBoxNames), element.__selected.index);
 
 		this.setDownloadState(templateData.downloadButton, element.___working);
 
@@ -220,7 +222,12 @@ class ListRenderer implements IPagedRenderer<IRemotePackageInfo, ITemplateData> 
 			}).then((path) => {
 				if (path) {
 					const isEmptyWorkspace = this.workspaceService.getWorkbenchState() === WorkbenchState.EMPTY;
-					this.windowService.openWindow([URI.file(path)], { forceNewWindow: !isEmptyWorkspace });
+					this.windowService.openWindow([
+						{
+							uri: URI.file(path),
+							typeHint: 'file',
+						},
+					], { forceNewWindow: !isEmptyWorkspace });
 				}
 			});
 		} else {
@@ -240,6 +247,7 @@ export class RemotePackagesListView extends WorkbenchPagedList<IRemotePackageInf
 		@IConfigurationService configurationService: IConfigurationService,
 		@IContextViewService contextViewService: IContextViewService,
 		@IInstantiationService instantiationService: IInstantiationService,
+		@IKeybindingService keybindingService: IKeybindingService,
 	) {
 		super(
 			container,
@@ -254,6 +262,7 @@ export class RemotePackagesListView extends WorkbenchPagedList<IRemotePackageInf
 			listService,
 			themeService,
 			configurationService,
+			keybindingService,
 		);
 		this._toDispose.push(attachListStyler(this, themeService));
 	}

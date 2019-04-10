@@ -30,9 +30,9 @@ export function processPromise(cp: ChildProcess) {
 	});
 }
 
-function StatusCodeError(status: number, signal: string): ProgramError {
+function StatusCodeError(status: number, signal: string): ProgramError | void {
 	if (status === 0 && !signal) {
-		return null;
+		return;
 	}
 	return new ProgramError(signal, status);
 }

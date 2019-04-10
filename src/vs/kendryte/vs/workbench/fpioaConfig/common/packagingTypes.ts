@@ -52,11 +52,11 @@ export interface IPinRange {
 }
 
 export interface IOPinPlacement { // { A1: IO1, B2: IO2 ... }
-	[pinLocation: string]: /* pinIO: */number;
+	[pinLocation: string]: /* pinIO: */number | undefined;
 }
 
 export interface IOPinPlacementRevert {
-	[pinIO: number]: /* pinLocation: */string;
+	[pinIO: number]: /* pinLocation: */string | undefined;
 }
 
 export interface IChipGeometry {

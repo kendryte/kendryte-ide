@@ -5,7 +5,7 @@
 
 import * as assert from 'assert';
 import * as os from 'os';
-import * as path from 'path';
+import * as path from 'vs/base/common/path';
 import * as pfs from 'vs/base/node/pfs';
 
 import { normalizeRoots, ChokidarWatcherService } from '../chokidarWatcherService';
@@ -16,7 +16,7 @@ import { Delayer } from 'vs/base/common/async';
 import { IRawFileChange } from 'vs/workbench/services/files/node/watcher/common';
 import { FileChangeType } from 'vs/platform/files/common/files';
 
-function newRequest(basePath: string, ignored = []): IWatcherRequest {
+function newRequest(basePath: string, ignored: string[] = []): IWatcherRequest {
 	return { basePath, ignored };
 }
 
@@ -127,7 +127,7 @@ suite.skip('Chockidar watching', () => {
 
 	const service = new ChokidarWatcherService();
 	const result: IRawFileChange[] = [];
-	let error = null;
+	let error: string | null = null;
 
 	suiteSetup(async () => {
 		await pfs.mkdirp(testDir);
@@ -147,7 +147,7 @@ suite.skip('Chockidar watching', () => {
 	});
 
 	suiteTeardown(async () => {
-		await pfs.del(testDir);
+		await pfs.rimraf(testDir, pfs.RimRafMode.MOVE);
 		await service.stop();
 	});
 
@@ -185,14 +185,14 @@ suite.skip('Chockidar watching', () => {
 		await assertFileEvents(result, [{ path: copiedFilePath, type: FileChangeType.ADDED }, { path: testFolderPath, type: FileChangeType.ADDED }]);
 
 		// delete a file
-		await pfs.del(copiedFilePath);
+		await pfs.rimraf(copiedFilePath, pfs.RimRafMode.MOVE);
 		let renamedFilePath = path.join(testFolderPath, 'file3.txt');
 		// move a file
 		await pfs.rename(testFilePath, renamedFilePath);
 		await assertFileEvents(result, [{ path: copiedFilePath, type: FileChangeType.DELETED }, { path: testFilePath, type: FileChangeType.DELETED }, { path: renamedFilePath, type: FileChangeType.ADDED }]);
 
 		// delete a folder
-		await pfs.del(testFolderPath);
+		await pfs.rimraf(testFolderPath, pfs.RimRafMode.MOVE);
 		await assertFileEvents(result, [{ path: testFolderPath, type: FileChangeType.DELETED }, { path: renamedFilePath, type: FileChangeType.DELETED }]);
 	});
 
@@ -234,15 +234,15 @@ suite.skip('Chockidar watching', () => {
 		await assertFileEvents(result, [{ path: movedFile2, type: FileChangeType.ADDED }, { path: movedFile3, type: FileChangeType.ADDED }]);
 
 		// delete all files
-		await pfs.del(movedFile1); // hidden
-		await pfs.del(movedFile2);
-		await pfs.del(movedFile3);
-		await pfs.del(folder1); // hidden
-		await pfs.del(folder2); // hidden
-		await pfs.del(folder3); // hidden
-		await pfs.del(folder4);
-		await pfs.del(folder5);
-		await pfs.del(file4);
+		await pfs.rimraf(movedFile1); // hidden
+		await pfs.rimraf(movedFile2, pfs.RimRafMode.MOVE);
+		await pfs.rimraf(movedFile3, pfs.RimRafMode.MOVE);
+		await pfs.rimraf(folder1); // hidden
+		await pfs.rimraf(folder2); // hidden
+		await pfs.rimraf(folder3); // hidden
+		await pfs.rimraf(folder4, pfs.RimRafMode.MOVE);
+		await pfs.rimraf(folder5, pfs.RimRafMode.MOVE);
+		await pfs.rimraf(file4, pfs.RimRafMode.MOVE);
 		await assertFileEvents(result, [{ path: movedFile2, type: FileChangeType.DELETED }, { path: movedFile3, type: FileChangeType.DELETED }, { path: file4, type: FileChangeType.DELETED }, { path: folder4, type: FileChangeType.DELETED }, { path: folder5, type: FileChangeType.DELETED }]);
 	});
 
@@ -278,9 +278,9 @@ suite.skip('Chockidar watching', () => {
 		assert.equal(service.wacherCount, 1);
 
 		// delete all
-		await pfs.del(folderPath1);
-		await pfs.del(folderPath2);
-		await pfs.del(filePath4);
+		await pfs.rimraf(folderPath1, pfs.RimRafMode.MOVE);
+		await pfs.rimraf(folderPath2, pfs.RimRafMode.MOVE);
+		await pfs.rimraf(filePath4, pfs.RimRafMode.MOVE);
 
 		await assertFileEvents(result, [{ path: folderPath1, type: FileChangeType.DELETED }, { path: filePath2, type: FileChangeType.DELETED }]);
 	});
@@ -311,8 +311,8 @@ suite.skip('Chockidar watching', () => {
 		await assertFileEvents(result, [{ path: filePath2, type: FileChangeType.DELETED }]);
 
 		// delete all
-		await pfs.del(folderPath1);
-		await pfs.del(filePath1);
+		await pfs.rimraf(folderPath1, pfs.RimRafMode.MOVE);
+		await pfs.rimraf(filePath1, pfs.RimRafMode.MOVE);
 
 		await assertFileEvents(result, [{ path: filePath1, type: FileChangeType.DELETED }]);
 	});

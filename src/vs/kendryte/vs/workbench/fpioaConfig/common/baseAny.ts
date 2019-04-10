@@ -38,7 +38,7 @@ export class BaseAny {
 
 	fromBase10(data: number): string {
 		if (isNaN(data)) {
-			return null;
+			return 'NaN';
 		}
 		if (data <= 0) {
 			throw new RangeError('can not convert value <= 0');

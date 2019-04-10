@@ -1,6 +1,5 @@
 import { IPackageRegistryService, PACKAGE_MANAGER_LOG_CHANNEL_ID } from 'vs/kendryte/vs/workbench/packageManager/common/type';
-import { TPromise } from 'vs/base/common/winjs.base';
-import { ACTIVE_GROUP, IEditorService, SIDE_GROUP } from 'vs/workbench/services/editor/common/editorService';
+import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { PackageBrowserInput } from 'vs/kendryte/vs/workbench/packageManager/common/editors/packageBrowserInput';
 import { IRemotePackageInfo, PACKAGE_LIST_EXAMPLE, PACKAGE_LIST_LIBRARY } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
@@ -48,7 +47,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 		this.logger = channelLogService.createChannel('Package Manager', PACKAGE_MANAGER_LOG_CHANNEL_ID, true);
 	}
 
-	public async listLocal(): TPromise<ILibraryProject[]> {
+	public async listLocal(): Promise<ILibraryProject[]> {
 		const folder = this.nodePathService.workspaceFilePath(CMAKE_LIBRARY_FOLDER_NAME);
 		if (!await dirExists(folder)) {
 			return [];
@@ -69,25 +68,25 @@ export class PackageRegistryService implements IPackageRegistryService {
 		return ret;
 	}
 
-	async getPackageInfoLocal(packageType: CMakeProjectTypes, packageName: string): Promise<ILibraryProject> {
+	async getPackageInfoLocal(packageType: CMakeProjectTypes, packageName: string): Promise<ILibraryProject | undefined> {
 		const list = await this.listLocal();
 		return list.find((pkg) => {
 			return pkg.name === packageName && pkg.type === packageType;
 		});
 	}
 
-	async getPackageInfoRegistry(packageType: CMakeProjectTypes, packageName: string): Promise<IRemotePackageInfo> {
+	async getPackageInfoRegistry(packageType: CMakeProjectTypes, packageName: string): Promise<IRemotePackageInfo | undefined> {
 		let registry = await this.getRegistry(packageType);
 		return registry.find((pkg) => {
 			return pkg.name === packageName;
 		});
 	}
 
-	openBrowser(sideByside: boolean = false): TPromise<any> {
-		return this.editorService.openEditor(this.instantiationService.createInstance(PackageBrowserInput, null), null, sideByside ? SIDE_GROUP : ACTIVE_GROUP);
+	openBrowser(): Promise<any> {
+		return this.editorService.openEditor(this.instantiationService.createInstance(PackageBrowserInput, null));
 	}
 
-	openPackageFile(sideByside: boolean = false): TPromise<any> {
+	openPackageFile(sideByside: boolean = false): Promise<any> {
 		return this.editorService.openEditor({
 			resource: URI.file(this.nodePathService.getPackageFile()),
 		});
@@ -135,14 +134,14 @@ export class PackageRegistryService implements IPackageRegistryService {
 		return this.cached[type] = registry;
 	}
 
-	public async queryPackageVersions(type: CMakeProjectTypes, packageName: string, cancel: CancellationToken = CancellationToken.None): TPromise<IRemotePackageInfo> {
+	public async queryPackageVersions(type: CMakeProjectTypes, packageName: string, cancel: CancellationToken = CancellationToken.None): Promise<IRemotePackageInfo | undefined> {
 		const registry = await this.getRegistry(type);
 		return registry.find((item) => {
 			return item.name === packageName;
 		});
 	}
 
-	public async queryPackages(type: CMakeProjectTypes, search: string | RegExp): TPromise<IPager<IRemotePackageInfo>> {
+	public async queryPackages(type: CMakeProjectTypes, search: string | RegExp): Promise<IPager<IRemotePackageInfo>> {
 		let registry = await this.getRegistry(type);
 
 		if (search) {
@@ -162,10 +161,10 @@ export class PackageRegistryService implements IPackageRegistryService {
 			firstPage: registry.slice(0, pageSize),
 			total: registry.length,
 			pageSize,
-			getPage: (pageIndex: number, cancellationToken: CancellationToken): TPromise<IRemotePackageInfo[]> => {
+			getPage: (pageIndex: number, cancellationToken: CancellationToken): Promise<IRemotePackageInfo[]> => {
 				this.logger.info(' -> switch page to: ', pageIndex);
 				const start = pageIndex * pageSize;
-				return TPromise.as(registry.slice(start, start + pageSize));
+				return Promise.resolve(registry.slice(start, start + pageSize));
 			},
 		};
 	}
@@ -195,7 +194,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 		}
 	}
 
-	public async installAll(): TPromise<void> {
+	public async installAll(): Promise<void> {
 		const { json: pkgInfo, warnings } = await this.nodeFileSystemService.readPackageFile();
 		if (warnings.length) {
 			warnings.map(e => this.logger.error(e.message));
@@ -243,7 +242,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 		return resolveUrl(PACKAGE_MANAGER_DISTRIBUTE_URL + '/', itemToInstall.downloadUrl);
 	}
 
-	public async installExample(packageInfo: IRemotePackageInfo, version: string, targetPath: string): TPromise<string> {
+	public async installExample(packageInfo: IRemotePackageInfo, version: string, targetPath: string): Promise<string> {
 		this.logger.info('Install example: %s @ %s', packageInfo.name, version);
 
 		const downloadUrl = this.findUrl(packageInfo, version);
@@ -281,7 +280,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 		return finalPath;
 	}
 
-	public async installDependency(packageInfo: IRemotePackageInfo, version?: string): TPromise<void> {
+	public async installDependency(packageInfo: IRemotePackageInfo, version?: string): Promise<void> {
 		this.logger.info('Install package: %s @ %s', packageInfo.name, version);
 
 		const downloadUrl = this.findUrl(packageInfo, version);
@@ -303,7 +302,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 		this._onLocalPackageChange.fire();
 	}
 
-	private async downloadFromAbsUrl(downloadUrl: string, defaultName: string, defaultVersion: string): Promise<string> {
+	private async downloadFromAbsUrl(downloadUrl: string, defaultName: string, defaultVersion: string | undefined): Promise<string> {
 		const downId = await this.downloadService.downloadTemp(downloadUrl, true, this.logger);
 		const libZipFile = await this.downloadService.waitResultFile(downId);
 		const tempResultDir = await this.fileCompressService.extractTemp(libZipFile, this.logger);

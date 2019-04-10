@@ -1,5 +1,4 @@
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { TPromise } from 'vs/base/common/winjs.base';
 import { assign } from 'vs/base/common/objects';
 import { getProxyAgent } from 'vs/base/node/proxy';
 import { IHTTPConfiguration } from 'vs/platform/request/node/request';
@@ -16,9 +15,9 @@ export interface Headers extends request.Headers {
 export interface INodeRequestService {
 	_serviceBrand: any;
 
-	getBody(url: string): TPromise<string>;
+	getBody(url: string): Promise<string>;
 
-	raw(method: string, url: string, headers?: Headers): TPromise<request.Request>;
+	raw(method: string, url: string, headers?: Headers): Promise<request.Request>;
 }
 
 class NodeRequestService implements INodeRequestService {
@@ -33,9 +32,9 @@ class NodeRequestService implements INodeRequestService {
 
 	}
 
-	getBody(url: string): TPromise<string> {
+	getBody(url: string): Promise<string> {
 		return this.raw('GET', url).then((req) => {
-			return new TPromise((resolve, reject) => {
+			return new Promise((resolve, reject) => {
 				req.on('error', (error) => {
 					reject(error);
 				});
@@ -53,7 +52,7 @@ class NodeRequestService implements INodeRequestService {
 		});
 	}
 
-	async raw(method: string, url: string, headers: request.Headers = {}): TPromise<request.Request> {
+	async raw(method: string, url: string, headers: request.Headers = {}): Promise<request.Request> {
 		const options: request.OptionsWithUrl = {
 			json: false,
 			url,

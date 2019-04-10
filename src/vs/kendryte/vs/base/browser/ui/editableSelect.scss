@@ -1,0 +1,70 @@
+@mixin full-size {
+	left: 0;
+	top: 0;
+	height: 100%;
+	width: 100%;
+}
+
+
+.editable-select-box {
+	border: transparent 1px solid;
+	padding: 1px;
+	position: relative;
+	width: 100%;
+	display: flex;
+	
+	.synthetic-focus, select, input {
+		outline: none !important;
+	}
+	
+	> .editable-select-holder {
+		display: none;
+	}
+	
+	> .input {
+		flex-grow: 1;
+		
+		input {
+			display: block;
+			border: none;
+		}
+	}
+	
+	&.has-select {
+		> .select {
+			position: absolute;
+			z-index: 10;
+			@include full-size();
+			
+			select {
+				display: block;
+				@include full-size();
+			}
+		}
+	}
+	
+	&.enable-input.has-select {
+		> .input {
+			position: relative;
+			z-index: 11;
+		}
+		
+		> .editable-select-holder {
+			display: block;
+			z-index: 9;
+			position: relative;
+			width: 18px;
+		}
+	}
+	
+	&:not(.enable-input).has-select {
+		> .input {
+			position: relative;
+			z-index: 9;
+		}
+	}
+	
+	&.enable-input:not(.has-select) {
+	
+	}
+}

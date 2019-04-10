@@ -1,6 +1,6 @@
 import { IRelaunchService } from 'vs/kendryte/vs/platform/vscode/common/relaunchService';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { IKendryteClientService, MainThreadMethod } from 'vs/kendryte/vs/services/ipc/electron-browser/ipcType';
+import { IKendryteClientService, MainThreadMethod } from 'vs/kendryte/vs/services/ipc/common/ipcType';
 
 export class RenderRelaunchService implements IRelaunchService {
 	_serviceBrand: any;

@@ -5,7 +5,7 @@ import { Extensions as ConfigurationExtensions, IConfigurationRegistry } from 'v
 import { Extensions as WorkbenchExtensions, IWorkbenchContribution, IWorkbenchContributionsRegistry } from 'vs/workbench/common/contributions';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
-import { readdirSync } from 'vs/base/node/extfs';
+import { readdirSync } from 'vs/base/node/pfs';
 import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { ILogService } from 'vs/platform/log/common/log';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
@@ -51,14 +51,12 @@ setIfNot.set('workbench.list.openMode', 'doubleClick');
 setIfNot.set('editor.cursorBlinking', 'smooth');
 setIfNot.set('editor.cursorStyle', 'line-thin');
 setIfNot.set('git.ignoreMissingGitWarning', true);
-setIfNot.set('files.autoSave', 'afterDelay');
 setIfNot.set('explorer.confirmDelete', false);
 setIfNot.forEach((v, k) => {
 	configOverwrites[k] = (a, user) => user === undefined ? v : undefined;
 });
 
 const forceOverride = new Map<string, any>();
-forceOverride.set('cmake.generator', 'Unix Makefiles');
 forceOverride.forEach((v, k) => {
 	configOverwrites[k] = () => v;
 });
@@ -72,7 +70,7 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 		@ILogService private logService: ILogService,
 	) {
 		Object.keys(this.registry.getConfigurationProperties()).forEach((key: string) => this.doOverrideValue(key));
-		this.registry.onDidRegisterConfiguration((keys: string[]) => keys.forEach(this.doOverrideValue, this));
+		this.registry.onDidUpdateConfiguration((keys: string[]) => keys.forEach(this.doOverrideValue, this));
 	}
 
 	private doOverrideValue(key: string) {

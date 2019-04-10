@@ -1,4 +1,3 @@
-import { TPromise } from 'vs/base/common/winjs.base';
 import { localize } from 'vs/nls';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ConfirmResult, EditorInput, IEditorInputFactory, IRevertOptions } from 'vs/workbench/common/editor';
@@ -9,11 +8,11 @@ import { dispose } from 'vs/base/common/lifecycle';
 import { getChipPackaging } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingRegistry';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { SaveAllAction } from 'vs/workbench/parts/files/electron-browser/fileActions';
 import { Emitter, Event } from 'vs/base/common/event';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { PinFuncSetEvent } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
+import { SaveAllAction } from 'vs/workbench/contrib/files/browser/fileActions';
 
 const fpioaInputTypeId = 'workbench.input.fpioaInput';
 
@@ -82,7 +81,7 @@ export class FpioaEditorInput extends EditorInput {
 		return false;
 	}
 
-	async resolve(refresh?: boolean): TPromise<FpioaModel> {
+	async resolve(refresh?: boolean): Promise<FpioaModel> {
 		const fileRes = this.getResource();
 		if (!refresh) {
 			if (this._model && this._model.getResource().fsPath === fileRes.fsPath) {
@@ -98,6 +97,18 @@ export class FpioaEditorInput extends EditorInput {
 		//	(this.textFileService.models as TextFileEditorModelManager).add(fileRes, this._model as any);
 
 		return await this._model.load();
+	}
+
+	unSelectChip() {
+		const beforeNotDirty = this._model.isDirty();
+		const changed = this._model.setChip(undefined);
+		if (beforeNotDirty !== this._model.isDirty()) {
+			this._onDidChangeDirty.fire();
+		}
+
+		if (changed) {
+			this._onDidChange.fire();
+		}
 	}
 
 	selectChip(name: string) {
@@ -117,7 +128,7 @@ export class FpioaEditorInput extends EditorInput {
 		}
 	}
 
-	private async _ask(oldTag, old, newTag, newLeft, newRight) {
+	private async _ask(oldTag: string, old: string, newTag: string, newLeft: string, newRight: string) {
 		return await this.dialogService.confirm({
 			title: localize('alert', 'Alert'),
 			message: localize(
@@ -138,7 +149,7 @@ export class FpioaEditorInput extends EditorInput {
 	}
 
 	// 当这个功能已经分配给了其他pin
-	private async _overwritePin(funcId: string, newIoPin: string) {
+	private async _overwritePin(funcId: string, newIoPin: string | undefined) {
 		const alreadyAssigned = this._model.getFuncPin(funcId);
 		if (!alreadyAssigned) {
 			return;
@@ -146,7 +157,7 @@ export class FpioaEditorInput extends EditorInput {
 
 		const confirm = await this._ask(
 			localize('function', 'function'), funcId,
-			localize('pin', 'pin'), alreadyAssigned, newIoPin,
+			localize('pin', 'pin'), alreadyAssigned, newIoPin || 'Undefined',
 		);
 		if (confirm) {
 			this._model.unsetFunc(funcId);
@@ -210,11 +221,11 @@ export class FpioaEditorInput extends EditorInput {
 		return otherInput instanceof FpioaEditorInput;
 	}
 
-	confirmSave(): TPromise<ConfirmResult> {
-		return TPromise.wrap(ConfirmResult.SAVE);
+	confirmSave(): Promise<ConfirmResult> {
+		return Promise.resolve(ConfirmResult.SAVE);
 	}
 
-	async save(): TPromise<boolean> {
+	async save(): Promise<boolean> {
 		if (!this._model) {
 			return false;
 		}
@@ -225,8 +236,8 @@ export class FpioaEditorInput extends EditorInput {
 		return ok;
 	}
 
-	revert(options?: IRevertOptions): TPromise<boolean> {
-		return TPromise.as(false);
+	revert(options?: IRevertOptions): Promise<boolean> {
+		return Promise.resolve(false);
 	}
 
 	toString() {

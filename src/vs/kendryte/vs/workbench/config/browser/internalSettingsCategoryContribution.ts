@@ -1,6 +1,6 @@
 import { Registry } from 'vs/platform/registry/common/platform';
 import { Extensions, IConfigCategoryRegistry } from 'vs/kendryte/vs/platform/config/common/category';
-import { commonlyUsedData } from 'vs/workbench/parts/preferences/browser/settingsLayout';
+import { commonlyUsedData } from 'vs/workbench/contrib/preferences/browser/settingsLayout';
 import { CONFIG_CATEGORY } from 'vs/kendryte/vs/base/common/configKeys';
 import { openModeSettingKey } from 'vs/platform/list/browser/listService';
 

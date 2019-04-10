@@ -1,5 +1,5 @@
 import { IKendrytePackageJsonEditorService } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/kendrytePackageJsonEditorService';
-import { IEditorGroup } from 'vs/workbench/services/group/common/editorGroupsService';
+import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IEditor } from 'vs/workbench/common/editor';
 import { URI } from 'vs/base/common/uri';
 import { IEditorOptions } from 'vs/platform/editor/common/editor';
@@ -16,7 +16,7 @@ export class KendrytePackageJsonEditorService implements IKendrytePackageJsonEdi
 	) {
 	}
 
-	public async openEditor(resource: URI, options?: IEditorOptions, group?: IEditorGroup): Promise<IEditor> {
+	public async openEditor(resource: URI, options?: IEditorOptions, group?: IEditorGroup): Promise<IEditor | null> {
 		const input = this.instantiationService.createInstance(KendrytePackageJsonEditorInput, resource);
 		return this.editorService.openEditor(input, options, group);
 	}
