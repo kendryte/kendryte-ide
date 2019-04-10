@@ -144,7 +144,7 @@ class ListRenderer implements IPagedRenderer<IRemotePackageInfo, ITemplateData> 
 		templateData.description.textContent = element.description || '';
 
 		if (!element.__selections) {
-			element.__selections = ['Select version', ...element.versions.map(e => e.versionName)];
+			element.__selections = [localize('selectVersion', 'Select Version'), ...element.versions.map(e => e.versionName)];
 			element.__selected = { index: 0, selected: '' };
 		}
 

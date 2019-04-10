@@ -112,7 +112,7 @@ class SerialMonitorPanel extends Panel {
 
 		this.createButton(
 			this.$leftHead,
-			'$(repo-sync) ' + localize('create session', 'Reload Devices'),
+			'$(repo-sync) ' + localize('reload_devices', 'Reload Devices'),
 			() => this.commandService.executeCommand(ACTION_ID_REFRESH_SERIAL_DEVICE),
 		).enabled = true;
 

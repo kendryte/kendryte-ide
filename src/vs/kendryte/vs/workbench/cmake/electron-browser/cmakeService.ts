@@ -51,6 +51,7 @@ import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/c
 import { CONTEXT_CMAKE_SEEMS_OK, CONTEXT_CMAKE_WORKING } from 'vs/kendryte/vs/workbench/cmake/common/contextKey';
 import { CMakeError, CMakeErrorType } from 'vs/kendryte/vs/workbench/cmake/common/errors';
 import { DeferredPromise } from 'vs/kendryte/vs/base/common/deferredPromise';
+import { localize } from 'vs/nls';
 
 export class CMakeService implements ICMakeService {
 	_serviceBrand: any;
@@ -205,7 +206,7 @@ export class CMakeService implements ICMakeService {
 			child.on('exit', (code, signal) => {
 				if (signal || code) {
 					this.logger.info(`CMake Command exit with %s`, signal || code);
-					reject(new Error('CMake command failed with ' + (signal || code)));
+					reject(new Error(localize('errorCMakeExit', 'CMake command failed with {0}', signal || code)));
 				} else {
 					this.logger.info('CMake Command successful finished');
 					resolve();
@@ -303,7 +304,7 @@ export class CMakeService implements ICMakeService {
 		delete this.cmakeProcess;
 		delete this.cmakeEndPromise;
 		delete this.cmakePipe;
-		this.cmakeConnectionStablePromise.error(new Error('exit too earlly'));
+		this.cmakeConnectionStablePromise.error(new Error(localize('errorCMakeCrash', 'cmake process crashing')));
 		delete this.cmakeConnectionStablePromise;
 		try {
 			unlinkSync(this.cmakePipeFile);
@@ -501,14 +502,14 @@ export class CMakeService implements ICMakeService {
 			return resolvePath(this._currentFolder, 'CMakeLists.txt');
 		} else {
 			this.logger.error('This is not a cmake project: ' + this._currentFolder);
-			throw new Error('cmake project is required');
+			throw new CMakeError(CMakeErrorType.PROJECT_NOT_EXISTS);
 		}
 	}
 
 	get buildPath() {
 		if (!this._currentFolder) {
 			this.logger.error('You must open a folder to do this.');
-			throw new Error('You must open a folder to do this.');
+			throw new CMakeError(CMakeErrorType.NO_WORKSPACE);
 		}
 		return resolvePath(this._currentFolder, 'build');
 	}
@@ -566,7 +567,7 @@ export class CMakeService implements ICMakeService {
 		if (!this._CMakeProjectExists) {
 			this.logger.error('refuse to configure.');
 			this.logger.error('This is not a cmake project: ' + this._currentFolder);
-			throw new Error('This is not a cmake project: ' + this._currentFolder);
+			throw new CMakeError(CMakeErrorType.PROJECT_NOT_EXISTS);
 		}
 
 		await this.generateCMakeListsFile();
@@ -676,7 +677,7 @@ export class CMakeService implements ICMakeService {
 		}
 		if (ret.cmdCode !== 0) {
 			this.logger.info('Build Error: %s exited with code %s.', make, ret.cmdCode);
-			throw new Error('make failed with code ' + ret.cmdCode);
+			throw new Error(localize('errorBuildErrorCode', 'make failed with code {0}', ret.cmdCode));
 		} else {
 			processors.dispose();
 			delete this.lastProcess;
@@ -771,7 +772,7 @@ export class CMakeService implements ICMakeService {
 		const variant = await this.getCurrentVariant();
 
 		if (!variant) {
-			const e = new Error('No build variant named: ' + this.selectedVariant);
+			const e = new Error(localize('errorNoVariant', 'No build variant named: {0}', this.selectedVariant));
 			this.notificationService.error(e);
 			throw e;
 		}
@@ -814,14 +815,14 @@ export class CMakeService implements ICMakeService {
 	public async getOutputFile(): Promise<string> {
 		const proj = await this.getCurrentProject();
 		if (!proj) {
-			throw new Error('Error: can not find an executable item, please select one.');
+			throw new Error(localize('errorNoOutputBinary', 'can not find an executable item'));
 		}
 		for (const item of proj.targets) {
 			if (item.type === CMAKE_TARGET_TYPE.EXECUTABLE) {
 				return item.artifacts[0];
 			}
 		}
-		throw new Error('Error: can not find an executable item, please select one.');
+		throw new Error(localize('errorNoOutputBinary', 'can not find an executable item'));
 	}
 
 	private getCMakeToRun(): { root: string, bins: string, cmake: string } {
