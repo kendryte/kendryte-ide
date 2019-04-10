@@ -227,6 +227,7 @@ function factory(nodeRequire, path, fs, perf) {
 			if (!packConfig || typeof packConfig.hash !== 'string' || !packConfig.translations || typeof (mainPack = packConfig.translations['vscode']) !== 'string') {
 				return defaultResult(initialLocale);
 			}
+			const kendrytePack = packConfig.translations['kendryte'];
 			return exists(mainPack).then(fileExists => {
 				if (!fileExists) {
 					return defaultResult(initialLocale);
@@ -262,10 +263,11 @@ function factory(nodeRequire, path, fs, perf) {
 								return result;
 							}
 							return mkdirp(coreLocation).then(() => {
-								return Promise.all([readFile(metaDataFile), readFile(mainPack)]);
+								return Promise.all([readFile(metaDataFile), readFile(mainPack), readFile(kendrytePack)]);
 							}).then(values => {
 								const metadata = JSON.parse(values[0]);
 								const packData = JSON.parse(values[1]).contents;
+								const kendrytePackData = JSON.parse(values[2]).contents;
 								const bundles = Object.keys(metadata.bundles);
 								const writes = [];
 								for (let bundle of bundles) {
@@ -274,7 +276,10 @@ function factory(nodeRequire, path, fs, perf) {
 									for (let module of modules) {
 										const keys = metadata.keys[module];
 										const defaultMessages = metadata.messages[module];
-										const translations = packData[module];
+										let translations = packData[module];
+										if (kendrytePackData[module]) {
+											translations = Object.assign({}, translations, kendrytePackData[module])
+										}
 										let targetStrings;
 										if (translations) {
 											targetStrings = [];
