@@ -5,7 +5,7 @@ import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE, ICMakeService } from 'vs/kendryte/v
 import { exists, lstat } from 'vs/base/node/pfs';
 import { IProgressService2, ProgressLocation } from 'vs/platform/progress/common/progress';
 import { SubProgress } from 'vs/kendryte/vs/platform/config/common/progress';
-import { ISerialPortService } from 'vs/kendryte/vs/services/serialPort/common/type';
+import { ISerialPortService, SerialPortCloseReason } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import {
@@ -18,9 +18,9 @@ import {
 import { FlashTargetType, SerialLoader } from 'vs/kendryte/vs/workbench/serialUpload/node/flasher';
 import { CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { SerialPortCloseReason } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { createActionInstance } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 import { CHIP_BAUDRATE } from 'vs/kendryte/vs/workbench/serialUpload/common/chipDefine';
+import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 
 export class MaixSerialUploadAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_SERIAL_UPLOAD;
@@ -37,6 +37,7 @@ export class MaixSerialUploadAction extends Action {
 		@IProgressService2 private progressService: IProgressService2,
 		@IChannelLogService private channelLogService: IChannelLogService,
 		@IConfigurationService private configurationService: IConfigurationService,
+		@IEnvironmentService private environmentService: IEnvironmentService,
 	) {
 		super(id, label);
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
@@ -91,6 +92,7 @@ export class MaixSerialUploadAction extends Action {
 			this.serialPortService,
 			port,
 			this.logger,
+			!this.environmentService.isBuilt,
 		);
 
 		loader.setBaudRate(br);

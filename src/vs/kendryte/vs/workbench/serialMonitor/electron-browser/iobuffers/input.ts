@@ -72,7 +72,7 @@ export class UserTypeInputStream extends UserInputStream {
 		data = data.replace(/\r/g, this.ending);
 
 		const buff = Buffer.from(data, this.encoding);
-		console.log('transform type: %s (%s)', buff, this.encoding);
+		// console.log('[serial][input] transform type: %s (%s)', buff, this.encoding);
 		this.push(buff);
 
 		callback();
@@ -123,7 +123,7 @@ export class UserLineInputStream extends UserInputStream {
 		}
 
 		const buff = Buffer.from(data + this.ending, this.encoding);
-		console.log('transform string: %s (%s)', buff, this.encoding);
+		// console.log('[serial][input] transform string: %s (%s)', buff, this.encoding);
 		this.push(buff);
 
 		callback();

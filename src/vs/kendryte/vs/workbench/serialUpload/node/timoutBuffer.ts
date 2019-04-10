@@ -11,7 +11,7 @@ export class TimeoutBuffer extends Transform {
 	}
 
 	_transform(chunk: Buffer, encoding: string, callback: Function): void {
-		// console.log('<<< %s', chunk);
+		// console.log('<<< %s', chunk.toString('hex'));
 		this.reset();
 
 		this.push(chunk, encoding);

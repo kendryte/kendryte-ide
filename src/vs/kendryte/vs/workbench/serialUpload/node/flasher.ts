@@ -24,6 +24,10 @@ import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/typ
 import { throwNull } from 'vs/kendryte/vs/base/common/assertNotNull';
 import { CHIP_BAUDRATE, PROGRAM_BASE } from 'vs/kendryte/vs/workbench/serialUpload/common/chipDefine';
 import { memoize } from 'vs/base/common/decorators';
+import { localize } from 'vs/nls';
+import { SpeedMeter } from 'vs/kendryte/vs/base/common/speedShow';
+import { DATA_LEN_WRITE_FLASH, DATA_LEN_WRITE_MEMORTY } from 'vs/kendryte/vs/platform/open/common/chipConst';
+import { HexDumpLoggerStream } from 'vs/kendryte/vs/base/node/loggerStream';
 
 export enum FlashTargetType {
 	OnBoard = 0,
@@ -58,23 +62,32 @@ export class SerialLoader extends Disposable {
 		private readonly serialPortService: ISerialPortService,
 		private readonly device: SerialPortBaseBinding,
 		protected readonly logger: IChannelLogger,
+		developmentMode: boolean,
 	) {
 		super();
 
 		this.timeout = this._register(new TimeoutBuffer(5));
 
-		this.streamChain = new StreamChain([
+		const inputChain = [
 			new ISPSerializeBuffer(),
 			new EscapeBuffer(),
 			new QuotingBuffer(),
-			device,
-			// this.timeout,
+			new HexDumpLoggerStream(logger.trace.bind(logger), '[READ_IN ]'),
+		];
+		const outputChain = [
+			this.timeout,
+			new HexDumpLoggerStream(logger.trace.bind(logger), '[WRITE_OUT]'),
 			new UnQuotedBuffer(),
 			new UnEscapeBuffer(),
 			new ISPParseBuffer(),
-		]);
+		];
 
-		this.timeout.disable();
+		this.streamChain = new StreamChain([...inputChain, device, ...outputChain]);
+
+		if (developmentMode) {
+			this.logger.warn('This is debug mode, RW timeout is disabled.');
+			this.timeout.disable();
+		}
 
 		this.cancel = new CancellationTokenSource();
 		this._register(this.streamChain);
@@ -123,33 +136,45 @@ export class SerialLoader extends Disposable {
 	@memoize
 	protected get bootLoaderStream(): ReadStream {
 		return this._register(disposableStream(
-			createReadStream(throwNull(this._bootLoader), { highWaterMark: 1024 }),
+			createReadStream(throwNull(this._bootLoader), { highWaterMark: DATA_LEN_WRITE_MEMORTY }),
 		));
 	}
 
 	@memoize
 	protected get applicationStream(): ReadStream {
 		return this._register(disposableStream(
-			createReadStream(throwNull(this._application), { highWaterMark: 4096 }),
+			createReadStream(throwNull(this._application), { highWaterMark: DATA_LEN_WRITE_FLASH }),
 		));
 	}
 
 	protected async writeMemoryChunks(content: ReadStream, baseAddress: number, length: number, report?: SubProgress) {
+		const speed = new SpeedMeter();
+		speed.start();
+
+		const cancel = this.cancel.token;
+
 		const packedData = new ISPMemoryPacker(baseAddress, length, async (bytesProcessed: number): Promise<void> => {
 			const op = await this.expect(ISPOperation.ISP_MEMORY_WRITE);
 			if (op.op === ISPOperation.ISP_DEBUG_INFO) {
 				this.logger.info(op.text);
 			} else if (op.op === ISPOperation.ISP_MEMORY_WRITE && op.err === ISPError.ISP_RET_OK) {
+				speed.setCurrent(bytesProcessed);
 				if (report) {
+					report.message(localize('serial.memory.writing', 'Writing Memory @ {0}', speed.getSpeed()));
 					report.progress(bytesProcessed);
 				}
 			} else {
 				throw this.ispError(op);
 			}
+			if (cancel.isCancellationRequested) {
+				throw new Error('user cancel');
+			}
 		});
 		content.pipe(packedData).pipe(this.streamChain);
 
 		await packedData.finishPromise();
+		speed.complete();
+		this.logger.info('  - speed: %s', speed.getSpeed());
 	}
 
 	protected async writeFlashChunks(content: ReadStream, baseAddress: number, length: number, report?: SubProgress) {
@@ -173,8 +198,6 @@ export class SerialLoader extends Disposable {
 		const dataEndAt = contentBuffer.length - shaSize;
 		const dataSize = contentBuffer.length - shaSize - headerSize;
 
-		// appendFileSync('X:/test-js.txt', '==' + length + '\n\n');
-
 		if (this._encryptionKey) {
 			contentBuffer.writeUInt8(1, 0);
 		} else {
@@ -185,35 +208,42 @@ export class SerialLoader extends Disposable {
 		createHash('sha256').update(contentBuffer.slice(0, dataEndAt)).digest()
 			.copy(contentBuffer, contentBuffer.length - shaSize);
 
-		// appendFileSync('X:/test-js.txt', '==sha256=' + createHash('sha256').update(Buffer.allocUnsafe(10)).digest().toString('hex') + '\n\n');
-		// appendFileSync('X:/test-js.txt', '==' + contentBuffer.length + '\n\n');
-		// writeFileSync('X:/js-buffer.txt', contentBuffer);
+		const speed = new SpeedMeter();
+		speed.start();
 
-		const packedData = new ISPFlashPacker(baseAddress, length, async (bytesProcessed: number): Promise<void> => {
+		const cancel = this.cancel.token;
+
+		const memoryChunkPacker = new ISPFlashPacker(baseAddress, length, async (bytesProcessed: number): Promise<void> => {
 			const op = await this.expect(ISPOperation.ISP_FLASH_WRITE);
 			if (op.op === ISPOperation.ISP_FLASH_WRITE && op.err === ISPError.ISP_RET_OK) {
+				speed.setCurrent(bytesProcessed);
 				if (report) {
+					report.message(localize('serial.memory.writing', 'Writing Flash @ {0}', speed.getSpeed()));
 					report.progress(bytesProcessed);
 				}
 			} else {
 				throw this.ispError(op);
 			}
+			if (cancel.isCancellationRequested) {
+				throw new Error('user cancel');
+			}
 		});
 
-		const spliter = new ChunkBuffer(4096);
-		spliter
-			.pipe(packedData)
+		const splitter = new ChunkBuffer(DATA_LEN_WRITE_FLASH);
+		splitter.pipe(memoryChunkPacker)
 			.pipe(this.streamChain);
+		splitter.end(contentBuffer);
 
-		spliter.end(contentBuffer);
+		await memoryChunkPacker.finishPromise();
 
-		await packedData.finishPromise();
+		speed.complete();
+		this.logger.info('  - speed: %s', speed.getSpeed());
 	}
 
 	private async flashBootGreeting() {
 		let received = false;
 
-		const p = this.expect(ISPOperation.ISP_NOP).finally(() => {
+		const p = this.expect(ISPOperation.ISP_FLASH_GREETING).finally(() => {
 			received = true;
 		});
 
@@ -222,16 +252,13 @@ export class SerialLoader extends Disposable {
 			this.logger.info(' - Greeting %s.', ++i);
 			this.send(ISPOperation.ISP_FLASH_GREETING, Buffer.alloc(3));
 			await timeout(300);
-
-			if (i === 20) {
-				throw new Error('ISP application no response.');
-			}
 		}
 
 		return p.then(() => {
 			this.logger.info('   - got hello.');
 		}, (e) => {
 			this.logger.error('   - no hello:' + (e ? e.message || e : 'no message'));
+			throw e;
 		});
 	}
 
@@ -241,6 +268,7 @@ export class SerialLoader extends Disposable {
 		buff.writeUInt32LE(address, 0);
 		buff.writeUInt32LE(0, 4);
 		this.send(ISPOperation.ISP_MEMORY_BOOT, buff);
+		await timeout(500);
 		this.logger.info('  boot command sent');
 
 		await this.flashBootGreeting();
@@ -266,14 +294,22 @@ export class SerialLoader extends Disposable {
 	}
 
 	async changeBaudRate(br = this._baudRate) {
-		this.logger.info('Change baud rate to ', br);
+		br = parseInt(br as any);
+		this.logger.info('Change baud rate to:', br);
 
 		const buff = Buffer.allocUnsafe(12);
 		buff.writeUInt32LE(0, 0);
 		buff.writeUInt32LE(4, 4);
 		buff.writeUInt32LE(br, 8);
 
-		await this.send(ISPOperation.ISP_DEBUG_CHANGE_BAUD_RATE, buff);
+		this.send(ISPOperation.ISP_CHANGE_BAUD_RATE, buff);
+
+		this.logger.info(' - Change connection baudrate...');
+		await this.serialPortService.updatePortBaudRate(this.device, br);
+		// this.streamChain.restartPipe();
+
+		// this.logger.info(' - wait for ISP_CHANGE_BAUD_RATE (0x%s)...', ISPOperation.ISP_CHANGE_BAUD_RATE.toString(16));
+		// await this.expect(ISPOperation.ISP_CHANGE_BAUD_RATE);
 
 		await this.flashBootGreeting();
 
@@ -416,12 +452,13 @@ export class SerialLoader extends Disposable {
 	}
 
 	public abort(error: Error) {
+		this.logger.info('abort operation with %s', error.message);
 		if (this.aborted) {
 			return;
 		}
-		this.logger.info('abort operation with %s', error.message);
 		this.aborted = error || new Error('Unknown Error');
 		this.cancel.cancel();
+		this.streamChain.dispose();
 	}
 
 	protected async getSize(stream: ReadStream) {

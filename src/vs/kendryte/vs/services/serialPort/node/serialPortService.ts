@@ -19,11 +19,12 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 
 const SELECT_STORAGE_KEY = 'serial-port.last-selected';
 
-interface SerialPortEvent {
+interface SerialPortInternal {
 	_beforeClose: Emitter<SerialPortCloseReason>;
+	deviceName: string;
 }
 
-type SerialPortInternalType = SerialPort & SerialPortBaseBinding & SerialPortEvent;
+type SerialPortInternalType = SerialPort & SerialPortBaseBinding & SerialPortInternal;
 
 function testSame(a: SerialPortItem, b: SerialPortItem) {
 	return a.comName === b.comName && a.locationId === b.locationId && a.manufacturer === b.manufacturer && a.pnpId === b.pnpId && a.productId === b.productId && a.serialNumber === b.serialNumber && a.vendorId === b.vendorId;
@@ -234,6 +235,22 @@ class SerialPortService implements ISerialPortService {
 		});
 	}
 
+	public async updatePortBaudRate(port: string | SerialPortBaseBinding, newBr: number) {
+		const serialDevice = this.getPortDevice(port);
+		if (!serialDevice) {
+			throw new Error('Device not open.');
+		}
+		this.logService.info(`update serial port ${serialDevice.deviceName} baudrate to: ${newBr}`);
+		serialDevice.pause();
+		await this._handlePromise('drain serial port', (cb) => {
+			serialDevice.drain(cb);
+		});
+		await this._handlePromise('update serial port', (cb) => {
+			this.openedPorts.getReq(serialDevice.deviceName).update({ baudRate: newBr }, cb);
+		});
+		serialDevice.resume();
+	}
+
 	public async openPort(serialDevice: string, opts: Partial<OpenOptions> = {}, exclusive = false): Promise<SerialPortInternalType> {
 		this.logService.info(`open serial port ${serialDevice} ${exclusive ? '[EXCLUSIVE] ' : ''}with:`, opts);
 		if (this.openedPorts.has(serialDevice)) {
@@ -271,6 +288,7 @@ class SerialPortService implements ISerialPortService {
 			});
 		});
 		Object.assign(port, {
+			deviceName: serialDevice,
 			_beforeClose: emitter,
 			beforeClose: emitter.event,
 		});

@@ -1,5 +1,6 @@
 import { ISPError, ISPOperation } from 'vs/kendryte/vs/workbench/serialUpload/node/bufferConsts';
 import { Transform } from 'stream';
+import { DATA_LEN_WRITE_MEMORTY } from 'vs/kendryte/vs/platform/open/common/chipConst';
 
 export class ISPMemoryPacker extends Transform {
 	private _currentAddress: number;
@@ -27,6 +28,10 @@ export class ISPMemoryPacker extends Transform {
 	}
 
 	_transform(data: Buffer, encoding: string, callback: Function) {
+		if (data.length > DATA_LEN_WRITE_MEMORTY) { // TODO
+			throw new TypeError('ISP Memory can only handle ' + DATA_LEN_WRITE_MEMORTY + 'bytes chunk data.');
+		}
+
 		this.processed += data.length;
 
 		const writeHeader = Buffer.allocUnsafe(8);

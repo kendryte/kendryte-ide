@@ -51,10 +51,10 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 		const plugButton = this.statusControl.createInstance(StatusBarLeftLocation.SERIAL);
 		plugButton.text = '$(plug)';
 
-		const openTerminalButton = this.statusControl.createInstance(StatusBarLeftLocation.SERIAL);
-		openTerminalButton.text = '$(terminal)';
-		openTerminalButton.tooltip = ACTION_LABEL_SERIAL_MONITOR_TOGGLE;
-		openTerminalButton.command = ACTION_ID_SERIAL_MONITOR_TOGGLE;
+		const openSerialTerminalButton = this.statusControl.createInstance(StatusBarLeftLocation.SERIAL);
+		openSerialTerminalButton.text = '$(terminal)';
+		openSerialTerminalButton.tooltip = ACTION_LABEL_SERIAL_MONITOR_TOGGLE;
+		openSerialTerminalButton.command = ACTION_ID_SERIAL_MONITOR_TOGGLE;
 
 		const rebootButton = this.statusControl.createInstance(StatusBarLeftLocation.SERIAL);
 		rebootButton.text = '$(sync)';

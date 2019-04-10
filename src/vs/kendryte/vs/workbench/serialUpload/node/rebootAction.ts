@@ -8,6 +8,7 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { SerialLoader } from 'vs/kendryte/vs/workbench/serialUpload/node/flasher';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 
 export class MaixSerialRebootAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_SERIAL_BOOT;
@@ -24,6 +25,7 @@ export class MaixSerialRebootAction extends Action {
 		@IProgressService2 private progressService: IProgressService2,
 		@IChannelLogService channelLogService: IChannelLogService,
 		@IConfigurationService private configurationService: IConfigurationService,
+		@IEnvironmentService private environmentService: IEnvironmentService,
 	) {
 		super(id, label);
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
@@ -69,6 +71,7 @@ export class MaixSerialRebootAction extends Action {
 			this.serialPortService,
 			port,
 			this.logger,
+			!this.environmentService.isBuilt,
 		);
 		loader.abortedPromise.catch((e) => {
 			console.log('flasher output: %s', e ? e.message || e : e);

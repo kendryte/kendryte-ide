@@ -60,8 +60,9 @@ export class StreamChain<IT, OT> extends Disposable implements NodeJS.WritableSt
 		streams.forEach((parser) => {
 			if (prev) {
 				prev.pipe(parser);
+				const pp = prev;
 				this._register(toDisposable(() => {
-					prev.unpipe(parser);
+					pp.unpipe(parser);
 				}));
 			}
 			this._register(
@@ -74,7 +75,7 @@ export class StreamChain<IT, OT> extends Disposable implements NodeJS.WritableSt
 			);
 			this._register(
 				addDisposableEventEmitterListener(parser, 'error', (err: Error) => {
-					debugger;
+					// debugger;
 					this._onError.fire(err);
 				}),
 			);

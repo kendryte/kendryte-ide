@@ -68,3 +68,5 @@ import 'vs/kendryte/vs/platform/sudo/electron-browser/register';
 import 'vs/kendryte/vs/code/electron-browser/updater/register';
 // bootstrap
 import 'vs/kendryte/vs/workbench/bootstrap/common/kendryteBootstrap';
+// open actions
+import 'vs/kendryte/vs/platform/open/electron-browser/register';

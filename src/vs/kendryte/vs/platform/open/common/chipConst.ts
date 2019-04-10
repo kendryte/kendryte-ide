@@ -1,0 +1,2 @@
+export const DATA_LEN_WRITE_MEMORTY = 1024;
+export const DATA_LEN_WRITE_FLASH = 4096;

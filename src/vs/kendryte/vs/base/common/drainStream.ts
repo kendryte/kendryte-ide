@@ -8,7 +8,7 @@ export function drainStream(stream: NodeJS.ReadableStream, size: number, start: 
 			cur += data.copy(buff, cur);
 		});
 		stream.on('close', () => {
-			resolve(buff.slice(0, cur + extra));
+			resolve(buff);
 		});
 	});
 }

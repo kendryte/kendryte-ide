@@ -34,6 +34,7 @@ export interface ISerialPortService extends EnumProviderService<SerialPortItem> 
 
 	refreshDevices(): void;
 	openPort(serialDevice: string, opts?: Partial<OpenOptions>, exclusive?: boolean): Promise<SerialPortBaseBinding>;
+	updatePortBaudRate(serialDevice: string | SerialPortBaseBinding, newBaudRate: number): void;
 	closePort(serialDevice: string | SerialPortBaseBinding, reason: SerialPortCloseReason): Promise<void>;
 	sendReboot(serialDevice: string | SerialPortBaseBinding, cancel?: CancellationToken): Promise<void>;
 	sendRebootISPKD233(serialDevice: string | SerialPortBaseBinding, cancel?: CancellationToken): Promise<void>;
