@@ -1,7 +1,7 @@
 import 'vs/css!vs/kendryte/vs/workbench/kendrytePackageJsonEditor/browser/media/kendrytePackageJsonEditor';
 import { BaseEditor } from 'vs/workbench/browser/parts/editor/baseEditor';
 import { KENDRYTE_PACKAGE_JSON_EDITOR_ID } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/ids';
-import { $, append, Dimension } from 'vs/base/browser/dom';
+import { $, append } from 'vs/base/browser/dom';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IStorageService } from 'vs/platform/storage/common/storage';
@@ -10,41 +10,21 @@ import { CancellationToken } from 'vs/base/common/cancellation';
 import { KendrytePackageJsonEditorInput } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/kendrytePackageJsonEditorInput';
 import { KendrytePackageJsonEditorModel } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/node/kendrytePackageJsonEditorModel';
 import { CMAKE_CONFIG_FILE_NAME, CMakeProjectTypes, ICompileInfoPossibleKeys } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
-import { ISelectData, SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
-import { attachInputBoxStyler, attachSelectBoxStyler } from 'vs/platform/theme/common/styler';
-import { IInputValidator, InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
 import { localize } from 'vs/nls';
 import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
-import {
-	combineValidation,
-	validateArgList,
-	validateDefinitions,
-	validateFile,
-	validateFolders,
-	validateKeyValue,
-	validateProjectName,
-	validateRequired,
-	validateSources,
-	validateUrl,
-	validateVersionString,
-} from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/node/validators';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { selectBoxNames } from 'vs/kendryte/vs/base/browser/ui/selectBox';
-import { MapLike } from 'vs/kendryte/vs/base/common/extendMap';
-
-interface IUISectionWidget<T, TG = any> {
-	get(): TG;
-	set(val: T): void;
-}
-
-interface IUISection<T> {
-	section: HTMLDivElement;
-	widget: IUISectionWidget<T>;
-}
+import { IUISection, IUISectionWidget } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/type';
+import { SectionFactory } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/sectionFactory';
+import { SourceFileListFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/sourceFileList';
+import { AbstractFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/base';
+import { PackageJsonValidate } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/node/validators.class';
+import { SingleFileFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/singleFile';
+import { FolderListFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/folderList';
+import { SingleFolderFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/singleFolder';
 
 interface IControlList {
 	name: IUISection<string>;
@@ -71,12 +51,6 @@ interface IControlList {
 	// executable
 }
 
-const typeSelections = {
-	[CMakeProjectTypes.library]: localize('library', 'Library'),
-	[CMakeProjectTypes.prebuiltLibrary]: localize('prebuilt library', 'Prebuilt library'),
-	[CMakeProjectTypes.executable]: localize('executable', 'Executable'),
-};
-
 export class KendrytePackageJsonEditor extends BaseEditor {
 	public static readonly ID: string = KENDRYTE_PACKAGE_JSON_EDITOR_ID;
 	protected _input: KendrytePackageJsonEditorInput;
@@ -84,6 +58,7 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 	private h1: HTMLHeadingElement;
 	private controls: IControlList = {} as any;
 	private scroll: DomScrollableElement;
+	private readonly sectionCreator: SectionFactory;
 	private json: HTMLDivElement;
 	private editorInited: boolean = false;
 
@@ -91,16 +66,28 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
-		@IInstantiationService instantiationService: IInstantiationService,
-		@IContextViewService private readonly contextViewService: IContextViewService,
+		@IContextViewService contextViewService: IContextViewService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@INotificationService private readonly notificationService: INotificationService,
 	) {
 		super(KendrytePackageJsonEditor.ID, telemetryService, themeService, storageService);
+
+		this.sectionCreator = this._register(instantiationService.createInstance(SectionFactory));
+		this._register(this.sectionCreator.onDidHeightChange(() => {
+			this.layout();
+		}));
+		this._register(this.sectionCreator.onUpdate(({ property, value }) => {
+			this.updateSimple(property, value);
+		}));
+		this._register(this.sectionCreator.onTypeChange((type) => {
+			this.onTypeChange(type);
+		}));
 	}
 
 	async setInput(input: KendrytePackageJsonEditorInput, options: EditorOptions, token: CancellationToken): Promise<void> {
 		super.setInput(input, options, token);
 		this._model = await input.resolve();
+		this.sectionCreator.setRootPath(resolvePath(this._model.resource.fsPath, '..'));
 
 		if (!this.editorInited) {
 			console.warn('Skip because editor not ready');
@@ -138,7 +125,7 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 		console.log('onTypeChange: ', value);
 		const display = (sections: (keyof IControlList)[], show: boolean) => {
 			for (const secName of sections) {
-				console.log('display: ', sections, show);
+				// console.log('display: ', sections, show);
 				this.controls[secName].section.style.display = show ? 'flex' : 'none';
 				const set = this.controls[secName].widget.set as Function;
 				if (!show) {
@@ -173,22 +160,7 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 		return this._model.data;
 	}
 
-	private validateFile(value: string) {
-		const root = resolvePath(this._model.resource.fsPath, '..');
-		return validateFile(root, value);
-	}
-
-	private validateFolders(value: string) {
-		const root = resolvePath(this._model.resource.fsPath, '..');
-		return validateFolders(root, value);
-	}
-
-	private validateSources(value: string) {
-		const root = resolvePath(this._model.resource.fsPath, '..');
-		return validateSources(root, value);
-	}
-
-	public layout(dimension: Dimension): void {
+	public layout(): void {
 		this.scroll.scanDomNode();
 	}
 
@@ -210,171 +182,199 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 		}));
 		append(parent, this.scroll.getDomNode());
 
-		const validateFile = this.validateFile.bind(this);
-		const validateFolders = this.validateFolders.bind(this);
-		const validateSources = this.validateSources.bind(this);
-
 		parent.classList.add('kendryte-package-json-editor');
 		this.h1 = append(container, $('h1'));
-		(append(container, $('div.muted')) as HTMLSpanElement).innerText = 'Your settings will saved automatically';
+		(append(container, $('div.muted')) as HTMLSpanElement).innerText = localize('kendrytePackageJsonEditorAutoSave', 'Your settings will saved automatically');
 		append(container, $('hr'));
 
-		this.controls.type = this.createSection(
+		this.createSection(
+			'type',
 			container,
 			localize('kendrytePackageJsonEditor.type.title', 'Project type'),
 			localize('kendrytePackageJsonEditor.type.desc', 'Type of your project. Warning: change this will clear others settings.'),
-			($section) => this.createTypeSelect($section),
+			($section) => this.sectionCreator.createTypeSelect($section),
 		);
 
-		this.controls.name = this.createSection(
+		this.createSection(
+			'name',
 			container,
 			localize('kendrytePackageJsonEditor.name.title', 'Project name'),
 			localize('kendrytePackageJsonEditor.name.desc', 'Title of your project. Only a-z, 0-9, -, _ are allowed.'),
-			($section) => this.createTextInput(
-				$section,
-				'name',
-				[
-					validateRequired,
-					validateProjectName,
-				],
+			($section, property) => this.sectionCreator.createTextInput($section, property,
+				[PackageJsonValidate.Required, PackageJsonValidate.ProjectName],
 				localize('required', 'Required.'),
 			),
 		);
 
-		this.controls.version = this.createSection(
+		this.createSection(
+			'version',
 			container,
 			localize('kendrytePackageJsonEditor.version.title', 'Current version'),
 			localize('kendrytePackageJsonEditor.version.desc', 'Apply when publish.'),
-			($section) => this.createTextInput(
-				$section,
-				'version',
-				[
-					validateRequired,
-					validateVersionString,
-				],
+			($section, property) => this.sectionCreator.createTextInput($section, property,
+				[PackageJsonValidate.Required, PackageJsonValidate.VersionString],
 				localize('required', 'Required'),
 			),
 		);
 
-		this.controls.homepage = this.createSection(
+		this.createSection(
+			'homepage',
 			container,
 			localize('kendrytePackageJsonEditor.homepage.title', 'Homepage'),
 			localize('kendrytePackageJsonEditor.homepage.desc', 'A link to your project home (eg. github page).'),
-			($section) => this.createTextInput($section, 'homepage', validateUrl, 'http://xxxx'),
+			($section, property) => this.sectionCreator.createTextInput($section, property,
+				PackageJsonValidate.Url, 'http://xxxx',
+			),
 		);
 
-		this.controls.header = this.createSection(
+		this.createSection(
+			'header',
 			container,
 			localize('kendrytePackageJsonEditor.header.title', 'Headers directory'),
 			localize('kendrytePackageJsonEditor.header.desc', 'You can use #include from these folders in your code. One folder per line. Relative to this {0} file', CMAKE_CONFIG_FILE_NAME),
-			($section) => this.createTextAreaArray($section, 'header', validateFolders, 'relative/path/to/include/root'),
+			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+				PackageJsonValidate.Folders, 'relative/path/to/include/root',
+			),
+			FolderListFieldControl,
 		);
 
-		this.controls.source = this.createSection(
+		this.createSection(
+			'source',
 			container,
 			localize('kendrytePackageJsonEditor.source.title', 'Source files'),
 			localize('kendrytePackageJsonEditor.source.desc', 'Source files to compile. One file/folder per line.'),
-			($section) => this.createTextAreaArray(
-				$section,
-				'source',
-				[
-					validateRequired,
-					validateSources,
-				],
+			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+				[PackageJsonValidate.Required, PackageJsonValidate.Sources],
 				localize('kendrytePackageJsonEditor.source.placeholder', 'path/to/code.c - directly add a file.\npath/*.c - match all .c file in this folder.\npath/**.c - also recursive subfolders.'),
 			),
+			SourceFileListFieldControl,
 		);
 
-		this.controls.c_flags = this.createSection(
+		this.createSection(
+			'c_flags',
 			container,
 			localize('kendrytePackageJsonEditor.c_flags.title', 'Arguments for gcc'),
 			localize('kendrytePackageJsonEditor.c_flags.desc', 'one argument per line'),
-			($section) => this.createTextAreaArray($section, 'c_flags', validateArgList, ''),
-		);
-
-		this.controls.cpp_flags = this.createSection(
-			container,
-			localize('kendrytePackageJsonEditor.cpp_flags.title', 'Arguments for g++'),
-			localize('kendrytePackageJsonEditor.cpp_flags.desc', 'one argument per line'),
-			($section) => this.createTextAreaArray($section, 'cpp_flags', validateArgList, ''),
-		);
-
-		this.controls.c_cpp_flags = this.createSection(
-			container,
-			localize('kendrytePackageJsonEditor.c_cpp_flags.title', 'Arguments for both gcc and g++'),
-			localize('kendrytePackageJsonEditor.c_cpp_flags.desc', 'one argument per line'),
-			($section) => this.createTextAreaArray($section, 'c_cpp_flags', validateArgList, 'eg. -Os'),
-		);
-
-		this.controls.link_flags = this.createSection(
-			container,
-			localize('kendrytePackageJsonEditor.link_flags.title', 'Arguments for ld'),
-			localize('kendrytePackageJsonEditor.link_flags.desc', 'one argument per line'),
-			($section) => this.createTextAreaArray($section, 'link_flags', validateArgList, ''),
-		);
-
-		this.controls.ld_file = this.createSection(
-			container,
-			localize('kendrytePackageJsonEditor.ld_file.title', 'LD file path'),
-			localize('kendrytePackageJsonEditor.ld_file.desc', 'Use another LD file'),
-			($section) => this.createTextInput($section, 'ld_file', validateFile, ''),
-		);
-
-		this.controls.entry = this.createSection(
-			container,
-			localize('kendrytePackageJsonEditor.entry.title', 'Entry file'),
-			localize('kendrytePackageJsonEditor.entry.desc', 'Commonly used in a demo project.'),
-			($section) => this.createTextInput($section, 'entry', validateFile, 'eg. src/main.c'),
-		);
-
-		this.controls.definitions = this.createSection(
-			container,
-			localize('kendrytePackageJsonEditor.definitions.title', 'C/C++ Definitions'),
-			localize('kendrytePackageJsonEditor.definitions.desc', 'User configurable definitions, will create #define in compile time.'),
-			($section) => this.createTextAreaMap($section, 'definitions', validateDefinitions, 'SOME_VALUE1:str=hello world\nSOME_VALUE2:raw=123'),
-		);
-
-		this.controls.include = this.createSection(
-			container,
-			localize('kendrytePackageJsonEditor.include.title', 'Include root'),
-			localize('kendrytePackageJsonEditor.include.desc', 'User can #include your header from these folders. But recommended use only one folder, and no other source inside it.'),
-			($section) => this.createTextAreaArray($section, 'include', validateFolders, 'eg. include/'),
-		);
-
-		this.controls.prebuilt = this.createSection(
-			container,
-			localize('kendrytePackageJsonEditor.prebuilt.title', 'Prebuilt library file'),
-			localize('kendrytePackageJsonEditor.prebuilt.desc', 'If your library is not open source, assign the pre compiled .a file here.'),
-			($section) => this.createTextInput(
-				$section,
-				'prebuilt',
-				[
-					validateRequired,
-					validateFile,
-				],
-				'eg. libXXX.a',
+			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+				PackageJsonValidate.ArgList, '',
 			),
 		);
 
-		this.controls.exampleSource = this.createSection(
+		this.createSection(
+			'cpp_flags',
 			container,
-			localize('kendrytePackageJsonEditor.exampleSource.title', 'Examples'),
-			localize('kendrytePackageJsonEditor.exampleSource.desc', 'You can add example in your library.'),
-			($section) => this.createTextAreaArray($section, 'exampleSource', validateSources, 'eg. test/*.c'),
+			localize('kendrytePackageJsonEditor.cpp_flags.title', 'Arguments for g++'),
+			localize('kendrytePackageJsonEditor.cpp_flags.desc', 'one argument per line'),
+			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+				PackageJsonValidate.ArgList, '',
+			),
 		);
 
-		this.controls.properties = this.createSection(
+		this.createSection(
+			'c_cpp_flags',
+			container,
+			localize('kendrytePackageJsonEditor.c_cpp_flags.title', 'Arguments for both gcc and g++'),
+			localize('kendrytePackageJsonEditor.c_cpp_flags.desc', 'one argument per line'),
+			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+				PackageJsonValidate.ArgList, 'eg. -Os',
+			),
+		);
+
+		this.createSection(
+			'link_flags',
+			container,
+			localize('kendrytePackageJsonEditor.link_flags.title', 'Arguments for ld'),
+			localize('kendrytePackageJsonEditor.link_flags.desc', 'one argument per line'),
+			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+				PackageJsonValidate.ArgList, '',
+			),
+		);
+
+		this.createSection(
+			'ld_file',
+			container,
+			localize('kendrytePackageJsonEditor.ld_file.title', 'LD file path'),
+			localize('kendrytePackageJsonEditor.ld_file.desc', 'Use another LD file'),
+			($section, property) => this.sectionCreator.createTextInput($section, property,
+				PackageJsonValidate.File, '',
+			),
+			SingleFileFieldControl,
+		);
+
+		this.createSection(
+			'entry',
+			container,
+			localize('kendrytePackageJsonEditor.entry.title', 'Entry file'),
+			localize('kendrytePackageJsonEditor.entry.desc', 'Commonly used in a demo project.'),
+			($section, property) => this.sectionCreator.createTextInput($section, property,
+				PackageJsonValidate.File, 'eg. src/main.c',
+			),
+			SingleFileFieldControl,
+		);
+
+		this.createSection(
+			'definitions',
+			container,
+			localize('kendrytePackageJsonEditor.definitions.title', 'C/C++ Definitions'),
+			localize('kendrytePackageJsonEditor.definitions.desc', 'User configurable definitions, will create #define in compile time.'),
+			($section, property) => this.sectionCreator.createTextAreaMap($section, property,
+				PackageJsonValidate.Definitions, 'SOME_VALUE1:str=hello world\nSOME_VALUE2:raw=123',
+			),
+		);
+
+		this.createSection(
+			'include',
+			container,
+			localize('kendrytePackageJsonEditor.include.title', 'Include root'),
+			localize('kendrytePackageJsonEditor.include.desc', 'User can #include your header from these folders. But recommended use only one folder, and no other source inside it.'),
+			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+				PackageJsonValidate.Folders, 'eg. include/',
+			),
+			FolderListFieldControl,
+		);
+
+		this.createSection(
+			'prebuilt',
+			container,
+			localize('kendrytePackageJsonEditor.prebuilt.title', 'Prebuilt library file'),
+			localize('kendrytePackageJsonEditor.prebuilt.desc', 'If your library is not open source, assign the pre compiled .a file here.'),
+			($section, property) => this.sectionCreator.createTextInput($section, property,
+				[PackageJsonValidate.Required, PackageJsonValidate.File],
+				'eg. libXXX.a',
+			),
+			SingleFileFieldControl,
+		);
+
+		this.createSection(
+			'exampleSource',
+			container,
+			localize('kendrytePackageJsonEditor.exampleSource.title', 'Examples'),
+			localize('kendrytePackageJsonEditor.exampleSource.desc', 'You can add example in your library (example is a folder contains kendryte-package.json, and it\'s project type is executable).'),
+			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+				PackageJsonValidate.Sources, 'eg. test/',
+			),
+			SingleFolderFieldControl,
+		);
+
+		this.createSection(
+			'properties',
 			container,
 			localize('kendrytePackageJsonEditor.properties.title', 'CMake properties'),
 			localize('kendrytePackageJsonEditor.properties.desc', 'Please check CMake manual to get more information'),
-			($section) => this.createTextAreaMap($section, 'properties', validateKeyValue, 'PROPERTY_NAME1=some value\nPROPERTY_NAME2=some other value'),
+			($section, property) => this.sectionCreator.createTextAreaMap($section, property,
+				PackageJsonValidate.KeyValue, 'PROPERTY_NAME1=some value\nPROPERTY_NAME2=some other value',
+			),
 		);
 
-		this.controls.extraList = this.createSection(
+		this.createSection(
+			'extraList',
 			container,
 			localize('kendrytePackageJsonEditor.extraList.title', 'Prepend raw cmake lists'),
 			localize('kendrytePackageJsonEditor.extraList.desc', 'This file\'s content will add into generated cmakelist, note that you cannot use compile target, because it did not created.'),
-			($section) => this.createTextInput($section, 'extraList', validateFile, localize('kendrytePackageJsonEditor.extraList.placeholder', 'Do not use this in most project.')),
+			($section, property) => this.sectionCreator.createTextInput($section, property,
+				PackageJsonValidate.File, localize('kendrytePackageJsonEditor.extraList.placeholder', 'Do not use this in most project.'),
+			),
+			SingleFileFieldControl,
 		);
 
 		this.json = append(container, $('code.json'));
@@ -382,161 +382,14 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 		this.scroll.scanDomNode();
 	}
 
-	private createTypeSelect(parent: HTMLElement): IUISectionWidget<CMakeProjectTypes, CMakeProjectTypes> {
-		const displayNames = Object.values(typeSelections);
-		const values = Object.keys(typeSelections) as CMakeProjectTypes[];
-
-		let setting = false;
-		let value = values[0];
-		const input = this._register(new SelectBox(displayNames.map(selectBoxNames), 0, this.contextViewService));
-		this._register(attachSelectBoxStyler(input, this.themeService));
-		this._register(input.onDidSelect((sel: ISelectData) => {
-			if (setting) {
-				return;
-			}
-			value = values[sel.index];
-			this.onTypeChange(values[sel.index]);
-
-			if (value === CMakeProjectTypes.prebuiltLibrary) {
-				this.updateSimple('type', CMakeProjectTypes.library);
-			} else {
-				this.updateSimple('type', value);
-			}
-		}));
-		input.render(parent);
-
-		return {
-			get() {return value;},
-			set(newVal) {
-				setting = true;
-				value = newVal || values[0];
-				console.log('Type SelectBox: set: %s (%s)', newVal, value);
-				input.select(values.indexOf(value));
-				setting = false;
-			},
-		};
-	}
-
-	private _createTextBox(
-		parent: HTMLElement,
-		validation: (IInputValidator | IInputValidator[]),
-		placeholder: string,
-		textarea: boolean,
-	): InputBox {
-		const input = this._register(new InputBox(parent, this.contextViewService, {
-			placeholder,
-			validationOptions: {
-				validation: combineValidation(validation),
-			},
-			flexibleHeight: textarea,
-		}));
-		input.width = 320;
-		this._register(attachInputBoxStyler(input, this.themeService));
-		this._register(input.onDidHeightChange(() => {
-			this.scroll.scanDomNode();
-		}));
-		return input;
-	}
-
-	private createTextInput(
-		parent: HTMLElement,
+	private createSection<T>(
 		property: ICompileInfoPossibleKeys,
-		validation: (IInputValidator | IInputValidator[]),
-		placeholder: string,
-	): IUISectionWidget<string, string> {
-		const input = this._createTextBox(parent, validation, placeholder, false);
-		let setting = false;
-		this._register(input.onDidChange((data: string) => {
-			if (setting) {
-				return;
-			}
-			this.updateSimple(property, data);
-		}));
-		return {
-			get() {return input.value;},
-			set(v) {
-				setting = true;
-				input.value = v || '';
-				setting = false;
-			},
-		};
-	}
-
-	private createTextAreaMap(
 		parent: HTMLElement,
-		property: ICompileInfoPossibleKeys,
-		validation: (IInputValidator | IInputValidator[]),
-		placeholder: string,
-	): IUISectionWidget<string | string[], MapLike<string>> {
-		const input = this._createTextBox(parent, validation, placeholder, true);
-		let setting = false;
-		const ret = {
-			get(): MapLike<string> {
-				const obj: any = {};
-				input.value.split('\n').filter(e => e.length > 0).forEach((line) => {
-					let f = line.indexOf('=');
-					if (f === -1) {
-						f = line.length;
-					}
-					obj[line.substr(0, f)] = line.substr(f + 1);
-				});
-				return obj;
-			},
-			set(v: string | string[]) {
-				setting = true;
-				if (v) {
-					if (typeof v === 'string') {
-						input.value = v;
-					} else {
-						input.value = Object.entries(v).map(([k, v]) => {
-							return `${k}=${v}`;
-						}).join('\n');
-					}
-				} else {
-					input.value = '';
-				}
-				setting = false;
-			},
-		};
-		this._register(input.onDidChange((data: string) => {
-			if (setting) {
-				return;
-			}
-			this.updateSimple(property, ret.get());
-		}));
-		return ret;
-	}
-
-	private createTextAreaArray(
-		parent: HTMLElement,
-		property: ICompileInfoPossibleKeys,
-		validation: (IInputValidator | IInputValidator[]),
-		placeholder: string,
-	): IUISectionWidget<string[] | string, string[]> {
-		const input = this._createTextBox(parent, validation, placeholder, true);
-		let setting = false;
-		const ret = {
-			get() {return input.value.split('\n').filter(e => e.length > 0);},
-			set(v: string[] | string) {
-				setting = true;
-				if (v) {
-					input.value = Array.isArray(v) ? v.join('\n') : v;
-				} else {
-					input.value = '';
-				}
-				setting = false;
-			},
-		};
-		this._register(input.onDidChange((data: string) => {
-			if (setting) {
-				return;
-			}
-			this.updateSimple(property, ret.get());
-		}));
-		return ret;
-	}
-
-	private createSection<T>(parent: HTMLElement, title: string, desc: string, input: ($section: HTMLDivElement) => IUISectionWidget<T>): IUISection<T> {
+		title: string,
+		desc: string,
+		input: ($section: HTMLDivElement, property: ICompileInfoPossibleKeys) => IUISectionWidget<T>,
+		controllerClass?: new(control: IUISection<T>, ...services: { _serviceBrand: any; }[]) => AbstractFieldControl<T>,
+	) {
 		const container: HTMLDivElement = append(parent, $('div.section'));
 
 		const left: HTMLDivElement = append(container, $('div.left'));
@@ -546,11 +399,23 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 		d.innerText = desc;
 
 		const section = append(container, $('div.right')) as HTMLDivElement;
-		const widget = input(section);
-		return {
+		const widget = input(section, property);
+
+		const bundle: IUISection<T> = {
+			title,
 			widget,
+			sectionControl: append(section, $('div.control')),
 			section: container,
 		};
+
+		if (controllerClass) {
+			const controller = this._register(this.instantiationService.createInstance(controllerClass, bundle));
+			this._register(controller.onUpdate((value) => {
+				this.updateSimple(property, value);
+			}));
+		}
+
+		this.controls[property] = bundle;
 	}
 
 	private updateSimple(property: ICompileInfoPossibleKeys, value: any): void {

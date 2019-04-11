@@ -1,41 +1,62 @@
 .editable-select-box {
-  border: transparent 1px solid;
-  padding: 1px;
-  position: relative;
-  width: 100%;
-  display: flex; }
-  .editable-select-box .synthetic-focus, .editable-select-box select, .editable-select-box input {
-    outline: none !important; }
-  .editable-select-box > .editable-select-holder {
-    display: none; }
-  .editable-select-box > .input {
-    flex-grow: 1; }
-    .editable-select-box > .input input {
-      display: block;
-      border: none; }
-  .editable-select-box.has-select > .select {
-    position: absolute;
-    z-index: 10;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: 100%; }
-    .editable-select-box.has-select > .select select {
-      display: block;
-      left: 0;
-      top: 0;
-      height: 100%;
-      width: 100%; }
-  .editable-select-box.enable-input.has-select > .input {
-    position: relative;
-    z-index: 11; }
-  .editable-select-box.enable-input.has-select > .editable-select-holder {
-    display: block;
-    z-index: 9;
-    position: relative;
-    width: 18px; }
-  .editable-select-box:not(.enable-input).has-select > .input {
-    position: relative;
-    z-index: 9; }
+	border: transparent 1px solid;
+	padding: 1px;
+	position: relative;
+	width: 100%;
+	display: flex;
+}
+
+.editable-select-box .synthetic-focus,
+.editable-select-box select,
+.editable-select-box input {
+	outline: none !important;
+}
+
+.editable-select-box>.editable-select-holder {
+	display: none;
+}
+
+.editable-select-box>.input {
+	flex-grow: 1;
+}
+
+.editable-select-box>.input input {
+	display: block;
+	border: none;
+}
+
+.editable-select-box.has-select>.select {
+	position: absolute;
+	z-index: 10;
+	left: 0;
+	top: 0;
+	height: 100%;
+	width: 100%;
+}
+
+.editable-select-box.has-select>.select select {
+	display: block;
+	left: 0;
+	top: 0;
+	height: 100%;
+	width: 100%;
+}
+
+.editable-select-box.enable-input.has-select>.input {
+	position: relative;
+	z-index: 11;
+}
+
+.editable-select-box.enable-input.has-select>.editable-select-holder {
+	display: block;
+	z-index: 9;
+	position: relative;
+	width: 18px;
+}
+
+.editable-select-box:not(.enable-input).has-select>.input {
+	position: relative;
+	z-index: 9;
+}
 
 /*# sourceMappingURL=editableSelect.css.map */

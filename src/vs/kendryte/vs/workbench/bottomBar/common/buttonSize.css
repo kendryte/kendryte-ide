@@ -1,8 +1,13 @@
-.monaco-workbench > .part.statusbar > .statusbar-item[statusbar-entry-priority='5.99'], .monaco-workbench > .part.statusbar > .statusbar-item[statusbar-entry-priority='3.99'] {
-  padding: 0 0.3em 0 0.3em;
-  background-color: rgba(128, 128, 128, 0.5); }
-  .monaco-workbench > .part.statusbar > .statusbar-item[statusbar-entry-priority='5.99'] > *, .monaco-workbench > .part.statusbar > .statusbar-item[statusbar-entry-priority='3.99'] > * {
-    margin: auto;
-    padding: 0; }
+.monaco-workbench>.part.statusbar>.statusbar-item[statusbar-entry-priority='5.99'],
+.monaco-workbench>.part.statusbar>.statusbar-item[statusbar-entry-priority='3.99'] {
+	padding: 0 0.3em 0 0.3em;
+	background-color: rgba(128, 128, 128, 0.5);
+}
+
+.monaco-workbench>.part.statusbar>.statusbar-item[statusbar-entry-priority='5.99']>*,
+.monaco-workbench>.part.statusbar>.statusbar-item[statusbar-entry-priority='3.99']>* {
+	margin: auto;
+	padding: 0;
+}
 
 /*# sourceMappingURL=buttonSize.css.map */

@@ -17,7 +17,6 @@ export interface ICommonProject {
 	name: string;
 	version: string;
 	homepage?: string;
-	output?: string;
 	dependency: { [id: string]: string };
 	properties: { [id: string]: string };
 	header: string[];

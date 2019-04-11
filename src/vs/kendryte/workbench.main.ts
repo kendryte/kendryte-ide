@@ -55,8 +55,6 @@ import 'vs/kendryte/vs/workbench/bottomBar/common/kendryteButtonContribution';
 // Package Manager
 import 'vs/kendryte/vs/workbench/packageManager/browser/actionsContribution';
 import 'vs/kendryte/vs/workbench/packageManager/electron-browser/mainPanelContribution';
-// open forum
-import 'vs/kendryte/vs/workbench/webpageLink/electron-browser/registerForumContribution';
 // kendryte-package-json editor
 import 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/kendryteJsonContribution';
 // OpenOCD
@@ -70,3 +68,5 @@ import 'vs/kendryte/vs/code/electron-browser/updater/register';
 import 'vs/kendryte/vs/workbench/bootstrap/common/kendryteBootstrap';
 // open actions
 import 'vs/kendryte/vs/platform/open/electron-browser/register';
+// file dialog
+import 'vs/kendryte/vs/platform/fileDialog/common/configContribution';
