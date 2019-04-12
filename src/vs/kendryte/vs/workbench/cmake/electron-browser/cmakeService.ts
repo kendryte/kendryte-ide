@@ -124,7 +124,6 @@ export class CMakeService implements ICMakeService {
 		this.localDefine.push(`-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE`);
 
 		// console.log('cmake service init.');
-		this.localEnv.CMAKE_MAKE_PROGRAM = this.configurationService.getValue<string>(CONFIG_KEY_MAKE_PROGRAM) || 'make';
 
 		this.workspaceContextService.onDidChangeWorkspaceFolders(() => {
 			this.rescanCurrentFolder().then(undefined, (e) => {
@@ -167,9 +166,16 @@ export class CMakeService implements ICMakeService {
 		const staticEnv = await this.getCMakeDef();
 		const env: any = getEnvironment(this.nodePathService);
 
+		const extraConfigEnv = {
+			CMAKE_MAKE_PROGRAM: this.configurationService.getValue<string>(CONFIG_KEY_MAKE_PROGRAM) || 'make',
+		};
+
+		this.logger.debug('CMAKE_MAKE_PROGRAM=', extraConfigEnv.CMAKE_MAKE_PROGRAM);
+
 		return {
 			...env,
 			...staticEnv,
+			...extraConfigEnv,
 			...this.localEnv,
 		};
 	}
