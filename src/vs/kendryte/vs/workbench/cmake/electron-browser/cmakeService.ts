@@ -29,7 +29,6 @@ import {
 	ICMakeProtocolSetGlobalSettings,
 } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/message';
 import { CMakeCache } from 'vs/kendryte/vs/workbench/cmake/node/cmakeCache';
-import { isWindows } from 'vs/base/common/platform';
 import { LineData, LineProcess } from 'vs/base/node/processes';
 import { cpus } from 'os';
 import { CMAKE_TARGET_TYPE } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/config';
@@ -124,12 +123,8 @@ export class CMakeService implements ICMakeService {
 		this.localDefine = [];
 		this.localDefine.push(`-DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE`);
 
-		console.log('cmake service init.');
-		if (isWindows) {
-			this.localEnv.CMAKE_MAKE_PROGRAM = 'mingw32-make.exe';
-		} else {
-			this.localEnv.CMAKE_MAKE_PROGRAM = this.configurationService.getValue<string>(CONFIG_KEY_MAKE_PROGRAM) || '/usr/bin/make';
-		}
+		// console.log('cmake service init.');
+		this.localEnv.CMAKE_MAKE_PROGRAM = this.configurationService.getValue<string>(CONFIG_KEY_MAKE_PROGRAM) || 'make';
 
 		this.workspaceContextService.onDidChangeWorkspaceFolders(() => {
 			this.rescanCurrentFolder().then(undefined, (e) => {

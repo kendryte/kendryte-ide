@@ -2,6 +2,7 @@ import {
 	CONFIG_CATEGORY,
 	CONFIG_DESCRIPTION_BUILD_VERBOSE,
 	CONFIG_DESCRIPTION_DEBUG,
+	CONFIG_DESCRIPTION_MAKE_PROGRAM,
 	CONFIG_KEY_BUILD_VERBOSE,
 	CONFIG_KEY_CMAKE_DEBUG,
 	CONFIG_KEY_MAKE_PROGRAM,
@@ -29,9 +30,9 @@ registerConfiguration({
 		},
 		[CONFIG_KEY_MAKE_PROGRAM]: {
 			title: CONFIG_LABEL_MAKE_PROGRAM,
-			type: 'file',
-			default: '/usr/bin/make',
-			description: CONFIG_DESCRIPTION_BUILD_VERBOSE,
+			type: 'string',
+			default: 'make',
+			description: CONFIG_DESCRIPTION_MAKE_PROGRAM,
 		},
 	},
 });

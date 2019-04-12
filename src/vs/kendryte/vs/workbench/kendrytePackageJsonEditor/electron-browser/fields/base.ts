@@ -123,7 +123,7 @@ export abstract class AbstractFieldControl<T> extends Disposable {
 			exclude = alwaysIgnorePattern;
 		}
 		const glob = `${sourceDir}${recursive ? '/**' : ''}/*.{${types.join(',')}}`;
-		console.log('glob files: "%s" in %s', glob, sourceDir);
+		// console.log('glob files: "%s" in %s', glob, sourceDir);
 		return fastGlobAsync(glob, {
 			cwd: this.nodePathService.workspaceFilePath(),
 			stats: false,
