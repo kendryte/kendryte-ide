@@ -23,6 +23,15 @@
         flex: 1; }
         .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right textarea.input {
           width: 100%; }
+        .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control {
+          display: flex;
+          flex-direction: row; }
+          .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control > * {
+            flex: 0;
+            white-space: nowrap;
+            margin-right: 0.3em; }
+            .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control > * .icon {
+              margin-right: 2px; }
     .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > code.json {
       margin-top: 15px;
       white-space: pre;

@@ -1,18 +1,29 @@
-.monaco-workbench .visualstudio-icon:before {
-	content: ' ';
-	display: inline-block;
-	height: 1em;
-	width: 1em;
+.monaco-workbench {
+	.visualstudio-icon,
+	.octicon-vs,
+	.vscode-icon {
+		&:before {
+			background-repeat: no-repeat;
+			background-size: contain;
+			content: ' ';
+			display: inline-block;
+			height: 1em;
+			width: 1em;
+		}
+	}
 }
 
 .monaco-workbench .octicon.octicon-vs {
 	font-family: initial !important;
-	
-	&:before {
-		content: ' ';
-		display: inline-block;
-		height: 1em;
-		width: 1em;
+}
+
+@mixin create_code($name) {
+	.monaco-workbench .vscode-icon.#{$name}:before {
+		background-image: url("#{$name}.svg");
+		
+		.vs-dark & {
+			background-image: url("#{$name}_inverse.svg");
+		}
 	}
 }
 
@@ -36,3 +47,9 @@
 @include create('library');
 @include create('example');
 @include create('select');
+@include create('add-folder');
+@include create('add-add-folder');
+@include create('add-file');
+@include create('clear-window');
+@include create_code('AddFile');
+@include create_code('AddFolder');

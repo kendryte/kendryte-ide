@@ -26,7 +26,7 @@ export class PackageDetailCompletionInput extends EditorInput {
 		const otherpackageInput = other as PackageDetailCompletionInput;
 
 		return this.packageType === otherpackageInput.packageType &&
-		       this.packageName === otherpackageInput.packageName;
+			this.packageName === otherpackageInput.packageName;
 	}
 
 	getName(): string {

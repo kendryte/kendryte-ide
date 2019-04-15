@@ -76,7 +76,7 @@ start "zadig" /D ${JSON.stringify(dirname(zadigExe))} /WAIT ${JSON.stringify(zad
 
 		const handle = this.notificationService.notify({
 			severity: Severity.Info,
-			message: 'Learn how to install JLink driver.',
+			message: localize('leanHow', 'Learn how to install JLink driver.'),
 			actions: {
 				primary: [this.instantiationService.createInstance(OpenUrlAction, localize('detail', 'Show Detail'), URL_INSTALL_JLINK_DRIVER)],
 				secondary: [

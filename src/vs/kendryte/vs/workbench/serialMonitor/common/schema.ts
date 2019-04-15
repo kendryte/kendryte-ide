@@ -75,7 +75,7 @@ export const localOptionsScheme: IJSONSchemaMapOf<ISerialMonitorSettings> = {
 	},
 	inputCharset: {
 		title: localize('inputCharset.title', 'Input Charset'),
-		description: localize('outputCharset.desc', 'Transform your input before send to device'),
+		description: localize('inputCharset.desc', 'Transform your input before send to device'),
 		type: 'string',
 		enum: ['latin1', 'utf8', 'hex'],
 		default: 'latin1',

@@ -218,7 +218,7 @@ export class SerialLoader extends Disposable {
 			if (op.op === ISPOperation.ISP_FLASH_WRITE && op.err === ISPError.ISP_RET_OK) {
 				speed.setCurrent(bytesProcessed);
 				if (report) {
-					report.message(localize('serial.memory.writing', 'Writing Flash @ {0}', speed.getSpeed()));
+					report.message(localize('serial.flash.writing', 'Writing Flash @ {0}', speed.getSpeed()));
 					report.progress(bytesProcessed);
 				}
 			} else {

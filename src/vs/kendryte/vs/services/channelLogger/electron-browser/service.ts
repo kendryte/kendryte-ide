@@ -43,7 +43,7 @@ class ChannelLogService extends Disposable implements IChannelLogService {
 			log,
 			file,
 		});
-		const newItem = new ChannelLogger(this.windowService.getCurrentWindowId(), this.outputService.getChannel(id) as IOutputChannel);
+		const newItem = new ChannelLogger(this.windowService.windowId, this.outputService.getChannel(id) as IOutputChannel);
 		this._register(newItem);
 
 		this.map.set(id, newItem);

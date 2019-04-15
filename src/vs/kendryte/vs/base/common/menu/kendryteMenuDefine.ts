@@ -44,7 +44,7 @@ import {
 	ACTION_LABEL_RELOAD,
 	ACTION_LABEL_REPORT_BUG,
 } from 'vs/kendryte/vs/base/common/menu/processTool';
-import { ACTION_ID_OPEN_FORUM, ACTION_LABEL_OPEN_FORUM } from 'vs/kendryte/vs/base/common/menu/webLink';
+import { ACTION_ID_OPEN_DOCUMENT, ACTION_ID_OPEN_FORUM, ACTION_LABEL_OPEN_DOCUMENT, ACTION_LABEL_OPEN_FORUM } from 'vs/kendryte/vs/base/common/menu/webLink';
 
 export class MyMenuSeparator {
 	public readonly separator = true;
@@ -76,6 +76,7 @@ export const ApplicationMenuStructure: MyMenuRegistry = [
 	new MyMenuSeparator('kendryte'),
 
 	new MyMenu(ACTION_ID_OPEN_FORUM, ACTION_LABEL_OPEN_FORUM),
+	new MyMenu(ACTION_ID_OPEN_DOCUMENT, ACTION_LABEL_OPEN_DOCUMENT),
 	new MyMenu(ACTION_ID_OPEN_FPIOA_EDIT, ACTION_LABEL_OPEN_FPIOA_EDIT),
 
 	new MyMenuSeparator('debug'),
