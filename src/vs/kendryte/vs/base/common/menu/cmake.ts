@@ -15,7 +15,7 @@ export const ACTION_ID_MAIX_CMAKE_BUILD = 'workbench.action.kendryte.build';
 export const ACTION_LABEL_MAIX_CMAKE_BUILD = localize('build', 'Build');
 
 export const ACTION_ID_MAIX_CMAKE_RUN = 'workbench.action.kendryte.run';
-export const ACTION_LABEL_MAIX_CMAKE_RUN = localize('debug', 'Run');
+export const ACTION_LABEL_MAIX_CMAKE_RUN = localize('run', 'Run');
 export const ACTION_ID_MAIX_CMAKE_BUILD_RUN = 'workbench.action.kendryte.build-run';
 export const ACTION_LABEL_MAIX_CMAKE_BUILD_RUN = localize('and', '{0} and {1}', ACTION_LABEL_MAIX_CMAKE_BUILD, ACTION_LABEL_MAIX_CMAKE_RUN);
 

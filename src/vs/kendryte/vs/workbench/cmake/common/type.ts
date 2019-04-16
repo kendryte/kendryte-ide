@@ -1,9 +1,13 @@
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
 import { Event } from 'vs/base/common/event';
+import { localize } from 'vs/nls';
 
 export const CMAKE_CHANNEL = 'maix-make-run';
 export const CMAKE_CHANNEL_TITLE = 'Build/Run';
+
+export const CMAKE_ERROR_REQUIRE_FOLDER = localize('ErrorRequireFolder', 'You must open a folder to do this.');
+export const CMAKE_ERROR_NOT_PROJECT = localize('ErrorNotProject', 'You must open a folder to do this.');
 
 export interface ICMakeSelection {
 	variant: string;

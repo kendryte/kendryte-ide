@@ -11,6 +11,7 @@ import {
 import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { IQuickInputService } from 'vs/platform/quickinput/common/quickInput';
+import { localize } from 'vs/nls';
 
 export class InstallDependencyAction extends Action {
 	public static readonly ID = ACTION_ID_PACKAGE_MANAGER_INSTALL_DEPENDENCY;
@@ -68,7 +69,7 @@ export class InstallSingleDependencyAction extends Action {
 					label: v.versionName,
 					description: relInfo,
 				};
-			}), { placeHolder: 'Select version to install' });
+			}), { placeHolder: localize('selectVersion', 'Select version to install') });
 			if (!sel) {
 				return;
 			}

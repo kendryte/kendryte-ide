@@ -7,7 +7,7 @@ import * as minimist from 'minimist';
 import * as os from 'os';
 import { localize } from 'vs/nls';
 import { ParsedArgs } from 'vs/platform/environment/common/environment';
-import { join } from 'path';
+import { join } from 'vs/base/common/path';
 import { writeFileSync } from 'fs';
 
 /**
@@ -66,6 +66,7 @@ export const options: Option[] = [
 	{ id: 'max-memory', type: 'string', cat: 't', description: localize('maxMemory', "Max memory size for a window (in Mbytes).") },
 
 	{ id: 'remote', type: 'string' },
+	{ id: 'locate-extension', type: 'string' },
 	{ id: 'extensionDevelopmentPath', type: 'string' },
 	{ id: 'extensionTestsPath', type: 'string' },
 	{ id: 'debugId', type: 'string' },
@@ -94,7 +95,8 @@ export const options: Option[] = [
 	{ id: 'trace-category-filter', type: 'string' },
 	{ id: 'trace-options', type: 'string' },
 	{ id: 'prof-code-loading', type: 'boolean' },
-	{ id: 'nodeless', type: 'boolean' } // TODO@ben revisit electron5 nodeless support
+	{ id: 'nodeless', type: 'boolean' }, // TODO@ben revisit electron5 nodeless support
+	{ id: '_', type: 'string' }
 ];
 
 export function parseArgs(args: string[], isOptionSupported = (_: Option) => true): ParsedArgs {

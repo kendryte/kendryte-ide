@@ -7,7 +7,7 @@ export const CONFIG_CATEGORY = {
 	BUILD: { id: 'build', category: localize('build', 'Build'), parent: 'build-deploy' },
 	ID_DEBUG: { id: 'debug', category: localize('debug', 'Debug'), parent: 'build-deploy' },
 	OPENOCD: { id: 'openocd', category: localize('openocd', 'OpenOCD'), parent: 'build-deploy' },
-	DEBUG_JTAG: { id: 'debug.jtag', category: ' › ' + localize('jtag', 'JTag'), parent: 'build-deploy' },
+	DEBUG_JTAG: { id: 'debug.jtag', category: ' › ' + localize('jtag', 'JLink'), parent: 'build-deploy' },
 	DEBUG_FTDI: { id: 'debug.ftdi', category: ' › ' + localize('ftdi', 'FTDI'), parent: 'build-deploy' },
 	DEBUG_CUSTOM: { id: 'debug.custom', category: ' › ' + localize('custom', 'Custom'), parent: 'build-deploy' },
 	DEPLOY: { id: 'deploy', category: localize('deploy', 'Deploy'), parent: 'build-deploy' },
@@ -38,7 +38,7 @@ export const CONFIG_DESCRIPTION_OPENOCD_CORE = localize('debug.openocd.core', 'w
 
 //
 export const CONFIG_KEY_JTAG_ID = 'debug.jtag.id';
-export const CONFIG_DESCRIPTION_JTAG_ID = localize('debug.jtag.id.desc', 'Serial number of JTag device, 0 means use first available.');
+export const CONFIG_DESCRIPTION_JTAG_ID = localize('debug.jtag.id.desc', 'Serial number of JLink device, 0 means use first available.');
 
 export const CONFIG_KEY_JTAG_SPEED = 'debug.jtag.speed';
 export const CONFIG_DESCRIPTION_JTAG_SPEED = localize('debug.jtag.speed.desc', 'khz');

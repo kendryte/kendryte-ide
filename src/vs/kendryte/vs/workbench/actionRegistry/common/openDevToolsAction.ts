@@ -2,6 +2,7 @@ import { IWindowService } from 'vs/platform/windows/common/windows';
 import { localize } from 'vs/nls';
 import { Action } from 'vs/base/common/actions';
 import { registerExternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
+import { ACTION_CATEGORY_BUILD_DEBUG } from 'vs/kendryte/vs/base/common/menu/cmake';
 
 export class OpenDevToolsAction extends Action {
 
@@ -19,4 +20,4 @@ export class OpenDevToolsAction extends Action {
 	}
 }
 
-registerExternalAction(localize('debug', 'Debug'), OpenDevToolsAction);
+registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, OpenDevToolsAction);

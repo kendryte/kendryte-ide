@@ -3,6 +3,8 @@ import { localize } from 'vs/nls';
 import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
 import { lstatSync } from 'fs';
 
+export type IValidValidator = IInputValidator | undefined ;
+
 function msg(content: string, type: MessageType = MessageType.ERROR): IMessage | null {
 	return { content, type };
 }
@@ -107,10 +109,13 @@ export function validateKeyValue(value: string): IMessage | null {
 	return null;
 }
 
-export function combineValidation(validation: (IInputValidator | IInputValidator[])): IInputValidator {
+export function combineValidation(validation: IValidValidator | IValidValidator[]): IInputValidator | undefined {
 	if (Array.isArray(validation)) {
 		return (value: string) => {
 			for (const vf of validation) {
+				if (!vf) {
+					continue;
+				}
 				const ret = vf(value);
 				if (ret) {
 					return ret;

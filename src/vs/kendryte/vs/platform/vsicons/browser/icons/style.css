@@ -1,4 +1,8 @@
-.monaco-workbench .visualstudio-icon:before {
+.monaco-workbench .visualstudio-icon:before,
+.monaco-workbench .octicon-vs:before,
+.monaco-workbench .vscode-icon:before {
+  background-repeat: no-repeat;
+  background-size: contain;
   content: ' ';
   display: inline-block;
   height: 1em;
@@ -6,11 +10,6 @@
 
 .monaco-workbench .octicon.octicon-vs {
   font-family: initial !important; }
-  .monaco-workbench .octicon.octicon-vs:before {
-    content: ' ';
-    display: inline-block;
-    height: 1em;
-    width: 1em; }
 
 .monaco-workbench .visualstudio-icon.library:before {
   background-image: url("library.svg"); }
@@ -41,5 +40,55 @@
   background-image: url("select.svg"); }
   .vs-dark .monaco-workbench .octicon.octicon-vs.select:before {
     background-image: url("select-dark.svg"); }
+
+.monaco-workbench .visualstudio-icon.add-folder:before {
+  background-image: url("add-folder.svg"); }
+  .vs-dark .monaco-workbench .visualstudio-icon.add-folder:before {
+    background-image: url("add-folder-dark.svg"); }
+
+.monaco-workbench .octicon.octicon-vs.add-folder:before {
+  background-image: url("add-folder.svg"); }
+  .vs-dark .monaco-workbench .octicon.octicon-vs.add-folder:before {
+    background-image: url("add-folder-dark.svg"); }
+
+.monaco-workbench .visualstudio-icon.add-add-folder:before {
+  background-image: url("add-add-folder.svg"); }
+  .vs-dark .monaco-workbench .visualstudio-icon.add-add-folder:before {
+    background-image: url("add-add-folder-dark.svg"); }
+
+.monaco-workbench .octicon.octicon-vs.add-add-folder:before {
+  background-image: url("add-add-folder.svg"); }
+  .vs-dark .monaco-workbench .octicon.octicon-vs.add-add-folder:before {
+    background-image: url("add-add-folder-dark.svg"); }
+
+.monaco-workbench .visualstudio-icon.add-file:before {
+  background-image: url("add-file.svg"); }
+  .vs-dark .monaco-workbench .visualstudio-icon.add-file:before {
+    background-image: url("add-file-dark.svg"); }
+
+.monaco-workbench .octicon.octicon-vs.add-file:before {
+  background-image: url("add-file.svg"); }
+  .vs-dark .monaco-workbench .octicon.octicon-vs.add-file:before {
+    background-image: url("add-file-dark.svg"); }
+
+.monaco-workbench .visualstudio-icon.clear-window:before {
+  background-image: url("clear-window.svg"); }
+  .vs-dark .monaco-workbench .visualstudio-icon.clear-window:before {
+    background-image: url("clear-window-dark.svg"); }
+
+.monaco-workbench .octicon.octicon-vs.clear-window:before {
+  background-image: url("clear-window.svg"); }
+  .vs-dark .monaco-workbench .octicon.octicon-vs.clear-window:before {
+    background-image: url("clear-window-dark.svg"); }
+
+.monaco-workbench .vscode-icon.AddFile:before {
+  background-image: url("AddFile.svg"); }
+  .vs-dark .monaco-workbench .vscode-icon.AddFile:before {
+    background-image: url("AddFile_inverse.svg"); }
+
+.monaco-workbench .vscode-icon.AddFolder:before {
+  background-image: url("AddFolder.svg"); }
+  .vs-dark .monaco-workbench .vscode-icon.AddFolder:before {
+    background-image: url("AddFolder_inverse.svg"); }
 
 /*# sourceMappingURL=style.css.map */

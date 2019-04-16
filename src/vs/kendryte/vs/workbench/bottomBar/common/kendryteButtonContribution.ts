@@ -22,7 +22,6 @@ import {
 import { Registry } from 'vs/platform/registry/common/platform';
 import { LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { localize } from 'vs/nls';
-import { ACTION_ID_MAIX_CMAKE_SELECT_TARGET, ACTION_ID_MAIX_CMAKE_SELECT_VARIANT } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
 import { CONTEXT_CMAKE_WORKING } from 'vs/kendryte/vs/workbench/cmake/common/contextKey';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { ACTION_ID_SERIAL_MONITOR_TOGGLE, ACTION_LABEL_SERIAL_MONITOR_TOGGLE } from 'vs/kendryte/vs/workbench/serialMonitor/common/actionId';
@@ -31,6 +30,8 @@ import { ISerialPortService } from 'vs/kendryte/vs/services/serialPort/common/ty
 import { Disposable } from 'vs/base/common/lifecycle';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { errorForeground } from 'vs/platform/theme/common/colorRegistry';
+import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
+import { CMakeError, CMakeErrorType } from 'vs/kendryte/vs/workbench/cmake/common/errors';
 
 class KendryteButtonContribution extends Disposable implements IWorkbenchContribution {
 	private errorButton: IPublicStatusButton;
@@ -103,18 +104,6 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 		// errorButton.command = ACTION_ID_SHOW_CMAKE_LOG;
 		errorButton.contextKey = cmakeButtonsShow;
 
-		const selectVariantButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
-		selectVariantButton.text = '<...>';
-		selectVariantButton.tooltip = localize('debug.select.variant', 'Click to select build variant');
-		selectVariantButton.command = ACTION_ID_MAIX_CMAKE_SELECT_VARIANT;
-		selectVariantButton.contextKey = cmakeButtonsShow;
-
-		const selectTargetButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
-		selectTargetButton.text = '<...>';
-		selectTargetButton.tooltip = localize('debug.select.target', 'Click to select build target');
-		selectTargetButton.command = ACTION_ID_MAIX_CMAKE_SELECT_TARGET;
-		selectTargetButton.contextKey = cmakeButtonsShow;
-
 		const cleanButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
 		cleanButton.text = '$(trashcan)';
 		cleanButton.tooltip = ACTION_LABEL_MAIX_CMAKE_CLEANUP;
@@ -145,19 +134,28 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 		uploadButton.command = ACTION_ID_MAIX_SERIAL_BUILD_UPLOAD;
 		uploadButton.contextKey = cmakeButtonsShow;
 
-		this.cmakeService.onCMakeSelectionChange((current) => {
-			selectVariantButton.text = current.variant ? `[${current.variant}]` : `<All>`;
-			selectTargetButton.text = current.target ? `[${current.target}]` : `<Def>`;
-		});
-
 		this._register(this.themeService.onThemeChange(() => {
 			this.updateErrorButtonColor();
 		}));
 		this.cmakeService.onCMakeProjectChange((e) => {
 			if (e) {
 				errorButton.text = '$(alert)';
-				errorButton.command = ACTION_ID_SHOW_CMAKE_LOG;
 				errorButton.tooltip = localize('error', 'CMake Error: {0}', e.message);
+
+				if (e instanceof CMakeError) {
+					switch (e.type) {
+						case CMakeErrorType.NO_WORKSPACE:
+							errorButton.command = 'workbench.action.files.openFolder';
+							break;
+						case CMakeErrorType.PROJECT_NOT_EXISTS:
+							errorButton.command = ACTION_ID_MAIX_CMAKE_HELLO_WORLD;
+							break;
+						default:
+							errorButton.command = ACTION_ID_SHOW_CMAKE_LOG;
+					}
+				} else {
+					errorButton.command = ACTION_ID_SHOW_CMAKE_LOG;
+				}
 			} else {
 				errorButton.text = '$(check)';
 				errorButton.command = undefined as any;

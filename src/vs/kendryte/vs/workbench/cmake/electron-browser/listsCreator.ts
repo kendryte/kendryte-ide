@@ -16,6 +16,7 @@ import { resolve } from 'path';
 import { async as fastGlobAsync, EntryItem } from 'fast-glob';
 import { ExtendMap } from 'vs/kendryte/vs/base/common/extendMap';
 import { localize } from 'vs/nls';
+import { ignorePattern } from 'vs/kendryte/vs/platform/fileDialog/common/globalIgnore';
 
 export const CMAKE_LIST_GENERATED_WARNING = '# [NEVER REMOVE THIS LINE] WARNING: this file is generated, please edit ' + CMAKE_CONFIG_FILE_NAME + ' file instead.';
 const iternalSourceCodeFiles: string[] = [
@@ -165,10 +166,6 @@ export class CMakeListsCreator {
 
 		if (!lib) {
 			this.treeCache[current.name] = current;
-		}
-
-		if (!current.output) {
-			current.output = 'build';
 		}
 
 		return this.treeCache[lib] = current;
@@ -600,13 +597,6 @@ export class CMakeListsCreator {
 				// remove absolute and empty entries
 				return fp.replace(/^\.*[\/\\]*/, '').trim();
 			}).filter(e => e.length > 0);
-
-		const ignorePattern = [
-			(item.output || 'build') + '/**',
-			CMAKE_LIBRARY_FOLDER_NAME + '/**',
-			'.*',
-			'.*/**',
-		];
 
 		this.logger.info(`Source to match ${sourceToMatch.length}:`);
 		sourceToMatch.forEach((line) => {

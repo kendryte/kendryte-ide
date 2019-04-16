@@ -8,11 +8,13 @@ import { endsWith } from 'vs/base/common/strings';
 import { IKendrytePackageJsonEditorService } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/kendrytePackageJsonEditorService';
 import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { KendrytePackageJsonEditorInput } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/kendrytePackageJsonEditorInput';
+import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 
 export class KendrytePackageJsonEditorHandlerContribution extends Disposable implements IWorkbenchContribution {
 	constructor(
 		@IEditorService private readonly editorService: IEditorService,
 		@IKendrytePackageJsonEditorService private readonly kendrytePackageJsonEditorService: IKendrytePackageJsonEditorService,
+		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
 	) {
 		super();
 
@@ -30,6 +32,10 @@ export class KendrytePackageJsonEditorHandlerContribution extends Disposable imp
 			!resource ||
 			!endsWith(resource.path, CMAKE_CONFIG_FILE_NAME) // resource must end in kendryte-package.json
 		) {
+			return;
+		}
+
+		if (this.workspaceContextService.getWorkbenchState() === WorkbenchState.EMPTY) {
 			return;
 		}
 

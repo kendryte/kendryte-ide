@@ -36,6 +36,21 @@
 				textarea.input {
 					width: 100%;
 				}
+				
+				> .control {
+					display: flex;
+					flex-direction: row;
+					
+					> * {
+						flex: 0;
+						white-space: nowrap;
+						margin-right: 0.3em;
+						
+						.icon {
+							margin-right: 2px;
+						}
+					}
+				}
 			}
 		}
 		

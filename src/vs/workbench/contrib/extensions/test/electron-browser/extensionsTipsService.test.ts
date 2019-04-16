@@ -21,13 +21,12 @@ import { Emitter } from 'vs/base/common/event';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
-import { TestTextResourceConfigurationService, TestContextService, TestLifecycleService, TestEnvironmentService, TestStorageService, TestSharedProcessService } from 'vs/workbench/test/workbenchTestServices';
+import { TestTextResourceConfigurationService, TestContextService, TestLifecycleService, TestEnvironmentService, TestSharedProcessService } from 'vs/workbench/test/workbenchTestServices';
 import { TestNotificationService } from 'vs/platform/notification/test/common/testNotificationService';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { URI } from 'vs/base/common/uri';
 import { testWorkspace } from 'vs/platform/workspace/test/common/testWorkspace';
-import { IFileService } from 'vs/platform/files/common/files';
-import { FileService } from 'vs/workbench/services/files/node/fileService';
+import { LegacyFileService } from 'vs/workbench/services/files/node/fileService';
 import { TestConfigurationService } from 'vs/platform/configuration/test/common/testConfigurationService';
 import { IPager } from 'vs/base/common/paging';
 import { assign } from 'vs/base/common/objects';
@@ -35,7 +34,7 @@ import { getGalleryExtensionId } from 'vs/platform/extensionManagement/common/ex
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { ConfigurationKey } from 'vs/workbench/contrib/extensions/common/extensions';
 import { ExtensionManagementService } from 'vs/platform/extensionManagement/node/extensionManagementService';
-import { TestExtensionEnablementService } from 'vs/platform/extensionManagement/test/electron-browser/extensionEnablementService.test';
+import { TestExtensionEnablementService } from 'vs/workbench/services/extensionManagement/test/electron-browser/extensionEnablementService.test';
 import { IURLService } from 'vs/platform/url/common/url';
 import product from 'vs/platform/product/node/product';
 import { ITextModel } from 'vs/editor/common/model';
@@ -48,6 +47,11 @@ import { TestExperimentService } from 'vs/workbench/contrib/experiments/test/ele
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { ExtensionType } from 'vs/platform/extensions/common/extensions';
 import { ISharedProcessService } from 'vs/platform/ipc/electron-browser/sharedProcessService';
+import { FileService2 } from 'vs/workbench/services/files2/common/fileService2';
+import { NullLogService } from 'vs/platform/log/common/log';
+import { Schemas } from 'vs/base/common/network';
+import { DiskFileSystemProvider } from 'vs/workbench/services/files2/node/diskFileSystemProvider';
+import { IFileService } from 'vs/platform/files/common/files';
 
 const mockExtensionGallery: IGalleryExtension[] = [
 	aGalleryExtension('MockExtension1', {
@@ -279,7 +283,15 @@ suite('ExtensionsTipsService Test', () => {
 		const myWorkspace = testWorkspace(URI.from({ scheme: 'file', path: folderDir }));
 		workspaceService = new TestContextService(myWorkspace);
 		instantiationService.stub(IWorkspaceContextService, workspaceService);
-		instantiationService.stub(IFileService, new FileService(workspaceService, TestEnvironmentService, new TestTextResourceConfigurationService(), new TestConfigurationService(), new TestLifecycleService(), new TestStorageService(), new TestNotificationService(), { disableWatcher: true }));
+		const fileService = new FileService2(new NullLogService());
+		fileService.registerProvider(Schemas.file, new DiskFileSystemProvider(new NullLogService()));
+		fileService.setLegacyService(new LegacyFileService(
+			fileService,
+			workspaceService,
+			TestEnvironmentService,
+			new TestTextResourceConfigurationService()
+		));
+		instantiationService.stub(IFileService, fileService);
 	}
 
 	function testNoPromptForValidRecommendations(recommendations: string[]) {
@@ -314,7 +326,7 @@ suite('ExtensionsTipsService Test', () => {
 	});
 
 	test('ExtensionTipsService: No Prompt for valid workspace recommendations during extension development', () => {
-		instantiationService.stub(IEnvironmentService, { extensionDevelopmentLocationURI: URI.file('/folder/file') });
+		instantiationService.stub(IEnvironmentService, { extensionDevelopmentLocationURI: [URI.file('/folder/file')] });
 		return testNoPromptOrRecommendationsForValidRecommendations(mockTestData.validRecommendedExtensions);
 	});
 
