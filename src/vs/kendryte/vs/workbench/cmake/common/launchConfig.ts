@@ -60,14 +60,11 @@ export class WorkspaceMaixLaunch implements ILaunch {
 			name: 'Kendryte: Debug with OpenOCD',
 			executable: this.programFile,
 			target: `127.0.0.1:${this.port}`,
-			remote: true,
 			cwd: '${workspaceRoot}/build',
 			internalConsoleOptions: 'openOnSessionStart' as any,
 			env: {
 				...getEnvironment(this.nodePathService),
 			},
-			printCalls: true,
-			stopOnAttach: false,
 			autorun: [],
 			gdbpath: this.GDB,
 		};

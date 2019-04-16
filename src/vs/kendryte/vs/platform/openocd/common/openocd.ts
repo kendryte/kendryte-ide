@@ -1,9 +1,11 @@
 import {
 	CONFIG_CATEGORY,
 	CONFIG_DESCRIPTION_OPENOCD_CORE,
+	CONFIG_DESCRIPTION_OPENOCD_EXTRA_ARGS,
 	CONFIG_DESCRIPTION_OPENOCD_PORT,
 	CONFIG_DESCRIPTION_OPENOCD_USE,
 	CONFIG_KEY_OPENOCD_CORE,
+	CONFIG_KEY_OPENOCD_EXTRA_ARGS,
 	CONFIG_KEY_OPENOCD_PORT,
 	CONFIG_KEY_OPENOCD_USE,
 } from 'vs/kendryte/vs/base/common/configKeys';
@@ -44,6 +46,11 @@ registerConfiguration({
 			default: -1,
 			minimum: -1,
 			maximum: 1,
+		},
+		[CONFIG_KEY_OPENOCD_EXTRA_ARGS]: {
+			description: CONFIG_DESCRIPTION_OPENOCD_EXTRA_ARGS,
+			type: 'string',
+			default: '',
 		},
 	},
 });
