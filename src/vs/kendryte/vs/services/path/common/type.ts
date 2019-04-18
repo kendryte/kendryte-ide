@@ -17,6 +17,7 @@ export interface INodePathService {
 	/** @deprecated osTempDir */tempDir(name?: string): string;
 	createAppLink(): Promise<void>;
 	getPackageFile(): string;
+	kendrytePaths(): string[];
 }
 
 export const INodePathService = createDecorator<INodePathService>('nodePathService');

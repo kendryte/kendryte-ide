@@ -2,7 +2,7 @@ import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IJSONResult, INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { copy, dirExists, exists, mkdirp, readFile, rimraf, stat, unlink, writeFile } from 'vs/base/node/pfs';
 import { ILogService } from 'vs/platform/log/common/log';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { Segment } from 'vs/base/common/json';
 import { URI } from 'vs/base/common/uri';
 import * as encoding from 'vs/base/node/encoding';

@@ -3,7 +3,7 @@ import { registerExternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/
 import { Action } from 'vs/base/common/actions';
 import { localize } from 'vs/nls';
 import { IPanelService } from 'vs/workbench/services/panel/common/panelService';
-import { SerialPortActionCategory } from 'vs/kendryte/vs/base/common/menu/serialPort';
+import { ACTION_CATEGORY_SERIAL_PORT } from 'vs/kendryte/vs/base/common/menu/serialPort';
 import { IWorkbenchLayoutService } from 'vs/workbench/services/layout/browser/layoutService';
 
 class ToggleSerialMonitorAction extends Action {
@@ -28,4 +28,4 @@ class ToggleSerialMonitorAction extends Action {
 	}
 }
 
-registerExternalAction(SerialPortActionCategory, ToggleSerialMonitorAction);
+registerExternalAction(ACTION_CATEGORY_SERIAL_PORT, ToggleSerialMonitorAction);

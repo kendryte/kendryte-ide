@@ -10,7 +10,7 @@ import { IJSONResult, INodeFileSystemService } from 'vs/kendryte/vs/services/fil
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { CONFIG_KEY_BUILD_VERBOSE } from 'vs/kendryte/vs/base/common/configKeys';
-import { relativePath, resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { relativePath, resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { normalizeArray } from 'vs/kendryte/vs/base/common/normalizeArray';
 import { resolve } from 'path';
 import { async as fastGlobAsync, EntryItem } from 'fast-glob';
@@ -68,6 +68,7 @@ function defaultConcat(a: any, b: any) {
 }
 
 const CMAKE_CWD = '${CMAKE_CURRENT_LIST_DIR}/';
+const DefineType = /:(raw|str)$/i;
 
 export class CMakeListsCreator {
 	private readonly readed: KnownFiles = {} as any;
@@ -245,7 +246,9 @@ export class CMakeListsCreator {
 				return;
 			}
 			for (const k of Object.keys(current.definitions)) {
-				const id = k.replace(/:RAW$/, '');
+				const type = DefineType.exec(k);
+				const id = k.replace(DefineType, '');
+
 				const bundle = this.definitionsRegistry.entry(id, () => {
 					return {
 						id,
@@ -253,7 +256,7 @@ export class CMakeListsCreator {
 						value: '',
 					};
 				});
-				if (k.endsWith(':RAW')) {
+				if (type && type[1].toLowerCase() === 'raw') {
 					bundle.value = '' + current.definitions[k];
 				} else {
 					bundle.value = JSON.stringify(current.definitions[k]);
@@ -453,7 +456,7 @@ export class CMakeListsCreator {
 			'project(${PROJECT_NAME})',
 		];
 		if (this.isDebugMode) {
-			ret.push('set(CMAKE_VERBOSE_MAKEFILE TRUE)');
+			ret.push('set(-DCMAKE_VERBOSE_MAKEFILE TRUE)');
 		}
 		return ret;
 	}
@@ -542,6 +545,7 @@ export class CMakeListsCreator {
 			ret.push(`## final create ${current.name} library`);
 			if (current.hasSourceCode) {
 				ret.push('add_library(${PROJECT_NAME} SHARED STATIC ${SOURCE_FILES})');
+				ret.push(`target_compile_definitions(\${PROJECT_NAME} PRIVATE "PROJECT_PATH=${CMAKE_CWD}")`);
 			} else {
 				ret.push('add_library(${PROJECT_NAME} SHARED STATIC IMPORTED GLOBAL)');
 				ret.push('set_property(TARGET ${PROJECT_NAME} PROPERTY IMPORTED_LOCATION');
@@ -551,6 +555,7 @@ export class CMakeListsCreator {
 		} else {
 			ret.push(`## final create ${current.name} executable`);
 			ret.push('add_executable(${PROJECT_NAME} ${SOURCE_FILES})');
+			ret.push(`target_compile_definitions(\${PROJECT_NAME} PRIVATE "PROJECT_PATH=${CMAKE_CWD}")`);
 		}
 		return ret;
 	}

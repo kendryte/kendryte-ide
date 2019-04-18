@@ -33,7 +33,7 @@ import { LineData, LineProcess } from 'vs/base/node/processes';
 import { cpus } from 'os';
 import { CMAKE_TARGET_TYPE } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/config';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { DebugScript, getEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
 import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { CMakeBuildErrorProcessor, CMakeBuildProgressProcessor, CMakeProcessList } from 'vs/kendryte/vs/workbench/cmake/node/outputProcessor';

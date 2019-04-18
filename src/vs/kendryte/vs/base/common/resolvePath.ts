@@ -1,4 +1,4 @@
-import { normalize, relative, resolve } from 'path';
+import { normalize, relative, resolve } from 'vs/base/common/path';
 import { isWindows } from 'vs/base/common/platform';
 import { tmpdir } from 'os';
 

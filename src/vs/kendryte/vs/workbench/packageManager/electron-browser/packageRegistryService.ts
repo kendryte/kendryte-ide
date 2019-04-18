@@ -12,7 +12,7 @@ import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common
 import { ILogService } from 'vs/platform/log/common/log';
 import { IFileCompressService } from 'vs/kendryte/vs/services/fileCompress/node/fileCompressService';
 import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME, CMakeProjectTypes, ICompileInfo, ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { resolve as resolveUrl } from 'url';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';

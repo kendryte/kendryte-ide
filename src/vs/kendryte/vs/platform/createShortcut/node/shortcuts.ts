@@ -2,7 +2,7 @@ import { create as createWindowsAsync, IShortcutOptions, IShortcutValue, query a
 import { isWindows } from 'vs/base/common/platform';
 import { lstat, mkdirp, readlink, rimraf, symlink, writeFile } from 'vs/base/node/pfs';
 import * as fs from 'fs';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { dirname, posix } from 'path';
 import { promisify } from 'util';
 import product from 'vs/platform/product/node/product';

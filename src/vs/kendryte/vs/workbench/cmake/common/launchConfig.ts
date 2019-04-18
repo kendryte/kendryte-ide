@@ -4,7 +4,7 @@ import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspac
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { URI } from 'vs/base/common/uri';
 import { localize } from 'vs/nls';
@@ -57,7 +57,7 @@ export class WorkspaceMaixLaunch implements ILaunch {
 			id: 'kendryte',
 			type: 'kendryte',
 			request: 'launch',
-			name: 'Kendryte: Debug with OpenOCD',
+			name: 'KDBG',
 			executable: this.programFile,
 			target: `127.0.0.1:${this.port}`,
 			cwd: '${workspaceRoot}/build',

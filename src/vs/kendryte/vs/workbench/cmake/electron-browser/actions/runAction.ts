@@ -12,7 +12,7 @@ import { IOpenOCDService } from 'vs/kendryte/vs/services/openocd/common/openOCDS
 import { IDebugService } from 'vs/workbench/contrib/debug/common/debug';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { getEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';

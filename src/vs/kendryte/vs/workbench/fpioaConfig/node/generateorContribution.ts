@@ -11,7 +11,7 @@ import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiati
 import { SyncActionDescriptor } from 'vs/platform/actions/common/actions';
 import { CommandsRegistry } from 'vs/platform/commands/common/commands';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 
 // const category = localize('kendryte', 'Kendryte');
 

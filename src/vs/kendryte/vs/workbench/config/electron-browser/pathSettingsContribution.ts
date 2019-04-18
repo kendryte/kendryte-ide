@@ -8,7 +8,7 @@ import { LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { readdirSync } from 'vs/base/node/pfs';
 import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { ILogService } from 'vs/platform/log/common/log';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 
 interface SettingsOverwiter<T> {
 	(access: ServicesAccessor, old: T, defaultVal?: T): T;

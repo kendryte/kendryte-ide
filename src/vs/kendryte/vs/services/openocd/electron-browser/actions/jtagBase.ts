@@ -16,7 +16,7 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { dirname, normalize } from 'vs/base/common/path';
 import { writeFile } from 'vs/base/node/pfs';
-import { osTempDir } from 'vs/kendryte/vs/base/node/resolvePath';
+import { osTempDir } from 'vs/kendryte/vs/base/common/resolvePath';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { OPENOCD_CHANNEL, OPENOCD_CHANNEL_TITLE } from 'vs/kendryte/vs/services/openocd/common/channel';

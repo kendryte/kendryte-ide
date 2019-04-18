@@ -8,7 +8,7 @@ import { URI } from 'vs/base/common/uri';
 import { IFileDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { FileFilter } from 'vs/platform/windows/common/windows';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { async as fastGlobAsync, Pattern } from 'fast-glob';

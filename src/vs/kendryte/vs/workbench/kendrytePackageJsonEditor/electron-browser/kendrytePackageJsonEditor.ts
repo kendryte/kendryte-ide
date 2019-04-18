@@ -15,7 +15,7 @@ import { IContextViewService } from 'vs/platform/contextview/browser/contextView
 import { localize } from 'vs/nls';
 import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IUISection, IUISectionWidget } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/type';
 import { SectionFactory } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/sectionFactory';

@@ -5,20 +5,23 @@ import {
 	ACTION_ID_MAIX_CMAKE_BUILD_DEBUG,
 	ACTION_ID_MAIX_CMAKE_BUILD_RUN,
 	ACTION_ID_MAIX_CMAKE_CLEANUP,
-	ACTION_ID_MAIX_SERIAL_BOOT,
-	ACTION_ID_MAIX_SERIAL_BUILD_UPLOAD,
-	ACTION_ID_MAIX_SERIAL_SELECT_DEFAULT,
 	ACTION_ID_SHOW_CMAKE_LOG,
 	ACTION_LABEL_CMAKE_NO_ERROR,
 	ACTION_LABEL_MAIX_CMAKE_BUILD,
 	ACTION_LABEL_MAIX_CMAKE_BUILD_DEBUG,
 	ACTION_LABEL_MAIX_CMAKE_BUILD_RUN,
 	ACTION_LABEL_MAIX_CMAKE_CLEANUP,
+} from 'vs/kendryte/vs/base/common/menu/cmake';
+import {
+	ACTION_ID_MAIX_SERIAL_BOOT,
+	ACTION_ID_MAIX_SERIAL_BOOT_ISP,
+	ACTION_ID_MAIX_SERIAL_BUILD_UPLOAD,
+	ACTION_ID_MAIX_SERIAL_SELECT_DEFAULT,
 	ACTION_LABEL_MAIX_SERIAL_BOOT,
 	ACTION_LABEL_MAIX_SERIAL_BOOT_ISP,
 	ACTION_LABEL_MAIX_SERIAL_BUILD_UPLOAD,
 	ACTION_LABEL_MAIX_SERIAL_SELECT_DEFAULT,
-} from 'vs/kendryte/vs/base/common/menu/cmake';
+} from 'vs/kendryte/vs/base/common/menu/serialPort';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { localize } from 'vs/nls';
@@ -61,13 +64,11 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 		rebootButton.text = '$(sync)';
 		rebootButton.tooltip = ACTION_LABEL_MAIX_SERIAL_BOOT;
 		rebootButton.command = ACTION_ID_MAIX_SERIAL_BOOT;
-		rebootButton.arguments = ['program'];
 
 		const ispButton = this.statusControl.createInstance(StatusBarLeftLocation.SERIAL);
 		ispButton.text = 'ISP';
 		ispButton.tooltip = ACTION_LABEL_MAIX_SERIAL_BOOT_ISP;
-		ispButton.command = ACTION_ID_MAIX_SERIAL_BOOT;
-		ispButton.arguments = ['isp'];
+		ispButton.command = ACTION_ID_MAIX_SERIAL_BOOT_ISP;
 
 		const selectDefaultButton = this.statusControl.createInstance(StatusBarLeftLocation.SERIAL);
 		selectDefaultButton.tooltip = ACTION_LABEL_MAIX_SERIAL_SELECT_DEFAULT;

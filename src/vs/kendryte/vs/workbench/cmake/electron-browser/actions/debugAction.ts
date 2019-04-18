@@ -2,7 +2,7 @@ import { Action } from 'vs/base/common/actions';
 import { IDebugService, ILaunch } from 'vs/workbench/contrib/debug/common/debug';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { ILogService } from 'vs/platform/log/common/log';
 import { DebugScript } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
 import { visit } from 'vs/base/common/json';

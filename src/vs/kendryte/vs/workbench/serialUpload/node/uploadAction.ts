@@ -6,15 +6,15 @@ import { exists, lstat } from 'vs/base/node/pfs';
 import { IProgressService2, ProgressLocation } from 'vs/platform/progress/common/progress';
 import { SubProgress } from 'vs/kendryte/vs/platform/config/common/progress';
 import { ISerialPortService, SerialPortCloseReason } from 'vs/kendryte/vs/services/serialPort/common/type';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
+import { ACTION_ID_MAIX_CMAKE_BUILD } from 'vs/kendryte/vs/base/common/menu/cmake';
 import {
-	ACTION_ID_MAIX_CMAKE_BUILD,
 	ACTION_ID_MAIX_SERIAL_BUILD_UPLOAD,
 	ACTION_ID_MAIX_SERIAL_UPLOAD,
 	ACTION_LABEL_MAIX_SERIAL_BUILD_UPLOAD,
 	ACTION_LABEL_MAIX_SERIAL_UPLOAD,
-} from 'vs/kendryte/vs/base/common/menu/cmake';
+} from 'vs/kendryte/vs/base/common/menu/serialPort';
 import { FlashTargetType, SerialLoader } from 'vs/kendryte/vs/workbench/serialUpload/node/flasher';
 import { CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';

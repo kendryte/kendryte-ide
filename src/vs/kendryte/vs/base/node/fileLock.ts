@@ -2,7 +2,7 @@ import { hash } from 'vs/base/common/hash';
 import { lock as rawLock, unlock as rawUnlock } from 'proper-lockfile';
 import { fileExists, mkdirp, unlink, writeFile } from 'vs/base/node/pfs';
 import { ICommonLogger } from 'vs/kendryte/vs/base/common/log';
-import { osTempDir } from 'vs/kendryte/vs/base/node/resolvePath';
+import { osTempDir } from 'vs/kendryte/vs/base/common/resolvePath';
 import { dirname } from 'vs/base/common/path';
 
 export function wrapActionWithFileLock<T>(fileToLock: string, logger: ICommonLogger, action: () => Thenable<T>): Promise<T> {

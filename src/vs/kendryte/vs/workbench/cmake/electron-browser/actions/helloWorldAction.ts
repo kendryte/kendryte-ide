@@ -9,7 +9,7 @@ import { copy, fileExists, mkdirp, unlink } from 'vs/base/node/pfs';
 import { ACTIVE_GROUP, IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { CMAKE_CONFIG_FILE_NAME, IExecutableProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { assertNotNull } from 'vs/kendryte/vs/base/common/assertNotNull';
 
 export class MaixCMakeHelloWorldAction extends Action {

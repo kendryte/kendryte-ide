@@ -1,6 +1,6 @@
 import { IInputValidator, IMessage, MessageType } from 'vs/base/browser/ui/inputbox/inputBox';
 import { localize } from 'vs/nls';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { lstatSync } from 'fs';
 
 export type IValidValidator = IInputValidator | undefined ;

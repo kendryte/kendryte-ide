@@ -40,6 +40,7 @@ const libUsbDisconnect = /\bLIBUSB_ERROR_NO_DEVICE\b/;
 const TDOHigh = /\bTDO seems to be stuck high\b/;
 const startOk = /\bExamined RISCV core\b/;
 const commonError = / IR capture error; saw /;
+const listenBusy = /couldn't bind .+ to socket on port/;
 
 export class OpenOCDService implements IOpenOCDService {
 	_serviceBrand: any;
@@ -285,6 +286,13 @@ export class OpenOCDService implements IOpenOCDService {
 			this.stop().catch(undefined);
 		} else if (TDOHigh.test(line)) {
 			this.restart().catch(undefined);
+		} else if (listenBusy.test(line)) {
+			Promise.all([
+				this.configurationService.updateValue(CONFIG_KEY_OPENOCD_PORT, 0, ConfigurationTarget.WORKSPACE),
+				this.configurationService.updateValue(CONFIG_KEY_OPENOCD_PORT, 0, ConfigurationTarget.USER),
+			]).then(() => {
+				return this.stop();
+			}).catch(undefined);
 		} else if (this.okWait) {
 			if (startOk.test(line)) {
 				this.okPromise.complete(undefined);

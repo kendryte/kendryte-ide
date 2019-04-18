@@ -8,7 +8,7 @@ import { doubleExtname } from 'vs/kendryte/vs/base/common/doubleExtname';
 import { hash } from 'vs/base/common/hash';
 import { ILogService } from 'vs/platform/log/common/log';
 import { defaultConsoleLogger } from 'vs/kendryte/vs/platform/log/node/consoleLogger';
-import { osTempDir } from 'vs/kendryte/vs/base/node/resolvePath';
+import { osTempDir } from 'vs/kendryte/vs/base/common/resolvePath';
 import { wrapActionWithFileLock } from 'vs/kendryte/vs/base/node/fileLock';
 
 export class NodeDownloadService implements INodeDownloadService {

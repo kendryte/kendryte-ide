@@ -5,7 +5,7 @@ import { FocusTerminalFindWidgetAction } from 'vs/workbench/contrib/terminal/bro
 import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
 import { Action } from 'vs/base/common/actions';
 import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
-import { SerialPortActionCategory } from 'vs/kendryte/vs/base/common/menu/serialPort';
+import { ACTION_CATEGORY_SERIAL_PORT } from 'vs/kendryte/vs/base/common/menu/serialPort';
 
 export class SerialPortShowFindAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_ACTION_FOCUS_FIND_WIDGET;
@@ -26,6 +26,6 @@ export class SerialPortShowFindAction extends Action {
 	}
 }
 
-registerActionWithKey(SerialPortActionCategory, SerialPortShowFindAction, {
+registerActionWithKey(ACTION_CATEGORY_SERIAL_PORT, SerialPortShowFindAction, {
 	primary: KeyMod.CtrlCmd | KeyCode.KEY_F,
 }, CONTEXT_IN_SERIAL_PORT_OUTPUT, KeybindingWeight.WorkbenchContrib + 3);

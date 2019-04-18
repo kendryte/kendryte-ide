@@ -28,7 +28,7 @@ export class MaixCMakeBuildAction extends Action {
 				this.notificationService.info('Build complete.');
 			}
 		}, (e) => {
-			debugger;
+			// debugger;
 			this.outputChannel.append('\n[ERROR] Build failed.\n');
 			this.outputChannel.append(`${e.stack || e.message}\n`);
 			this.outputChannel.append('[ERROR] Build failed.\n');
