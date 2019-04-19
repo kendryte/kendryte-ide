@@ -5,15 +5,16 @@ import { IEditorInput } from 'vs/workbench/common/editor';
 import { IEditorOptions, ITextEditorOptions } from 'vs/platform/editor/common/editor';
 import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { endsWith } from 'vs/base/common/strings';
-import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
-import { IFlashManagerEditorService } from 'vs/kendryte/vs/workbench/flashManager/common/flashManagerEditorService';
-import { FlashManagerEditorInput } from 'vs/kendryte/vs/workbench/flashManager/electron-browser/flashManagerEditorInput';
+import { IFlashManagerService } from 'vs/kendryte/vs/workbench/flashManager/common/flashManagerService';
+import { FlashManagerEditorInput } from 'vs/kendryte/vs/workbench/flashManager/common/editorInput';
+import { basename, dirname } from 'vs/base/common/path';
+import { FLASH_MANAGER_CONFIG_FILE_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 
 export class FlashManagerHandlerContribution extends Disposable implements IWorkbenchContribution {
 	constructor(
 		@IEditorService private readonly editorService: IEditorService,
-		@IFlashManagerEditorService private readonly flashManagerEditorService: IFlashManagerEditorService,
+		@IFlashManagerService private readonly flashManagerEditorService: IFlashManagerService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
 	) {
 		super();
@@ -30,7 +31,8 @@ export class FlashManagerHandlerContribution extends Disposable implements IWork
 		const resource = editor.getResource();
 		if (
 			!resource ||
-			!endsWith(resource.path, CMAKE_CONFIG_FILE_NAME) // resource must end in kendryte-package.json
+			!endsWith(basename(dirname(resource.path)), PROJECT_CONFIG_FOLDER_NAME) ||
+			!endsWith(resource.path, FLASH_MANAGER_CONFIG_FILE_NAME)
 		) {
 			return;
 		}

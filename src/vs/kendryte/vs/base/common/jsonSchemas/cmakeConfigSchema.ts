@@ -1,9 +1,15 @@
 import { IJSONSchema, IJSONSchemaMap } from 'vs/base/common/jsonSchema';
 import { localize } from 'vs/nls';
 import { SchemaArray, SchemaMap } from 'vs/kendryte/vs/base/common/jsonSchemaHelper/commonTypes';
+import {
+	CMAKE_CONFIG_FILE_NAME as CMAKE_CONFIG_FILE_NAME_NEW,
+	CMAKE_LIBRARY_FOLDER_NAME as CMAKE_LIBRARY_FOLDER_NAME_NEW,
+} from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 
-export const CMAKE_CONFIG_FILE_NAME = 'kendryte-package.json';
-export const CMAKE_LIBRARY_FOLDER_NAME = 'kendryte_libraries';
+/** @deprecated */
+export const CMAKE_CONFIG_FILE_NAME = CMAKE_CONFIG_FILE_NAME_NEW;
+/** @deprecated */
+export const CMAKE_LIBRARY_FOLDER_NAME = CMAKE_LIBRARY_FOLDER_NAME_NEW;
 export const CMAKE_LIST_GENERATED_WARNING = '# [NEVER REMOVE THIS LINE] WARNING: this file is generated, please edit ' + CMAKE_CONFIG_FILE_NAME + ' file instead.';
 
 const cmakeSchemaId = 'vscode://schemas/CMakeLists';

@@ -34,6 +34,8 @@ import 'vs/kendryte/vs/platform/vscode/electron-browser/relaunchRenderService';
 import 'vs/kendryte/vs/workbench/fpioaConfig/node/generateorContribution';
 import 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaContribution';
 import 'vs/kendryte/vs/workbench/fpioaConfig/common/packagings/includeAllContribution';
+// flash manager
+import 'vs/kendryte/vs/workbench/flashManager/electron-browser/flashManagerContribution';
 // Serial Devices
 import 'vs/kendryte/vs/services/serialPort/node/serialPortService';
 import 'vs/kendryte/vs/services/serialPort/common/configContribution';

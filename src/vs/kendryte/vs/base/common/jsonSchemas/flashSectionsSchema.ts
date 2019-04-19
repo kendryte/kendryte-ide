@@ -6,14 +6,22 @@ export const FLASH_CONFIG_FILE_NAME = 'kendryte-package.json';
 const flashSchemaId = 'vscode://schemas/flasher';
 
 export interface IFlashManagerConfigJson {
-	downloadSections: IFlashSection[]
+	baseAddress: string;
+	totalSize: number;
+	downloadSections: IFlashSection[];
 }
+
+export type IFlashManagerConfigJsonReadonly = Readonly<{
+	baseAddress: string;
+	totalSize: number;
+	downloadSections: ReadonlyArray<IFlashSection>;
+}>;
 
 export interface IFlashSection {
 	name: string;
 	address: string;
+	autoAddress: boolean;
 	filename: string;
-	sha256: boolean;
 }
 
 const downloadSectionProps: IJSONSchemaMap = {

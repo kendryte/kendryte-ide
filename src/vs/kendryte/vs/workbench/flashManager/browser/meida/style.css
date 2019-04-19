@@ -1,0 +1,56 @@
+[id="workbench.editor.flashManagerEditor"] > .subContainer {
+  overflow: hidden;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column; }
+  [id="workbench.editor.flashManagerEditor"] > .subContainer > .titlebar {
+    overflow: hidden; }
+    [id="workbench.editor.flashManagerEditor"] > .subContainer > .titlebar > .error {
+      margin-bottom: 5px;
+      font-size: large; }
+    [id="workbench.editor.flashManagerEditor"] > .subContainer > .titlebar > .buttonBar {
+      margin-bottom: 5px;
+      display: flex;
+      flex-direction: row;
+      white-space: nowrap; }
+      [id="workbench.editor.flashManagerEditor"] > .subContainer > .titlebar > .buttonBar .monaco-button {
+        padding: 4px 12px;
+        margin-right: 0.7em;
+        display: block; }
+        [id="workbench.editor.flashManagerEditor"] > .subContainer > .titlebar > .buttonBar .monaco-button > span {
+          margin-right: 4px; }
+      [id="workbench.editor.flashManagerEditor"] > .subContainer > .titlebar > .buttonBar > .createButton {
+        position: relative;
+        overflow: hidden; }
+        [id="workbench.editor.flashManagerEditor"] > .subContainer > .titlebar > .buttonBar > .createButton > .alter {
+          position: absolute;
+          top: 100%; }
+      [id="workbench.editor.flashManagerEditor"] > .subContainer > .titlebar > .buttonBar > .spacer {
+        flex: 1; }
+  [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer {
+    flex: 1;
+    overflow: hidden; }
+    [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section {
+      display: block;
+      position: relative;
+      overflow: hidden;
+      line-height: 1em;
+      padding: 12px 10px; }
+      [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section label {
+        display: inline-block;
+        margin-right: 1.2em; }
+      [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > * {
+        margin-bottom: 8px; }
+      [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l1 {
+        position: relative; }
+        [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l1 > .remove {
+          position: absolute;
+          right: 0;
+          top: 0;
+          padding: 8px; }
+      [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l2 > .file {
+        display: block; }
+      [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l2 .octicon {
+        line-height: unset; }
+
+/*# sourceMappingURL=style.css.map */

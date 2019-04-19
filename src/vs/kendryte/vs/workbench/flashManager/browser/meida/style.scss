@@ -1,0 +1,93 @@
+[id="workbench.editor.flashManagerEditor"] {
+	> .subContainer {
+		overflow: hidden;
+		margin: 0 auto;
+		display: flex;
+		flex-direction: column;
+		
+		> .titlebar {
+			overflow: hidden;
+			
+			
+			> .error {
+				margin-bottom: 5px;
+				font-size: large;
+			}
+			
+			> .buttonBar {
+				margin-bottom: 5px;
+				display: flex;
+				flex-direction: row;
+				white-space: nowrap;
+				
+				.monaco-button {
+					padding: 4px 12px;
+					margin-right: 0.7em;
+					display: block;
+					
+					> span {
+						margin-right: 4px;
+					}
+				}
+				
+				> .createButton {
+					position: relative;
+					overflow: hidden;
+					
+					> .alter {
+						position: absolute;
+						top: 100%;
+					}
+				}
+				
+				
+				> .spacer {
+					flex: 1;
+				}
+			}
+		}
+		
+		> .listContainer {
+			flex: 1;
+			overflow: hidden;
+			
+			.flash-section {
+				display: block;
+				position: relative;
+				overflow: hidden;
+				line-height: 1em;
+				padding: 12px 10px;
+				
+				label {
+					display: inline-block;
+					margin-right: 1.2em;
+				}
+				
+				> * {
+					margin-bottom: 8px;
+				}
+				
+				> .l1 {
+					position: relative;
+					
+					> .remove {
+						position: absolute;
+						right: 0;
+						top: 0;
+						padding: 8px;
+					}
+				}
+				
+				> .l2 {
+					> .file {
+						display: block;
+					}
+					
+					.octicon {
+						line-height: unset;
+					}
+				}
+			}
+		}
+	}
+}
