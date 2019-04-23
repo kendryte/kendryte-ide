@@ -1,6 +1,5 @@
 import { IListVirtualDelegate } from 'vs/base/browser/ui/list/list';
 import { IPagedRenderer } from 'vs/base/browser/ui/list/listPaging';
-import { IFlashSection } from 'vs/kendryte/vs/base/common/jsonSchemas/flashSectionsSchema';
 import { $, append } from 'vs/base/browser/dom';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { IMessage, InputBox, MessageType } from 'vs/base/browser/ui/inputbox/inputBox';
@@ -11,7 +10,6 @@ import { localize } from 'vs/nls';
 import { attachButtonStyler, attachInputBoxStyler } from 'vs/platform/theme/common/styler';
 import { Action } from 'vs/base/common/actions';
 import { vscodeIconClass, vsiconClass } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
-import { lstat } from 'vs/base/node/pfs';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { Emitter } from 'vs/base/common/event';
 import { IFileDialogService } from 'vs/platform/dialogs/common/dialogs';
@@ -19,6 +17,11 @@ import { URI } from 'vs/base/common/uri';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { Button } from 'vs/base/browser/ui/button/button';
+import { isValidFlashAddressString, parseMemoryAddress, validMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
+import { IFlashSectionUI } from 'vs/kendryte/vs/workbench/flashManager/common/type';
+import { IFlashSection } from 'vs/kendryte/vs/base/common/jsonSchemas/flashSectionsSchema';
+import { LazyInputBox } from 'vs/kendryte/vs/base/browser/ui/lazyInputBox';
+import { FLASH_SAFE_ADDRESS } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
 
 const TEMPLATE_ID = 'template.flash.manager.list.section';
 
@@ -28,10 +31,17 @@ const invalidName: IMessage = {
 	type: MessageType.ERROR,
 };
 
-const validAddress = /^(?:0x)?[0-9a-fA-F]+$/;
 const invalidAddress: IMessage = {
-	content: localize('invalidAddress', 'Invalid address, must match: {0}', '' + validAddress),
+	content: localize('invalidAddress', 'Invalid address, must match: {0}', '' + validMemoryAddress),
 	type: MessageType.ERROR,
+};
+const invalidAddressAlign: IMessage = {
+	content: localize('invalidAddressAlign', 'Flash address must be divisible by {0}', 8),
+	type: MessageType.ERROR,
+};
+const warnApplicationAddress: IMessage = {
+	content: localize('noteAddressProgram', 'Note: remember to verify your program binary size'),
+	type: MessageType.WARNING,
 };
 
 const emptyFile: IMessage = {
@@ -44,31 +54,35 @@ interface ITemplateData {
 	readonly toDispose: IDisposable;
 	readonly nameInput: InputBox;
 	readonly addressInput: InputBox;
+	readonly addressEndDisplay: InputBox
 	readonly fileInput: InputBox;
 	readonly removeButton: Button;
+	readonly moveUpButton: Button;
+	readonly moveDownButton: Button;
 }
 
-export class FlashSectionDelegate implements IListVirtualDelegate<IFlashSection> {
-	public getHeight(element: IFlashSection): number {
+export class FlashSectionDelegate implements IListVirtualDelegate<IFlashSectionUI> {
+	public getHeight(element: IFlashSectionUI): number {
 		return 110;
 	}
 
-	public getTemplateId(element: IFlashSection): string {
+	public getTemplateId(element: IFlashSectionUI): string {
 		return TEMPLATE_ID;
 	}
 }
 
-export class FlashSectionRender implements IPagedRenderer<IFlashSection, ITemplateData> {
+export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemplateData> {
 	public readonly templateId: string = TEMPLATE_ID;
 	private readonly rootPath: string;
 
-	private readonly _onFieldChange = new Emitter<{ id: number; field: keyof IFlashSection; value: string }>();
+	private readonly _onFieldChange = new Emitter<{ id: string; field: keyof IFlashSection; value: string }>();
 	public readonly onFieldChange = this._onFieldChange.event;
 
-	private readonly _onDelete = new Emitter<number>();
-	public readonly onDelete = this._onDelete.event;
+	private readonly _onDeleteClick = new Emitter<string>();
+	public readonly onDeleteClick = this._onDeleteClick.event;
 
-	private readonly conflictList = new Map<string, number>();
+	private readonly _onMove = new Emitter<{ id: string; toDown: boolean; }>(); // moveDown = true
+	public readonly onMove = this._onMove.event;
 
 	constructor(
 		@INodePathService nodePathService: INodePathService,
@@ -80,7 +94,10 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSection, ITempla
 		this.rootPath = nodePathService.workspaceFilePath();
 	}
 
-	public renderElement(element: IFlashSection, index: number, templateData: ITemplateData, dynamicHeightProbing?: boolean): void {
+	public renderElement(element: IFlashSectionUI, index: number, templateData: ITemplateData, dynamicHeightProbing?: boolean): void {
+		// console.log('render item ', index);
+		templateData.elementDispose = dispose(templateData.elementDispose);
+
 		templateData.nameInput.value = element.name;
 		if (element.autoAddress) {
 			templateData.addressInput.value = '';
@@ -89,35 +106,31 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSection, ITempla
 			templateData.addressInput.value = element.address;
 			templateData.addressInput.setPlaceHolder('');
 		}
+		templateData.addressEndDisplay.value = `${element.addressEnd} (${element.filesize} bytes)`;
+
 		templateData.fileInput.value = element.filename;
 
-		if (element.filename) {
-			lstat(element.filename).then(() => {
-
-			}, (e) => {
-				// ignore
-			});
-		}
-
-		templateData.elementDispose = dispose(templateData.elementDispose);
 		templateData.elementDispose.push(templateData.nameInput.onDidChange((text) => {
-			this._onFieldChange.fire({ id: index, field: 'name', value: text });
+			this._onFieldChange.fire({ id: element.id, field: 'name', value: text });
 		}));
 		templateData.elementDispose.push(templateData.addressInput.onDidChange((text) => {
-			this._onFieldChange.fire({ id: index, field: 'address', value: text });
+			this._onFieldChange.fire({ id: element.id, field: 'address', value: text });
 		}));
 		templateData.elementDispose.push(templateData.fileInput.onDidChange((text) => {
-			this._onFieldChange.fire({ id: index, field: 'filename', value: text });
+			this._onFieldChange.fire({ id: element.id, field: 'filename', value: text });
 		}));
 		templateData.elementDispose.push(templateData.removeButton.onDidClick(() => {
-			this._onDelete.fire(index);
+			this._onDeleteClick.fire(element.id);
 		}));
-
-		console.log('render item ', index);
+		templateData.elementDispose.push(templateData.moveUpButton.onDidClick(() => {
+			this._onMove.fire({ id: element.id, toDown: false });
+		}));
+		templateData.elementDispose.push(templateData.moveDownButton.onDidClick(() => {
+			this._onMove.fire({ id: element.id, toDown: true });
+		}));
 	}
 
-	public disposeElement(element: IFlashSection, index: number, templateData: ITemplateData, dynamicHeightProbing?: boolean): void {
-		this.conflictList.delete(element.name);
+	public disposeElement(element: IFlashSectionUI, index: number, templateData: ITemplateData, dynamicHeightProbing?: boolean): void {
 		templateData.elementDispose = dispose(templateData.elementDispose);
 	}
 
@@ -131,7 +144,12 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSection, ITempla
 		const l1 = append(parent, $('div.l1'));
 		const nameInput = this.createNameBox(l1, dis);
 		const addressInput = this.createAddressBox(l1, dis);
-		const removeButton = this.createRemoveButton(l1, dis);
+		const addressEndDisplay = this.createAddressEnd(l1, dis);
+
+		const ctl = append(l1, $('div.ctl'));
+		const moveUpButton = this.createMoveButton('up', ctl, dis);
+		const moveDownButton = this.createMoveButton('down', ctl, dis);
+		const removeButton = this.createRemoveButton(ctl, dis);
 
 		const l2 = append(parent, $('div.l2'));
 		const fileInput = this.createFileBox(l2, dis);
@@ -140,8 +158,11 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSection, ITempla
 			toDispose: dis,
 			nameInput,
 			addressInput,
+			addressEndDisplay,
 			fileInput,
 			removeButton,
+			moveUpButton,
+			moveDownButton,
 			elementDispose: [],
 		};
 	}
@@ -154,7 +175,7 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSection, ITempla
 		const nameInputLabel = append(parent, $('label.name'));
 		nameInputLabel.textContent = localize('nameLabel', 'Section name: ');
 
-		const nameInput = _disposable.register(new InputBox(nameInputLabel, this.contextViewService, {
+		const nameInput = _disposable.register(new LazyInputBox(nameInputLabel, this.contextViewService, {
 			placeholder: localize('namePlaceholder', 'Reference name'),
 			validationOptions: {
 				validation(val: string) {
@@ -174,14 +195,24 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSection, ITempla
 		const addressInputLabel = append(parent, $('label.address'));
 		addressInputLabel.textContent = localize('addressLabel', 'Flash address: ');
 
-		const addressInput = _disposable.register(new InputBox(addressInputLabel, this.contextViewService, {
+		const addressInput = _disposable.register(new LazyInputBox(addressInputLabel, this.contextViewService, {
 			placeholder: localize('addressPlaceholder', 'Flash address'),
 			validationOptions: {
 				validation(val: string) {
-					if (validAddress.test(val)) {
+					if (!val) { // auto address
 						return null;
 					}
-					return invalidAddress;
+					if (!isValidFlashAddressString(val)) {
+						return invalidAddress;
+					}
+					const loc = parseMemoryAddress(val);
+					if (loc % 8) {
+						return invalidAddressAlign;
+					}
+					if (loc < FLASH_SAFE_ADDRESS) {
+						return warnApplicationAddress;
+					}
+					return null;
 				},
 			},
 			actions: [
@@ -195,11 +226,24 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSection, ITempla
 		return addressInput;
 	}
 
+	private createAddressEnd(parent: HTMLElement, _disposable: PublicDisposable) {
+		const label = append(parent, $('label.address'));
+		label.textContent = localize('addressEndLabel', 'End: ');
+
+		const input = _disposable.register(new InputBox(label, undefined));
+		input.disable();
+		input.inputElement.readOnly = true;
+
+		_disposable.register(attachInputBoxStyler(input, this.themeService));
+
+		return input;
+	}
+
 	private createFileBox(parent: HTMLElement, _disposable: PublicDisposable) {
 		const label = append(parent, $('label.file'));
-		label.textContent = localize('fileLabel', 'File path: (relative to current project)');
+		label.textContent = localize('fileLabel', 'File path:');
 
-		const input: InputBox = _disposable.register(new InputBox(label, this.contextViewService, {
+		const input: InputBox = _disposable.register(new LazyInputBox(label, this.contextViewService, {
 			placeholder: localize('addressPlaceholder', 'Flash address'),
 			validationOptions: {
 				validation(val: string) {
@@ -247,6 +291,15 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSection, ITempla
 		_disposable.register(attachButtonStyler(button, this.themeService));
 		button.element.classList.add('remove');
 		append(button.element, $('span.octicon.octicon-x'));
+		return button;
+	}
+
+	private createMoveButton(action: string, parent: HTMLElement, _disposable: PublicDisposable) {
+		const button = _disposable.register(new Button(parent, {}));
+		_disposable.register(attachButtonStyler(button, this.themeService));
+		button.element.classList.add('move');
+		button.element.classList.add(action);
+		append(button.element, $('span.octicon.octicon-chevron-' + action));
 		return button;
 	}
 }

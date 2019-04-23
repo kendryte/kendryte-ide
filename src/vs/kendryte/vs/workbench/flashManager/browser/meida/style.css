@@ -21,10 +21,13 @@
           margin-right: 4px; }
       [id="workbench.editor.flashManagerEditor"] > .subContainer > .titlebar > .buttonBar > .createButton {
         position: relative;
-        overflow: hidden; }
+        overflow: hidden;
+        z-index: 1000; }
         [id="workbench.editor.flashManagerEditor"] > .subContainer > .titlebar > .buttonBar > .createButton > .alter {
           position: absolute;
           top: 100%; }
+        [id="workbench.editor.flashManagerEditor"] > .subContainer > .titlebar > .buttonBar > .createButton:hover {
+          overflow: visible; }
       [id="workbench.editor.flashManagerEditor"] > .subContainer > .titlebar > .buttonBar > .spacer {
         flex: 1; }
   [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer {
@@ -43,11 +46,17 @@
         margin-bottom: 8px; }
       [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l1 {
         position: relative; }
-        [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l1 > .remove {
+        [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l1 > .ctl {
           position: absolute;
           right: 0;
           top: 0;
-          padding: 8px; }
+          display: flex; }
+          [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l1 > .ctl > .move {
+            margin-left: 0.6em; }
+          [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l1 > .ctl > .remove {
+            margin-left: 1.1em; }
+          [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l1 > .ctl > * {
+            padding: 6px; }
       [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l2 > .file {
         display: block; }
       [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l2 .octicon {

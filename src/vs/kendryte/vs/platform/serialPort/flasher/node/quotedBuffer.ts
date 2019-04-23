@@ -1,5 +1,5 @@
-import { garbageEvent, quoteMark } from 'vs/kendryte/vs/workbench/serialUpload/node/bufferConsts';
-import { BaseTransformStream } from 'vs/kendryte/vs/workbench/serialUpload/node/baseTransform';
+import { garbageEvent, quoteMark } from 'vs/kendryte/vs/platform/serialPort/flasher/node/bufferConsts';
+import { BaseTransformStream } from 'vs/kendryte/vs/platform/serialPort/flasher/node/baseTransform';
 
 export class QuotingBuffer extends BaseTransformStream<string, Buffer> {
 	transform(chunk: string) {

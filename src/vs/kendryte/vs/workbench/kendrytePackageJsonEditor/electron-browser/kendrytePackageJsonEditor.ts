@@ -349,7 +349,7 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 			'exampleSource',
 			container,
 			localize('kendrytePackageJsonEditor.exampleSource.title', 'Examples'),
-			localize('kendrytePackageJsonEditor.exampleSource.desc', 'You can add example in your library (example is a folder contains kendryte-package.json, and it\'s project type is executable).'),
+			localize('kendrytePackageJsonEditor.exampleSource.desc', 'You can add example in your library (example is a folder contains {0}, and it\'s project type is executable).', CMAKE_CONFIG_FILE_NAME),
 			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
 				PackageJsonValidate.Sources, 'eg. test/',
 			),

@@ -15,11 +15,11 @@ import {
 	ACTION_LABEL_MAIX_SERIAL_BUILD_UPLOAD,
 	ACTION_LABEL_MAIX_SERIAL_UPLOAD,
 } from 'vs/kendryte/vs/base/common/menu/serialPort';
-import { FlashTargetType, SerialLoader } from 'vs/kendryte/vs/workbench/serialUpload/node/flasher';
+import { FlashTargetType, SerialLoader } from 'vs/kendryte/vs/platform/serialPort/flasher/node/flasher';
 import { CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { createActionInstance } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
-import { CHIP_BAUDRATE } from 'vs/kendryte/vs/workbench/serialUpload/common/chipDefine';
+import { CHIP_BAUDRATE } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 
 export class MaixSerialUploadAction extends Action {

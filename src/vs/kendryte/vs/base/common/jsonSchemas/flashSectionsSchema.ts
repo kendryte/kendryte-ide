@@ -1,21 +1,17 @@
 import { IJSONSchema, IJSONSchemaMap } from 'vs/base/common/jsonSchema';
 import { localize } from 'vs/nls';
 
-export const FLASH_CONFIG_FILE_NAME = 'kendryte-package.json';
-
 const flashSchemaId = 'vscode://schemas/flasher';
 
 export interface IFlashManagerConfigJson {
-	baseAddress: string;
-	totalSize: number;
-	downloadSections: IFlashSection[];
+	readonly baseAddress: string;
+	readonly downloadSections: ReadonlyArray<Readonly<IFlashSection>>;
 }
 
-export type IFlashManagerConfigJsonReadonly = Readonly<{
+export interface IFlashManagerConfigJsonWritable extends IFlashManagerConfigJson {
 	baseAddress: string;
-	totalSize: number;
-	downloadSections: ReadonlyArray<IFlashSection>;
-}>;
+	downloadSections: IFlashSection[];
+}
 
 export interface IFlashSection {
 	name: string;

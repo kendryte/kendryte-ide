@@ -1,5 +1,5 @@
-import { escapeMark, quoteMark } from 'vs/kendryte/vs/workbench/serialUpload/node/bufferConsts';
-import { BaseTransformStream } from 'vs/kendryte/vs/workbench/serialUpload/node/baseTransform';
+import { escapeMark, quoteMark } from 'vs/kendryte/vs/platform/serialPort/flasher/node/bufferConsts';
+import { BaseTransformStream } from 'vs/kendryte/vs/platform/serialPort/flasher/node/baseTransform';
 
 const escapeMap: Map<string, string> = new Map();
 escapeMap.set(escapeMark + '\xdd', escapeMark); // order is important

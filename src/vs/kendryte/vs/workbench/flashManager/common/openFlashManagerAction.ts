@@ -8,6 +8,7 @@ import { ACTION_ID_OPEN_FLASH_MANAGER, ACTION_LABEL_OPEN_FLASH_MANAGER } from 'v
 import { FlashManagerEditorInput } from 'vs/kendryte/vs/workbench/flashManager/common/editorInput';
 import { URI } from 'vs/base/common/uri';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
+import { FLASH_MANAGER_CONFIG_FILE_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 
 export class OpenFlashManagerAction extends Action {
 	public static readonly ID = ACTION_ID_OPEN_FLASH_MANAGER;
@@ -32,7 +33,7 @@ export class OpenFlashManagerAction extends Action {
 
 		const input = this.instantiationService.createInstance(
 			FlashManagerEditorInput,
-			URI.file(this.nodePathService.workspaceFilePath('config/flash-manager.json')),
+			URI.file(this.nodePathService.workspaceFilePath(PROJECT_CONFIG_FOLDER_NAME + '/' + FLASH_MANAGER_CONFIG_FILE_NAME)),
 		);
 		return this.editorService.openEditor(input, {
 			revealIfOpened: true,

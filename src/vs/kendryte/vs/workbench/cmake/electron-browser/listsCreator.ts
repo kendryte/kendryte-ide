@@ -1,10 +1,5 @@
-import {
-	CMAKE_CONFIG_FILE_NAME,
-	CMAKE_LIBRARY_FOLDER_NAME,
-	CMakeProjectTypes,
-	ICompileInfo as ICompileInfoBase,
-	ILibraryProject,
-} from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
+import { CMakeProjectTypes, ICompileInfo as ICompileInfoBase, ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IJSONResult, INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
@@ -462,7 +457,11 @@ export class CMakeListsCreator {
 	}
 
 	private includeDirs(current: ICompileInfo) {
-		const ret: string[] = [];
+		const ret: string[] = [
+			'## add headers from ide',
+			`include_directories("${CMAKE_CWD}${PROJECT_CONFIG_FOLDER_NAME}")`,
+		];
+
 		if (current.header) {
 			ret.push(
 				'## add headers from self',

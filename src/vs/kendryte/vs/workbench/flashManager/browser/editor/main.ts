@@ -4,6 +4,7 @@ import {
 	ACTION_ID_FLASH_MANGER_CREATE_ZIP_PROGRAM,
 	ACTION_ID_FLASH_MANGER_FLASH_ALL,
 	FlashManagerFocusContext,
+	IFlashSectionUI,
 	KENDRYTE_FLASH_MANAGER_ID,
 	KENDRYTE_FLASH_MANAGER_TITLE,
 } from 'vs/kendryte/vs/workbench/flashManager/common/type';
@@ -18,19 +19,16 @@ import { FlashManagerEditorInput } from 'vs/kendryte/vs/workbench/flashManager/c
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { WorkbenchList } from 'vs/platform/list/browser/listService';
 import { FlashSectionDelegate, FlashSectionRender } from 'vs/kendryte/vs/workbench/flashManager/browser/editor/list';
-import { IFlashManagerConfigJsonReadonly, IFlashSection } from 'vs/kendryte/vs/base/common/jsonSchemas/flashSectionsSchema';
 import { Button } from 'vs/base/browser/ui/button/button';
 import { attachButtonStyler, attachStyler } from 'vs/platform/theme/common/styler';
 import { localize } from 'vs/nls';
 import { renderOcticons } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 import { vscodeIcon } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
 import 'vs/css!vs/kendryte/vs/workbench/flashManager/browser/meida/style';
-import { FLASH_SAFE_ADDRESS } from 'vs/kendryte/vs/workbench/serialUpload/common/chipDefine';
 import { listErrorForeground } from 'vs/platform/theme/common/colorRegistry';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { createActionInstance } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
-import { assertNotNull } from 'vs/kendryte/vs/base/common/assertNotNull';
 import { InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
 import { humanSize } from 'vs/kendryte/vs/base/common/speedShow';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
@@ -51,7 +49,7 @@ export class FlashManagerEditor extends BaseEditor {
 	private btnFlashAll: Button;
 	private btnCreateZip: Button;
 	private btnCreateZip2: Button;
-	private sectionList: WorkbenchList<IFlashSection>;
+	private sectionList: WorkbenchList<IFlashSectionUI>;
 	private baseAddressInput: InputBox;
 
 	private readonly render: FlashSectionRender;
@@ -73,30 +71,41 @@ export class FlashManagerEditor extends BaseEditor {
 	}
 
 	async setInput(input: FlashManagerEditorInput, options: EditorOptions | null, token: CancellationToken): Promise<void> {
+		if (this._input === input) {
+			return;
+		}
 		this.clearInput();
-		this._inputEvents.push(input.onItemUpdate((indexes) => {
-			for (const index of indexes) {
-				this.updateSingleLine(index);
-			}
-			this.updateErrorMessage(input.errorMessage, input.modelData);
-		}));
-		this._inputEvents.push(input.onItemDelete((index) => {
-			this.updateSingleLine(index, true);
-			this.updateErrorMessage(input.errorMessage, input.modelData);
-		}));
-		this._inputEvents.push(input.onReload(() => {
-			this.refreshPage(input.modelData);
-			this.updateErrorMessage(input.errorMessage, input.modelData);
-		}));
-		this._inputEvents.push(this.render.onFieldChange(({ id, field, value }) => {
-			assertNotNull(input).changeSectionFieldValue(id, field, value);
-		}));
-		this._inputEvents.push(this.render.onDelete((id) => {
-			assertNotNull(input).deleteItem(id);
-		}));
 
 		await input.resolve();
-		return super.setInput(input, options, token);
+		await super.setInput(input, options, token);
+		this.refreshFullList();
+		this.refreshTitle();
+
+		this._inputEvents.push(input.onReload(() => {
+			this.refreshFullList();
+			this.refreshTitle();
+		}));
+
+		this._inputEvents.push(input.onItemUpdate((itemIds) => {
+			this.refreshLine(itemIds);
+			this.refreshTitle();
+		}));
+		this._inputEvents.push(this.render.onFieldChange(({ id, field, value }) => {
+			input.changeSectionFieldValue(id, field, value);
+		}));
+		this._inputEvents.push(this.render.onDeleteClick((id) => {
+			const index = input.deleteItem(id);
+			this.sectionList.splice(index, 1);
+			// console.log('delete %s - %s', index, id);
+		}));
+		this._inputEvents.push(this.render.onMove(({ id, toDown }) => {
+			const index = input.findSectionIndex(id);
+			if (toDown) {
+				this.onMoveItem(index, index + 1);
+			} else {
+				this.onMoveItem(index - 1, index);
+			}
+		}));
 	}
 
 	public dispose(): void {
@@ -162,14 +171,14 @@ export class FlashManagerEditor extends BaseEditor {
 			new FlashSectionDelegate,
 			[this.render],
 			{
-				identityProvider: { getId(e: IFlashSection) {return e.name;} },
+				identityProvider: { getId(e: IFlashSectionUI) {return e.name;} },
 				multipleSelectionSupport: false,
 				keyboardSupport: false,
 				supportDynamicHeights: false,
 				mouseSupport: false,
 				horizontalScrolling: false,
 			},
-		) as WorkbenchList<IFlashSection>);
+		) as WorkbenchList<IFlashSectionUI>);
 	}
 
 	private createButtonBar(parent: HTMLElement) {
@@ -179,7 +188,8 @@ export class FlashManagerEditor extends BaseEditor {
 		append(addButton.element, $('span')).textContent = localize('addFile', 'Add file...');
 
 		this._register(addButton.onDidClick(() => {
-			assertNotNull(this._input).createNewSection();
+			// Note: this implies new item is always the last one. | or it will destroy next item | onUpdate => splice(end, 1, [newOne])
+			this._input!.createNewSection();
 		}));
 
 		const zipPlace = append(parent, $('div.createButton'));
@@ -201,7 +211,7 @@ export class FlashManagerEditor extends BaseEditor {
 
 		const flashAllButton = this.btnFlashAll = this._register(new Button(parent, {}));
 		this._register(attachButtonStyler(flashAllButton, this.themeService));
-		flashAllButton.element.innerHTML = renderOcticons('$(desktop-download) ' + localize('flashAll', 'Flash all files'));
+		flashAllButton.element.innerHTML = renderOcticons('$(desktop-download) ' + localize('uploadAll', 'Upload all files'));
 
 		this._register(flashAllButton.onDidClick(() => {
 			return this.saveAndRun(ACTION_ID_FLASH_MANGER_FLASH_ALL);
@@ -228,48 +238,62 @@ export class FlashManagerEditor extends BaseEditor {
 		}
 
 		return createActionInstance(this.instantiationService, commandId).run(this._input.getResource().fsPath).catch((err) => {
-			this.notificationService.error('cannot run command: ' + err.message);
+			this.notificationService.error(err.message);
 		});
 	}
 
-	private updateErrorMessage(errorMessage: string, data: IFlashManagerConfigJsonReadonly) {
+	private refreshTitle() {
+		const errorMessage = this._input!.errorMessage;
+		const data = this._input!.modelData;
+
+		// console.log('update error message', errorMessage);
 		if (errorMessage) {
 			this.btnFlashAll.enabled = false;
 			this.btnCreateZip.enabled = false;
 			this.btnCreateZip2.enabled = false;
 			this.error.textContent = errorMessage;
+			this.information.textContent = '';
 		} else {
 			this.btnFlashAll.enabled = data.downloadSections.length > 0;
 			this.btnCreateZip.enabled = data.downloadSections.length > 0;
 			this.btnCreateZip2.enabled = data.downloadSections.length > 0;
 			this.error.textContent = '';
+			this.information.textContent = localize(
+				'informationMessage',
+				'{0} files, {1} data, write flash: {2} to {3}',
+				data.downloadSections.length,
+				humanSize(data.totalSize),
+				data.baseAddress,
+				data.endAddress,
+			);
 		}
-
-		this.information.textContent = localize(
-			'informationMessage',
-			'{0} files, {1} data, write flash: {2} to {3}',
-			data.downloadSections.length,
-			humanSize(data.totalSize),
-			'0x' + FLASH_SAFE_ADDRESS.toString(16).toUpperCase(),
-			'0x' + (FLASH_SAFE_ADDRESS + data.totalSize).toString(16).toUpperCase(),
-		);
 
 		this.baseAddressInput.value = data.baseAddress;
 
 		this.layout();
 	}
 
-	private refreshPage(data: IFlashManagerConfigJsonReadonly) {
-		this.sectionList.splice(0, this.sectionList.length, data.downloadSections.map((item) => {
-			return { ...item };
-		}));
+	private refreshLine(ids: string[]) {
+		ids.forEach((id) => {
+			const changedIndex = this._input!.findSectionIndex(id);
+			this.sectionList.splice(changedIndex, 1, this._input!.sliceData(changedIndex, 1));
+		});
+	}
+
+	private refreshFullList() {
+		this.sectionList.splice(0, this.sectionList.length, this._input!.sliceData());
 
 		this.btnAddFile.enabled = true;
 	}
 
-	private updateSingleLine(modelIndex: number, remove = false) {
-		const newOne = assertNotNull(this._input).modelData.downloadSections[modelIndex];
-		console.log('splice(%s, %s, ?%s)', modelIndex, 1, true);
-		this.sectionList.splice(modelIndex, 1, remove ? [] : [{ ...newOne }]);
+	private onMoveItem(index1: number, index2: any) {
+		if (index1 < 0 || index2 >= this._input!.modelData.downloadSections.length) {
+			return; // just ignore out range
+		}
+
+		this._input!.swap(index1, index2);
+		const newOrder = this._input!.sliceData(index1, 2);
+
+		this.sectionList.splice(index1, 2, newOrder);
 	}
 }

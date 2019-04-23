@@ -10,7 +10,7 @@ import {
 } from 'vs/kendryte/vs/base/common/menu/serialPort';
 import { CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { SerialLoader } from 'vs/kendryte/vs/workbench/serialUpload/node/flasher';
+import { SerialLoader } from 'vs/kendryte/vs/platform/serialPort/flasher/node/flasher';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';

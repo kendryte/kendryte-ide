@@ -33,10 +33,15 @@
 				> .createButton {
 					position: relative;
 					overflow: hidden;
+					z-index: 1000;
 					
 					> .alter {
 						position: absolute;
 						top: 100%;
+					}
+					
+					&:hover {
+						overflow: visible;
 					}
 				}
 				
@@ -70,11 +75,23 @@
 				> .l1 {
 					position: relative;
 					
-					> .remove {
+					> .ctl {
 						position: absolute;
 						right: 0;
 						top: 0;
-						padding: 8px;
+						display: flex;
+						
+						> .move {
+							margin-left: 0.6em;
+						}
+						
+						> .remove {
+							margin-left: 1.1em;
+						}
+						
+						> * {
+							padding: 6px;
+						}
 					}
 				}
 				

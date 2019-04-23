@@ -9,6 +9,7 @@ import { URI } from 'vs/base/common/uri';
 import { CMAKE_LIBRARY_FOLDER_NAME } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { localize } from 'vs/nls';
 import { KendrytePackageJsonEditorModel } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/node/kendrytePackageJsonEditorModel';
+import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 
 export class KendrytePackageJsonEditorInput extends EditorInput {
 	public static readonly ID: string = KENDRYTE_PACKAGE_JSON_EDITOR_INPUT_ID;
@@ -93,9 +94,9 @@ export class KendrytePackageJsonEditorInput extends EditorInput {
 		} else if (verbosity === Verbosity.SHORT) {
 			const name = this.getPackageDirName();
 			if (name) {
-				return `kendryte-package.json [${name}]`;
+				return `${CMAKE_CONFIG_FILE_NAME} [${name}]`;
 			} else {
-				return 'kendryte-package.json';
+				return CMAKE_CONFIG_FILE_NAME;
 			}
 		} else {
 			const name = this.getPackageDirName();

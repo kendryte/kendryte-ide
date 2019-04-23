@@ -1,4 +1,4 @@
-import { ISPError, ISPOperation } from 'vs/kendryte/vs/workbench/serialUpload/node/bufferConsts';
+import { ISPError, ISPOperation } from 'vs/kendryte/vs/platform/serialPort/flasher/node/bufferConsts';
 import { Transform } from 'stream';
 import { DATA_LEN_WRITE_FLASH } from 'vs/kendryte/vs/platform/open/common/chipConst';
 

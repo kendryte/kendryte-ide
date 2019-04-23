@@ -39,7 +39,7 @@ import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { CMakeBuildErrorProcessor, CMakeBuildProgressProcessor, CMakeProcessList } from 'vs/kendryte/vs/workbench/cmake/node/outputProcessor';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIST_GENERATED_WARNING } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { CMAKE_LIST_GENERATED_WARNING } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ILogService, LogLevel } from 'vs/platform/log/common/log';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
@@ -51,6 +51,7 @@ import { CONTEXT_CMAKE_SEEMS_OK, CONTEXT_CMAKE_WORKING } from 'vs/kendryte/vs/wo
 import { CMakeError, CMakeErrorType } from 'vs/kendryte/vs/workbench/cmake/common/errors';
 import { DeferredPromise } from 'vs/kendryte/vs/base/common/deferredPromise';
 import { localize } from 'vs/nls';
+import { CMAKE_CONFIG_FILE_NAME, PROJECT_BUILD_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 
 export class CMakeService implements ICMakeService {
 	_serviceBrand: any;
@@ -512,7 +513,7 @@ export class CMakeService implements ICMakeService {
 			this.logger.error('You must open a folder to do this.');
 			throw new CMakeError(CMakeErrorType.NO_WORKSPACE);
 		}
-		return resolvePath(this._currentFolder, 'build');
+		return resolvePath(this._currentFolder, PROJECT_BUILD_FOLDER_NAME);
 	}
 
 	private async initBaseConfigWhenHello(hello: ICMakeProtocolHello) {

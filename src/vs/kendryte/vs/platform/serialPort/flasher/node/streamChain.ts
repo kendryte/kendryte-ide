@@ -1,5 +1,5 @@
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
-import { garbageEvent } from 'vs/kendryte/vs/workbench/serialUpload/node/bufferConsts';
+import { garbageEvent } from 'vs/kendryte/vs/platform/serialPort/flasher/node/bufferConsts';
 import { Emitter } from 'vs/base/common/event';
 import { addDisposableEventEmitterListener } from 'vs/kendryte/vs/base/node/disposableEvents';
 
