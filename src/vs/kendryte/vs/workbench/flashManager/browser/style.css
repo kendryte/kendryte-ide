@@ -2,7 +2,8 @@
   overflow: hidden;
   margin: 0 auto;
   display: flex;
-  flex-direction: column; }
+  flex-direction: column;
+  min-width: 510px; }
   [id="workbench.editor.flashManagerEditor"] > .subContainer > .titlebar {
     overflow: hidden; }
     [id="workbench.editor.flashManagerEditor"] > .subContainer > .titlebar > .error {
@@ -57,9 +58,9 @@
             margin-left: 1.1em; }
           [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l1 > .ctl > * {
             padding: 6px; }
-      [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l2 > .file {
+      [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l3 > .file {
         display: block; }
-      [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l2 .octicon {
+      [id="workbench.editor.flashManagerEditor"] > .subContainer > .listContainer .flash-section > .l3 .octicon {
         line-height: unset; }
 
 /*# sourceMappingURL=style.css.map */

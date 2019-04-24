@@ -18,11 +18,16 @@ export interface CurrentItem extends IQuickPickItem {
 	current?: boolean;
 }
 
+export interface IBeforeBuild {
+	waitUntil(thenable: Promise<void>): void;
+}
+
 export interface ICMakeService {
 	_serviceBrand: any;
 
 	readonly onCMakeProjectChange: Event<Error | null>;
 	readonly onCMakeSelectionChange: Event<ICMakeSelection>;
+	readonly onPrepareBuild: Event<IBeforeBuild>;
 
 	readonly isEnabled: boolean;
 	rescanCurrentFolder(): Promise<void>;

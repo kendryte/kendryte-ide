@@ -1,3 +1,4 @@
+import 'vs/css!vs/kendryte/vs/workbench/flashManager/browser/style';
 import { BaseEditor } from 'vs/workbench/browser/parts/editor/baseEditor';
 import {
 	ACTION_ID_FLASH_MANGER_CREATE_ZIP,
@@ -18,13 +19,12 @@ import { CancellationToken } from 'vs/base/common/cancellation';
 import { FlashManagerEditorInput } from 'vs/kendryte/vs/workbench/flashManager/common/editorInput';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { WorkbenchList } from 'vs/platform/list/browser/listService';
-import { FlashSectionDelegate, FlashSectionRender } from 'vs/kendryte/vs/workbench/flashManager/browser/editor/list';
+import { FlashSectionDelegate, FlashSectionRender } from 'vs/kendryte/vs/workbench/flashManager/browser/list';
 import { Button } from 'vs/base/browser/ui/button/button';
 import { attachButtonStyler, attachStyler } from 'vs/platform/theme/common/styler';
 import { localize } from 'vs/nls';
 import { renderOcticons } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 import { vscodeIcon } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
-import 'vs/css!vs/kendryte/vs/workbench/flashManager/browser/meida/style';
 import { listErrorForeground } from 'vs/platform/theme/common/colorRegistry';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { createActionInstance } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';

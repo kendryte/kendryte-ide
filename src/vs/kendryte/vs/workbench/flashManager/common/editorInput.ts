@@ -184,6 +184,7 @@ export class FlashManagerEditorInput extends EditorInput {
 			autoAddress: true,
 			filename: '',
 			addressEnd: '',
+			swapBytes: true,
 		});
 
 		this.sync().catch();
@@ -191,7 +192,7 @@ export class FlashManagerEditorInput extends EditorInput {
 		return index;
 	}
 
-	public changeSectionFieldValue(id: string, field: keyof IFlashSection, value: string) {
+	public changeSectionFieldValue(id: string, field: keyof IFlashSection, value: any) {
 		// console.log('change section value: %s . %s = %s', id, field, value);
 		this.setDirty(true);
 

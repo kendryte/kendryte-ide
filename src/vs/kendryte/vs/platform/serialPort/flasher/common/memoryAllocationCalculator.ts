@@ -1,9 +1,10 @@
 import { humanSize } from 'vs/kendryte/vs/base/common/speedShow';
+import { DATA_LEN_WRITE_FLASH } from 'vs/kendryte/vs/platform/open/common/chipConst';
 
-export function ceil8(address: number): number {
-	const mod = address % 8;
+export function ceilAlign(address: number): number {
+	const mod = address % DATA_LEN_WRITE_FLASH;
 	if (mod > 0) {
-		return address + (8 - mod);
+		return address + (DATA_LEN_WRITE_FLASH - mod);
 	} else {
 		return address;
 	}
@@ -30,7 +31,7 @@ export class MemoryAllocationCalculator {
 	}
 
 	allocAuto(size: number): AllocInfo {
-		size = ceil8(size);
+		size = ceilAlign(size);
 
 		const allocAt = this.freeSpace.findIndex(([freeFrom, freeTo]) => {
 			return freeTo - freeFrom >= size;
@@ -58,7 +59,7 @@ export class MemoryAllocationCalculator {
 	}
 
 	allocManual(size: number, from: number): AllocInfo {
-		size = ceil8(size);
+		size = ceilAlign(size);
 
 		const to = from + size;
 		const allocAt = this.freeSpace.findIndex(([freeFrom, freeTo]) => {

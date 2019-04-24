@@ -100,7 +100,7 @@ export class SubProgress {
 
 	progress(value: number) {
 		// console.log('progress(%s)', value);
-		if (this.parts[this.currentPart] === 0) {
+		if (this.parts[this.currentPart] === 0 && value !== 0) {
 			throw new RangeError('not in progress stage');
 		}
 		if (value < 0) {

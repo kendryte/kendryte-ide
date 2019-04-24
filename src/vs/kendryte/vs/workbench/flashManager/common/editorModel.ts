@@ -8,8 +8,7 @@ import { FLASH_SAFE_ADDRESS } from 'vs/kendryte/vs/platform/serialPort/flasher/c
 import { localize } from 'vs/nls';
 import { MemoryAllocationCalculator, parseMemoryAddress, stringifyMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-
-const DONT_MODIFY_MARKER = localize('dontModifyMarker', 'DO NOT MODIFY THIS FILE, IT WILL BE OVERRIDE!!!');
+import { IFlashManagerService } from 'vs/kendryte/vs/workbench/flashManager/common/flashManagerService';
 
 interface ISection {
 	varName: string;
@@ -17,6 +16,7 @@ interface ISection {
 	startHex: string;
 	endHex: string;
 	size: number;
+	swapBytes: boolean;
 }
 
 export class FlashManagerEditorModel implements IEditorModel {
@@ -30,8 +30,8 @@ export class FlashManagerEditorModel implements IEditorModel {
 		public readonly resource: URI,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@INodePathService private readonly nodePathService: INodePathService,
+		@IFlashManagerService private readonly flashManagerService: IFlashManagerService,
 	) {
-		this.sourceFilePath = resource.fsPath.replace(/\.json$/i, '.h');
 	}
 
 	get data(): IFlashManagerConfigJson {
@@ -71,7 +71,7 @@ export class FlashManagerEditorModel implements IEditorModel {
 			),
 		);
 
-		await this.generateDefine().catch((e) => {
+		await this.flashManagerService.runGenerateMemoryMap().catch((e) => {
 			console.debug('save flash manager: cannot create source file: %s', e.stack.split(/\n/).slice(0, 3).join('\n'));
 			return this.nodeFileSystemService.deleteFileIfEsxists(this.sourceFilePath);
 		});
@@ -81,8 +81,8 @@ export class FlashManagerEditorModel implements IEditorModel {
 		return {
 			baseAddress: this.jsonData.baseAddress,
 			downloadSections: this.jsonData.downloadSections.map((item) => {
-				const { name, address, autoAddress, filename } = item;
-				return { name, address, autoAddress, filename };
+				const { name, address, autoAddress, filename, swapBytes } = item;
+				return { name, address, autoAddress, filename, swapBytes };
 			}),
 		};
 	}
@@ -115,27 +115,10 @@ export class FlashManagerEditorModel implements IEditorModel {
 				startHex: item.address,
 				endHex: stringifyMemoryAddress(addressEnd),
 				size: fileSize,
+				swapBytes: item.swapBytes || false,
 			});
 		}
 
 		return ret;
-	}
-
-	private async generateDefine() {
-		const createdFileContents = [
-			'// ' + DONT_MODIFY_MARKER,
-			'#ifndef KENDRYTE_IDE_FLASH_MANGER_OUT',
-			'#define KENDRYTE_IDE_FLASH_MANGER_OUT',
-		];
-
-		for (const item of await this.createSections()) {
-			createdFileContents.push(`#define ${item.varName}_START ${item.startHex}`);
-			createdFileContents.push(`#define ${item.varName}_END ${item.endHex}`);
-			createdFileContents.push(`#define ${item.varName}_SIZE ${item.size}`);
-		}
-
-		createdFileContents.push('#endif');
-
-		await this.nodeFileSystemService.writeFileIfChanged(this.sourceFilePath, createdFileContents.join('\n') + '\n');
 	}
 }

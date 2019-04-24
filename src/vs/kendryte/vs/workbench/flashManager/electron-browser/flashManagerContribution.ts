@@ -15,7 +15,7 @@ import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
 import { Extensions as EditorInputExtensions, IEditorInputFactoryRegistry } from 'vs/workbench/common/editor';
 import { KENDRYTE_PACKAGE_JSON_EDITOR_TITLE } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/ids';
 import { FlashManagerEditorInput, FlashManagerEditorInputFactory } from 'vs/kendryte/vs/workbench/flashManager/common/editorInput';
-import { FlashManagerEditor } from 'vs/kendryte/vs/workbench/flashManager/browser/editor/main';
+import { FlashManagerEditor } from 'vs/kendryte/vs/workbench/flashManager/browser/main';
 import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
 import { FlashManagerFocusContext } from 'vs/kendryte/vs/workbench/flashManager/common/type';
 import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';

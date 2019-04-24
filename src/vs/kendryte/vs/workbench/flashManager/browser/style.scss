@@ -4,6 +4,7 @@
 		margin: 0 auto;
 		display: flex;
 		flex-direction: column;
+		min-width: 510px;
 		
 		> .titlebar {
 			overflow: hidden;
@@ -93,9 +94,15 @@
 							padding: 6px;
 						}
 					}
+					
+					> .swap {
+					}
 				}
 				
 				> .l2 {
+				}
+				
+				> .l3 {
 					> .file {
 						display: block;
 					}

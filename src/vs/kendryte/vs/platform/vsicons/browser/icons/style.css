@@ -91,4 +91,9 @@
   .vs-dark .monaco-workbench .vscode-icon.AddFolder:before {
     background-image: url("AddFolder_inverse.svg"); }
 
+.monaco-workbench .vscode-icon.checked:before {
+  background-image: url("checked.svg"); }
+  .vs-dark .monaco-workbench .vscode-icon.checked:before {
+    background-image: url("checked_inverse.svg"); }
+
 /*# sourceMappingURL=style.css.map */

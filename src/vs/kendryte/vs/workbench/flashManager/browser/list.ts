@@ -22,6 +22,7 @@ import { IFlashSectionUI } from 'vs/kendryte/vs/workbench/flashManager/common/ty
 import { IFlashSection } from 'vs/kendryte/vs/base/common/jsonSchemas/flashSectionsSchema';
 import { LazyInputBox } from 'vs/kendryte/vs/base/browser/ui/lazyInputBox';
 import { FLASH_SAFE_ADDRESS } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
+import { attachMyCheckboxStyler, MyCheckBox } from 'vs/kendryte/vs/base/browser/ui/myCheckBox';
 
 const TEMPLATE_ID = 'template.flash.manager.list.section';
 
@@ -53,6 +54,7 @@ interface ITemplateData {
 	elementDispose: IDisposable[];
 	readonly toDispose: IDisposable;
 	readonly nameInput: InputBox;
+	readonly swapInput: MyCheckBox;
 	readonly addressInput: InputBox;
 	readonly addressEndDisplay: InputBox
 	readonly fileInput: InputBox;
@@ -63,7 +65,7 @@ interface ITemplateData {
 
 export class FlashSectionDelegate implements IListVirtualDelegate<IFlashSectionUI> {
 	public getHeight(element: IFlashSectionUI): number {
-		return 110;
+		return 150;
 	}
 
 	public getTemplateId(element: IFlashSectionUI): string {
@@ -75,7 +77,7 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 	public readonly templateId: string = TEMPLATE_ID;
 	private readonly rootPath: string;
 
-	private readonly _onFieldChange = new Emitter<{ id: string; field: keyof IFlashSection; value: string }>();
+	private readonly _onFieldChange = new Emitter<{ id: string; field: keyof IFlashSection; value: any }>();
 	public readonly onFieldChange = this._onFieldChange.event;
 
 	private readonly _onDeleteClick = new Emitter<string>();
@@ -107,11 +109,15 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 			templateData.addressInput.setPlaceHolder('');
 		}
 		templateData.addressEndDisplay.value = `${element.addressEnd} (${element.filesize} bytes)`;
+		templateData.swapInput.checked = element.swapBytes;
 
 		templateData.fileInput.value = element.filename;
 
 		templateData.elementDispose.push(templateData.nameInput.onDidChange((text) => {
 			this._onFieldChange.fire({ id: element.id, field: 'name', value: text });
+		}));
+		templateData.elementDispose.push(templateData.swapInput.onChange((isKeyboard) => {
+			this._onFieldChange.fire({ id: element.id, field: 'swapBytes', value: templateData.swapInput.checked });
 		}));
 		templateData.elementDispose.push(templateData.addressInput.onDidChange((text) => {
 			this._onFieldChange.fire({ id: element.id, field: 'address', value: text });
@@ -143,20 +149,24 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 
 		const l1 = append(parent, $('div.l1'));
 		const nameInput = this.createNameBox(l1, dis);
-		const addressInput = this.createAddressBox(l1, dis);
-		const addressEndDisplay = this.createAddressEnd(l1, dis);
+		const swapInput = this.createSwapCheckBox(l1, dis);
+
+		const l2 = append(parent, $('div.l2'));
+		const addressInput = this.createAddressBox(l2, dis);
+		const addressEndDisplay = this.createAddressEnd(l2, dis);
 
 		const ctl = append(l1, $('div.ctl'));
 		const moveUpButton = this.createMoveButton('up', ctl, dis);
 		const moveDownButton = this.createMoveButton('down', ctl, dis);
 		const removeButton = this.createRemoveButton(ctl, dis);
 
-		const l2 = append(parent, $('div.l2'));
-		const fileInput = this.createFileBox(l2, dis);
+		const l3 = append(parent, $('div.l3'));
+		const fileInput = this.createFileBox(l3, dis);
 
 		return {
 			toDispose: dis,
 			nameInput,
+			swapInput,
 			addressInput,
 			addressEndDisplay,
 			fileInput,
@@ -189,6 +199,19 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 		_disposable.register(attachInputBoxStyler(nameInput, this.themeService));
 
 		return nameInput;
+	}
+
+	private createSwapCheckBox(parent: HTMLElement, _disposable: PublicDisposable) {
+		const input = _disposable.register(new MyCheckBox(parent, {
+			icon: 'vscode-icon checked',
+			title: localize('swapLabel', 'Swap bytes'),
+			description: '',
+			isChecked: true,
+		}));
+
+		_disposable.register(attachMyCheckboxStyler(input, this.themeService));
+
+		return input;
 	}
 
 	private createAddressBox(parent: HTMLElement, _disposable: PublicDisposable) {

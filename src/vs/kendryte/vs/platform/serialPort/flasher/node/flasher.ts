@@ -28,6 +28,8 @@ import { localize } from 'vs/nls';
 import { SpeedMeter } from 'vs/kendryte/vs/base/common/speedShow';
 import { DATA_LEN_WRITE_FLASH, DATA_LEN_WRITE_MEMORTY } from 'vs/kendryte/vs/platform/open/common/chipConst';
 import { HexDumpLoggerStream } from 'vs/kendryte/vs/base/node/loggerStream';
+import { stringifyMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
+import { FourBytesReverser } from 'vs/kendryte/vs/platform/serialPort/flasher/node/fourBytesReverser';
 
 export enum FlashTargetType {
 	OnBoard = 0,
@@ -72,11 +74,11 @@ export class SerialLoader extends Disposable {
 			new ISPSerializeBuffer(),
 			new EscapeBuffer(),
 			new QuotingBuffer(),
-			new HexDumpLoggerStream(logger.trace.bind(logger), '[READ_IN ]'),
+			new HexDumpLoggerStream(logger.trace.bind(logger), '[TO  DEV]'),
 		];
 		const outputChain = [
 			this.timeout,
-			new HexDumpLoggerStream(logger.trace.bind(logger), '[WRITE_OUT]'),
+			new HexDumpLoggerStream(logger.trace.bind(logger), '[DEV OUT]'),
 			new UnQuotedBuffer(),
 			new UnEscapeBuffer(),
 			new ISPParseBuffer(),
@@ -177,7 +179,7 @@ export class SerialLoader extends Disposable {
 		this.logger.info('  - speed: %s', speed.getSpeed());
 	}
 
-	protected async writeFlashChunks(content: ReadStream, baseAddress: number, length: number, report?: SubProgress) {
+	protected async writeFlashProgramChunks(content: ReadStream, baseAddress: number, length: number, report?: SubProgress, encryption = false) {
 		const shaSize = 32;
 		const headerIsEncryptSize = 1;
 		const headerDataLenSize = 4;
@@ -186,7 +188,7 @@ export class SerialLoader extends Disposable {
 
 		let contentBuffer: Buffer;
 		const headerSize = headerIsEncryptSize + headerDataLenSize; // isEncrypt(1bit) + appLen(4bit) + appCode
-		if (this._encryptionKey) {
+		if (this._encryptionKey && encryption) {
 			const aesType = `aes-${this._encryptionKey.length}-cbc`;
 			const encrypt = createCipheriv(aesType, this._encryptionKey, Buffer.allocUnsafe(16));
 			contentBuffer = await drainStream(content.pipe(encrypt), length + AES_MAX_LARGER_SIZE, headerSize, shaSize);
@@ -198,7 +200,7 @@ export class SerialLoader extends Disposable {
 		const dataEndAt = contentBuffer.length - shaSize;
 		const dataSize = contentBuffer.length - shaSize - headerSize;
 
-		if (this._encryptionKey) {
+		if (this._encryptionKey && encryption) {
 			contentBuffer.writeUInt8(1, 0);
 		} else {
 			contentBuffer.writeUInt8(0, 0);
@@ -213,7 +215,7 @@ export class SerialLoader extends Disposable {
 
 		const cancel = this.cancel.token;
 
-		const memoryChunkPacker = new ISPFlashPacker(baseAddress, length, async (bytesProcessed: number): Promise<void> => {
+		const chunkPacker = new ISPFlashPacker(baseAddress, length, async (bytesProcessed: number): Promise<void> => {
 			const op = await this.expect(ISPOperation.ISP_FLASH_WRITE);
 			if (op.op === ISPOperation.ISP_FLASH_WRITE && op.err === ISPError.ISP_RET_OK) {
 				speed.setCurrent(bytesProcessed);
@@ -230,11 +232,11 @@ export class SerialLoader extends Disposable {
 		});
 
 		const splitter = new ChunkBuffer(DATA_LEN_WRITE_FLASH);
-		splitter.pipe(memoryChunkPacker)
+		splitter.pipe(chunkPacker)
 			.pipe(this.streamChain);
 		splitter.end(contentBuffer);
 
-		await memoryChunkPacker.finishPromise();
+		await chunkPacker.finishPromise();
 
 		speed.complete();
 		this.logger.info('  - speed: %s', speed.getSpeed());
@@ -260,6 +262,18 @@ export class SerialLoader extends Disposable {
 			this.logger.error('   - no hello:' + (e ? e.message || e : 'no message'));
 			throw e;
 		});
+	}
+
+	async executeBootloader(report: SubProgress) {
+		await this.executeProgram(PROGRAM_BASE);
+
+		report.message('flashing program init...');
+		await Promise.race<any>([this.abortedPromise, this.selectFlashTarget()]);
+
+		if (this._baudRate !== CHIP_BAUDRATE) {
+			report.message(`update baudrate to ${this._baudRate}...`);
+			await Promise.race<any>([this.abortedPromise, this.changeBaudRate()]);
+		}
 	}
 
 	async executeProgram(address = PROGRAM_BASE) {
@@ -318,7 +332,46 @@ export class SerialLoader extends Disposable {
 
 	async flashMainProgram(report: SubProgress) {
 		this.logger.info('Downloading program to flash');
-		await this.writeFlashChunks(this.applicationStream, 0, this.applicationStreamSize, report);
+		await this.writeFlashProgramChunks(this.applicationStream, 0, this.applicationStreamSize, report);
+		this.logger.info(' - Complete.');
+	}
+
+	async flashData(stream: ReadStream, address: number, reverse4Bytes: boolean, report: SubProgress) {
+		const length = await this.getSize(stream);
+		this.logger.info(`Downloading data to flash: size=${length} address=${stringifyMemoryAddress(address)}`);
+		const speed = new SpeedMeter();
+
+		const cancel = this.cancel.token;
+		const chunkPacker = new ISPFlashPacker(address, length, async (bytesProcessed: number): Promise<void> => {
+			const op = await this.expect(ISPOperation.ISP_FLASH_WRITE);
+			if (op.op === ISPOperation.ISP_FLASH_WRITE && op.err === ISPError.ISP_RET_OK) {
+				speed.setCurrent(bytesProcessed);
+				if (report) {
+					report.message(localize('serial.flash.writing', 'Writing Flash @ {0}', speed.getSpeed()));
+					report.progress(bytesProcessed);
+				}
+			} else {
+				throw this.ispError(op);
+			}
+			if (cancel.isCancellationRequested) {
+				throw new Error('user cancel');
+			}
+		});
+
+		let source = reverse4Bytes ?
+			stream.pipe(new FourBytesReverser()) :
+			stream;
+
+		source
+			.pipe(new ChunkBuffer(DATA_LEN_WRITE_FLASH))
+			.pipe(chunkPacker)
+			.pipe(this.streamChain);
+
+		await chunkPacker.finishPromise();
+
+		speed.complete();
+		this.logger.info('  - speed: %s', speed.getSpeed());
+
 		this.logger.info(' - Complete.');
 	}
 
@@ -478,10 +531,9 @@ export class SerialLoader extends Disposable {
 		this.applicationStreamSize = await this.getSize(this.applicationStream);
 		this.bootLoaderStreamSize = await this.getSize(this.bootLoaderStream);
 		report.splitWith([
-			0, // greeting
-			this.bootLoaderStreamSize, // flash bootloader
-			0, // boot
-			0, // init
+			0, // greeting...
+			this.bootLoaderStreamSize, // flashing bootloader...
+			0, // booting up bootloader...
 			this.applicationStreamSize,
 		]);
 
@@ -494,15 +546,7 @@ export class SerialLoader extends Disposable {
 		report.next();
 
 		report.message('booting up bootloader...');
-		await Promise.race<any>([this.abortedPromise, this.executeProgram()]);
-		report.message('update baudrate...');
-		if (this._baudRate !== CHIP_BAUDRATE) {
-			await Promise.race<any>([this.abortedPromise, this.changeBaudRate()]);
-		}
-		report.next();
-
-		report.message('flashing program init...');
-		await Promise.race<any>([this.abortedPromise, this.selectFlashTarget()]);
+		await Promise.race<any>([this.abortedPromise, this.executeBootloader(report)]);
 		report.next();
 
 		report.message('flashing program...');

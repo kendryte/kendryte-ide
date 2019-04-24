@@ -68,14 +68,17 @@ class NodeFileSystemService implements INodeFileSystemService {
 
 	protected async hasFileChanged(file: string, data: Buffer): Promise<boolean> {
 		if (!await exists(file)) {
+			// console.log('target did not exists');
 			return true;
 		}
 		const size = await stat(file).then(x => x.size);
 		if (size !== data.length) {
+			// console.log('size is different');
 			return true;
 		}
-		const diskContrent = await readFile(file);
-		return !diskContrent.compare(data);
+		const diskContent = await readFile(file);
+		// console.log('buffer content different? %s', diskContent.compare(data) !== 0);
+		return diskContent.compare(data) !== 0;
 	}
 
 	public async writeFileIfChanged(file: string, data: string | Buffer): Promise<boolean> {
@@ -83,9 +86,11 @@ class NodeFileSystemService implements INodeFileSystemService {
 			data = Buffer.from(data, 'utf8');
 		}
 		if (!await this.hasFileChanged(file, data)) {
+			// console.log('save file UNchanged: ' + file);
 			this.logService.debug('save file unchanged: ' + file);
 			return false;
 		}
+		// console.log('save file changed: ' + file);
 		this.logService.debug('writeFile: ' + file);
 		await this.rawWriteFile(file, data);
 		return true;

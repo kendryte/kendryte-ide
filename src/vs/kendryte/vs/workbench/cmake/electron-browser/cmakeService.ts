@@ -1,4 +1,4 @@
-import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE, CMakeInternalVariants, CurrentItem, ICMakeSelection, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE, CMakeInternalVariants, CurrentItem, IBeforeBuild, ICMakeSelection, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { ChildProcess, spawn } from 'child_process';
@@ -16,7 +16,7 @@ import {
 } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/cmakeProtocol';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { unlinkSync } from 'fs';
-import { Emitter, Event } from 'vs/base/common/event';
+import { AsyncEmitter, Emitter, Event } from 'vs/base/common/event';
 import { ICMakeProtocolError } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/error';
 import { ICMakeProtocolMessage, ICMakeProtocolProgress, ICMakeProtocolReply } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/event';
 import { ICMakeProtocolSignal } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/singal';
@@ -85,8 +85,12 @@ export class CMakeService implements ICMakeService {
 	private readonly cmakeConfiguredContextKey: IContextKey<boolean>;
 	private readonly cmakeWorkingContextKey: IContextKey<boolean>;
 
+	private readonly _onPrepareBuild = new AsyncEmitter<IBeforeBuild>();
+	public readonly onPrepareBuild = this._onPrepareBuild.event;
+
 	private readonly _onCMakeSelectionChange = new Emitter<ICMakeSelection>();
 	public readonly onCMakeSelectionChange = this._onCMakeSelectionChange.event;
+
 	private verbose: boolean;
 
 	constructor(
@@ -621,6 +625,17 @@ export class CMakeService implements ICMakeService {
 		await this.ensureConfiguration();
 
 		this.logger.info('Run cmake build:');
+
+		await this._onPrepareBuild.fireAsync((thenables) => {
+			return {
+				waitUntil(thenable: Promise<void>): void {
+					if (Object.isFrozen(thenables)) {
+						throw new TypeError('waitUntil cannot be called async');
+					}
+					thenables.push(thenable);
+				},
+			};
+		});
 
 		let make: string = this.getCMakeToRun().cmake;
 

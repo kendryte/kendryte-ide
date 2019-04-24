@@ -5,12 +5,9 @@ import {
 	ACTION_LABEL_FLASH_MANGER_CREATE_ZIP,
 	ACTION_LABEL_FLASH_MANGER_CREATE_ZIP_PROGRAM,
 } from 'vs/kendryte/vs/workbench/flashManager/common/type';
-import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { FlashManagerEditorModel } from 'vs/kendryte/vs/workbench/flashManager/common/editorModel';
-import { URI } from 'vs/base/common/uri';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { FLASH_MANAGER_CONFIG_FILE_NAME, PROJECT_BUILD_FOLDER_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
-import { basename, resolve } from 'vs/base/common/path';
+import { PROJECT_BUILD_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
+import { basename } from 'vs/base/common/path';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import * as JSZip from 'jszip';
 import { createReadStream } from 'fs';
@@ -18,6 +15,7 @@ import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { INotificationHandle, INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { localize } from 'vs/nls';
+import { IFlashManagerService } from 'vs/kendryte/vs/workbench/flashManager/common/flashManagerService';
 
 export class CreateZipAction extends Action {
 	static readonly ID: string = ACTION_ID_FLASH_MANGER_CREATE_ZIP;
@@ -25,7 +23,7 @@ export class CreateZipAction extends Action {
 
 	constructor(
 		id = CreateZipAction.ID, label = CreateZipAction.LABEL,
-		@IInstantiationService private readonly instantiationService: IInstantiationService,
+		@IFlashManagerService private readonly flashManagerService: IFlashManagerService,
 		@INodePathService private readonly nodePathService: INodePathService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@INotificationService private readonly notificationService: INotificationService,
@@ -34,9 +32,7 @@ export class CreateZipAction extends Action {
 	}
 
 	protected async createSections() {
-		const config = resolve(this.nodePathService.workspaceFilePath(), PROJECT_CONFIG_FOLDER_NAME, FLASH_MANAGER_CONFIG_FILE_NAME);
-		const model = this.instantiationService.createInstance(FlashManagerEditorModel, URI.file(config));
-		await model.load();
+		const model = await this.flashManagerService.getFlashManagerModel();
 
 		const sections = await model.createSections();
 		return sections.map(({ varName, startHex, filename }) => {
@@ -103,13 +99,13 @@ export class CreateZipWithProgramAction extends CreateZipAction {
 
 	constructor(
 		id = CreateZipWithProgramAction.ID, label = CreateZipWithProgramAction.LABEL,
-		@IInstantiationService instantiationService: IInstantiationService,
+		@IFlashManagerService flashManagerService: IFlashManagerService,
 		@INodePathService nodePathService: INodePathService,
 		@INodeFileSystemService nodeFileSystemService: INodeFileSystemService,
 		@INotificationService notificationService: INotificationService,
 		@ICMakeService private readonly cmakeService: ICMakeService,
 	) {
-		super(id, label, instantiationService, nodePathService, nodeFileSystemService, notificationService);
+		super(id, label, flashManagerService, nodePathService, nodeFileSystemService, notificationService);
 	}
 
 	protected async createSections() {

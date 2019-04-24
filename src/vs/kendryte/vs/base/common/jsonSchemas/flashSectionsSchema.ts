@@ -18,6 +18,7 @@ export interface IFlashSection {
 	address: string;
 	autoAddress: boolean;
 	filename: string;
+	swapBytes: boolean;
 }
 
 const downloadSectionProps: IJSONSchemaMap = {
@@ -26,6 +27,11 @@ const downloadSectionProps: IJSONSchemaMap = {
 		description: 'Name of this file, can reference from C code',
 		pattern: '^[a-zA-Z0-9_]+$',
 		patternErrorMessage: 'Only allow to use: alphanumeric, _(underscore)',
+	},
+	autoAddress: {
+		type: 'boolean',
+		default: true,
+		description: 'Automatically calculate file\'s SHA-256 sum and write to flash.',
 	},
 	address: {
 		type: 'string',
@@ -37,10 +43,10 @@ const downloadSectionProps: IJSONSchemaMap = {
 		type: 'string',
 		description: 'File path. (relative to this file)',
 	},
-	sha256: {
+	swapBytes: {
 		type: 'boolean',
 		default: false,
-		description: 'Automatically calculate file\'s SHA-256 sum and write to flash.',
+		description: 'Swap bytes for riscv platform.',
 	},
 };
 
