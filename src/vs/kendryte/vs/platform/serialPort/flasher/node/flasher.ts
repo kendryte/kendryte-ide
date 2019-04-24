@@ -220,7 +220,7 @@ export class SerialLoader extends Disposable {
 			if (op.op === ISPOperation.ISP_FLASH_WRITE && op.err === ISPError.ISP_RET_OK) {
 				speed.setCurrent(bytesProcessed);
 				if (report) {
-					report.message(localize('serial.flash.writing', 'Writing Flash @ {0}', speed.getSpeed()));
+					report.message(localize('serial.flash.writing', 'Writing Program @ {0}', speed.getSpeed()));
 					report.progress(bytesProcessed);
 				}
 			} else {
@@ -341,6 +341,7 @@ export class SerialLoader extends Disposable {
 		this.logger.info(`Downloading data to flash: size=${length} address=${stringifyMemoryAddress(address)}`);
 		const speed = new SpeedMeter();
 
+		speed.start();
 		const cancel = this.cancel.token;
 		const chunkPacker = new ISPFlashPacker(address, length, async (bytesProcessed: number): Promise<void> => {
 			const op = await this.expect(ISPOperation.ISP_FLASH_WRITE);

@@ -21,6 +21,7 @@ import { stat } from 'vs/base/node/pfs';
 import { AllocInfo, MemoryAllocationCalculator, parseMemoryAddress, stringifyMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
 import { FLASH_MAX_SIZE, FLASH_SAFE_ADDRESS } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
 import { humanSize } from 'vs/kendryte/vs/base/common/speedShow';
+import { IFlashManagerService } from 'vs/kendryte/vs/workbench/flashManager/common/flashManagerService';
 
 const MARKER_ID = 'flash.manager.editor';
 
@@ -42,7 +43,7 @@ export class FlashManagerEditorInput extends EditorInput {
 
 	constructor(
 		resource: URI,
-		@IInstantiationService instantiationService: IInstantiationService,
+		@IFlashManagerService flashManagerService: IFlashManagerService,
 		@INodePathService private readonly nodePathService: INodePathService,
 		@IMarkerService private readonly markerService: IMarkerService,
 	) {
@@ -50,7 +51,7 @@ export class FlashManagerEditorInput extends EditorInput {
 
 		this._register(this._onReload);
 		this._register(this._onItemUpdate);
-		this.model = instantiationService.createInstance(FlashManagerEditorModel, resource);
+		this.model = flashManagerService.getFlashManagerModelNotResolved(resource);
 	}
 
 	public get modelData(): IFlashManagerConfigJsonUI {

@@ -41,7 +41,7 @@ export class FlashManagerService implements IFlashManagerService {
 		});
 	}
 
-	async openEditor(resource: URI, options?: IEditorOptions, group?: IEditorGroup): Promise<IEditor | null> {
+	async openEditor(resource: URI = this.currentConfigFile, options?: IEditorOptions, group?: IEditorGroup): Promise<IEditor | null> {
 		const input = this.instantiationService.createInstance(FlashManagerEditorInput, resource);
 		return this.editorService.openEditor(input, options, group);
 	}
@@ -51,10 +51,13 @@ export class FlashManagerService implements IFlashManagerService {
 		return URI.file(config);
 	}
 
-	async getFlashManagerModel(): Promise<FlashManagerEditorModel> {
-		const config = this.currentConfigFile;
-		this.logger.info(`Reading config file: ${config.fsPath}`);
-		const model = this.instantiationService.createInstance(FlashManagerEditorModel, config);
+	getFlashManagerModelNotResolved(resource: URI = this.currentConfigFile): FlashManagerEditorModel {
+		return this.instantiationService.createInstance(FlashManagerEditorModel, resource);
+	}
+
+	async getFlashManagerModel(resource: URI = this.currentConfigFile): Promise<FlashManagerEditorModel> {
+		this.logger.info(`Reading config file: ${resource.fsPath}`);
+		const model = this.getFlashManagerModelNotResolved(resource);
 		await model.load();
 		return model;
 	}

@@ -8,8 +8,9 @@ import { FlashManagerEditorModel } from 'vs/kendryte/vs/workbench/flashManager/c
 export interface IFlashManagerService {
 	_serviceBrand: any;
 
-	openEditor(resource: URI, options?: IEditorOptions, group?: IEditorGroup): Promise<IEditor | null>;
-	getFlashManagerModel(): Promise<FlashManagerEditorModel>;
+	openEditor(resource?: URI, options?: IEditorOptions, group?: IEditorGroup): Promise<IEditor | null>;
+	getFlashManagerModelNotResolved(resource?: URI): FlashManagerEditorModel;
+	getFlashManagerModel(resource?: URI): Promise<FlashManagerEditorModel>;
 	runGenerateMemoryMap(): Promise<void>;
 }
 
