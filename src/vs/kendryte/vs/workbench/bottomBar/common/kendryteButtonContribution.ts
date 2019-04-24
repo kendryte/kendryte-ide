@@ -37,7 +37,7 @@ import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD } from 'vs/kendryte/vs/workbench/cmake
 import { CMakeError, CMakeErrorType } from 'vs/kendryte/vs/workbench/cmake/common/errors';
 
 class KendryteButtonContribution extends Disposable implements IWorkbenchContribution {
-	private errorButton: IPublicStatusButton;
+	private currentHasError: boolean = false;
 
 	constructor(
 		@IKendryteStatusControllerService private readonly statusControl: IKendryteStatusControllerService,
@@ -99,10 +99,10 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 		// cmakeButton.command = ACTION_ID_MAIX_CMAKE_CONFIGURE;
 		cmakeButton.contextKey = cmakeButtonsShow;
 
-		const errorButton = this.errorButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
+		const errorButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
 		errorButton.text = '$(alert)';
 		errorButton.tooltip = ACTION_LABEL_CMAKE_NO_ERROR;
-		// errorButton.command = ACTION_ID_SHOW_CMAKE_LOG;
+		errorButton.command = ACTION_ID_SHOW_CMAKE_LOG;
 		errorButton.contextKey = cmakeButtonsShow;
 
 		const cleanButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
@@ -136,10 +136,11 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 		uploadButton.contextKey = cmakeButtonsShow;
 
 		this._register(this.themeService.onThemeChange(() => {
-			this.updateErrorButtonColor();
+			this.updateErrorButtonColor(errorButton);
 		}));
 		this.cmakeService.onCMakeProjectChange((e) => {
 			if (e) {
+				this.currentHasError = true;
 				errorButton.text = '$(alert)';
 				errorButton.tooltip = localize('error', 'CMake Error: {0}', e.message);
 
@@ -158,24 +159,25 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 					errorButton.command = ACTION_ID_SHOW_CMAKE_LOG;
 				}
 			} else {
+				this.currentHasError = false;
 				errorButton.text = '$(check)';
-				errorButton.command = undefined as any;
+				errorButton.command = ACTION_ID_SHOW_CMAKE_LOG;
 				errorButton.tooltip = ACTION_LABEL_CMAKE_NO_ERROR;
 			}
-			this.updateErrorButtonColor();
+			this.updateErrorButtonColor(errorButton);
 		});
 	}
 
-	private updateErrorButtonColor() {
-		if (this.errorButton.command) {
+	private updateErrorButtonColor(errorButton: IPublicStatusButton) {
+		if (this.currentHasError) {
 			const color = this.themeService.getTheme().getColor(errorForeground);
 			if (color) {
-				this.errorButton.color = color.toString();
+				errorButton.color = color.toString();
 			} else {
-				this.errorButton.color = '#f00';
+				errorButton.color = '#f00';
 			}
 		} else {
-			this.errorButton.color = undefined as any;
+			errorButton.color = undefined as any;
 		}
 	}
 }

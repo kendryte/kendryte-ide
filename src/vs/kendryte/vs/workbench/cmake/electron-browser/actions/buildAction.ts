@@ -43,7 +43,7 @@ export class MaixCMakeBuildAction extends Action {
 
 	async _run() {
 		this.outputChannel.clear();
-		this.outputChannel.append('Starting build...\n');
+		this.outputChannel.append('```\nStarting build...\n');
 
 		await this.textFileService.saveAll();
 

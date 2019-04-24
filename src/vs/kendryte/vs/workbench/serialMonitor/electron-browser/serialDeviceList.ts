@@ -28,7 +28,7 @@ export class SerialDeviceList extends Disposable {
 	private _currentSelect?: SerialMonitorData;
 
 	constructor(
-		container: HTMLElement,
+		private readonly container: HTMLElement,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@ISerialPortService private readonly serialPortService: ISerialPortService,
 	) {
@@ -72,6 +72,7 @@ export class SerialDeviceList extends Disposable {
 	}
 
 	layout(height: number) {
+		this.container.style.height = height + 'px';
 		this.list.layout(height);
 	}
 

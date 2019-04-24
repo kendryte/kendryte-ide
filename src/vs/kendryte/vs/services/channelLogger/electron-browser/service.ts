@@ -37,6 +37,9 @@ class ChannelLogService extends Disposable implements IChannelLogService {
 	}
 
 	public createChannel(name: string, id: string = name, log: boolean = false, file?: URI): IChannelLogger {
+		if (this.map.has(id)) {
+			return this.map.get(id)!;
+		}
 		registry.registerChannel({
 			id,
 			label: name,
@@ -50,6 +53,8 @@ class ChannelLogService extends Disposable implements IChannelLogService {
 		newItem.onDispose(() => {
 			this.map.delete(id);
 		});
+
+		newItem.writeln('```');
 
 		return newItem;
 	}

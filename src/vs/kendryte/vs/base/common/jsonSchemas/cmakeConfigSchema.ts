@@ -75,7 +75,7 @@ const libType: IJSONSchemaMap = {
 	},
 	exampleSource: {
 		...SchemaArray('Source file to compile, can use "*" to match file.', 'string'),
-		default: ['example/*.c', 'example/*.cpp', 'example/*.h'],
+		default: ['example/*.c', 'example/*.cpp'],
 	},
 };
 
@@ -100,7 +100,7 @@ const baseSchemaProps: IJSONSchemaMap = {
 	properties: SchemaMap('cmake project properties', 'string'),
 	source: {
 		...SchemaArray('Source file to compile, can use "*" to match file.', 'string'),
-		default: ['src/*.c', 'src/*.cpp', 'src/*.h'],
+		default: ['src/*.c', 'src/*.cpp'],
 	},
 	header: {
 		...SchemaArray('List of header files dir path, relative to current json file.', 'string'),

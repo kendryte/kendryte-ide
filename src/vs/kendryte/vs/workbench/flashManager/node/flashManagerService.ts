@@ -16,6 +16,7 @@ import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/commo
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { IMarkerService, MarkerSeverity } from 'vs/platform/markers/common/markers';
+import { exists } from 'vs/base/node/pfs';
 
 const DONT_MODIFY_MARKER = localize('dontModifyMarker', 'DO NOT MODIFY THIS FILE, IT WILL BE OVERRIDE!!!');
 const MARKER_ID = 'flash.manager.service';
@@ -37,8 +38,16 @@ export class FlashManagerService implements IFlashManagerService {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 
 		cmakeService.onPrepareBuild((event) => {
-			event.waitUntil(this.runGenerateMemoryMap());
+			event.waitUntil(this.runIfExists());
 		});
+	}
+
+	async runIfExists() {
+		if (await exists(this.currentConfigFile.fsPath)) {
+			await this.runGenerateMemoryMap();
+		} else {
+			this.logger.info('[Flash Manager] not enabled for this project.');
+		}
 	}
 
 	async openEditor(resource: URI = this.currentConfigFile, options?: IEditorOptions, group?: IEditorGroup): Promise<IEditor | null> {

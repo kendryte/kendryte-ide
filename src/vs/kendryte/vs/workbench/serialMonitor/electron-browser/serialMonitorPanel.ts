@@ -203,9 +203,9 @@ class SerialMonitorPanel extends Panel {
 		}));
 
 		// xterm
-		this.xterm = this._register(this.instantiationService.createInstance(OutputXTerminal));
+		this.xterm = this._register(this.instantiationService.createInstance(OutputXTerminal, xtermContainer));
+		await this.xterm.waitForTerminalInit();
 		context.setOutput(this.xterm);
-		await this.xterm.attachToElement(xtermContainer);
 	}
 
 	private createButton($target: HTMLElement, label: string, cb: (btn: Button) => void, title?: string): Button & { styler: IDisposable } {

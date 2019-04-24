@@ -19,7 +19,6 @@ export class MaixCMakeOpenLogAction extends Action {
 
 	run(): Promise<void> {
 		const logger = this.channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
-		logger.clear();
 		return this.channelLogService.show(logger.id);
 	}
 }

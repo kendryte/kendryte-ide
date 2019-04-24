@@ -82,9 +82,15 @@
 				opacity: 0 !important;
 			}
 			
-			> .integrated-terminal {
-				> .terminal-outer-container > .terminal-wrapper {
-					flex-grow: 1;
+			> .xterm-wrapper {
+				flex: 1;
+				
+				> .terminal-wrapper {
+					display: block;
+					position: absolute;
+					bottom: 1px; /* required for size calc */
+					top: 0;
+					overflow-y: hidden;
 				}
 			}
 			
