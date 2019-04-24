@@ -55,7 +55,7 @@ class SerialMonitorControlService implements ISerialMonitorControlService {
 
 	focusFindWidget() {
 		this.ensure().then(() => {
-			this.xterm.focusFindWidget();
+			return this.xterm.focusFindWidget();
 		});
 	}
 

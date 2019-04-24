@@ -13,7 +13,6 @@ import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IAction } from 'vs/base/common/actions';
 import { ContextSubMenu } from 'vs/base/browser/contextmenu';
-import { memoize } from 'vs/base/common/decorators';
 import { SerialPortCopyAction, SerialPortPasteAction } from 'vs/kendryte/vs/workbench/serialMonitor/electron-browser/actions/copyPaste';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { SerialPortClearAction } from 'vs/kendryte/vs/workbench/serialMonitor/electron-browser/actions/clear';
@@ -36,6 +35,11 @@ import { IStorageService } from 'vs/platform/storage/common/storage';
 import { IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
 import { OutputWindowFind } from 'vs/kendryte/vs/workbench/serialMonitor/electron-browser/outputWindowFind';
 
+interface IContextMenuCache {
+	actions: (IAction | ContextSubMenu)[];
+	copyButton: IAction;
+}
+
 export class OutputXTerminal extends TerminalInstance {
 	protected _toDisposable: IDisposable[];
 	protected _isLifecycleDisposed: boolean;
@@ -55,7 +59,7 @@ export class OutputXTerminal extends TerminalInstance {
 	private _cancelContextMenu: boolean;
 	private dimension: Dimension;
 	private currentInstance?: NodeJS.WritableStream;
-	private _hasFocusContext: IContextKey<boolean>;
+	protected _hasFocusContext: IContextKey<boolean>;
 
 	private readonly _onXTermInputData: Emitter<string>;
 	public readonly onXTermInputData: Event<string>;
@@ -106,6 +110,7 @@ export class OutputXTerminal extends TerminalInstance {
 			accessibilityService,
 		);
 
+		delete (this as any)._terminalHasTextContextKey;
 		Object.assign(this, {
 			_terminalHasTextContextKey: terminalHasTextContextKey,
 		});
@@ -166,30 +171,33 @@ export class OutputXTerminal extends TerminalInstance {
 		// this.registerFocusEvents();
 	}
 
-	public reattachToElement(container: HTMLElement): void {
+	reattachToElement(container: HTMLElement): void {
 		if (!this.elementWrapper) {
 			throw new Error('The terminal instance has not been attached to a container yet');
 		}
 		super.reattachToElement(container);
-		this.elementWrapper = (this as any)._wrapperElement;
 		this._attach();
 	}
 
-	public attachToElement(container: HTMLElement): void {
+	_attachToElement(container: HTMLElement): void {
+		// debugger;
 		if (this.elementWrapper) {
 			throw new Error('The terminal instance has already been attached to a container');
 		}
-		super.attachToElement(container);
-		this.elementWrapper = (this as any)._wrapperElement;
+		super._attachToElement(container);
 		this._attach();
 	}
 
 	private _attach() {
+		delete this._findWidget;
+		delete this.elementWrapper;
 		this._createXterm().then(() => {
+			// console.error(this.myConfigHelper.panelContainer);
+			this.elementWrapper = (this as any)._wrapperElement;
 			this.parentDisposables = dispose(this.parentDisposables);
-			this.parentDisposables.push(addDisposableListener(this.elementWrapper, 'mousedown', (event: MouseEvent) => this.handleMouseDown(event)));
-			this.parentDisposables.push(addDisposableListener(this.elementWrapper, 'mouseup', (event: MouseEvent) => this.handleMouseUp(event)));
-			this.parentDisposables.push(addDisposableListener(this.elementWrapper, 'contextmenu', (event: MouseEvent) => this.handleContextMenu(event)));
+			this.parentDisposables.push(addDisposableListener(this.myConfigHelper.panelContainer, 'mousedown', (event: MouseEvent) => this.handleMouseDown(event)));
+			this.parentDisposables.push(addDisposableListener(this.myConfigHelper.panelContainer, 'mouseup', (event: MouseEvent) => this.handleMouseUp(event)));
+			this.parentDisposables.push(addDisposableListener(this.myConfigHelper.panelContainer, 'contextmenu', (event: MouseEvent) => this.handleContextMenu(event)));
 		});
 	}
 
@@ -206,7 +214,7 @@ export class OutputXTerminal extends TerminalInstance {
 		if (this.terminal) {
 			this.terminal.element.style.height = dimension.height + 'px';
 			super.layout(dimension);
-			console.log('terminalInstance: layout: [%s, %s] = (%s, %s)', dimension.width, dimension.height, (this as any)._cols, (this as any)._rows);
+			// console.log('terminalInstance: layout: [%s, %s] = (%s, %s)', dimension.width, dimension.height, (this as any)._cols, (this as any)._rows);
 		}
 	}
 
@@ -249,6 +257,10 @@ export class OutputXTerminal extends TerminalInstance {
 	}
 
 	handleUserType(enabled: boolean) {
+		if (this.userInputEnabled === enabled) {
+			return;
+		}
+		delete this._contextMenuCache;
 		this.userInputEnabled = enabled;
 	}
 
@@ -275,6 +287,7 @@ export class OutputXTerminal extends TerminalInstance {
 	}
 
 	private handleContextMenu(event: MouseEvent) {
+		// console.log('context!!');
 		if (!this._cancelContextMenu) {
 			const standardEvent = new StandardMouseEvent(event);
 			const anchor: { x: number, y: number } = { x: standardEvent.posx, y: standardEvent.posy };
@@ -318,30 +331,32 @@ export class OutputXTerminal extends TerminalInstance {
 		}
 	}
 
+	private _contextMenuCache?: IContextMenuCache;
+
 	private _getContextMenuActions(): (IAction | ContextSubMenu)[] {
-		const acts = this._createContextMenuActions();
-		acts.copy.enabled = this.terminal.hasSelection();
-		acts.paste.enabled = this.userInputEnabled;
-		return acts.list;
-	}
+		if (!this._contextMenuCache) {
+			const copy = this.instantiationService.createInstance(SerialPortCopyAction, SerialPortCopyAction.ID, SerialPortCopyAction.LABEL);
+			const find = this.instantiationService.createInstance(SerialPortShowFindAction, SerialPortShowFindAction.ID, SerialPortShowFindAction.LABEL);
+			const clear = this.instantiationService.createInstance(SerialPortClearAction, SerialPortClearAction.ID, SerialPortClearAction.LABEL);
 
-	@memoize
-	private _createContextMenuActions() {
-		const copy = this.instantiationService.createInstance(SerialPortCopyAction, SerialPortCopyAction.ID, SerialPortCopyAction.LABEL);
-		const paste = this.instantiationService.createInstance(SerialPortPasteAction, SerialPortPasteAction.ID, SerialPortPasteAction.LABEL);
+			const actions: (IAction | ContextSubMenu)[] = [];
+			this._contextMenuCache = { copyButton: copy, actions: actions };
 
-		return {
-			copy,
-			paste,
-			list: [
-				this.instantiationService.createInstance(SerialPortShowFindAction, SerialPortShowFindAction.ID, SerialPortShowFindAction.LABEL),
-				new Separator(),
-				copy,
-				paste,
-				new Separator(),
-				this.instantiationService.createInstance(SerialPortClearAction, SerialPortClearAction.ID, SerialPortClearAction.LABEL),
-			],
-		};
+			actions.push(find, new Separator(), copy);
+
+			if (this.userInputEnabled) {
+				const paste = this.instantiationService.createInstance(SerialPortPasteAction, SerialPortPasteAction.ID, SerialPortPasteAction.LABEL);
+				actions.push(paste);
+			}
+
+			// actions.push(pasteSomeFile);
+			// actions.push(saveAsFile);
+
+			actions.push(new Separator(), clear);
+
+			this._contextMenuCache.copyButton.enabled = this.terminal.hasSelection();
+		}
+		return this._contextMenuCache.actions;
 	}
 
 	protected reloadConfig(e: IConfigurationChangeEvent) {
@@ -380,17 +395,22 @@ export class OutputXTerminal extends TerminalInstance {
 		this._onXTermInputData.fire(data);
 	}
 
-	@memoize
-	public get findWidget() {
-		return this.instantiationService.createInstance(OutputWindowFind, this.elementWrapper, this.terminal);
+	private _findWidget: OutputWindowFind;
+
+	private createWidget() {
+		if (!this._findWidget && this.elementWrapper) {
+			this._findWidget = this.instantiationService.createInstance(OutputWindowFind, this.elementWrapper, this.terminal);
+		}
+		return this._findWidget;
 	}
 
-	focusFindWidget() {
+	async focusFindWidget() {
 		const sel = this.terminal.getSelection();
+		await this.createWidget();
 		if (this.terminal.hasSelection() && (sel.indexOf('\n') === -1)) {
-			this.findWidget.reveal(sel);
+			this._findWidget.reveal(sel);
 		} else {
-			this.findWidget.reveal();
+			this._findWidget.reveal();
 		}
 	}
 }
