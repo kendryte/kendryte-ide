@@ -10,17 +10,16 @@ import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { $, addDisposableListener, append } from 'vs/base/browser/dom';
-import { IPackageRegistryService, PACKAGE_MANAGER_LOG_CHANNEL_ID } from 'vs/kendryte/vs/workbench/packageManager/common/type';
+import { IPackageRegistryService } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { IJSONResult, INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
-import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
-import { ICompileInfo } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { renderOcticons } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 import { IQuickInputService } from 'vs/platform/quickinput/common/quickInput';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { Emitter } from 'vs/base/common/event';
 import { isUndefinedOrNull } from 'vs/base/common/types';
+import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 
 const templateId = 'local-package-tree';
 
@@ -115,23 +114,23 @@ function validateNumber(s: string) {
 export class PackageConfigView extends ViewletPanel {
 	private list: WorkbenchList<IConfigSection>;
 	private packageList: HTMLElement;
-	private logger: IChannelLogger;
+	private _visible: boolean = false;
 
 	constructor(
 		options: IViewletViewOptions,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@IChannelLogService channelLogService: IChannelLogService,
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IPackageRegistryService private readonly packageRegistryService: IPackageRegistryService,
 		@INodePathService private readonly nodePathService: INodePathService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
+		@ICMakeService private readonly cmakeService: ICMakeService,
 	) {
 		super({ ...(options as IViewletPanelOptions), ariaHeaderLabel: options.title }, keybindingService, contextMenuService, configurationService);
 
-		this.logger = channelLogService.createChannel('Package Manager', PACKAGE_MANAGER_LOG_CHANNEL_ID, true);
 		this.disposables.push(this.packageRegistryService.onLocalPackageChange(e => this.show()));
+		this.disposables.push(this.cmakeService.onProjectSelectionChange(e => this.show()));
 	}
 
 	protected renderBody(container: HTMLElement): void {
@@ -153,28 +152,29 @@ export class PackageConfigView extends ViewletPanel {
 		this.list.layout(size);
 	}
 
-	async show(): Promise<void> {
-		const packages = await this.packageRegistryService.listLocal();
-		const localObject: any = {};
+	public setVisible(visible: boolean): void {
+		super.setVisible(visible);
+		if (this._visible !== visible) {
+			this._visible = visible;
+		}
+		this.show();
+	}
 
-		const file = this.nodePathService.getPackageFile();
-		if (!file) {
-			this.list.splice(0, this.list.length);
+	async show(): Promise<void> {
+		if (!this._visible) {
 			return;
 		}
-		this.logger.info('reading file: ' + file);
-		const { json: current, warnings }: IJSONResult<ICompileInfo> = await this.nodeFileSystemService.readJsonFile<ICompileInfo>(file).catch((e) => {
-			this.logger.error(e);
-			throw new Error(`parsing dependencies, please check. invalid JSON file "${file}".`);
-		});
-		if (warnings.length) {
-			this.logger.warn('JsonWarn:', warnings);
+		const project = this.cmakeService.getSelectedProject();
+		this.list.splice(0, this.list.length);
+		if (project.exists) {
+			return;
 		}
+		const self = (await this.nodeFileSystemService.readProjectFileIn(project.path))!;
 
-		const defines = Object.assign(localObject, ...packages.map(e => e.definitions || {}));
-		if (current.definitions) {
-			Object.assign(localObject, current.definitions);
-		}
+		const packages = await this.packageRegistryService.listLocal(project.path);
+		const localObject: any = {};
+
+		const defines = Object.assign(localObject, ...packages.map(e => e.definitions), self.json.definitions);
 
 		const kv = Object.entries(defines).map(([k, v]) => {
 			return <IConfigSection>{
@@ -188,7 +188,8 @@ export class PackageConfigView extends ViewletPanel {
 	}
 
 	private async writeChange(item: IConfigSection) {
-		const file = this.nodePathService.getPackageFile();
+		const project = this.cmakeService.getSelectedProject();
+		const file = this.nodePathService.getProjectSettingsFile(project.path);
 
 		const val = item.type === 'number' ? parseFloat(item.value) : item.value;
 

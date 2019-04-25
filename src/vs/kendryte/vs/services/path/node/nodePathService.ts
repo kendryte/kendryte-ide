@@ -11,7 +11,7 @@ import { tmpdir } from 'os';
 import { mkdirp } from 'vs/base/node/pfs';
 import { optional } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
-import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { memoize } from 'vs/base/common/decorators';
 import { basename } from 'vs/base/common/path';
 import { processEnvironmentPathList } from 'vs/kendryte/vs/base/common/platformEnv';
@@ -87,8 +87,12 @@ export class NodePathService implements INodePathService {
 		}
 	}
 
-	getPackageFile() {
-		return this.workspaceFilePath(CMAKE_CONFIG_FILE_NAME);
+	getProjectSettingsFile(root: string = this.workspaceFilePath()) {
+		return resolvePath(root, CMAKE_CONFIG_FILE_NAME);
+	}
+
+	getProjectAllSettingsFile(){
+		return this.everyWorkspaceFilePath(CMAKE_CONFIG_FILE_NAME)
 	}
 
 	kendrytePaths(): string[] {
@@ -185,6 +189,12 @@ export class NodePathService implements INodePathService {
 		} else {
 			return '';
 		}
+	}
+
+	public everyWorkspaceFilePath(s: string = './'): string[] {
+		return this.workspaceContextService.getWorkspace().folders.map((f) => {
+			return resolvePath(f.uri.fsPath, s);
+		});
 	}
 }
 

@@ -61,7 +61,7 @@ export class MaixCMakeHelloWorldAction extends Action {
 		}
 
 		// this is official package, just ignore any error
-		const { json } = await this.nodeFileSystemService.readPackageFile();
+		const { json } = await this.nodeFileSystemService.readProjectFileIn(target, true);
 		const packageData = json as IExecutableProject;
 
 		const resolver = this.workspaceContextService.getWorkspace().folders[0];

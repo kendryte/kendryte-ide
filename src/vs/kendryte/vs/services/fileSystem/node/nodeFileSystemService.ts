@@ -1,5 +1,5 @@
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { IJSONResult, INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
+import { IFileWithStat, ILoadedCompileInfo, INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { copy, dirExists, exists, fileExists, mkdirp, readFile, rimraf, stat, unlink, writeFile } from 'vs/base/node/pfs';
 import { ILogService } from 'vs/platform/log/common/log';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
@@ -20,9 +20,11 @@ import { EditOperation } from 'vs/editor/common/core/editOperation';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { ICompileInfo } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { isMacintosh, isWindows } from 'vs/base/common/platform';
+import { CMAKE_ERROR_REQUIRE_FOLDER } from 'vs/kendryte/vs/workbench/cmake/common/type';
 
 class NodeFileSystemService implements INodeFileSystemService {
 	_serviceBrand: any;
+	private readonly _projectFileCache = new Map<string, IFileWithStat<ILoadedCompileInfo>>();
 
 	constructor(
 		@ILogService protected logService: ILogService,
@@ -42,6 +44,41 @@ class NodeFileSystemService implements INodeFileSystemService {
 		} else {
 			return readFile(file, 'utf8');
 		}
+	}
+
+	readFileWithTime(file: string, raw?: false): Promise<IFileWithStat<string>>;
+	readFileWithTime(file: string, raw: true): Promise<IFileWithStat<Buffer>>;
+	async readFileWithTime(file: string, raw?: boolean): Promise<IFileWithStat<string | Buffer>> {
+		this.logService.debug('readFile: ' + file);
+		const fstat = await stat(file);
+		const ret: IFileWithStat<any> = {
+			filepath: file,
+			content: undefined,
+			stat: {
+				atime: fstat.atimeMs,
+				mtime: fstat.mtimeMs,
+				ctime: fstat.ctimeMs,
+				birthtime: fstat.birthtimeMs,
+			},
+		};
+		if (raw) {
+			ret.content = await readFile(file);
+		} else {
+			ret.content = await readFile(file, 'utf8');
+		}
+		return ret;
+	}
+
+	didFileModifiedFrom(file: IFileWithStat<any>) {
+		return stat(file.filepath).then((fstat) => {
+			if (fstat.mtimeMs === file.stat.mtime && fstat.ctimeMs === file.stat.ctime) {
+				return false;
+			} else {
+				return true;
+			}
+		}, e => {
+			return false;
+		});
 	}
 
 	public readFileIfExists(file: string, raw?: false): Promise<string>;
@@ -105,14 +142,73 @@ class NodeFileSystemService implements INodeFileSystemService {
 		await copy(from, to);
 	}
 
-	public async readJsonFile<T>(file: string): Promise<IJSONResult<T>> {
+	public async readJsonFile<T>(file: string) {
 		const data = await readFile(file, 'utf8');
 		const [json, warnings] = parseExtendedJson(data, file);
-		return { json, warnings };
+		return { json, warnings, file };
 	}
 
-	public readPackageFile(packageFile: string = this.nodePathService.getPackageFile()) {
-		return this.readJsonFile<ICompileInfo>(packageFile);
+	readProjectFileIn(dirname: string, required: true): Promise<ILoadedCompileInfo>;
+	readProjectFileIn(dirname: string): Promise<ILoadedCompileInfo | null>;
+	public async readProjectFileIn(dir: string, required: boolean = false) {
+		const file = this.nodePathService.getProjectSettingsFile(dir);
+		const result = this._readProjectFile(file);
+		if (required && !result) {
+			throw new Error(CMAKE_ERROR_REQUIRE_FOLDER);
+		}
+		return result;
+	}
+
+	public async _readProjectFile(file: string) {
+		const cachedItem = this._projectFileCache.get(file);
+		if (cachedItem) {
+			if (await this.didFileModifiedFrom(cachedItem)) {
+				this._projectFileCache.delete(file);
+			} else {
+				return cachedItem.content;
+			}
+		}
+
+		if (!await exists(file)) {
+			console.log('not a project: %s', file);
+			return null;
+		}
+
+		console.log('reload project file: %s', file);
+		const newFile = await this.readFileWithTime(file);
+		const [json, warnings] = parseExtendedJson<ICompileInfo>(newFile.content, file);
+
+		const ret = <IFileWithStat<ILoadedCompileInfo>>{
+			filepath: file,
+			content: { json, warnings, file },
+			stat: newFile.stat,
+		};
+		this._projectFileCache.set(file, ret);
+
+		return { json, warnings, file };
+	}
+
+	public async readAllProjectFiles() {
+		const ret: ILoadedCompileInfo[] = [];
+		for (const file of this.nodePathService.getProjectAllSettingsFile()) {
+			const pkg = await this._readProjectFile(file);
+			if (!pkg) {
+				continue;
+			}
+
+			ret.push(pkg);
+		}
+
+		/* TODO: clean cache
+		const allStillOpen = ret.map((e) => e.file);
+		for (const file of this._projectFileCache.keys()) {
+			if (!allStillOpen.includes(file)) {
+				this._projectFileCache.delete(file);
+			}
+		}
+		*/
+
+		return ret;
 	}
 
 	public async tryWriteInFolder(target: string): Promise<boolean> {

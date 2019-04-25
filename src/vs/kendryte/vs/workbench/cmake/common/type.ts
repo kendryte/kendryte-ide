@@ -7,7 +7,7 @@ export const CMAKE_CHANNEL = 'maix-make-run';
 export const CMAKE_CHANNEL_TITLE = 'Build/Run';
 
 export const CMAKE_ERROR_REQUIRE_FOLDER = localize('ErrorRequireFolder', 'You must open a folder to do this.');
-export const CMAKE_ERROR_NOT_PROJECT = localize('ErrorNotProject', 'You must open a folder to do this.');
+export const CMAKE_ERROR_NOT_PROJECT = localize('ErrorNotProject', 'This is not a cmake project.');
 
 export interface ICMakeSelection {
 	variant: string;
@@ -22,12 +22,21 @@ export interface IBeforeBuild {
 	waitUntil(thenable: Promise<void>): void;
 }
 
+export type IProjectList = ReadonlyMap<string/* project name */, string/* absolute path of CONTAIN DIR */>;
+
+export interface IProjectSelect {
+	exists: boolean;
+	project: string;
+	path: string;
+}
+
 export interface ICMakeService {
 	_serviceBrand: any;
 
-	readonly onCMakeProjectChange: Event<Error | null>;
+	readonly onCMakeStatusChange: Event<Error | null>;
 	readonly onCMakeSelectionChange: Event<ICMakeSelection>;
 	readonly onPrepareBuild: Event<IBeforeBuild>;
+	readonly onProjectSelectionChange: Event<IProjectSelect>;
 
 	readonly isEnabled: boolean;
 	rescanCurrentFolder(): Promise<void>;
@@ -41,6 +50,10 @@ export interface ICMakeService {
 	getVariantList(): Promise<CurrentItem[]>;
 	ensureConfiguration(): Promise<any>;
 	shutdown(force?: boolean): Promise<void>;
+	setProject(projectName: string): Promise<void>;
+	getSelectedProject(required?: boolean): IProjectSelect;
+	refreshProjectList(): Promise<void>;
+	getProjectList(refresh?: boolean): Promise<IProjectList>;
 }
 
 export const ICMakeService = createDecorator<ICMakeService>('ICMakeService');

@@ -17,6 +17,7 @@ import { registerCMakeSchemas } from 'vs/kendryte/vs/base/common/jsonSchemas/cma
 import { MaixCMakeBuildRunAction, MaixCMakeRunAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/runAction';
 import { ACTION_CATEGORY_BUILD_DEBUG } from 'vs/kendryte/vs/base/common/menu/cmake';
 import { MaixCMakeOpenLogAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/openLogAction';
+import { CMakeSelectProjectAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/selectProjectAction';
 
 registerSingleton(ICMakeService, CMakeService);
 
@@ -57,3 +58,6 @@ registerCMakeSchemas((id, schema) => {
 
 // open log
 registerInternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeOpenLogAction);
+
+// select project
+registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, CMakeSelectProjectAction);

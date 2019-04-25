@@ -27,13 +27,14 @@ export interface IPackageRegistryService {
 	_serviceBrand: any;
 	onLocalPackageChange: Event<void>;
 
-	listLocal(): Promise<ILibraryProject[]>;
+	listLocal(projectPath?:string): Promise<ILibraryProject[]>;
 	openBrowser(): Promise<any>;
 	queryPackageVersions(type: CMakeProjectTypes, packageName: string): Promise<IRemotePackageInfo | undefined>;
 	queryPackages(type: CMakeProjectTypes, search: string, page: number): Promise<IPager<IRemotePackageInfo>>;
 	installDependency(packageInfo: IRemotePackageInfo, selectedVersion?: string): Promise<void>;
 	installExample(currentElement: IRemotePackageInfo, selectedVersion: string, targetPath: string): Promise<string>;
 	installAll(): Promise<void>;
+	installProject(dir?: string): Promise<void>;
 	getPackageInfoLocal(packageType: CMakeProjectTypes, packageName: string): Promise<ILibraryProject | undefined>;
 	getPackageInfoRegistry(packageType: CMakeProjectTypes, packageName: string): Promise<IRemotePackageInfo | undefined>;
 	erasePackage(packageName: string): Promise<void>;

@@ -10,7 +10,7 @@ import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { $, addDisposableListener, append } from 'vs/base/browser/dom';
-import { IPagedModel, PagedModel } from 'vs/base/common/paging';
+import { PagedModel } from 'vs/base/common/paging';
 import { Button } from 'vs/base/browser/ui/button/button';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { attachButtonStyler } from 'vs/platform/theme/common/styler';
@@ -20,6 +20,7 @@ import { renderOcticons } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 import { DisplayPackageDetailAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/displayPackageDetailAction';
 import { ILogService } from 'vs/platform/log/common/log';
 import { DeleteDependencyAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/deleteDependencyAction';
+import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 
 const templateId = 'local-package-list';
 
@@ -152,18 +153,21 @@ export class Renderer implements IPagedRenderer<ILibraryProject, ITemplateData> 
 export class LocalPackagesListView extends ViewletPanel {
 	private list: WorkbenchPagedList<ILibraryProject>;
 	private packageList: HTMLElement;
+	private _visible: boolean = false;
 
 	constructor(
 		options: IViewletViewOptions,
-		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IConfigurationService configurationService: IConfigurationService,
+		@ICMakeService cmakeService: ICMakeService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IPackageRegistryService private readonly packageRegistryService: IPackageRegistryService,
 	) {
 		super({ ...(options as IViewletPanelOptions), ariaHeaderLabel: options.title }, keybindingService, contextMenuService, configurationService);
 
 		this.disposables.push(this.packageRegistryService.onLocalPackageChange(e => this.show()));
+		this.disposables.push(cmakeService.onProjectSelectionChange(e => this.show()));
 	}
 
 	protected renderBody(container: HTMLElement): void {
@@ -183,9 +187,18 @@ export class LocalPackagesListView extends ViewletPanel {
 		this.list.layout(size);
 	}
 
-	async show(): Promise<IPagedModel<ILibraryProject>> {
-		const model = new PagedModel(await this.packageRegistryService.listLocal());
-		this.list.model = model;
-		return model;
+	public setVisible(visible: boolean): void {
+		super.setVisible(visible);
+		if (this._visible !== visible) {
+			this._visible = visible;
+		}
+		this.show();
+	}
+
+	async show(): Promise<void> {
+		if (!this._visible) {
+			return;
+		}
+		this.list.model = new PagedModel(await this.packageRegistryService.listLocal());
 	}
 }

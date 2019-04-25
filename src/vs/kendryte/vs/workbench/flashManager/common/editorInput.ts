@@ -158,9 +158,9 @@ export class FlashManagerEditorInput extends EditorInput {
 			case Verbosity.SHORT:
 				return '';
 			case Verbosity.MEDIUM:
-				return localize('editing {0}', basename(this.getResource().fsPath));
+				return localize('editingFile', 'editing {0}', basename(this.getResource().fsPath));
 			case Verbosity.LONG:
-				return localize('editing {0}', this.getResource().fsPath);
+				return localize('editingFile', 'editing {0}', this.getResource().fsPath);
 		}
 
 	}

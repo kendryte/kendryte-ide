@@ -1,8 +1,6 @@
 import { Action } from 'vs/base/common/actions';
 import { IPackageRegistryService } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 import { IRemotePackageInfo } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
-import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { assumeWorkbench } from 'vs/kendryte/vs/workbench/packageManager/browser/assumeWorkbench';
 import {
 	ACTION_ID_PACKAGE_MANAGER_INSTALL_DEPENDENCY,
 	ACTION_ID_PACKAGE_MANAGER_INSTALL_SINGLE_DEPENDENCY,
@@ -12,25 +10,52 @@ import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClo
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { IQuickInputService } from 'vs/platform/quickinput/common/quickInput';
 import { localize } from 'vs/nls';
+import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import { toErrorMessage } from 'vs/base/common/errorMessage';
 
-export class InstallDependencyAction extends Action {
+export class InstallEveryDependencyAction extends Action {
 	public static readonly ID = ACTION_ID_PACKAGE_MANAGER_INSTALL_DEPENDENCY;
 	public static readonly LABEL = ACTION_LABEL_PACKAGE_MANAGER_INSTALL_DEPENDENCY;
 
 	constructor(
-		id: string = InstallDependencyAction.ID,
-		label: string = InstallDependencyAction.LABEL,
-		@IInstantiationService private instantiationService: IInstantiationService,
+		id: string = InstallEveryDependencyAction.ID,
+		label: string = InstallEveryDependencyAction.LABEL,
 		@IPackageRegistryService private packageRegistryService: IPackageRegistryService,
+		@INotificationService private notificationService: INotificationService,
 	) {
 		super(id, label);
 	}
 
-	public run(event?: any): Promise<void> {
-		if (!this.instantiationService.invokeFunction(assumeWorkbench)) {
-			return Promise.resolve();
-		}
-		return this.packageRegistryService.installAll();
+	public run(): Promise<void> {
+		return this.packageRegistryService.installAll().then(() => {
+			this.notificationService.info(localize('installSuccess', 'All dependencies successfully installed.'));
+		}, (e) => {
+			this.notificationService.info(localize('installFail', 'Install failed: {0}', toErrorMessage(e)));
+		});
+	}
+}
+
+export class InstallProjectDependencyAction extends Action {
+	public static readonly ID = ACTION_ID_PACKAGE_MANAGER_INSTALL_DEPENDENCY;
+	public static readonly LABEL = ACTION_LABEL_PACKAGE_MANAGER_INSTALL_DEPENDENCY;
+
+	constructor(
+		id: string = InstallEveryDependencyAction.ID,
+		label: string = InstallEveryDependencyAction.LABEL,
+		@IPackageRegistryService private packageRegistryService: IPackageRegistryService,
+		@INotificationService private notificationService: INotificationService,
+		@ICMakeService private cmakeService: ICMakeService,
+	) {
+		super(id, label);
+	}
+
+	public run(): Promise<void> {
+		const dir = this.cmakeService.getSelectedProject(true).path;
+		return this.packageRegistryService.installProject(dir).then(() => {
+			this.notificationService.info(localize('installSuccessProject', 'Project dependencies successfully installed.'));
+		}, (e) => {
+			this.notificationService.info(localize('installFail', 'Install failed: {0}', toErrorMessage(e)));
+		});
 	}
 }
 
@@ -39,7 +64,6 @@ export class InstallSingleDependencyAction extends Action {
 		label: string,
 		private readonly selection: boolean,
 		private readonly packageInfo: IRemotePackageInfo,
-		@IInstantiationService private instantiationService: IInstantiationService,
 		@IPackageRegistryService private packageRegistryService: IPackageRegistryService,
 		@INotificationService private notificationService: INotificationService,
 		@IQuickInputService private quickInputService: IQuickInputService,
@@ -51,9 +75,6 @@ export class InstallSingleDependencyAction extends Action {
 	}
 
 	public async run(event?: any): Promise<void> {
-		if (!this.instantiationService.invokeFunction(assumeWorkbench)) {
-			return Promise.resolve();
-		}
 		let version: string | undefined = undefined;
 		if (this.selection) {
 			const sel = await this.quickInputService.pick(this.packageInfo.versions.map((v) => {

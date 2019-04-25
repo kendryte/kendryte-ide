@@ -26,4 +26,5 @@ export const ACTION_LABEL_MAIX_CMAKE_BUILD_DEBUG = localize('and', '{0} and {1}'
 
 export const ACTION_LABEL_CMAKE_NO_ERROR = localize('no.error', 'CMake status OK!');
 
-
+export const ACTION_ID_MAIX_CMAKE_SELECT_PROJECT = 'workbench.action.kendryte.select-project';
+export const ACTION_LABEL_MAIX_CMAKE_SELECT_PROJECT = localize('selectProjectToBuild', 'Select folder to build');

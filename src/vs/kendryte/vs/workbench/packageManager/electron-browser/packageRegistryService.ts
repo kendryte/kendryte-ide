@@ -11,7 +11,8 @@ import { parseExtendedJson } from 'vs/kendryte/vs/base/common/jsonComments';
 import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IFileCompressService } from 'vs/kendryte/vs/services/fileCompress/node/fileCompressService';
-import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME, CMakeProjectTypes, ICompileInfo, ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
+import { CMakeProjectTypes, ICommonProject, ICompileInfo, ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { resolve as resolveUrl } from 'url';
@@ -19,7 +20,7 @@ import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/commo
 import { URI } from 'vs/base/common/uri';
 import { dumpDate } from 'vs/kendryte/vs/base/common/dumpDate';
 import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
-import { INotificationHandle, INotificationService, Severity } from 'vs/platform/notification/common/notification';
+import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { PACKAGE_MANAGER_DISTRIBUTE_URL } from 'vs/kendryte/vs/base/common/constants/remoteRegistry';
 import { INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
@@ -41,29 +42,33 @@ export class PackageRegistryService implements IPackageRegistryService {
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@INodePathService private readonly nodePathService: INodePathService,
 		@IChannelLogService channelLogService: IChannelLogService,
-		@ICMakeService private CMakeService: ICMakeService,
+		@ICMakeService private cmakeService: ICMakeService,
 		@INotificationService private notificationService: INotificationService,
 	) {
 		this.logger = channelLogService.createChannel('Package Manager', PACKAGE_MANAGER_LOG_CHANNEL_ID, true);
 	}
 
-	public async listLocal(): Promise<ILibraryProject[]> {
-		const folder = this.nodePathService.workspaceFilePath(CMAKE_LIBRARY_FOLDER_NAME);
+	public async listLocal(projectPath?: string): Promise<ILibraryProject[]> {
+		if (!projectPath) {
+			const sel = this.cmakeService.getSelectedProject();
+			if (!sel.exists) {
+				return [];
+			}
+			projectPath = sel.path;
+		}
+
+		const folder = resolvePath(projectPath, CMAKE_LIBRARY_FOLDER_NAME);
 		if (!await dirExists(folder)) {
 			return [];
 		}
 		const ret: ILibraryProject[] = [];
 		for (const item of await readDirsInDir(folder)) {
-			const pkgFile = resolvePath(folder, item, CMAKE_CONFIG_FILE_NAME);
-			const { json: config, warnings } = await this.nodeFileSystemService.readJsonFile<ILibraryProject>(pkgFile);
-
-			if (warnings.length) {
-				this.logger.warn('package file (' + item + ') has error:\n' + warnings.map((err) => {
-					return '\t' + err.message;
-				}).join('\n'));
+			const result = await this.nodeFileSystemService.readProjectFileIn(resolvePath(folder, item));
+			if (!result) {
+				continue;
 			}
 
-			ret.push(config);
+			ret.push(result.json as ILibraryProject);
 		}
 		return ret;
 	}
@@ -86,9 +91,9 @@ export class PackageRegistryService implements IPackageRegistryService {
 		return this.editorService.openEditor(this.instantiationService.createInstance(PackageBrowserInput, null));
 	}
 
-	openPackageFile(sideByside: boolean = false): Promise<any> {
+	openPackageFile(projectPath: string, sideByside: boolean = false): Promise<any> {
 		return this.editorService.openEditor({
-			resource: URI.file(this.nodePathService.getPackageFile()),
+			resource: URI.file(this.nodePathService.getProjectSettingsFile(projectPath)),
 		});
 	}
 
@@ -169,13 +174,37 @@ export class PackageRegistryService implements IPackageRegistryService {
 		};
 	}
 
-	private async installAllWork(deps: { [id: string]: string }, installed: string[], handle: INotificationHandle) {
-		const keys = Object.keys(deps);
+	public async installAll(): Promise<void> {
+		const list = await this.nodeFileSystemService.readAllProjectFiles();
+		for (const { json, file } of list) {
+			await this._installEachProject(file, json);
+		}
+	}
+
+	public async installProject(dir: string = this.cmakeService.getSelectedProject(true).path) {
+		const ret = await this.nodeFileSystemService.readProjectFileIn(dir, true);
+		await this._installEachProject(ret.file, ret.json);
+	}
+
+	public async _installEachProject(projectPath: string, pkgInfo: ICommonProject): Promise<void> {
+		if (!pkgInfo.dependency) {
+			await this.openPackageFile(projectPath);
+			throw new Error('invalid dependency defined in ' + CMAKE_CONFIG_FILE_NAME + '.');
+		}
+
+		const handle = unClosableNotify(this.notificationService, {
+			severity: Severity.Info,
+			message: 'Installing...',
+			source: 'Package Manager',
+		});
+		handle.progress.infinite();
+
+		const keys = Object.keys(pkgInfo.dependency);
 		let i = 1;
 		for (const item of keys) {
 			handle.updateMessage(`installing dependencies: (${i++} of ${keys.length}) ${item}`);
 
-			const version = deps[item];
+			const version = pkgInfo.dependency[item];
 			if (/^https?:\/\//.test(version)) {
 				await this.downloadFromAbsUrl(version, item, 'Unknown');
 			} else {
@@ -192,40 +221,8 @@ export class PackageRegistryService implements IPackageRegistryService {
 				await this.downloadFromAbsUrl(this.findUrl(pkgInfo, version), item, version);
 			}
 		}
-	}
 
-	public async installAll(): Promise<void> {
-		const { json: pkgInfo, warnings } = await this.nodeFileSystemService.readPackageFile();
-		if (warnings.length) {
-			warnings.map(e => this.logger.error(e.message));
-			await this.openPackageFile();
-			throw new Error(warnings[0].message);
-		}
-
-		if (!pkgInfo.dependency) {
-			await this.openPackageFile();
-			throw new Error('invalid dependency defined in ' + CMAKE_CONFIG_FILE_NAME + '.');
-		}
-
-		const handle = unClosableNotify(this.notificationService, {
-			severity: Severity.Info,
-			message: 'Installing...',
-			source: 'Package Manager',
-		});
-		handle.progress.infinite();
-
-		await this.installAllWork(pkgInfo.dependency, [], handle).then(() => {
-			handle.progress.done();
-			handle.updateMessage('All dependencies successfully installed.');
-			handle.updateSeverity(Severity.Info);
-			handle.revoke();
-		}, (e) => {
-			handle.progress.done();
-			handle.updateMessage('All dependencies successfully installed.');
-			handle.updateSeverity(Severity.Info);
-			handle.revoke();
-			throw e;
-		});
+		handle.dispose();
 	}
 
 	private findUrl(packageInfo: IRemotePackageInfo, version?: string): string {
@@ -287,7 +284,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 
 		const saveDirName = await this.downloadFromAbsUrl(downloadUrl, packageInfo.name, version);
 
-		const currentConfigFile = this.nodePathService.getPackageFile();
+		const currentConfigFile = this.nodePathService.getProjectSettingsFile(this.cmakeService.getSelectedProject(true).path);
 		if (!await fileExists(currentConfigFile)) {
 			await this.nodeFileSystemService.rawWriteFile(currentConfigFile, JSON.stringify({
 				'$schema': 'vscode://schemas/CMakeLists',
@@ -327,12 +324,12 @@ export class PackageRegistryService implements IPackageRegistryService {
 		}
 		this.logger.info(`name:${config.name} version:${config.version}`);
 
-		const packagesRoot = resolvePath(this.nodePathService.workspaceFilePath(), CMAKE_LIBRARY_FOLDER_NAME);
+		const packagesRoot = resolvePath(this.cmakeService.getSelectedProject(true).path, CMAKE_LIBRARY_FOLDER_NAME);
 		const saveDirName = config.name;
 		const saveDir = resolvePath(packagesRoot, saveDirName);
 
 		this.logger.info(`  rimraf(${saveDir})`);
-		await this.CMakeService.shutdown();
+		await this.cmakeService.shutdown();
 		const delTemp = saveDir + '.delete';
 		if (await dirExists(delTemp)) {
 			await rimraf(delTemp);
@@ -355,12 +352,15 @@ export class PackageRegistryService implements IPackageRegistryService {
 	}
 
 	public async erasePackage(packageName: string) {
-		const packageSaveDir = resolvePath(this.nodePathService.workspaceFilePath(), CMAKE_LIBRARY_FOLDER_NAME, packageName);
+		const activeProject = this.cmakeService.getSelectedProject(true).path;
+
+		const packageSaveDir = resolvePath(activeProject, CMAKE_LIBRARY_FOLDER_NAME, packageName);
+		const currentConfigFile = this.nodePathService.getProjectSettingsFile(activeProject);
+
 		this.logger.info(`  rimraf(${packageSaveDir})`);
 
 		await rimraf(packageSaveDir);
 
-		const currentConfigFile = this.nodePathService.getPackageFile();
 		await this.nodeFileSystemService.editJsonFile(currentConfigFile, ['dependency', packageName], undefined);
 
 		this._onLocalPackageChange.fire();

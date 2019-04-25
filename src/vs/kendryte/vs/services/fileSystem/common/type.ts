@@ -8,10 +8,31 @@ export interface IJSONResult<T> {
 	warnings: ExParseError[];
 }
 
+export interface IFileWithStat<T> {
+	filepath: string;
+	content: T;
+	stat: {
+		atime: number;
+		mtime: number;
+		ctime: number;
+		birthtime: number;
+	}
+}
+
+interface WithFile {
+	file: string;
+}
+
+export type ILoadedCompileInfo = IJSONResult<ICompileInfo> & WithFile;
+
 export interface INodeFileSystemService {
 	_serviceBrand: any;
 
 	readFile(file: string): Promise<string>;
+
+	readFileWithTime(file: string): Promise<IFileWithStat<string>>;
+	readFileWithTime(file: string, raw: true): Promise<IFileWithStat<Buffer>>;
+	didFileModifiedFrom(file: IFileWithStat<any>): Promise<boolean>;
 
 	readFileIfExists(file: string): Promise<string>;
 	readFileIfExists(file: string, raw: true): Promise<Buffer>;
@@ -23,9 +44,12 @@ export interface INodeFileSystemService {
 
 	readJsonFile<T>(file: string): Promise<IJSONResult<T>>;
 	editJsonFile(file: string, key: Segment[] | Segment, value: any): Promise<void>;
-	readPackageFile(): Promise<IJSONResult<ICompileInfo>>;
 	tryWriteInFolder(packagesPath: string): Promise<boolean>;
 	prepareSocketFile(s: string): Promise<string>;
+
+	readProjectFileIn(dirname: string, required: true): Promise<ILoadedCompileInfo>;
+	readProjectFileIn(dirname: string): Promise<ILoadedCompileInfo | null>;
+	readAllProjectFiles(): Promise<ILoadedCompileInfo[]>;
 
 	deleteFileIfEsxists(filePath: string): Promise<boolean>;
 }

@@ -6,7 +6,10 @@ export const ACTION_ID_PACKAGE_MANAGER_OPEN_MARKET = 'workbench.package-manager.
 export const ACTION_LABEL_PACKAGE_MANAGER_OPEN_MARKET = localize('openMarketPlace', 'Explore online packages');
 
 export const ACTION_ID_PACKAGE_MANAGER_INSTALL_DEPENDENCY = 'workbench.package-manager.action.install-everything';
-export const ACTION_LABEL_PACKAGE_MANAGER_INSTALL_DEPENDENCY = localize('InstallDependencies', 'Install project dependencies');
+export const ACTION_LABEL_PACKAGE_MANAGER_INSTALL_DEPENDENCY = localize('InstallAllDependencies', 'Install all dependencies');
+
+export const ACTION_ID_PACKAGE_MANAGER_INSTALL_PROJECT_DEPENDENCY = 'workbench.package-manager.action.install-project';
+export const ACTION_LABEL_PACKAGE_MANAGER_INSTALL_PROJECT_DEPENDENCY = localize('InstallProjectDependencies', 'Install dependencies for current project');
 
 export const ACTION_ID_PACKAGE_MANAGER_INSTALL_SINGLE_DEPENDENCY = 'workbench.package-manager.action.install-single';
 

@@ -1,4 +1,13 @@
-import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE, CMakeInternalVariants, CurrentItem, IBeforeBuild, ICMakeSelection, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import {
+	CMAKE_CHANNEL,
+	CMAKE_CHANNEL_TITLE,
+	CMakeInternalVariants,
+	CurrentItem,
+	IBeforeBuild,
+	ICMakeSelection,
+	ICMakeService,
+	IProjectSelect,
+} from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { ChildProcess, spawn } from 'child_process';
@@ -47,11 +56,17 @@ import { CMakeListsCreator } from 'vs/kendryte/vs/workbench/cmake/electron-brows
 import { CONFIG_KEY_CMAKE_DEBUG, CONFIG_KEY_MAKE_PROGRAM } from 'vs/kendryte/vs/base/common/configKeys';
 import { IKendryteStatusControllerService } from 'vs/kendryte/vs/workbench/bottomBar/common/type';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
-import { CONTEXT_CMAKE_SEEMS_OK, CONTEXT_CMAKE_WORKING } from 'vs/kendryte/vs/workbench/cmake/common/contextKey';
+import { CONTEXT_CMAKE_MULTIPLE_PROJECT, CONTEXT_CMAKE_SEEMS_OK, CONTEXT_CMAKE_WORKING } from 'vs/kendryte/vs/workbench/cmake/common/contextKey';
 import { CMakeError, CMakeErrorType } from 'vs/kendryte/vs/workbench/cmake/common/errors';
 import { DeferredPromise } from 'vs/kendryte/vs/base/common/deferredPromise';
 import { localize } from 'vs/nls';
 import { CMAKE_CONFIG_FILE_NAME, PROJECT_BUILD_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
+import { IMarkerService } from 'vs/platform/markers/common/markers';
+import { URI } from 'vs/base/common/uri';
+import { createSimpleErrorMarker, createSimpleJsonWarningMarkers } from 'vs/kendryte/vs/platform/marker/common/simple';
+import { dirname } from 'vs/base/common/path';
+import { EXTEND_JSON_MARKER_ID } from 'vs/kendryte/vs/base/common/jsonComments';
+import { throwWorkspaceEmptyError } from 'vs/kendryte/vs/workbench/packageManager/browser/assertValidWorkspace';
 
 export class CMakeService implements ICMakeService {
 	_serviceBrand: any;
@@ -70,8 +85,10 @@ export class CMakeService implements ICMakeService {
 	private cmakePipe: NodeJS.ReadWriteStream; // Socket
 	private cmakePipeFile: string;
 
-	protected _currentFolder: string;
+	private _currentFolder: string;
+	private _currentProjectName: string;
 	protected _CMakeProjectExists: boolean;
+	private readonly _projectListCache = new Map<string/* project name */, string/* absolute path of DIR */>();
 
 	private cmakeRequests: { [cookie: string]: DeferredPromise<ICMakeResponse> } = {};
 
@@ -80,16 +97,21 @@ export class CMakeService implements ICMakeService {
 	private cmakeConnectionStablePromise: DeferredPromise<void>;
 	private lastProcess: CMakeProcessList;
 
-	private readonly _onCMakeProjectChange = new Emitter<Error | null>();
-	public readonly onCMakeProjectChange = this._onCMakeProjectChange.event;
 	private readonly cmakeConfiguredContextKey: IContextKey<boolean>;
 	private readonly cmakeWorkingContextKey: IContextKey<boolean>;
+	private readonly cmakeMultipleProjectContextKey: IContextKey<boolean>;
+
+	private readonly _onCMakeStatusChange = new Emitter<Error | null>();
+	public readonly onCMakeStatusChange = this._onCMakeStatusChange.event;
 
 	private readonly _onPrepareBuild = new AsyncEmitter<IBeforeBuild>();
 	public readonly onPrepareBuild = this._onPrepareBuild.event;
 
 	private readonly _onCMakeSelectionChange = new Emitter<ICMakeSelection>();
 	public readonly onCMakeSelectionChange = this._onCMakeSelectionChange.event;
+
+	private readonly _onProjectSelectionChange = new Emitter<IProjectSelect>();
+	public readonly onProjectSelectionChange = this._onProjectSelectionChange.event;
 
 	private verbose: boolean;
 
@@ -105,11 +127,13 @@ export class CMakeService implements ICMakeService {
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IKendryteStatusControllerService private readonly kendryteStatusControllerService: IKendryteStatusControllerService,
+		@IMarkerService private readonly markerService: IMarkerService,
 	) {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 
 		this.cmakeConfiguredContextKey = CONTEXT_CMAKE_SEEMS_OK.bindTo(contextKeyService);
 		this.cmakeWorkingContextKey = CONTEXT_CMAKE_WORKING.bindTo(contextKeyService);
+		this.cmakeMultipleProjectContextKey = CONTEXT_CMAKE_MULTIPLE_PROJECT.bindTo(contextKeyService);
 
 		lifecycleService.onWillShutdown(e => {
 			return e.join(this.shutdown(true));
@@ -444,42 +468,64 @@ export class CMakeService implements ICMakeService {
 
 		this.cmakeConfiguredContextKey.set(false);
 		this.cmakeWorkingContextKey.set(true);
-		this._onCMakeProjectChange.fire(null);
+		this._onCMakeStatusChange.fire(null);
 
 		return this._rescanCurrentFolder().then(() => {
 			this.cmakeConfiguredContextKey.set(true);
-			this._onCMakeProjectChange.fire(null);
+			this._onCMakeStatusChange.fire(null);
 			this.cmakeWorkingContextKey.set(false);
 		}, (e) => {
 			this.logger.info('rescan current folder error!');
 			this.logger.error(e.stack);
 
 			this.cmakeConfiguredContextKey.set(false);
-			this._onCMakeProjectChange.fire(e);
+			this._onCMakeStatusChange.fire(e);
 			this.cmakeWorkingContextKey.set(false);
 		});
 	}
 
-	public async _rescanCurrentFolder(): Promise<void> {
-		const currentDir = this.nodePathService.workspaceFilePath('./');
+	setProject(projectName: string) {
+		this._switchProject(projectName);
+		return this.rescanCurrentFolder();
+	}
 
+	private _switchProject(projectName: string) {
+		const newFolder = this._projectListCache.get(projectName);
+		if (newFolder && this._currentFolder !== newFolder) {
+			this.logger.info('Workspace change to: %s (project = %s)', newFolder, projectName);
+			this._currentFolder = newFolder;
+			this._currentProjectName = projectName;
+			this._onProjectSelectionChange.fire(this.getSelectedProject());
+		} else if (!newFolder && this._currentFolder) {
+			this.logger.info('Workspace is not active.');
+			this._currentFolder = '';
+			this._currentProjectName = '';
+			this._onProjectSelectionChange.fire({
+				exists: false,
+				path: '',
+				project: '',
+			});
+		}
+	}
+
+	private async _rescanCurrentFolder(): Promise<void> {
 		this.logger.info('Workspace folder changed, stopping CMake server...');
 		await this.shutdown();
 
-		this.logger.info('Workspace change to: %s', currentDir);
-		this._currentFolder = currentDir;
-		// this.localEnv.INSTALL_PREFIX = resolvePath(currentDir, 'build/install');
+		await this.refreshProjectList();
+
+		this._CMakeProjectExists = false;
+
+		const projectPaths = Array.from(this._projectListCache.values());
+		this.cmakeMultipleProjectContextKey.set(projectPaths.length > 1);
 
 		this.logger.info('detecting project in ' + this._currentFolder);
-
 		if (!this._currentFolder) {
-			this._CMakeProjectExists = false;
 			throw new CMakeError(CMakeErrorType.NO_WORKSPACE);
 		}
 		let listSourceFile = resolvePath(this._currentFolder, CMAKE_CONFIG_FILE_NAME);
 
 		if (!await exists(listSourceFile)) {
-			this._CMakeProjectExists = false;
 			throw new CMakeError(CMakeErrorType.PROJECT_NOT_EXISTS);
 		}
 		this.logger.info('  ' + CMAKE_CONFIG_FILE_NAME + ' found.');
@@ -501,6 +547,59 @@ export class CMakeService implements ICMakeService {
 
 		await this.generateCMakeListsFile();
 		this.logger.info('  - CMake project is exists.');
+	}
+
+	getSelectedProject(required = false) {
+		const exists = !!this._currentProjectName;
+		if (!exists && required) {
+			throwWorkspaceEmptyError(this.instantiationService, this.notificationService);
+		}
+
+		return {
+			exists,
+			project: this._currentProjectName,
+			path: this._currentFolder,
+		};
+	}
+
+	public refreshProjectList() {
+		this.markerService.changeAll(EXTEND_JSON_MARKER_ID, []);
+		return this.nodeFileSystemService.readAllProjectFiles().then((list) => {
+			this._projectListCache.clear();
+			let currentFolderStillExists = false;
+			for (const { json, warnings, file } of list) {
+				this.markerService.changeOne(EXTEND_JSON_MARKER_ID, URI.file(file), createSimpleJsonWarningMarkers(warnings));
+				const dir = resolvePath(dirname(file));
+				this._projectListCache.set(json.name, dir);
+
+				if (this._currentFolder === dir) {
+					currentFolderStillExists = true;
+					this._currentProjectName = json.name;
+				}
+			}
+
+			if (!currentFolderStillExists) {
+				this._switchProject(this._projectListCache.keys().next().value);
+			}
+		}, e => {
+			this._projectListCache.clear();
+			this.markerService.changeOne(
+				EXTEND_JSON_MARKER_ID,
+				URI.file(this.nodePathService.workspaceFilePath()),
+				[
+					createSimpleErrorMarker(e),
+				],
+			);
+		});
+	}
+
+	public getProjectList(refresh = false) {
+		if (refresh) {
+			return this.refreshProjectList().then(() => {
+				return this._projectListCache;
+			});
+		}
+		return Promise.resolve(this._projectListCache);
 	}
 
 	private get cmakeLists() {
@@ -560,9 +659,9 @@ export class CMakeService implements ICMakeService {
 	public configure(): Promise<void> {
 		this.cmakeWorkingContextKey.set(true);
 		return this._configure().then(() => {
-			this._onCMakeProjectChange.fire(null);
+			this._onCMakeStatusChange.fire(null);
 		}, (e) => {
-			this._onCMakeProjectChange.fire(e);
+			this._onCMakeStatusChange.fire(e);
 			throw e;
 		}).finally(() => {
 			this.cmakeWorkingContextKey.set(false);
