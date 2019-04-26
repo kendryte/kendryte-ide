@@ -1,5 +1,9 @@
 import { Color } from 'vs/base/common/color';
 import { IDisposable } from 'vs/base/common/lifecycle';
+import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
+import { URI } from 'vs/base/common/uri';
+import { IEditorOptions, ITextEditorOptions } from 'vs/platform/editor/common/editor';
+import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
 
 export interface IFuncPinMap {
 	[pinFuncID: string]: /* ioPinNum */ string;
@@ -48,3 +52,11 @@ export interface ContextMenuData {
 }
 
 export const ID_NO_FUNCTION = null;
+
+export interface IFpioaService {
+	_serviceBrand: any;
+
+	openEditor(resource: URI, options: IEditorOptions | ITextEditorOptions | undefined, group: IEditorGroup): any;
+}
+
+export const IFpioaService = createDecorator<IFpioaService>('fpioaService');

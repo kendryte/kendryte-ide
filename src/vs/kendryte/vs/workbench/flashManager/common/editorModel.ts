@@ -7,8 +7,7 @@ import { fileExists, stat } from 'vs/base/node/pfs';
 import { FLASH_SAFE_ADDRESS } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
 import { localize } from 'vs/nls';
 import { MemoryAllocationCalculator, parseMemoryAddress, stringifyMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
-import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { IFlashManagerService } from 'vs/kendryte/vs/workbench/flashManager/common/flashManagerService';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 
 interface ISection {
 	varName: string;
@@ -17,6 +16,10 @@ interface ISection {
 	endHex: string;
 	size: number;
 	swapBytes: boolean;
+}
+
+interface IReturnSection extends Pick<ISection, Exclude<keyof ISection, 'filename'>> {
+	filepath: string
 }
 
 export class FlashManagerEditorModel implements IEditorModel {
@@ -29,8 +32,6 @@ export class FlashManagerEditorModel implements IEditorModel {
 	constructor(
 		public readonly resource: URI,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
-		@INodePathService private readonly nodePathService: INodePathService,
-		@IFlashManagerService private readonly flashManagerService: IFlashManagerService,
 	) {
 	}
 
@@ -70,11 +71,7 @@ export class FlashManagerEditorModel implements IEditorModel {
 				this.filterProperty(),
 			),
 		);
-
-		await this.flashManagerService.runGenerateMemoryMap().catch((e) => {
-			console.debug('save flash manager: cannot create source file: %s', e.stack.split(/\n/).slice(0, 3).join('\n'));
-			return this.nodeFileSystemService.deleteFileIfEsxists(this.sourceFilePath);
-		});
+		await this.nodeFileSystemService.deleteFileIfExists(this.sourceFilePath);
 	}
 
 	private filterProperty() {
@@ -87,12 +84,14 @@ export class FlashManagerEditorModel implements IEditorModel {
 		};
 	}
 
-	public async createSections(): Promise<ISection[]> {
-		const ret: ISection[] = [];
+	public async createSections(memory?: MemoryAllocationCalculator) {
+		const ret: IReturnSection[] = [];
 
-		const memory = new MemoryAllocationCalculator(parseMemoryAddress(this.jsonData.baseAddress), Infinity);
+		if (!memory) {
+			memory = new MemoryAllocationCalculator(parseMemoryAddress(this.jsonData.baseAddress), Infinity);
+		}
 		for (const item of this.jsonData.downloadSections) {
-			const fullPath = this.nodePathService.workspaceFilePath(item.filename);
+			const fullPath = resolvePath(this.resource.fsPath, '../..', item.filename);
 			if (!await fileExists(fullPath)) {
 				throw new Error(localize('fileNotFound', 'File not exists: "{0}"', fullPath));
 			}
@@ -111,7 +110,7 @@ export class FlashManagerEditorModel implements IEditorModel {
 
 			ret.push({
 				varName: item.name,
-				filename: item.filename,
+				filepath: fullPath,
 				startHex: item.address,
 				endHex: stringifyMemoryAddress(addressEnd),
 				size: fileSize,

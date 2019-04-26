@@ -37,9 +37,7 @@ Registry.as<IEditorRegistry>(EditorExtensions.Editors).registerEditor(
 		FlashManagerEditor.ID,
 		KENDRYTE_PACKAGE_JSON_EDITOR_TITLE,
 	),
-	[
-		new SyncDescriptor(FlashManagerEditorInput),
-	],
+	new SyncDescriptor(FlashManagerEditorInput),
 );
 Registry.as<IEditorInputFactoryRegistry>(EditorInputExtensions.EditorInputFactories)
 	.registerEditorInputFactory(FlashManagerEditor.ID, FlashManagerEditorInputFactory);

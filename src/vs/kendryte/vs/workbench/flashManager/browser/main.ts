@@ -58,11 +58,11 @@ export class FlashManagerEditor extends BaseEditor {
 	constructor(
 		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
+		@IContextKeyService contextKeyService: IContextKeyService,
 		@IStorageService storageService: IStorageService,
 		@IContextViewService private readonly contextViewService: IContextViewService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@INotificationService private readonly notificationService: INotificationService,
-		@IContextKeyService contextKeyService: IContextKeyService,
 	) {
 		super(FlashManagerEditor.ID, telemetryService, themeService, storageService);
 
@@ -75,6 +75,8 @@ export class FlashManagerEditor extends BaseEditor {
 			return;
 		}
 		this.clearInput();
+
+		this.render.setNewRoot(input.rootPath);
 
 		await input.resolve();
 		await super.setInput(input, options, token);
@@ -224,7 +226,7 @@ export class FlashManagerEditor extends BaseEditor {
 		baseAddressInput.disable();
 	}
 
-	private async saveAndRun(commandId: string, ...args: any[]) {
+	private async saveAndRun(commandId: string) {
 		if (!this._input) {
 			this.notificationService.error('Flash section definitions file did not exists.');
 			return;

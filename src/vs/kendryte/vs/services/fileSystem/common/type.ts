@@ -19,11 +19,7 @@ export interface IFileWithStat<T> {
 	}
 }
 
-interface WithFile {
-	file: string;
-}
-
-export type ILoadedCompileInfo = IJSONResult<ICompileInfo> & WithFile;
+export type ILoadedCompileInfo = ICompileInfo;
 
 export interface INodeFileSystemService {
 	_serviceBrand: any;
@@ -47,11 +43,7 @@ export interface INodeFileSystemService {
 	tryWriteInFolder(packagesPath: string): Promise<boolean>;
 	prepareSocketFile(s: string): Promise<string>;
 
-	readProjectFileIn(dirname: string, required: true): Promise<ILoadedCompileInfo>;
-	readProjectFileIn(dirname: string): Promise<ILoadedCompileInfo | null>;
-	readAllProjectFiles(): Promise<ILoadedCompileInfo[]>;
-
-	deleteFileIfEsxists(filePath: string): Promise<boolean>;
+	deleteFileIfExists(filePath: string): Promise<boolean>;
 }
 
 export const INodeFileSystemService = createDecorator<INodeFileSystemService>('nodeFileSystemService');

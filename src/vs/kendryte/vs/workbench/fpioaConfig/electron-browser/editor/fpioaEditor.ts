@@ -81,11 +81,7 @@ export class FpioaEditor extends BaseEditor {
 
 		this.inputDispose.push(this.input.onDidChange(() => this.updateModel()));
 
-		let model = await input.resolve();
-
-		if (!model.isResolved()) {
-			model = await model.load();
-		}
+		await input.resolve();
 
 		this.updateModel();
 	}

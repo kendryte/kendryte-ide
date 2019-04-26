@@ -8,10 +8,10 @@ import { FlashManagerEditorModel } from 'vs/kendryte/vs/workbench/flashManager/c
 export interface IFlashManagerService {
 	_serviceBrand: any;
 
-	openEditor(resource?: URI, options?: IEditorOptions, group?: IEditorGroup): Promise<IEditor | null>;
-	getFlashManagerModelNotResolved(resource?: URI): FlashManagerEditorModel;
-	getFlashManagerModel(resource?: URI): Promise<FlashManagerEditorModel>;
-	runGenerateMemoryMap(): Promise<void>;
+	openEditor(resource: URI, options?: IEditorOptions, group?: IEditorGroup): Promise<IEditor | null>;
+	getFlashManagerModelNotResolved(resource: string): FlashManagerEditorModel;
+	getFlashManagerModel(resource: string): Promise<FlashManagerEditorModel>;
+	runGenerateMemoryMap(model: FlashManagerEditorModel): Promise<FlashManagerEditorModel>;
 }
 
 export const IFlashManagerService = createDecorator<IFlashManagerService>('flashManagerEditorService');

@@ -27,9 +27,7 @@ Registry.as<IEditorRegistry>(EditorExtensions.Editors).registerEditor(
 		KendrytePackageJsonEditor.ID,
 		KENDRYTE_PACKAGE_JSON_EDITOR_TITLE,
 	),
-	[
-		new SyncDescriptor(KendrytePackageJsonEditorInput),
-	],
+	new SyncDescriptor(KendrytePackageJsonEditorInput),
 );
 Registry.as<IEditorInputFactoryRegistry>(EditorInputExtensions.EditorInputFactories)
 	.registerEditorInputFactory(KendrytePackageJsonEditor.ID, KendrytePackageJsonEditorInputFactory);

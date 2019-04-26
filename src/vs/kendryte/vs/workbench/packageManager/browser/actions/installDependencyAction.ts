@@ -10,8 +10,8 @@ import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClo
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { IQuickInputService } from 'vs/platform/quickinput/common/quickInput';
 import { localize } from 'vs/nls';
-import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { toErrorMessage } from 'vs/base/common/errorMessage';
+import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 
 export class InstallEveryDependencyAction extends Action {
 	public static readonly ID = ACTION_ID_PACKAGE_MANAGER_INSTALL_DEPENDENCY;
@@ -44,13 +44,13 @@ export class InstallProjectDependencyAction extends Action {
 		label: string = InstallEveryDependencyAction.LABEL,
 		@IPackageRegistryService private packageRegistryService: IPackageRegistryService,
 		@INotificationService private notificationService: INotificationService,
-		@ICMakeService private cmakeService: ICMakeService,
+		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 	) {
 		super(id, label);
 	}
 
 	public run(): Promise<void> {
-		const dir = this.cmakeService.getSelectedProject(true).path;
+		const dir = this.kendryteWorkspaceService.requireCurrentWorkspace();
 		return this.packageRegistryService.installProject(dir).then(() => {
 			this.notificationService.info(localize('installSuccessProject', 'Project dependencies successfully installed.'));
 		}, (e) => {

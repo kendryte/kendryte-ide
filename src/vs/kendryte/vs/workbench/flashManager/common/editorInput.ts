@@ -15,13 +15,13 @@ import { basename } from 'vs/base/common/path';
 import { Emitter } from 'vs/base/common/event';
 import { memoize } from 'vs/base/common/decorators';
 import { IFlashSection } from 'vs/kendryte/vs/base/common/jsonSchemas/flashSectionsSchema';
-import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { IMarkerData, IMarkerService, MarkerSeverity } from 'vs/platform/markers/common/markers';
 import { stat } from 'vs/base/node/pfs';
 import { AllocInfo, MemoryAllocationCalculator, parseMemoryAddress, stringifyMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
 import { FLASH_MAX_SIZE, FLASH_SAFE_ADDRESS } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
 import { humanSize } from 'vs/kendryte/vs/base/common/speedShow';
 import { IFlashManagerService } from 'vs/kendryte/vs/workbench/flashManager/common/flashManagerService';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 
 const MARKER_ID = 'flash.manager.editor';
 
@@ -41,17 +41,18 @@ export class FlashManagerEditorInput extends EditorInput {
 	private readonly _onItemUpdate = new Emitter<string[]>();
 	public readonly onItemUpdate = this._onItemUpdate.event;
 
+	public get rootPath() {return resolvePath(this.model.resource.fsPath, '../..');}
+
 	constructor(
 		resource: URI,
 		@IFlashManagerService flashManagerService: IFlashManagerService,
-		@INodePathService private readonly nodePathService: INodePathService,
 		@IMarkerService private readonly markerService: IMarkerService,
 	) {
 		super();
 
 		this._register(this._onReload);
 		this._register(this._onItemUpdate);
-		this.model = flashManagerService.getFlashManagerModelNotResolved(resource);
+		this.model = flashManagerService.getFlashManagerModelNotResolved(resource.fsPath);
 	}
 
 	public get modelData(): IFlashManagerConfigJsonUI {
@@ -260,11 +261,11 @@ export class FlashManagerEditorInput extends EditorInput {
 			}
 
 			if (item.filename) {
-				const fullPath = this.nodePathService.workspaceFilePath(item.filename);
+				const fullPath = resolvePath(this.rootPath, item.filename);
 				await stat(fullPath).then((fstat) => {
 					item.filesize = fstat.size;
 				}, (e) => {
-					this.createDiagnostics(true, localize('fileNotExists', 'cannot read file: {0}', item.filename));
+					this.createDiagnostics(true, localize('fileNotExists', 'cannot read file: {0}', fullPath));
 					this.createDiagnostics(false, e.message);
 					item.filesize = 0;
 				});

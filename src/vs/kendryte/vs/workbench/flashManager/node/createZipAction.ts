@@ -5,17 +5,17 @@ import {
 	ACTION_LABEL_FLASH_MANGER_CREATE_ZIP,
 	ACTION_LABEL_FLASH_MANGER_CREATE_ZIP_PROGRAM,
 } from 'vs/kendryte/vs/workbench/flashManager/common/type';
-import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { PROJECT_BUILD_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { basename } from 'vs/base/common/path';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import * as JSZip from 'jszip';
 import { createReadStream } from 'fs';
-import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { INotificationHandle, INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { localize } from 'vs/nls';
 import { IFlashManagerService } from 'vs/kendryte/vs/workbench/flashManager/common/flashManagerService';
+import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 
 export class CreateZipAction extends Action {
 	static readonly ID: string = ACTION_ID_FLASH_MANGER_CREATE_ZIP;
@@ -24,41 +24,55 @@ export class CreateZipAction extends Action {
 	constructor(
 		id = CreateZipAction.ID, label = CreateZipAction.LABEL,
 		@IFlashManagerService private readonly flashManagerService: IFlashManagerService,
-		@INodePathService private readonly nodePathService: INodePathService,
+		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@INotificationService private readonly notificationService: INotificationService,
 	) {
 		super(id, label);
 	}
 
-	protected async createSections() {
-		const model = await this.flashManagerService.getFlashManagerModel();
+	protected async createSections(path: string) {
+		const model = await this.flashManagerService.getFlashManagerModel(path);
 
 		const sections = await model.createSections();
-		return sections.map(({ varName, startHex, filename }) => {
+		return sections.map(({ varName, startHex, filepath }) => {
 			return {
 				address: startHex,
-				file: this.nodePathService.workspaceFilePath(filename),
+				file: filepath,
 				sha256Prefix: false,
 			};
 		});
 	}
 
-	run() {
+	run(path: string | any) {
+		let rootPath = '';
+		if (typeof path === 'string') {
+			rootPath = path;
+		} else {
+			rootPath = this.kendryteWorkspaceService.requireCurrentWorkspaceFile();
+		}
 		const handle = this.notificationService.notify({
 			severity: Severity.Info,
 			message: '~',
 		});
 		handle.progress.infinite();
-		return this._run(handle).finally(() => {
+		return this._run(rootPath, handle).finally(() => {
 			handle.progress.done();
 		});
 	}
 
-	async _run(handle: INotificationHandle) {
+	async _run(path: string, handle: INotificationHandle) {
 		handle.updateMessage(localize('createZipFile', 'Creating zip file...'));
-		const sections = await this.createSections();
+
+		const sections = await this.createSections(path);
 		const zip = new JSZip();
+
+		if (sections.length === 0) {
+			handle.progress.done();
+			handle.updateSeverity(Severity.Warning);
+			handle.updateMessage(localize('noSection', 'No file to falsh...'));
+			return;
+		}
 
 		const jsonFile = shimJson(JSON.stringify({
 			version: '0.1.0',
@@ -82,9 +96,9 @@ export class CreateZipAction extends Action {
 			compression: 'DEFLATE',
 		});
 
-		const target = PROJECT_BUILD_FOLDER_NAME + '/flash-package.kfpkg';
+		const target = resolvePath(path, '../..', PROJECT_BUILD_FOLDER_NAME, 'flash-package.kfpkg');
 		await this.nodeFileSystemService.rawWriteFile(
-			resolvePath(this.nodePathService.workspaceFilePath(target)),
+			target,
 			result,
 		);
 
@@ -100,25 +114,25 @@ export class CreateZipWithProgramAction extends CreateZipAction {
 	constructor(
 		id = CreateZipWithProgramAction.ID, label = CreateZipWithProgramAction.LABEL,
 		@IFlashManagerService flashManagerService: IFlashManagerService,
-		@INodePathService nodePathService: INodePathService,
+		@IKendryteWorkspaceService kendryteWorkspaceService: IKendryteWorkspaceService,
 		@INodeFileSystemService nodeFileSystemService: INodeFileSystemService,
 		@INotificationService notificationService: INotificationService,
 		@ICMakeService private readonly cmakeService: ICMakeService,
 	) {
-		super(id, label, flashManagerService, nodePathService, nodeFileSystemService, notificationService);
+		super(id, label, flashManagerService, kendryteWorkspaceService, nodeFileSystemService, notificationService);
 	}
 
-	protected async createSections() {
-		const sections = await super.createSections();
+	protected async createSections(path: string) {
+		const sections = await super.createSections(path);
 		const binFile = await this.cmakeService.getOutputFile();
 		sections.unshift({ address: '0', file: binFile, sha256Prefix: true });
 		return sections;
 	}
 
-	async _run(handle: INotificationHandle) {
+	async _run(path: string, handle: INotificationHandle) {
 		handle.updateMessage(localize('building', 'Building program...'));
 		await this.cmakeService.build();
-		return super._run(handle);
+		return super._run(path, handle);
 	}
 }
 

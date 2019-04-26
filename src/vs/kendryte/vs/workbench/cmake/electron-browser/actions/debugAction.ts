@@ -54,9 +54,7 @@ export class MaixCMakeDebugAction extends Action {
 		const exists = await this.fileService.exists(resource);
 		if (!exists) {
 			await this.fileService.updateContent(resource, `{
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"$schema": "vscode://schemas/launch",
     "version": "0.2.0",
     "configurations": [
     ]

@@ -10,7 +10,6 @@ import { localize } from 'vs/nls';
 import { attachButtonStyler, attachInputBoxStyler } from 'vs/platform/theme/common/styler';
 import { Action } from 'vs/base/common/actions';
 import { vscodeIconClass, vsiconClass } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
-import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { Emitter } from 'vs/base/common/event';
 import { IFileDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { URI } from 'vs/base/common/uri';
@@ -23,6 +22,7 @@ import { IFlashSection } from 'vs/kendryte/vs/base/common/jsonSchemas/flashSecti
 import { LazyInputBox } from 'vs/kendryte/vs/base/browser/ui/lazyInputBox';
 import { FLASH_SAFE_ADDRESS } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
 import { attachMyCheckboxStyler, MyCheckBox } from 'vs/kendryte/vs/base/browser/ui/myCheckBox';
+import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 
 const TEMPLATE_ID = 'template.flash.manager.list.section';
 
@@ -75,7 +75,8 @@ export class FlashSectionDelegate implements IListVirtualDelegate<IFlashSectionU
 
 export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemplateData> {
 	public readonly templateId: string = TEMPLATE_ID;
-	private readonly rootPath: string;
+
+	private rootPath: string = '/';
 
 	private readonly _onFieldChange = new Emitter<{ id: string; field: keyof IFlashSection; value: any }>();
 	public readonly onFieldChange = this._onFieldChange.event;
@@ -87,13 +88,12 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 	public readonly onMove = this._onMove.event;
 
 	constructor(
-		@INodePathService nodePathService: INodePathService,
+		@IKendryteWorkspaceService kendryteWorkspaceService: IKendryteWorkspaceService,
 		@IThemeService private readonly themeService: IThemeService,
 		@IContextViewService private readonly contextViewService: IContextViewService,
 		@IFileDialogService private readonly fileDialogService: IFileDialogService,
 		@INotificationService private readonly notificationService: INotificationService,
 	) {
-		this.rootPath = nodePathService.workspaceFilePath();
 	}
 
 	public renderElement(element: IFlashSectionUI, index: number, templateData: ITemplateData, dynamicHeightProbing?: boolean): void {
@@ -324,6 +324,10 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 		button.element.classList.add(action);
 		append(button.element, $('span.octicon.octicon-chevron-' + action));
 		return button;
+	}
+
+	public setNewRoot(rootPath: string) {
+		this.rootPath = rootPath;
 	}
 }
 

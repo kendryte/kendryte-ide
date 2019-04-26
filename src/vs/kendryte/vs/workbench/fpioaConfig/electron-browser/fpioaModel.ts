@@ -55,7 +55,18 @@ export class FpioaModel extends EditorModel {
 		return this.saveOnGoing;
 	}
 
-	public async load(options: ILoadOptions = {}): Promise<this> {
+	public load(options: ILoadOptions = {}) {
+		return this._load(options).catch((e) => {
+			console.error(e);
+			this.content = {
+				funcPinMap: {},
+			} as any;
+			this.dirty = false;
+			return this;
+		});
+	}
+
+	private async _load(options: ILoadOptions): Promise<this> {
 		// console.log('---------------- load', options);
 		if (await this.fileService.exists(this.uri)) {
 			let data: IContent | undefined;

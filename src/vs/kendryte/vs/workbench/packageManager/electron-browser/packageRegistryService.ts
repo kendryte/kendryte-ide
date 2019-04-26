@@ -12,9 +12,8 @@ import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common
 import { ILogService } from 'vs/platform/log/common/log';
 import { IFileCompressService } from 'vs/kendryte/vs/services/fileCompress/node/fileCompressService';
 import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
-import { CMakeProjectTypes, ICommonProject, ICompileInfo, ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { CMakeProjectTypes, ICompileInfo, ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
-import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { resolve as resolveUrl } from 'url';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { URI } from 'vs/base/common/uri';
@@ -25,6 +24,7 @@ import { PACKAGE_MANAGER_DISTRIBUTE_URL } from 'vs/kendryte/vs/base/common/const
 import { INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { Emitter } from 'vs/base/common/event';
+import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 
 export class PackageRegistryService implements IPackageRegistryService {
 	_serviceBrand: any;
@@ -35,40 +35,39 @@ export class PackageRegistryService implements IPackageRegistryService {
 	public readonly onLocalPackageChange = this._onLocalPackageChange.event;
 
 	constructor(
+		@IChannelLogService channelLogService: IChannelLogService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IEditorService private readonly editorService: IEditorService,
 		@INodeDownloadService private readonly downloadService: INodeDownloadService,
 		@IFileCompressService private readonly fileCompressService: IFileCompressService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
-		@INodePathService private readonly nodePathService: INodePathService,
-		@IChannelLogService channelLogService: IChannelLogService,
 		@ICMakeService private cmakeService: ICMakeService,
 		@INotificationService private notificationService: INotificationService,
+		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 	) {
 		this.logger = channelLogService.createChannel('Package Manager', PACKAGE_MANAGER_LOG_CHANNEL_ID, true);
 	}
 
 	public async listLocal(projectPath?: string): Promise<ILibraryProject[]> {
 		if (!projectPath) {
-			const sel = this.cmakeService.getSelectedProject();
-			if (!sel.exists) {
+			const projectPath = this.kendryteWorkspaceService.getCurrentWorkspace();
+			if (!projectPath) {
 				return [];
 			}
-			projectPath = sel.path;
 		}
 
-		const folder = resolvePath(projectPath, CMAKE_LIBRARY_FOLDER_NAME);
+		const folder = resolvePath(projectPath!, CMAKE_LIBRARY_FOLDER_NAME);
 		if (!await dirExists(folder)) {
 			return [];
 		}
 		const ret: ILibraryProject[] = [];
 		for (const item of await readDirsInDir(folder)) {
-			const result = await this.nodeFileSystemService.readProjectFileIn(resolvePath(folder, item));
+			const result = await this.kendryteWorkspaceService.readProjectSetting(resolvePath(folder, item)) as ILibraryProject;
 			if (!result) {
 				continue;
 			}
 
-			ret.push(result.json as ILibraryProject);
+			ret.push(result);
 		}
 		return ret;
 	}
@@ -93,7 +92,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 
 	openPackageFile(projectPath: string, sideByside: boolean = false): Promise<any> {
 		return this.editorService.openEditor({
-			resource: URI.file(this.nodePathService.getProjectSettingsFile(projectPath)),
+			resource: URI.file(this.kendryteWorkspaceService.getProjectSetting(projectPath)),
 		});
 	}
 
@@ -175,20 +174,26 @@ export class PackageRegistryService implements IPackageRegistryService {
 	}
 
 	public async installAll(): Promise<void> {
-		const list = await this.nodeFileSystemService.readAllProjectFiles();
-		for (const { json, file } of list) {
-			await this._installEachProject(file, json);
+		const workspaces = await this.kendryteWorkspaceService.getAllWorkspace();
+		for (const workspacePath of workspaces) {
+			await this._installSingleWorkspace(workspacePath);
 		}
 	}
 
-	public async installProject(dir: string = this.cmakeService.getSelectedProject(true).path) {
-		const ret = await this.nodeFileSystemService.readProjectFileIn(dir, true);
-		await this._installEachProject(ret.file, ret.json);
+	public async installProject(dir = this.kendryteWorkspaceService.getCurrentWorkspace()) {
+		if (!dir) {
+			return;
+		}
+		await this._installSingleWorkspace(dir);
 	}
 
-	public async _installEachProject(projectPath: string, pkgInfo: ICommonProject): Promise<void> {
+	public async _installSingleWorkspace(workspacePath: string): Promise<void> {
+		const pkgInfo = await this.kendryteWorkspaceService.readProjectSetting(workspacePath);
+		if (!pkgInfo) {
+			return; // not a project
+		}
 		if (!pkgInfo.dependency) {
-			await this.openPackageFile(projectPath);
+			await this.openPackageFile(workspacePath);
 			throw new Error('invalid dependency defined in ' + CMAKE_CONFIG_FILE_NAME + '.');
 		}
 
@@ -284,7 +289,9 @@ export class PackageRegistryService implements IPackageRegistryService {
 
 		const saveDirName = await this.downloadFromAbsUrl(downloadUrl, packageInfo.name, version);
 
-		const currentConfigFile = this.nodePathService.getProjectSettingsFile(this.cmakeService.getSelectedProject(true).path);
+		const currentConfigFile = this.kendryteWorkspaceService.getProjectSetting(
+			this.kendryteWorkspaceService.requireCurrentWorkspace(),
+		);
 		if (!await fileExists(currentConfigFile)) {
 			await this.nodeFileSystemService.rawWriteFile(currentConfigFile, JSON.stringify({
 				'$schema': 'vscode://schemas/CMakeLists',
@@ -324,7 +331,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 		}
 		this.logger.info(`name:${config.name} version:${config.version}`);
 
-		const packagesRoot = resolvePath(this.cmakeService.getSelectedProject(true).path, CMAKE_LIBRARY_FOLDER_NAME);
+		const packagesRoot = this.kendryteWorkspaceService.requireCurrentWorkspaceFile(CMAKE_LIBRARY_FOLDER_NAME);
 		const saveDirName = config.name;
 		const saveDir = resolvePath(packagesRoot, saveDirName);
 
@@ -352,10 +359,10 @@ export class PackageRegistryService implements IPackageRegistryService {
 	}
 
 	public async erasePackage(packageName: string) {
-		const activeProject = this.cmakeService.getSelectedProject(true).path;
+		const activeProject = this.kendryteWorkspaceService.requireCurrentWorkspace();
 
 		const packageSaveDir = resolvePath(activeProject, CMAKE_LIBRARY_FOLDER_NAME, packageName);
-		const currentConfigFile = this.nodePathService.getProjectSettingsFile(activeProject);
+		const currentConfigFile = this.kendryteWorkspaceService.getProjectSetting(activeProject);
 
 		this.logger.info(`  rimraf(${packageSaveDir})`);
 

@@ -15,8 +15,8 @@ export class KendrytePackageJsonEditorModel implements IEditorModel {
 
 	constructor(
 		public readonly resource: URI,
-		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IChannelLogService channelLogService: IChannelLogService,
+		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 	) {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 	}

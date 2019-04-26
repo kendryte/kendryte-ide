@@ -4,7 +4,6 @@ import { IEditorService } from 'vs/workbench/services/editor/common/editorServic
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { localize } from 'vs/nls';
 import { URI } from 'vs/base/common/uri';
 import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
@@ -12,6 +11,7 @@ import { KendrytePackageJsonEditorInput } from 'vs/kendryte/vs/workbench/kendryt
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { exists } from 'vs/base/node/pfs';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 
 export class OpenPackageJsonEditorAction extends Action {
 	static readonly ID: string = ACTION_ID_OPEN_PROJECT_SETTINGS;
@@ -23,7 +23,7 @@ export class OpenPackageJsonEditorAction extends Action {
 		@IInstantiationService private instantiationService: IInstantiationService,
 		@IWorkspaceContextService private workspaceContextService: IWorkspaceContextService,
 		@INotificationService private notificationService: INotificationService,
-		@INodePathService private nodePathService: INodePathService,
+		@IKendryteWorkspaceService private kendryteWorkspaceService: IKendryteWorkspaceService,
 		@INodeFileSystemService private nodeFileSystemService: INodeFileSystemService,
 		@ICMakeService private cmakeService: ICMakeService,
 	) {
@@ -36,9 +36,9 @@ export class OpenPackageJsonEditorAction extends Action {
 			return new Error('Can not use flash manager whithout workspace');
 		}
 
-		const file = this.nodePathService.workspaceFilePath(CMAKE_CONFIG_FILE_NAME);
+		const file = this.kendryteWorkspaceService.requireCurrentWorkspaceFile(CMAKE_CONFIG_FILE_NAME);
 		if (!await exists(file)) {
-			await this.nodeFileSystemService.rawWriteFile(file, '{}');
+			await this.nodeFileSystemService.rawWriteFile(file, JSON.stringify({}));
 			await this.cmakeService.rescanCurrentFolder();
 		}
 

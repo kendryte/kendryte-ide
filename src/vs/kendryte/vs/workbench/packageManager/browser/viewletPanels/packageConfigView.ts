@@ -11,7 +11,6 @@ import { IContextMenuService } from 'vs/platform/contextview/browser/contextView
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { $, addDisposableListener, append } from 'vs/base/browser/dom';
 import { IPackageRegistryService } from 'vs/kendryte/vs/workbench/packageManager/common/type';
-import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { renderOcticons } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
@@ -19,7 +18,7 @@ import { IQuickInputService } from 'vs/platform/quickinput/common/quickInput';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { Emitter } from 'vs/base/common/event';
 import { isUndefinedOrNull } from 'vs/base/common/types';
-import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 
 const templateId = 'local-package-tree';
 
@@ -118,19 +117,18 @@ export class PackageConfigView extends ViewletPanel {
 
 	constructor(
 		options: IViewletViewOptions,
-		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IConfigurationService configurationService: IConfigurationService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IPackageRegistryService private readonly packageRegistryService: IPackageRegistryService,
-		@INodePathService private readonly nodePathService: INodePathService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
-		@ICMakeService private readonly cmakeService: ICMakeService,
+		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 	) {
 		super({ ...(options as IViewletPanelOptions), ariaHeaderLabel: options.title }, keybindingService, contextMenuService, configurationService);
 
 		this.disposables.push(this.packageRegistryService.onLocalPackageChange(e => this.show()));
-		this.disposables.push(this.cmakeService.onProjectSelectionChange(e => this.show()));
+		this.disposables.push(this.kendryteWorkspaceService.onCurrentWorkingDirectoryChange(e => this.show()));
 	}
 
 	protected renderBody(container: HTMLElement): void {
@@ -164,17 +162,21 @@ export class PackageConfigView extends ViewletPanel {
 		if (!this._visible) {
 			return;
 		}
-		const project = this.cmakeService.getSelectedProject();
 		this.list.splice(0, this.list.length);
-		if (project.exists) {
+
+		const root = this.kendryteWorkspaceService.getCurrentWorkspace();
+		if (!root) {
 			return;
 		}
-		const self = (await this.nodeFileSystemService.readProjectFileIn(project.path))!;
+		const json = await this.kendryteWorkspaceService.readProjectSetting(root);
+		if (!json) {
+			return;
+		}
 
-		const packages = await this.packageRegistryService.listLocal(project.path);
+		const packages = await this.packageRegistryService.listLocal(root);
 		const localObject: any = {};
 
-		const defines = Object.assign(localObject, ...packages.map(e => e.definitions), self.json.definitions);
+		const defines = Object.assign(localObject, ...packages.map(e => e.definitions), json.definitions);
 
 		const kv = Object.entries(defines).map(([k, v]) => {
 			return <IConfigSection>{
@@ -188,11 +190,10 @@ export class PackageConfigView extends ViewletPanel {
 	}
 
 	private async writeChange(item: IConfigSection) {
-		const project = this.cmakeService.getSelectedProject();
-		const file = this.nodePathService.getProjectSettingsFile(project.path);
+		const project = this.kendryteWorkspaceService.getProjectSetting(this.kendryteWorkspaceService.requireCurrentWorkspace());
 
 		const val = item.type === 'number' ? parseFloat(item.value) : item.value;
 
-		await this.nodeFileSystemService.editJsonFile(file, ['definitions', item.key], val);
+		await this.nodeFileSystemService.editJsonFile(project, ['definitions', item.key], val);
 	}
 }

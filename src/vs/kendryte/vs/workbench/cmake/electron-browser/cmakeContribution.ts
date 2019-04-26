@@ -12,12 +12,12 @@ import { MaixCMakeHelloWorldAction } from 'vs/kendryte/vs/workbench/cmake/electr
 import { MaixCMakeConfigureAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/configureAction';
 import { Extensions as JSONExtensions, IJSONContributionRegistry } from 'vs/platform/jsonschemas/common/jsonContributionRegistry';
 import { registerExternalAction, registerInternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
-import { OpenLocalCmakeListAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/openLocalCmakeList';
+import { OpenLocalCMakeListAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/openLocalCMakeList';
 import { registerCMakeSchemas } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { MaixCMakeBuildRunAction, MaixCMakeRunAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/runAction';
 import { ACTION_CATEGORY_BUILD_DEBUG } from 'vs/kendryte/vs/base/common/menu/cmake';
 import { MaixCMakeOpenLogAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/openLogAction';
-import { CMakeSelectProjectAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/selectProjectAction';
+import { SelectWorkspaceFolderAction } from 'vs/kendryte/vs/services/workspace/electron-browser/selectProjectAction';
 
 registerSingleton(ICMakeService, CMakeService);
 
@@ -49,7 +49,7 @@ registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeSelectVariantAction
 registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeHelloWorldAction);
 
 // open config file
-registerExternalAction(category, OpenLocalCmakeListAction);
+registerExternalAction(category, OpenLocalCMakeListAction);
 
 // CONFIG json
 registerCMakeSchemas((id, schema) => {
@@ -60,4 +60,4 @@ registerCMakeSchemas((id, schema) => {
 registerInternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeOpenLogAction);
 
 // select project
-registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, CMakeSelectProjectAction);
+registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, SelectWorkspaceFolderAction);

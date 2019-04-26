@@ -3,7 +3,7 @@ import { IEnvironmentService } from 'vs/platform/environment/common/environment'
 import { isLinux, isWindows } from 'vs/base/common/platform';
 import { lstatSync } from 'fs';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
-import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
+import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { createLinuxDesktopShortcut, ensureLinkEquals } from 'vs/kendryte/vs/platform/createShortcut/node/shortcuts';
 import { IShortcutOptions } from 'windows-shortcuts';
@@ -11,7 +11,6 @@ import { tmpdir } from 'os';
 import { mkdirp } from 'vs/base/node/pfs';
 import { optional } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
-import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { memoize } from 'vs/base/common/decorators';
 import { basename } from 'vs/base/common/path';
 import { processEnvironmentPathList } from 'vs/kendryte/vs/base/common/platformEnv';
@@ -33,17 +32,6 @@ export class NodePathService implements INodePathService {
 		];
 		for (const k of keys) {
 			logger.info(` {NodePathService} ${k} = ${this[k]()}`);
-		}
-
-		if (!workspaceContextService) {
-			// FIXME: portable mode do not use HOME
-			// this.createUserLink(this.getInstallPath('.fast-links/_Extensions'), pathResolveNow('HOMEPATH', process.env.HOME, product.dataFolderName));
-			// this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorage'), pathResolveNow('AppData', process.env.HOME, '.config', product.nameLong));
-			// this.createUserLink(this.getInstallPath('.fast-links/_LocalSettingAndStorageDevel'), pathResolveNow('AppData', process.env.HOME, '.config/code-oss-dev'));
-
-			this.workspaceFilePath = () => {
-				throw new Error('cannot use NodePathService::workspaceFilePath in main process.');
-			};
 		}
 
 		processEnvironmentPathList.add(...this.kendrytePaths());
@@ -85,14 +73,6 @@ export class NodePathService implements INodePathService {
 				resolvePath(root),
 			);
 		}
-	}
-
-	getProjectSettingsFile(root: string = this.workspaceFilePath()) {
-		return resolvePath(root, CMAKE_CONFIG_FILE_NAME);
-	}
-
-	getProjectAllSettingsFile(){
-		return this.everyWorkspaceFilePath(CMAKE_CONFIG_FILE_NAME)
 	}
 
 	kendrytePaths(): string[] {
@@ -180,21 +160,6 @@ export class NodePathService implements INodePathService {
 			console.log('%cToolchain is expected to be found at %s, But not found.', 'color:red', path);
 			return '';
 		}
-	}
-
-	public workspaceFilePath(s: string = './'): string {
-		const resolver: IWorkspaceFolder = this.workspaceContextService.getWorkspace().folders[0];
-		if (resolver) {
-			return resolvePath(resolver.uri.fsPath, s);
-		} else {
-			return '';
-		}
-	}
-
-	public everyWorkspaceFilePath(s: string = './'): string[] {
-		return this.workspaceContextService.getWorkspace().folders.map((f) => {
-			return resolvePath(f.uri.fsPath, s);
-		});
 	}
 }
 

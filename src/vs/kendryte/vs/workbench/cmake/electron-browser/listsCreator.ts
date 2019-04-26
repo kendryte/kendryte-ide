@@ -12,12 +12,9 @@ import { async as fastGlobAsync, EntryItem } from 'fast-glob';
 import { ExtendMap } from 'vs/kendryte/vs/base/common/extendMap';
 import { localize } from 'vs/nls';
 import { ignorePattern } from 'vs/kendryte/vs/platform/fileDialog/common/globalIgnore';
+import { ICompileService } from 'vs/kendryte/vs/services/compileService/common/type';
 
 export const CMAKE_LIST_GENERATED_WARNING = '# [NEVER REMOVE THIS LINE] WARNING: this file is generated, please edit ' + CMAKE_CONFIG_FILE_NAME + ' file instead.';
-const iternalSourceCodeFiles: string[] = [
-	'config/fpioa-config.c',
-	'config/fpioa-config.h',
-];
 
 interface DefineValue {
 	id: string;
@@ -75,9 +72,10 @@ export class CMakeListsCreator {
 	constructor(
 		private readonly currentDir: string,
 		private readonly logger: ILogService,
+		@IConfigurationService configurationService: IConfigurationService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@INodePathService private readonly nodePathService: INodePathService,
-		@IConfigurationService configurationService: IConfigurationService,
+		@ICompileService private readonly compileService: ICompileService,
 	) {
 		this.isDebugMode = configurationService.getValue<boolean>(CONFIG_KEY_BUILD_VERBOSE);
 	}
@@ -265,6 +263,8 @@ export class CMakeListsCreator {
 		await this.readBlockFiles();
 		await this.readDependenceTree();
 		// console.log('[cmake] Tree: ', this.tree);
+
+		await this.beforeBuildHooks();
 
 		if (this.isDebugMode) {
 			this.logger.info('=============================================');
@@ -596,7 +596,7 @@ export class CMakeListsCreator {
 	}
 
 	private async matchSourceCode(item: ICompileInfo) {
-		const sourceToMatch = iternalSourceCodeFiles.concat(item.source)
+		const sourceToMatch = item.source
 			.map((fp) => {
 				// remove absolute and empty entries
 				return fp.replace(/^\.*[\/\\]*/, '').trim();
@@ -618,16 +618,22 @@ export class CMakeListsCreator {
 			this.logger.error(e.message);
 			return [];
 		});
-		this.logger.debug('file array: ', allSourceFiles);
+
 		this.logger.info(`Matched source file count: ${allSourceFiles.length}.`);
 
 		if (allSourceFiles.length === 0) {
 			throw new Error('No source file matched for compile.');
 		}
 
+		this.logger.debug('file array: ', allSourceFiles);
+
 		item.matchingSourceFiles = allSourceFiles.map((item) => {
 			return item.toString();
 		});
 		// console.log(item.matchingSourceFiles);
+	}
+
+	private async beforeBuildHooks() {
+		await this.compileService.prepareToBuild(this.tree, this.walkList());
 	}
 }

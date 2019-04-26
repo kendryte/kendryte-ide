@@ -15,6 +15,7 @@ import { SubProgress } from 'vs/kendryte/vs/platform/config/common/progress';
 import { parseMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
 import { createReadStream } from 'fs';
 import { IFlashManagerService } from 'vs/kendryte/vs/workbench/flashManager/common/flashManagerService';
+import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 
 interface IMySection {
 	name: string;
@@ -40,19 +41,26 @@ export class FlashAllAction extends Action {
 		@IFlashManagerService private readonly flashManagerService: IFlashManagerService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IProgressService2 private readonly progressService: IProgressService2,
+		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 	) {
 		super(id, label);
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 		this.bootLoader = this.nodePathService.getPackagesPath('isp/bootloader.bin'); // todo
 	}
 
-	async run() {
-		const model = await this.flashManagerService.getFlashManagerModel();
+	async run(path: string | any) {
+		let rootPath = '';
+		if (typeof path === 'string') {
+			rootPath = path;
+		} else {
+			rootPath = this.kendryteWorkspaceService.requireCurrentWorkspaceFile();
+		}
+		const model = await this.flashManagerService.getFlashManagerModel(rootPath);
 
 		const sections: IMySection[] = (await model.createSections()).map((item) => {
 			return {
 				name: item.varName,
-				filepath: this.nodePathService.workspaceFilePath(item.filename),
+				filepath: item.filepath,
 				startHex: item.startHex,
 				start: parseMemoryAddress(item.startHex),
 				size: item.size,

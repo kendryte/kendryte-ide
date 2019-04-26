@@ -1,5 +1,5 @@
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { IFileWithStat, ILoadedCompileInfo, INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
+import { IFileWithStat, INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { copy, dirExists, exists, fileExists, mkdirp, readFile, rimraf, stat, unlink, writeFile } from 'vs/base/node/pfs';
 import { ILogService } from 'vs/platform/log/common/log';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
@@ -17,21 +17,16 @@ import { Selection } from 'vs/editor/common/core/selection';
 import { ITextModel } from 'vs/editor/common/model';
 import { Edit } from 'vs/base/common/jsonFormatter';
 import { EditOperation } from 'vs/editor/common/core/editOperation';
-import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { ICompileInfo } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { isMacintosh, isWindows } from 'vs/base/common/platform';
-import { CMAKE_ERROR_REQUIRE_FOLDER } from 'vs/kendryte/vs/workbench/cmake/common/type';
 
 class NodeFileSystemService implements INodeFileSystemService {
 	_serviceBrand: any;
-	private readonly _projectFileCache = new Map<string, IFileWithStat<ILoadedCompileInfo>>();
 
 	constructor(
 		@ILogService protected logService: ILogService,
 		@IFileService private fileService: IFileService,
 		@ITextModelService private textModelResolverService: ITextModelService,
 		@ITextFileService private textFileService: ITextFileService,
-		@INodePathService private nodePathService: INodePathService,
 	) {
 	}
 
@@ -148,69 +143,6 @@ class NodeFileSystemService implements INodeFileSystemService {
 		return { json, warnings, file };
 	}
 
-	readProjectFileIn(dirname: string, required: true): Promise<ILoadedCompileInfo>;
-	readProjectFileIn(dirname: string): Promise<ILoadedCompileInfo | null>;
-	public async readProjectFileIn(dir: string, required: boolean = false) {
-		const file = this.nodePathService.getProjectSettingsFile(dir);
-		const result = this._readProjectFile(file);
-		if (required && !result) {
-			throw new Error(CMAKE_ERROR_REQUIRE_FOLDER);
-		}
-		return result;
-	}
-
-	public async _readProjectFile(file: string) {
-		const cachedItem = this._projectFileCache.get(file);
-		if (cachedItem) {
-			if (await this.didFileModifiedFrom(cachedItem)) {
-				this._projectFileCache.delete(file);
-			} else {
-				return cachedItem.content;
-			}
-		}
-
-		if (!await exists(file)) {
-			console.log('not a project: %s', file);
-			return null;
-		}
-
-		console.log('reload project file: %s', file);
-		const newFile = await this.readFileWithTime(file);
-		const [json, warnings] = parseExtendedJson<ICompileInfo>(newFile.content, file);
-
-		const ret = <IFileWithStat<ILoadedCompileInfo>>{
-			filepath: file,
-			content: { json, warnings, file },
-			stat: newFile.stat,
-		};
-		this._projectFileCache.set(file, ret);
-
-		return { json, warnings, file };
-	}
-
-	public async readAllProjectFiles() {
-		const ret: ILoadedCompileInfo[] = [];
-		for (const file of this.nodePathService.getProjectAllSettingsFile()) {
-			const pkg = await this._readProjectFile(file);
-			if (!pkg) {
-				continue;
-			}
-
-			ret.push(pkg);
-		}
-
-		/* TODO: clean cache
-		const allStillOpen = ret.map((e) => e.file);
-		for (const file of this._projectFileCache.keys()) {
-			if (!allStillOpen.includes(file)) {
-				this._projectFileCache.delete(file);
-			}
-		}
-		*/
-
-		return ret;
-	}
-
 	public async tryWriteInFolder(target: string): Promise<boolean> {
 		if (await exists(target)) {
 			try {
@@ -307,7 +239,7 @@ class NodeFileSystemService implements INodeFileSystemService {
 		return path;
 	}
 
-	public async deleteFileIfEsxists(path: string) {
+	public async deleteFileIfExists(path: string) {
 		if (await fileExists(path)) {
 			await unlink(path);
 			return true;

@@ -20,7 +20,7 @@ import { renderOcticons } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 import { DisplayPackageDetailAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/displayPackageDetailAction';
 import { ILogService } from 'vs/platform/log/common/log';
 import { DeleteDependencyAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/deleteDependencyAction';
-import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 
 const templateId = 'local-package-list';
 
@@ -160,14 +160,14 @@ export class LocalPackagesListView extends ViewletPanel {
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IConfigurationService configurationService: IConfigurationService,
-		@ICMakeService cmakeService: ICMakeService,
+		@IKendryteWorkspaceService kendryteWorkspaceService: IKendryteWorkspaceService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IPackageRegistryService private readonly packageRegistryService: IPackageRegistryService,
 	) {
 		super({ ...(options as IViewletPanelOptions), ariaHeaderLabel: options.title }, keybindingService, contextMenuService, configurationService);
 
 		this.disposables.push(this.packageRegistryService.onLocalPackageChange(e => this.show()));
-		this.disposables.push(cmakeService.onProjectSelectionChange(e => this.show()));
+		this.disposables.push(kendryteWorkspaceService.onCurrentWorkingDirectoryChange(e => this.show()));
 	}
 
 	protected renderBody(container: HTMLElement): void {
