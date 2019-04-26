@@ -1,13 +1,16 @@
 import { URI } from 'vs/base/common/uri';
 import { FileOperationResult, IContent, IFileService, IFileStat } from 'vs/platform/files/common/files';
 import { getChipPackaging } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingRegistry';
-import { ILoadOptions, ISaveOptions } from 'vs/workbench/services/textfile/common/textfiles';
-import { EditorModel } from 'vs/workbench/common/editor';
-import { ICommandService } from 'vs/platform/commands/common/commands';
+import { ISaveOptions } from 'vs/workbench/services/textfile/common/textfiles';
 import { IFuncPinMap, ISavedJson } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
 import { VSBuffer } from 'vs/base/common/buffer';
+import { IEditorModel } from 'vs/platform/editor/common/editor';
+import { Emitter } from 'vs/base/common/event';
 
-export class FpioaModel extends EditorModel {
+export class FpioaModel implements IEditorModel {
+	private readonly _onDispose = new Emitter<void>();
+	public onDispose = this._onDispose.event;
+
 	private content: ISavedJson;
 	private contentHash: string;
 	private dirty: boolean = false;
@@ -16,10 +19,13 @@ export class FpioaModel extends EditorModel {
 	constructor(
 		protected uri: URI,
 		@IFileService private fileService: IFileService,
-		@ICommandService private commandService: ICommandService,
 	) {
-		super();
 		// console.log('---------------- constructor');
+	}
+
+	public dispose(): void {
+		this._onDispose.fire();
+		this._onDispose.dispose();
 	}
 
 	getResource() {
@@ -46,17 +52,13 @@ export class FpioaModel extends EditorModel {
 		}, (e) => {
 			delete this.saveOnGoing;
 			throw e;
-		}).then((v) => {
-			return this.doGenerate().then(() => {
-				return v;
-			});
 		});
 
 		return this.saveOnGoing;
 	}
 
-	public load(options: ILoadOptions = {}) {
-		return this._load(options).catch((e) => {
+	public load() {
+		return this._load().catch((e) => {
 			console.error(e);
 			this.content = {
 				funcPinMap: {},
@@ -66,12 +68,12 @@ export class FpioaModel extends EditorModel {
 		});
 	}
 
-	private async _load(options: ILoadOptions): Promise<this> {
+	private async _load(): Promise<this> {
 		// console.log('---------------- load', options);
 		if (await this.fileService.exists(this.uri)) {
 			let data: IContent | undefined;
 			await this.fileService.resolveContent(this.uri, {
-				etag: options.forceReadFromDisk ? '' : this.contentHash,
+				etag: this.contentHash,
 				encoding: 'utf8',
 				position: 4,
 			}).then((dd) => {
@@ -174,6 +176,10 @@ export class FpioaModel extends EditorModel {
 		return true;
 	}
 
+	getPinMap(): Readonly<IFuncPinMap> {
+		return this.content.funcPinMap;
+	}
+
 	private binary() {
 		// save as binary, then vscode will not open this file in text editor
 		return String.fromCharCode(12, 21, 8, 0) + JSON.stringify(this.content);
@@ -182,12 +188,5 @@ export class FpioaModel extends EditorModel {
 	private parse(buff: string) {
 		// first 4 byte already skip by fs read.
 		return JSON.parse(buff);
-	}
-
-	private doGenerate() {
-		return this.commandService.executeCommand('maix.fpioa.generate', {
-			...this.content,
-			configFile: this.uri.fsPath,
-		});
 	}
 }

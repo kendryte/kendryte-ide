@@ -23,7 +23,7 @@ interface IReturnSection extends Pick<ISection, Exclude<keyof ISection, 'filenam
 }
 
 export class FlashManagerEditorModel implements IEditorModel {
-	protected readonly _onDispose = new Emitter<void>();
+	private readonly _onDispose = new Emitter<void>();
 	public onDispose = this._onDispose.event;
 
 	private jsonData: IFlashManagerConfigJsonWritable;

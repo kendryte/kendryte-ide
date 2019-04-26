@@ -16,10 +16,10 @@ import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/chan
 import { IMarkerService } from 'vs/platform/markers/common/markers';
 import { exists } from 'vs/base/node/pfs';
 import { IBeforeBuild, ICompileService } from 'vs/kendryte/vs/services/compileService/common/type';
-import { DONT_MODIFY_MARKER } from 'vs/base/common/messages';
 import { createSimpleErrorMarker } from 'vs/kendryte/vs/platform/marker/common/simple';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { MemoryAllocationCalculator, parseMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
+import { wrapHeaderFile } from 'vs/kendryte/vs/base/common/cpp/wrapHeaderFile';
 
 const MARKER_ID = 'flash.manager.service';
 const CONST_NAME = 'KENDRYTE_IDE_FLASH_MANGER_OUT';
@@ -96,11 +96,7 @@ export class FlashManagerService implements IFlashManagerService {
 
 	private async _runGenerateMemoryMap(model: FlashManagerEditorModel, memory?: MemoryAllocationCalculator) {
 		this.logger.info('generating flash manager source file...');
-		const createdFileContents = [
-			'// ' + DONT_MODIFY_MARKER,
-			'#ifndef ' + CONST_NAME,
-			'#define ' + CONST_NAME,
-		];
+		const createdFileContents = [];
 
 		for (const item of await model.createSections(memory)) {
 			createdFileContents.push(`#define ${item.varName}_START ${item.startHex}`);
@@ -108,11 +104,9 @@ export class FlashManagerService implements IFlashManagerService {
 			createdFileContents.push(`#define ${item.varName}_SIZE ${item.size}`);
 		}
 
-		createdFileContents.push('#endif // ' + CONST_NAME);
-
 		const sourceFilePath = model.resource.fsPath.replace(/\.json$/i, '.h');
 
 		this.logger.info('    write to ' + sourceFilePath);
-		await this.nodeFileSystemService.writeFileIfChanged(sourceFilePath, createdFileContents.join('\n') + '\n');
+		await this.nodeFileSystemService.writeFileIfChanged(sourceFilePath, wrapHeaderFile(createdFileContents.join('\n'), CONST_NAME) + '\n');
 	}
 }

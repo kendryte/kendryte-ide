@@ -1,7 +1,7 @@
 import { localize } from 'vs/nls';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ConfirmResult, EditorInput, IEditorInputFactory, IRevertOptions } from 'vs/workbench/common/editor';
-import { FpioaModel } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaModel';
+import { FpioaModel } from 'vs/kendryte/vs/workbench/fpioaConfig/common/fpioaModel';
 import { URI } from 'vs/base/common/uri';
 import { dispose } from 'vs/base/common/lifecycle';
 import { getChipPackaging } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingRegistry';
@@ -10,7 +10,7 @@ import { INotificationService } from 'vs/platform/notification/common/notificati
 import { Emitter, Event } from 'vs/base/common/event';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
-import { PinFuncSetEvent } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
+import { IFpioaService, PinFuncSetEvent } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
 import { SaveAllAction } from 'vs/workbench/contrib/files/browser/fileActions';
 
 const fpioaInputTypeId = 'workbench.input.fpioaInput';
@@ -42,12 +42,12 @@ export class FpioaEditorInput extends EditorInput {
 
 	constructor(
 		private resource: URI,
-		@IInstantiationService private instantiationService: IInstantiationService,
 		// @ITextFileService private textFileService: ITextFileService,
 		@ICommandService commandService: ICommandService,
 		@IDialogService protected dialogService: IDialogService,
 		@INotificationService private notifyService: INotificationService,
 		@ILifecycleService lifecycleService: ILifecycleService,
+		@IFpioaService private readonly fpioaService: IFpioaService,
 	) {
 		super();
 
@@ -82,16 +82,14 @@ export class FpioaEditorInput extends EditorInput {
 	}
 
 	async resolve(): Promise<FpioaModel> {
-		const fileRes = this.resource;
 		if (this._model) {
 			dispose(this._model);
 		}
 
-		this._model = this.instantiationService.createInstance(FpioaModel, fileRes);
-
+		this._model = await this.fpioaService.createModel(this.resource);
 		//	(this.textFileService.models as TextFileEditorModelManager).add(fileRes, this._model as any);
 
-		return await this._model.load();
+		return this._model;
 	}
 
 	unSelectChip() {

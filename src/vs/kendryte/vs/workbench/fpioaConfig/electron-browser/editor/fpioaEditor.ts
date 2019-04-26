@@ -6,7 +6,7 @@ import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { EditorOptions } from 'vs/workbench/common/editor';
-import { FpioaModel } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaModel';
+import { FpioaModel } from 'vs/kendryte/vs/workbench/fpioaConfig/common/fpioaModel';
 import { Orientation } from 'vs/base/browser/ui/sash/sash';
 import { FpioaLeftPanel } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/leftPanel';
 import { FpioaRightPanel } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/rightPanel';

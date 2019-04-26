@@ -13,6 +13,10 @@ import { FPIOA_FILE_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base
 import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { FpioaEditorInput } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaEditorInput';
+import { FpioaModel } from 'vs/kendryte/vs/workbench/fpioaConfig/common/fpioaModel';
+import { getChipPackaging } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingRegistry';
+import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
+import { wrapHeaderFile } from 'vs/kendryte/vs/base/common/cpp/wrapHeaderFile';
 
 export class FpioaService implements IFpioaService {
 	public _serviceBrand: any;
@@ -24,30 +28,103 @@ export class FpioaService implements IFpioaService {
 		@IChannelLogService channelLogService: IChannelLogService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IEditorService private readonly editorService: IEditorService,
+		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 	) {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 		compileService.onPrepareBuild((event) => event.waitUntil(this.runIfExists(event)));
 	}
 
 	async runIfExists(event: IBeforeBuild) {
+		const allSections: string[] = [];
 		for (const project of event.projects) {
 			const configFile = resolvePath(project.projectPath, PROJECT_CONFIG_FOLDER_NAME, FPIOA_FILE_NAME);
 			if (await exists(configFile)) {
-				this.logger.info('[FPIOA Editor] Enabled for %s.', project.json.name);
-				project.registerConstructor({
-					header: 'fpioa-config.h',
-					source: 'fpioa-config.c',
-					functionName: 'configure_fpioa',
-				});
-			} else {
-				this.logger.info('[FPIOA Editor] NOT enabled for %s.', project.json.name);
+				const model = await this.createModel(URI.file(configFile));
+				const sections = this.generate(model);
+				if (sections.length !== 0) {
+					allSections.push(...sections);
+					this.logger.info('[FPIOA Editor] Enabled for %s.', project.json.name);
+					continue;
+				}
 			}
+			this.logger.info('[FPIOA Editor] NOT enabled for %s.', project.json.name);
+		}
+
+		if (allSections.length) {
+			this.logger.info('write fpioa config into', resolvePath(event.mainProject.projectPath, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.*'));
+			await this.nodeFileSystemService.writeFileIfChanged(
+				resolvePath(event.mainProject.projectPath, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.h'),
+				this.createHeader(),
+			);
+			await this.nodeFileSystemService.writeFileIfChanged(
+				resolvePath(event.mainProject.projectPath, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.c'),
+				this.createSource(allSections),
+			);
+
+			event.mainProject.registerConstructor({
+				header: 'fpioa-config.h',
+				source: 'fpioa-config.c',
+				functionName: 'ide_config_fpioa',
+			});
+		} else {
+			await this.nodeFileSystemService.deleteFileIfExists(
+				resolvePath(event.mainProject.projectPath, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.h'),
+			);
+			await this.nodeFileSystemService.deleteFileIfExists(
+				resolvePath(event.mainProject.projectPath, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.c'),
+			);
 		}
 	}
 
 	async openEditor(resource: URI, options?: IEditorOptions, group?: IEditorGroup): Promise<IEditor | null> {
 		const input = this.instantiationService.createInstance(FpioaEditorInput, resource);
 		return this.editorService.openEditor(input, options, group);
+	}
+
+	async createModel(resource: URI) {
+		const model = this.instantiationService.createInstance(FpioaModel, resource);
+		await model.load();
+		return model;
+	}
+
+	private generate(model: FpioaModel): string[] {
+		if (!model.currentChip) {
+			return [];
+		}
+
+		const ret = getChipPackaging(model.currentChip);
+		if (!ret) {
+			throw new Error('Unknown chip type: ' + model.currentChip);
+		}
+
+		const { generator, geometry } = ret;
+		const generatedConfigSections: string[] = [];
+		for (const [funcId, pinLoc] of Object.entries(model.getPinMap())) {
+			if (funcId !== undefined) {
+				generatedConfigSections.push(`ret += ${generator.setterFuncName}(${geometry.IOPinPlacement[pinLoc]}, ${generator.funcNamePrefix}${funcId});`);
+			}
+		}
+
+		return generatedConfigSections;
+	}
+
+	private createHeader() {
+		return wrapHeaderFile(`int ide_config_fpioa();`, 'IDE_FPIOA');
+	}
+
+	private createSource(allSections: string[]) {
+		// language=TEXT
+		return `#include <fpioa.h>
+#include "fpioa-config.h"
+
+int ide_config_fpioa() {
+int ret = 0;
+
+${allSections.join('\n')}
+
+return ret;
+}
+`;
 	}
 }
 

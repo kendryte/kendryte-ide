@@ -32,7 +32,6 @@ import 'vs/kendryte/vs/platform/vscode/electron-browser/relaunchRenderService';
 // import 'vs/kendryte/vs/workbench/patchSettings2/browser/settingsTreePathcer';
 // import 'vs/kendryte/vs/workbench/patchSettings2/browser/registerTypes';
 // IO Config
-import 'vs/kendryte/vs/workbench/fpioaConfig/node/generateorContribution';
 import 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaContribution';
 import 'vs/kendryte/vs/workbench/fpioaConfig/common/packagings/includeAllContribution';
 // flash manager

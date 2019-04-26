@@ -4,6 +4,8 @@ import { createDecorator } from 'vs/platform/instantiation/common/instantiation'
 import { URI } from 'vs/base/common/uri';
 import { IEditorOptions, ITextEditorOptions } from 'vs/platform/editor/common/editor';
 import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
+import { FpioaModel } from 'vs/kendryte/vs/workbench/fpioaConfig/common/fpioaModel';
+import { IChipGeneratorConfig } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingTypes';
 
 export interface IFuncPinMap {
 	[pinFuncID: string]: /* ioPinNum */ string;
@@ -57,6 +59,15 @@ export interface IFpioaService {
 	_serviceBrand: any;
 
 	openEditor(resource: URI, options: IEditorOptions | ITextEditorOptions | undefined, group: IEditorGroup): any;
+	createModel(resource: URI): Promise<FpioaModel>;
 }
 
 export const IFpioaService = createDecorator<IFpioaService>('fpioaService');
+
+
+export interface IGenerator {
+	readonly filename: string;
+
+	generate(config: IChipGeneratorConfig, funcPinMap: IFuncIOMap): string;
+}
+
