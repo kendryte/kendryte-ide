@@ -15,7 +15,7 @@ import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/commo
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { IMarkerService } from 'vs/platform/markers/common/markers';
 import { exists } from 'vs/base/node/pfs';
-import { IBeforeBuild, ICompileService } from 'vs/kendryte/vs/services/compileService/common/type';
+import { IBeforeBuildEvent, IMakefileService } from 'vs/kendryte/vs/services/makefileService/common/type';
 import { createSimpleErrorMarker } from 'vs/kendryte/vs/platform/marker/common/simple';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { MemoryAllocationCalculator, parseMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
@@ -30,7 +30,7 @@ export class FlashManagerService implements IFlashManagerService {
 
 	constructor(
 		@ISerialPortService serialPortService: ISerialPortService,
-		@ICompileService compileService: ICompileService,
+		@IMakefileService makefileService: IMakefileService,
 		@IChannelLogService channelLogService: IChannelLogService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IEditorService private readonly editorService: IEditorService,
@@ -39,16 +39,16 @@ export class FlashManagerService implements IFlashManagerService {
 	) {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 
-		compileService.onPrepareBuild((event) => event.waitUntil(this.runIfExists(event)));
+		makefileService.onPrepareBuild((event) => event.waitUntil(this.runIfExists(event)));
 	}
 
-	async runIfExists(event: IBeforeBuild) {
-		const mainFile = resolvePath(event.mainProject.projectPath, PROJECT_CONFIG_FOLDER_NAME, FLASH_MANAGER_CONFIG_FILE_NAME);
+	async runIfExists(event: IBeforeBuildEvent) {
+		const mainFile = resolvePath(event.projects[0].path, PROJECT_CONFIG_FOLDER_NAME, FLASH_MANAGER_CONFIG_FILE_NAME);
 		const mainModel = await this.getFlashManagerModel(mainFile);
 		const memory = new MemoryAllocationCalculator(parseMemoryAddress(mainModel.data.baseAddress), Infinity);
 
 		for (const project of event.projects) {
-			const configFile = resolvePath(project.projectPath, PROJECT_CONFIG_FOLDER_NAME, FLASH_MANAGER_CONFIG_FILE_NAME);
+			const configFile = resolvePath(project.path, PROJECT_CONFIG_FOLDER_NAME, FLASH_MANAGER_CONFIG_FILE_NAME);
 			if (await exists(configFile)) {
 				this.logger.info('[Flash Manager] Enabled for %s.', project.json.name);
 				const model = await this.getFlashManagerModel(configFile);
@@ -108,5 +108,7 @@ export class FlashManagerService implements IFlashManagerService {
 
 		this.logger.info('    write to ' + sourceFilePath);
 		await this.nodeFileSystemService.writeFileIfChanged(sourceFilePath, wrapHeaderFile(createdFileContents.join('\n'), CONST_NAME) + '\n');
+
+		return sourceFilePath;
 	}
 }

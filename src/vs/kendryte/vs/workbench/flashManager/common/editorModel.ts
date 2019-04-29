@@ -59,12 +59,12 @@ export class FlashManagerEditorModel implements IEditorModel {
 			this.jsonData.baseAddress = '0x' + FLASH_SAFE_ADDRESS.toString(16);
 		}
 
-		console.log('Flash Manager Model Load: %O', this.jsonData);
+		// console.log('Flash Manager Model Load: %O', this.jsonData);
 		return this;
 	}
 
 	async save(): Promise<void> {
-		console.log('Flash Manager Model Save: %O', this.jsonData);
+		// console.log('Flash Manager Model Save: %O', this.jsonData);
 		await this.nodeFileSystemService.writeFileIfChanged(
 			this.resource.fsPath,
 			JSON.stringify(

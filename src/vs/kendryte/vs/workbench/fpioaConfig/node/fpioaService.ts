@@ -6,7 +6,7 @@ import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IEditor } from 'vs/workbench/common/editor';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { IBeforeBuild, ICompileService } from 'vs/kendryte/vs/services/compileService/common/type';
+import { IBeforeBuildEvent, IMakefileService } from 'vs/kendryte/vs/services/makefileService/common/type';
 import { exists } from 'vs/base/node/pfs';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { FPIOA_FILE_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
@@ -24,20 +24,22 @@ export class FpioaService implements IFpioaService {
 	private readonly logger: IChannelLogger;
 
 	constructor(
-		@ICompileService compileService: ICompileService,
+		@IMakefileService makefileService: IMakefileService,
 		@IChannelLogService channelLogService: IChannelLogService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IEditorService private readonly editorService: IEditorService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 	) {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
-		compileService.onPrepareBuild((event) => event.waitUntil(this.runIfExists(event)));
+		makefileService.onPrepareBuild((event) => event.waitUntil(this.runIfExists(event)));
 	}
 
-	async runIfExists(event: IBeforeBuild) {
+	async runIfExists(event: IBeforeBuildEvent) {
+		const mainProject = event.projects[0];
+
 		const allSections: string[] = [];
-		for (const project of event.projects) {
-			const configFile = resolvePath(project.projectPath, PROJECT_CONFIG_FOLDER_NAME, FPIOA_FILE_NAME);
+		for (const project of event.projects.slice().reverse()) {
+			const configFile = resolvePath(project.path, PROJECT_CONFIG_FOLDER_NAME, FPIOA_FILE_NAME);
 			if (await exists(configFile)) {
 				const model = await this.createModel(URI.file(configFile));
 				const sections = this.generate(model);
@@ -51,27 +53,24 @@ export class FpioaService implements IFpioaService {
 		}
 
 		if (allSections.length) {
-			this.logger.info('write fpioa config into', resolvePath(event.mainProject.projectPath, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.*'));
+			this.logger.info('write fpioa config into', resolvePath(mainProject.path, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.*'));
 			await this.nodeFileSystemService.writeFileIfChanged(
-				resolvePath(event.mainProject.projectPath, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.h'),
+				resolvePath(mainProject.path, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.h'),
 				this.createHeader(),
 			);
 			await this.nodeFileSystemService.writeFileIfChanged(
-				resolvePath(event.mainProject.projectPath, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.c'),
+				resolvePath(mainProject.path, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.c'),
 				this.createSource(allSections),
 			);
 
-			event.mainProject.registerConstructor({
-				header: 'fpioa-config.h',
-				source: 'fpioa-config.c',
-				functionName: 'ide_config_fpioa',
-			});
+			event.registerGlobalExtraSource(['fpioa-config.c']);
+			event.registerGlobalConstructor('ide_config_fpioa', 'fpioa-config.h');
 		} else {
 			await this.nodeFileSystemService.deleteFileIfExists(
-				resolvePath(event.mainProject.projectPath, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.h'),
+				resolvePath(mainProject.path, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.h'),
 			);
 			await this.nodeFileSystemService.deleteFileIfExists(
-				resolvePath(event.mainProject.projectPath, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.c'),
+				resolvePath(mainProject.path, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.c'),
 			);
 		}
 	}

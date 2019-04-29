@@ -38,11 +38,10 @@ import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { CMakeBuildErrorProcessor, CMakeBuildProgressProcessor, CMakeProcessList } from 'vs/kendryte/vs/workbench/cmake/node/outputProcessor';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { CMAKE_LIST_GENERATED_WARNING } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { CMAKE_LIST_GENERATED_WARNING, CMAKE_LIST_GENERATED_WARNING_OLD } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ILogService, LogLevel } from 'vs/platform/log/common/log';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
-import { CMakeListsCreator } from 'vs/kendryte/vs/workbench/cmake/electron-browser/listsCreator';
 import { CONFIG_KEY_CMAKE_DEBUG, CONFIG_KEY_MAKE_PROGRAM } from 'vs/kendryte/vs/base/common/configKeys';
 import { IKendryteStatusControllerService } from 'vs/kendryte/vs/workbench/bottomBar/common/type';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
@@ -52,6 +51,7 @@ import { DeferredPromise } from 'vs/kendryte/vs/base/common/deferredPromise';
 import { localize } from 'vs/nls';
 import { CMAKE_CONFIG_FILE_NAME, PROJECT_BUILD_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
+import { IMakefileService } from 'vs/kendryte/vs/services/makefileService/common/type';
 
 export class CMakeService implements ICMakeService {
 	_serviceBrand: any;
@@ -102,6 +102,7 @@ export class CMakeService implements ICMakeService {
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IKendryteStatusControllerService private readonly kendryteStatusControllerService: IKendryteStatusControllerService,
+		@IMakefileService private readonly makefileService: IMakefileService,
 	) {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 
@@ -476,7 +477,7 @@ export class CMakeService implements ICMakeService {
 		if (await exists(createdListFile)) {
 			this.logger.info('  CMakeLists.txt found.');
 			const content = await readFile(createdListFile, 'utf8');
-			if (content.indexOf(CMAKE_LIST_GENERATED_WARNING) === -1) {
+			if (content.indexOf(CMAKE_LIST_GENERATED_WARNING) === -1 && content.indexOf(CMAKE_LIST_GENERATED_WARNING_OLD) === -1) {
 				this.logger.info('    - Error: this file is not created by me, refuse to delete it.');
 				throw new CMakeError(CMakeErrorType.PROJECT_NOT_EXISTS);
 			}
@@ -884,13 +885,6 @@ export class CMakeService implements ICMakeService {
 
 	private async generateCMakeListsFile() {
 		const currentFolder = this.kendryteWorkspaceService.requireCurrentWorkspace();
-		this.logger.info('Generate CMakeLists.txt file:');
-		const creator = this.instantiationService.createInstance(CMakeListsCreator, currentFolder, this.logger);
-		try {
-			await creator.prepareConfigure();
-		} catch (e) {
-			console.error(e);
-			throw e;
-		}
+		await this.makefileService.generateMakefile(currentFolder);
 	}
 }

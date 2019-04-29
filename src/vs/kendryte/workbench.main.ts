@@ -51,7 +51,7 @@ import 'vs/kendryte/vs/workbench/topMenu/electron-browser/kendryteMenuContributi
 import 'vs/kendryte/vs/workbench/topMenu/node/shortcutsContribution';
 // cmake
 import 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeContribution';
-import 'vs/kendryte/vs/services/compileService/node/compileService';
+import 'vs/kendryte/vs/services/makefileService/node/contribution';
 // bottom buttons
 import 'vs/kendryte/vs/workbench/bottomBar/electron-browser/statusBarContribution';
 import 'vs/kendryte/vs/workbench/bottomBar/common/kendryteButtonContribution';

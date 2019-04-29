@@ -50,7 +50,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 
 	public async listLocal(projectPath?: string): Promise<ILibraryProject[]> {
 		if (!projectPath) {
-			const projectPath = this.kendryteWorkspaceService.getCurrentWorkspace();
+			projectPath = this.kendryteWorkspaceService.getCurrentWorkspace();
 			if (!projectPath) {
 				return [];
 			}

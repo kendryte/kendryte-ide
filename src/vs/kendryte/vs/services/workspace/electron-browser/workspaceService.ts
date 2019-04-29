@@ -200,7 +200,7 @@ class WorkspaceService implements IKendryteWorkspaceService {
 			return null;
 		}
 
-		console.log('reload project file: %s', file);
+		// console.log('load project file: %s', file);
 		const { json, warnings } = await this.nodeFileSystemService.readJsonFile(file);
 
 		this.markerService.changeOne(EXTEND_JSON_MARKER_ID, URI.file(file), createSimpleJsonWarningMarkers(warnings));

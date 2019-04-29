@@ -147,20 +147,13 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 		this._register(this.themeService.onThemeChange(() => {
 			this.updateErrorButtonColor(errorButton);
 		}));
-		this.kendryteWorkspaceService.onCurrentWorkingDirectoryChange((path) => {
-			workspaceButton.text = '...';
-			if (!path) {
-				return;
-			}
-			this.kendryteWorkspaceService.readProjectSetting(path).then((data) => {
-				if (data) {
-					workspaceButton.text = data.name;
-				} else {
-					workspaceButton.text = basename(path);
-				}
-			});
-		});
-		this.cmakeService.onCMakeStatusChange((e) => {
+
+		this._register(this.kendryteWorkspaceService.onCurrentWorkingDirectoryChange((path) => {
+			this.onWorkspaceChange(workspaceButton, path);
+		}));
+		this.onWorkspaceChange(workspaceButton, this.kendryteWorkspaceService.getCurrentWorkspace());
+
+		this._register(this.cmakeService.onCMakeStatusChange((e) => {
 			if (e) {
 				this.currentHasError = true;
 				errorButton.text = '$(alert)';
@@ -173,7 +166,7 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 				errorButton.tooltip = ACTION_LABEL_CMAKE_NO_ERROR;
 			}
 			this.updateErrorButtonColor(errorButton);
-		});
+		}));
 	}
 
 	private updateErrorButtonColor(errorButton: IPublicStatusButton) {
@@ -187,6 +180,20 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 		} else {
 			errorButton.color = undefined as any;
 		}
+	}
+
+	private onWorkspaceChange(workspaceButton: IPublicStatusButton, path: void | string) {
+		workspaceButton.text = '...';
+		if (!path) {
+			return;
+		}
+		this.kendryteWorkspaceService.readProjectSetting(path).then((data) => {
+			if (data) {
+				workspaceButton.text = data.name;
+			} else {
+				workspaceButton.text = basename(path);
+			}
+		});
 	}
 }
 
