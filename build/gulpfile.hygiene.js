@@ -91,6 +91,7 @@ const indentationFilter = [
 	'!build/azure-pipelines/**/*.js',
 	'!build/azure-pipelines/**/*.config',
 	'!**/Dockerfile',
+	'!**/Dockerfile.*',
 	'!**/*.Dockerfile',
 	'!**/*.dockerfile',
 	'!extensions/markdown-language-features/media/*.js'

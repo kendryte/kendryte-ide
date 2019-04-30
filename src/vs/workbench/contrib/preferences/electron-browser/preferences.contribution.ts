@@ -217,8 +217,8 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 	weight: KeybindingWeight.WorkbenchContrib,
 	when: null,
 	primary: KeyMod.CtrlCmd | KeyCode.US_COMMA,
-	handler: (accessor, args: any) => {
-		accessor.get(IPreferencesService).openSettings();
+	handler: (accessor, args: string | undefined) => {
+		accessor.get(IPreferencesService).openSettings(undefined, typeof args === 'string' ? args : undefined);
 	}
 });
 
@@ -418,14 +418,14 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 			.then(() => {
 				const remoteAuthority = environmentService.configuration.remoteAuthority;
 				const hostLabel = labelService.getHostLabel(REMOTE_HOST_SCHEME, remoteAuthority) || remoteAuthority;
-				const label = nls.localize('openRemoteSettings', "Open User Settings ({0})", hostLabel);
+				const label = nls.localize('openRemoteSettings', "Open Remote Settings ({0})", hostLabel);
 				CommandsRegistry.registerCommand(OpenRemoteSettingsAction.ID, serviceAccessor => {
 					serviceAccessor.get(IInstantiationService).createInstance(OpenRemoteSettingsAction, OpenRemoteSettingsAction.ID, label).run();
 				});
 				MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
 					command: {
 						id: OpenRemoteSettingsAction.ID,
-						title: { value: label, original: `Preferences: Open User Settings (${hostLabel})` },
+						title: { value: label, original: `Preferences: Open Remote Settings (${hostLabel})` },
 						category: nls.localize('preferencesCategory', "Preferences")
 					},
 					when: RemoteAuthorityContext.notEqualsTo('')

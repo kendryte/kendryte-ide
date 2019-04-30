@@ -40,12 +40,13 @@ import { IRPCProtocol, createExtHostContextProxyIdentifier as createExtId, creat
 import { IProgressOptions, IProgressStep } from 'vs/platform/progress/common/progress';
 import { SaveReason } from 'vs/workbench/services/textfile/common/textfiles';
 import { IMarkdownString } from 'vs/base/common/htmlContent';
-import { ResolvedAuthority } from 'vs/platform/remote/common/remoteAuthorityResolver';
+import { ResolvedAuthority, RemoteAuthorityResolverErrorCode } from 'vs/platform/remote/common/remoteAuthorityResolver';
 import { ExtensionIdentifier, IExtensionDescription } from 'vs/platform/extensions/common/extensions';
 import * as codeInset from 'vs/workbench/contrib/codeinset/common/codeInset';
 import * as callHierarchy from 'vs/workbench/contrib/callHierarchy/common/callHierarchy';
 import { IRelativePattern } from 'vs/base/common/glob';
 import { IRemoteConsoleLog } from 'vs/base/common/console';
+import { VSBuffer } from 'vs/base/common/buffer';
 
 export interface IEnvironment {
 	isExtensionDevelopmentDebug: boolean;
@@ -64,6 +65,7 @@ export interface IStaticWorkspaceData {
 	id: string;
 	name: string;
 	configuration?: UriComponents | null;
+	isUntitled?: boolean | null;
 }
 
 export interface IWorkspaceData extends IStaticWorkspaceData {
@@ -116,11 +118,19 @@ export interface MainThreadCommandsShape extends IDisposable {
 	$getCommands(): Promise<string[]>;
 }
 
+export interface CommentThreadTemplate {
+	label: string;
+	acceptInputCommand?: modes.Command;
+	additionalCommands?: modes.Command[];
+	deleteCommand?: modes.Command;
+}
+
 export interface CommentProviderFeatures {
 	startDraftLabel?: string;
 	deleteDraftLabel?: string;
 	finishDraftLabel?: string;
 	reactionGroup?: modes.CommentReaction[];
+	commentThreadTemplate?: CommentThreadTemplate;
 }
 
 export interface MainThreadCommentsShape extends IDisposable {
@@ -374,7 +384,7 @@ export interface MainThreadOutputServiceShape extends IDisposable {
 
 export interface MainThreadProgressShape extends IDisposable {
 
-	$startProgress(handle: number, options: IProgressOptions): void;
+	$startProgress(handle: number, options: IProgressOptions, extension?: IExtensionDescription): void;
 	$progressReport(handle: number, message: IProgressStep): void;
 	$progressEnd(handle: number): void;
 }
@@ -535,7 +545,7 @@ export interface ExtHostWebviewsShape {
 	$onMessage(handle: WebviewPanelHandle, message: any): void;
 	$onDidChangeWebviewPanelViewState(handle: WebviewPanelHandle, newState: WebviewPanelViewState): void;
 	$onDidDisposeWebviewPanel(handle: WebviewPanelHandle): Promise<void>;
-	$deserializeWebviewPanel(newWebviewHandle: WebviewPanelHandle, viewType: string, title: string, state: any, position: EditorViewColumn, options: modes.IWebviewOptions): Promise<void>;
+	$deserializeWebviewPanel(newWebviewHandle: WebviewPanelHandle, viewType: string, title: string, state: any, position: EditorViewColumn, options: modes.IWebviewOptions & modes.IWebviewPanelOptions): Promise<void>;
 }
 
 export interface MainThreadUrlsShape extends IDisposable {
@@ -685,9 +695,13 @@ export interface MainThreadDebugServiceShape extends IDisposable {
 	$unregisterBreakpoints(breakpointIds: string[], functionBreakpointIds: string[]): Promise<void>;
 }
 
+export interface IOpenUriOptions {
+	readonly allowTunneling?: boolean;
+}
+
 export interface MainThreadWindowShape extends IDisposable {
 	$getWindowVisibility(): Promise<boolean>;
-	$openUri(uri: UriComponents): Promise<boolean>;
+	$openUri(uri: UriComponents, options: IOpenUriOptions): Promise<boolean>;
 }
 
 // -- extension host
@@ -783,8 +797,8 @@ export interface ExtHostWorkspaceShape {
 export interface ExtHostFileSystemShape {
 	$stat(handle: number, resource: UriComponents): Promise<files.IStat>;
 	$readdir(handle: number, resource: UriComponents): Promise<[string, files.FileType][]>;
-	$readFile(handle: number, resource: UriComponents): Promise<Buffer>;
-	$writeFile(handle: number, resource: UriComponents, content: Buffer, opts: files.FileWriteOptions): Promise<void>;
+	$readFile(handle: number, resource: UriComponents): Promise<VSBuffer>;
+	$writeFile(handle: number, resource: UriComponents, content: VSBuffer, opts: files.FileWriteOptions): Promise<void>;
 	$rename(handle: number, resource: UriComponents, target: UriComponents, opts: files.FileOverwriteOptions): Promise<void>;
 	$copy(handle: number, resource: UriComponents, target: UriComponents, opts: files.FileOverwriteOptions): Promise<void>;
 	$mkdir(handle: number, resource: UriComponents): Promise<void>;
@@ -793,8 +807,8 @@ export interface ExtHostFileSystemShape {
 	$unwatch(handle: number, session: number): void;
 	$open(handle: number, resource: UriComponents, opts: files.FileOpenOptions): Promise<number>;
 	$close(handle: number, fd: number): Promise<void>;
-	$read(handle: number, fd: number, pos: number, length: number): Promise<Buffer>;
-	$write(handle: number, fd: number, pos: number, data: Buffer): Promise<number>;
+	$read(handle: number, fd: number, pos: number, length: number): Promise<VSBuffer>;
+	$write(handle: number, fd: number, pos: number, data: VSBuffer): Promise<number>;
 }
 
 export interface ExtHostSearchShape {
@@ -803,8 +817,24 @@ export interface ExtHostSearchShape {
 	$clearCache(cacheKey: string): Promise<void>;
 }
 
+export interface IResolveAuthorityErrorResult {
+	type: 'error';
+	error: {
+		message: string | undefined;
+		code: RemoteAuthorityResolverErrorCode;
+		detail: any;
+	};
+}
+
+export interface IResolveAuthorityOKResult {
+	type: 'ok';
+	value: ResolvedAuthority;
+}
+
+export type IResolveAuthorityResult = IResolveAuthorityErrorResult | IResolveAuthorityOKResult;
+
 export interface ExtHostExtensionServiceShape {
-	$resolveAuthority(remoteAuthority: string): Promise<ResolvedAuthority>;
+	$resolveAuthority(remoteAuthority: string, resolveAttempt: number): Promise<IResolveAuthorityResult>;
 	$startExtensionHost(enabledExtensionIds: ExtensionIdentifier[]): Promise<void>;
 	$activateByEvent(activationEvent: string): Promise<void>;
 	$activate(extensionId: ExtensionIdentifier, activationEvent: string): Promise<boolean>;
@@ -812,8 +842,8 @@ export interface ExtHostExtensionServiceShape {
 	$deltaExtensions(toAdd: IExtensionDescription[], toRemove: ExtensionIdentifier[]): Promise<void>;
 
 	$test_latency(n: number): Promise<number>;
-	$test_up(b: Buffer): Promise<number>;
-	$test_down(size: number): Promise<Buffer>;
+	$test_up(b: VSBuffer): Promise<number>;
+	$test_down(size: number): Promise<VSBuffer>;
 }
 
 export interface FileSystemEvents {
@@ -1053,7 +1083,7 @@ export interface ExtHostTerminalServiceShape {
 	$acceptTerminalRendererInput(id: number, data: string): void;
 	$acceptTerminalTitleChange(id: number, name: string): void;
 	$acceptTerminalDimensions(id: number, cols: number, rows: number): void;
-	$createProcess(id: number, shellLaunchConfig: ShellLaunchConfigDto, activeWorkspaceRootUri: UriComponents, cols: number, rows: number): void;
+	$createProcess(id: number, shellLaunchConfig: ShellLaunchConfigDto, activeWorkspaceRootUri: UriComponents, cols: number, rows: number, isWorkspaceShellAllowed: boolean): void;
 	$acceptProcessInput(id: number, data: string): void;
 	$acceptProcessResize(id: number, cols: number, rows: number): void;
 	$acceptProcessShutdown(id: number, immediate: boolean): void;
@@ -1181,10 +1211,11 @@ export interface ExtHostCommentsShape {
 	$provideDocumentComments(handle: number, document: UriComponents): Promise<modes.CommentInfo | null>;
 	$createNewCommentThread(handle: number, document: UriComponents, range: IRange, text: string): Promise<modes.CommentThread | null>;
 	$onCommentWidgetInputChange(commentControllerHandle: number, input: string | undefined): Promise<number | undefined>;
+	$onActiveCommentThreadChange(commentControllerHandle: number, threadHandle: number | undefined): Promise<number | undefined>;
 	$provideCommentingRanges(commentControllerHandle: number, uriComponents: UriComponents, token: CancellationToken): Promise<IRange[] | undefined>;
 	$provideReactionGroup(commentControllerHandle: number): Promise<modes.CommentReaction[] | undefined>;
 	$toggleReaction(commentControllerHandle: number, threadHandle: number, uri: UriComponents, comment: modes.Comment, reaction: modes.CommentReaction): Promise<void>;
-	$createNewCommentWidgetCallback(commentControllerHandle: number, uriComponents: UriComponents, range: IRange, token: CancellationToken): Promise<void>;
+	$createNewCommentWidgetCallback(commentControllerHandle: number, uriComponents: UriComponents, range: IRange, token: CancellationToken): Promise<number | undefined>;
 	$replyToCommentThread(handle: number, document: UriComponents, range: IRange, commentThread: modes.CommentThread, text: string): Promise<modes.CommentThread | null>;
 	$editComment(handle: number, document: UriComponents, comment: modes.Comment, text: string): Promise<void>;
 	$deleteComment(handle: number, document: UriComponents, comment: modes.Comment): Promise<void>;
