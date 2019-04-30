@@ -1,71 +1,18 @@
-import {
-	KENDRYTE_PACKAGE_JSON_EDITOR_ID,
-	KENDRYTE_PACKAGE_JSON_EDITOR_INPUT_ID,
-	KENDRYTE_PACKAGE_JSON_EDITOR_TITLE,
-} from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/ids';
-import { ConfirmResult, EditorInput, IEditorInputFactory, IRevertOptions, Verbosity } from 'vs/workbench/common/editor';
+import { KENDRYTE_PACKAGE_JSON_EDITOR_ID, KENDRYTE_PACKAGE_JSON_EDITOR_INPUT_ID } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/ids';
+import { Verbosity } from 'vs/workbench/common/editor';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { URI } from 'vs/base/common/uri';
 import { CMAKE_LIBRARY_FOLDER_NAME } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { localize } from 'vs/nls';
 import { KendrytePackageJsonEditorModel } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/node/kendrytePackageJsonEditorModel';
 import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
+import { JsonEditorInputBase } from 'vs/kendryte/vs/workbench/jsonGUIEditor/browser/editorInputBaseImpl';
 
-export class KendrytePackageJsonEditorInput extends EditorInput {
+export class KendrytePackageJsonEditorInput extends JsonEditorInputBase<KendrytePackageJsonEditorModel> {
+	public static readonly EDITOR_ID: string = KENDRYTE_PACKAGE_JSON_EDITOR_ID;
 	public static readonly ID: string = KENDRYTE_PACKAGE_JSON_EDITOR_INPUT_ID;
 
-	private readonly model: KendrytePackageJsonEditorModel;
-	private _dirty: boolean = false;
-
-	/**
-	 * An editor input who's contents are retrieved from file services.
-	 */
-	constructor(
-		resource: URI,
-		@IInstantiationService instantiationService: IInstantiationService,
-	) {
-		super();
-		this.model = instantiationService.createInstance(KendrytePackageJsonEditorModel, resource);
-	}
-
-	protected setDirty(dirty: boolean = true) {
-		if (this._dirty === dirty) {
-			return;
-		}
-		this._dirty = !!dirty;
-		this._onDidChangeDirty.fire();
-	}
-
-	isDirty(): boolean {
-		return this._dirty;
-	}
-
-	confirmSave(): Promise<ConfirmResult> {
-		return Promise.resolve(ConfirmResult.DONT_SAVE);
-	}
-
-	save(): Promise<boolean> {
-		return Promise.resolve(true);
-	}
-
-	revert(options?: IRevertOptions): Promise<boolean> {
-		return Promise.resolve(true);
-	}
-
-	getName(): string {
-		return KENDRYTE_PACKAGE_JSON_EDITOR_TITLE;
-	}
-
-	getResource(): URI {
-		return this.model.resource;
-	}
-
-	getTypeId(): string {
-		return KendrytePackageJsonEditorInput.ID;
-	}
-
-	getPreferredEditorId(candidates: string[]): string {
-		return KENDRYTE_PACKAGE_JSON_EDITOR_ID;
+	createModel(instantiationService: IInstantiationService) {
+		return instantiationService.createInstance(KendrytePackageJsonEditorModel, this.resource);
 	}
 
 	supportsSplitEditor(): boolean {
@@ -123,36 +70,4 @@ export class KendrytePackageJsonEditorInput extends EditorInput {
 
 		return (m && m[1]) || 'Unknown';
 	}
-
-	public resolve(): Promise<KendrytePackageJsonEditorModel> {
-		return this.model.load();
-	}
 }
-
-interface ISerializedKendrytePackageJsonEditorInput {
-	resource: string;
-}
-
-export class KendrytePackageJsonEditorInputFactory implements IEditorInputFactory {
-	constructor() { }
-
-	public serialize(editorInput: EditorInput): string {
-		const input = <KendrytePackageJsonEditorInput>editorInput;
-
-		const serialized: ISerializedKendrytePackageJsonEditorInput = {
-			resource: input.getResource().toString(),
-		};
-
-		return JSON.stringify(serialized);
-	}
-
-	public deserialize(instantiationService: IInstantiationService, serializedEditorInput: string): EditorInput {
-		const deserialized: ISerializedKendrytePackageJsonEditorInput = JSON.parse(serializedEditorInput);
-
-		return instantiationService.createInstance(
-			KendrytePackageJsonEditorInput,
-			URI.parse(deserialized.resource),
-		);
-	}
-}
-

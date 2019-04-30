@@ -295,7 +295,7 @@ function kendryteExtend(){
 	} else {
 		try {
 			// @ts-ignore
-			require('source-map-support/register');
+			// require('source-map-support/register');
 		} catch (e) {
 			process.stderr.isTTY && console.error('ignored:', e.message);
 		}

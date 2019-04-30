@@ -1,5 +1,6 @@
 //// included by "vs/workbench/workbench.main.ts"
-
+// json editors base
+import 'vs/kendryte/vs/workbench/jsonGUIEditor/common/contribution';
 // Settings support
 import 'vs/kendryte/vs/workbench/config/browser/categoryContribution';
 import 'vs/kendryte/vs/workbench/config/electron-browser/pathSettingsContribution';

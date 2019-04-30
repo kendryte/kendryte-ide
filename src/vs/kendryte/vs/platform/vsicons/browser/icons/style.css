@@ -96,4 +96,14 @@
   .vs-dark .monaco-workbench .vscode-icon.checked:before {
     background-image: url("checked_inverse.svg"); }
 
+.monaco-workbench .vscode-icon.json:before {
+  background-image: url("json.svg"); }
+  .vs-dark .monaco-workbench .vscode-icon.json:before {
+    background-image: url("json_inverse.svg"); }
+
+.monaco-workbench .vscode-icon.PreferencesEditor:before {
+  background-image: url("PreferencesEditor.svg"); }
+  .vs-dark .monaco-workbench .vscode-icon.PreferencesEditor:before {
+    background-image: url("PreferencesEditor_inverse.svg"); }
+
 /*# sourceMappingURL=style.css.map */
