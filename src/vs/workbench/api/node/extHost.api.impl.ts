@@ -3,11 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { localize } from 'vs/nls';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import * as errors from 'vs/base/common/errors';
 import { Emitter, Event } from 'vs/base/common/event';
-import { TernarySearchTree } from 'vs/base/common/map';
 import * as path from 'vs/base/common/path';
 import Severity from 'vs/base/common/severity';
 import { URI } from 'vs/base/common/uri';
@@ -16,7 +14,7 @@ import { OverviewRulerLane } from 'vs/editor/common/model';
 import * as languageConfiguration from 'vs/editor/common/modes/languageConfiguration';
 import { score } from 'vs/editor/common/modes/languageSelector';
 import * as files from 'vs/platform/files/common/files';
-import { ExtHostContext, IInitData, IMainContext, MainContext, MainThreadKeytarShape } from 'vs/workbench/api/common/extHost.protocol';
+import { ExtHostContext, IInitData, IMainContext, MainContext } from 'vs/workbench/api/common/extHost.protocol';
 import { ExtHostApiCommands } from 'vs/workbench/api/common/extHostApiCommands';
 import { ExtHostClipboard } from 'vs/workbench/api/common/extHostClipboard';
 import { ExtHostCommands } from 'vs/workbench/api/common/extHostCommands';
@@ -37,14 +35,14 @@ import { ExtHostFileSystemEventService } from 'vs/workbench/api/common/extHostFi
 import { ExtHostHeapService } from 'vs/workbench/api/common/extHostHeapService';
 import { ExtHostLanguageFeatures, ISchemeTransformer } from 'vs/workbench/api/common/extHostLanguageFeatures';
 import { ExtHostLanguages } from 'vs/workbench/api/common/extHostLanguages';
-import { ExtHostLogService } from 'vs/workbench/api/node/extHostLogService';
+import { ExtHostLogService } from 'vs/workbench/api/common/extHostLogService';
 import { ExtHostMessageService } from 'vs/workbench/api/common/extHostMessageService';
 import { ExtHostOutputService } from 'vs/workbench/api/common/extHostOutput';
 import { LogOutputChannelFactory } from 'vs/workbench/api/node/extHostOutputService';
 import { ExtHostProgress } from 'vs/workbench/api/common/extHostProgress';
 import { ExtHostQuickOpen } from 'vs/workbench/api/common/extHostQuickOpen';
 import { ExtHostSCM } from 'vs/workbench/api/common/extHostSCM';
-import { ExtHostSearch } from 'vs/workbench/api/node/extHostSearch';
+import { ExtHostSearch, registerEHSearchProviders } from 'vs/workbench/api/node/extHostSearch';
 import { ExtHostStatusBar } from 'vs/workbench/api/common/extHostStatusBar';
 import { ExtHostStorage } from 'vs/workbench/api/common/extHostStorage';
 import { ExtHostTask } from 'vs/workbench/api/node/extHostTask';
@@ -57,7 +55,7 @@ import { ExtHostUrls } from 'vs/workbench/api/common/extHostUrls';
 import { ExtHostWebviews } from 'vs/workbench/api/common/extHostWebview';
 import { ExtHostWindow } from 'vs/workbench/api/common/extHostWindow';
 import { ExtHostWorkspace } from 'vs/workbench/api/common/extHostWorkspace';
-import { throwProposedApiError, checkProposedApiEnabled, nullExtensionDescription } from 'vs/workbench/services/extensions/common/extensions';
+import { throwProposedApiError, checkProposedApiEnabled } from 'vs/workbench/services/extensions/common/extensions';
 import { ProxyIdentifier } from 'vs/workbench/services/extensions/common/proxyIdentifier';
 import { ExtensionDescriptionRegistry } from 'vs/workbench/services/extensions/common/extensionDescriptionRegistry';
 import * as vscode from 'vscode';
@@ -66,6 +64,7 @@ import { originalFSPath } from 'vs/base/common/resources';
 import { CLIServer } from 'vs/workbench/api/node/extHostCLIServer';
 import { withNullAsUndefined } from 'vs/base/common/types';
 import { values } from 'vs/base/common/collections';
+import { Schemas } from 'vs/base/common/network';
 
 export interface IExtensionApiFactory {
 	(extension: IExtensionDescription, registry: ExtensionDescriptionRegistry, configProvider: ExtHostConfigProvider): typeof vscode;
@@ -89,10 +88,10 @@ export function createApiFactory(
 	extHostConfiguration: ExtHostConfiguration,
 	extensionService: ExtHostExtensionService,
 	extHostLogService: ExtHostLogService,
-	extHostStorage: ExtHostStorage
+	extHostStorage: ExtHostStorage,
+	schemeTransformer: ISchemeTransformer | null,
+	outputChannelName: string
 ): IExtensionApiFactory {
-
-	const schemeTransformer: ISchemeTransformer | null = null;
 
 	// Addressable instances
 	rpcProtocol.set(ExtHostContext.ExtHostLogService, extHostLogService);
@@ -114,7 +113,7 @@ export function createApiFactory(
 	const extHostFileSystem = rpcProtocol.set(ExtHostContext.ExtHostFileSystem, new ExtHostFileSystem(rpcProtocol, extHostLanguageFeatures));
 	const extHostFileSystemEvent = rpcProtocol.set(ExtHostContext.ExtHostFileSystemEventService, new ExtHostFileSystemEventService(rpcProtocol, extHostDocumentsAndEditors));
 	const extHostQuickOpen = rpcProtocol.set(ExtHostContext.ExtHostQuickOpen, new ExtHostQuickOpen(rpcProtocol, extHostWorkspace, extHostCommands));
-	const extHostTerminalService = rpcProtocol.set(ExtHostContext.ExtHostTerminalService, new ExtHostTerminalService(rpcProtocol, extHostConfiguration, extHostLogService));
+	const extHostTerminalService = rpcProtocol.set(ExtHostContext.ExtHostTerminalService, new ExtHostTerminalService(rpcProtocol, extHostConfiguration, extHostWorkspace, extHostDocumentsAndEditors, extHostLogService));
 	const extHostDebugService = rpcProtocol.set(ExtHostContext.ExtHostDebugService, new ExtHostDebugService(rpcProtocol, extHostWorkspace, extensionService, extHostDocumentsAndEditors, extHostConfiguration, extHostTerminalService, extHostCommands));
 	const extHostSCM = rpcProtocol.set(ExtHostContext.ExtHostSCM, new ExtHostSCM(rpcProtocol, extHostCommands, extHostLogService));
 	const extHostComment = rpcProtocol.set(ExtHostContext.ExtHostComments, new ExtHostComments(rpcProtocol, extHostCommands, extHostDocuments));
@@ -126,6 +125,14 @@ export function createApiFactory(
 	const extHostOutputService = rpcProtocol.set(ExtHostContext.ExtHostOutputService, new ExtHostOutputService(LogOutputChannelFactory, initData.logsLocation, rpcProtocol));
 	rpcProtocol.set(ExtHostContext.ExtHostStorage, extHostStorage);
 	if (initData.remoteAuthority) {
+		extHostTask.registerTaskSystem(Schemas.vscodeRemote, {
+			scheme: Schemas.vscodeRemote,
+			authority: initData.remoteAuthority,
+			platform: process.platform
+		});
+
+		registerEHSearchProviders(extHostSearch, extHostLogService);
+
 		const cliServer = new CLIServer(extHostCommands);
 		process.env['VSCODE_IPC_HOOK_CLI'] = cliServer.ipcHandlePath;
 	}
@@ -142,8 +149,7 @@ export function createApiFactory(
 	const extHostLanguages = new ExtHostLanguages(rpcProtocol, extHostDocuments);
 
 	// Register an output channel for exthost log
-	const name = localize('extensionsLog', "Extension Host");
-	extHostOutputService.createOutputChannelFromLogFile(name, extHostLogService.logFile);
+	extHostOutputService.createOutputChannelFromLogFile(outputChannelName, extHostLogService.logFile);
 
 	// Register API-ish commands
 	ExtHostApiCommands.register(extHostCommands);
@@ -247,7 +253,7 @@ export function createApiFactory(
 				return extHostClipboard;
 			},
 			openExternal(uri: URI) {
-				return extHostWindow.openUri(uri);
+				return extHostWindow.openUri(uri, { allowTunneling: !!initData.remoteAuthority });
 			}
 		});
 
@@ -526,6 +532,12 @@ export function createApiFactory(
 			set name(value) {
 				throw errors.readonly();
 			},
+			get workspaceFile() {
+				return extHostWorkspace.workspaceFile;
+			},
+			set workspaceFile(value) {
+				throw errors.readonly();
+			},
 			updateWorkspaceFolders: (index, deleteCount, ...workspaceFoldersToAdd) => {
 				return extHostWorkspace.updateWorkspaceFolders(extension, index, deleteCount || 0, ...workspaceFoldersToAdd);
 			},
@@ -758,6 +770,7 @@ export function createApiFactory(
 			Color: extHostTypes.Color,
 			ColorInformation: extHostTypes.ColorInformation,
 			ColorPresentation: extHostTypes.ColorPresentation,
+			Comment: extHostTypes.Comment,
 			CommentThreadCollapsibleState: extHostTypes.CommentThreadCollapsibleState,
 			CompletionItem: extHostTypes.CompletionItem,
 			CompletionItemKind: extHostTypes.CompletionItemKind,
@@ -799,6 +812,7 @@ export function createApiFactory(
 			Range: extHostTypes.Range,
 			RelativePattern: extHostTypes.RelativePattern,
 			ResolvedAuthority: extHostTypes.ResolvedAuthority,
+			RemoteAuthorityResolverError: extHostTypes.RemoteAuthorityResolverError,
 			Selection: extHostTypes.Selection,
 			SelectionRange: extHostTypes.SelectionRange,
 			ShellExecution: extHostTypes.ShellExecution,
@@ -869,108 +883,5 @@ class Extension<T> implements vscode.Extension<T> {
 
 	activate(): Thenable<T> {
 		return this._extensionService.activateByIdWithErrors(this._identifier, new ExtensionActivatedByAPI(false)).then(() => this.exports);
-	}
-}
-
-interface INodeModuleFactory {
-	readonly nodeModuleName: string;
-	load(request: string, parent: { filename: string; }): any;
-}
-
-export class NodeModuleRequireInterceptor {
-	public static INSTANCE = new NodeModuleRequireInterceptor();
-
-	private readonly _factories: Map<string, INodeModuleFactory>;
-
-	constructor() {
-		this._factories = new Map<string, INodeModuleFactory>();
-		this._installInterceptor(this._factories);
-	}
-
-	private _installInterceptor(factories: Map<string, INodeModuleFactory>): void {
-		const node_module = <any>require.__$__nodeRequire('module');
-		const original = node_module._load;
-		node_module._load = function load(request: string, parent: { filename: string; }, isMain: any) {
-			if (!factories.has(request)) {
-				return original.apply(this, arguments);
-			}
-			return factories.get(request)!.load(request, parent);
-		};
-	}
-
-	public register(interceptor: INodeModuleFactory): void {
-		this._factories.set(interceptor.nodeModuleName, interceptor);
-	}
-}
-
-export class VSCodeNodeModuleFactory implements INodeModuleFactory {
-	public readonly nodeModuleName = 'vscode';
-
-	private readonly _extApiImpl = new Map<string, typeof vscode>();
-	private _defaultApiImpl: typeof vscode;
-
-	constructor(
-		private readonly _apiFactory: IExtensionApiFactory,
-		private readonly _extensionPaths: TernarySearchTree<IExtensionDescription>,
-		private readonly _extensionRegistry: ExtensionDescriptionRegistry,
-		private readonly _configProvider: ExtHostConfigProvider
-	) {
-	}
-
-	public load(request: string, parent: { filename: string; }): any {
-
-		// get extension id from filename and api for extension
-		const ext = this._extensionPaths.findSubstr(URI.file(parent.filename).fsPath);
-		if (ext) {
-			let apiImpl = this._extApiImpl.get(ExtensionIdentifier.toKey(ext.identifier));
-			if (!apiImpl) {
-				apiImpl = this._apiFactory(ext, this._extensionRegistry, this._configProvider);
-				this._extApiImpl.set(ExtensionIdentifier.toKey(ext.identifier), apiImpl);
-			}
-			return apiImpl;
-		}
-
-		// fall back to a default implementation
-		if (!this._defaultApiImpl) {
-			let extensionPathsPretty = '';
-			this._extensionPaths.forEach((value, index) => extensionPathsPretty += `\t${index} -> ${value.identifier.value}\n`);
-			console.warn(`Could not identify extension for 'vscode' require call from ${parent.filename}. These are the extension path mappings: \n${extensionPathsPretty}`);
-			this._defaultApiImpl = this._apiFactory(nullExtensionDescription, this._extensionRegistry, this._configProvider);
-		}
-		return this._defaultApiImpl;
-	}
-}
-
-interface IKeytarModule {
-	getPassword(service: string, account: string): Promise<string | null>;
-	setPassword(service: string, account: string, password: string): Promise<void>;
-	deletePassword(service: string, account: string): Promise<boolean>;
-	findPassword(service: string): Promise<string | null>;
-}
-
-export class KeytarNodeModuleFactory implements INodeModuleFactory {
-	public readonly nodeModuleName = 'keytar';
-
-	private _impl: IKeytarModule;
-
-	constructor(mainThreadKeytar: MainThreadKeytarShape) {
-		this._impl = {
-			getPassword: (service: string, account: string): Promise<string | null> => {
-				return mainThreadKeytar.$getPassword(service, account);
-			},
-			setPassword: (service: string, account: string, password: string): Promise<void> => {
-				return mainThreadKeytar.$setPassword(service, account, password);
-			},
-			deletePassword: (service: string, account: string): Promise<boolean> => {
-				return mainThreadKeytar.$deletePassword(service, account);
-			},
-			findPassword: (service: string): Promise<string | null> => {
-				return mainThreadKeytar.$findPassword(service);
-			}
-		};
-	}
-
-	public load(request: string, parent: { filename: string; }): any {
-		return this._impl;
 	}
 }

@@ -87,6 +87,10 @@ import { IMenubarService } from 'vs/platform/menubar/common/menubar';
 import { MenubarService } from 'vs/platform/menubar/electron-browser/menubarService';
 import { IURLService } from 'vs/platform/url/common/url';
 import { RelayURLService } from 'vs/platform/url/electron-browser/urlService';
+import { ITunnelService } from 'vs/platform/remote/common/tunnel';
+import { TunnelService } from 'vs/workbench/services/remote/node/tunnelService';
+import { ConfigurationResolverService } from 'vs/workbench/services/configurationResolver/electron-browser/configurationResolverService';
+import { IConfigurationResolverService } from 'vs/workbench/services/configurationResolver/common/configurationResolver';
 
 import 'vs/platform/remote/node/tunnelService';
 
@@ -94,7 +98,6 @@ import 'vs/workbench/services/bulkEdit/browser/bulkEditService';
 import 'vs/workbench/services/integrity/node/integrityService';
 import 'vs/workbench/services/keybinding/common/keybindingEditing';
 import 'vs/workbench/services/textMate/electron-browser/textMateService';
-import 'vs/workbench/services/configurationResolver/browser/configurationResolverService';
 import 'vs/workbench/services/workspace/electron-browser/workspaceEditingService';
 import 'vs/workbench/services/extensions/common/inactiveExtensionUrlHandler';
 import 'vs/workbench/services/decorations/browser/decorationsService';
@@ -113,7 +116,6 @@ import 'vs/workbench/services/dialogs/electron-browser/dialogService';
 import 'vs/workbench/services/backup/node/backupFileService';
 import 'vs/workbench/services/editor/browser/editorService';
 import 'vs/workbench/services/history/browser/history';
-import 'vs/workbench/services/files/node/remoteFileService';
 import 'vs/workbench/services/activity/browser/activityService';
 import 'vs/workbench/browser/parts/views/views';
 import 'vs/workbench/services/keybinding/electron-browser/keybindingService';
@@ -159,6 +161,8 @@ registerSingleton(IIssueService, IssueService);
 registerSingleton(IWorkspacesService, WorkspacesService);
 registerSingleton(IMenubarService, MenubarService);
 registerSingleton(IURLService, RelayURLService);
+registerSingleton(ITunnelService, TunnelService, true);
+registerSingleton(IConfigurationResolverService, ConfigurationResolverService, true);
 
 //#endregion
 
@@ -178,7 +182,7 @@ import 'vs/workbench/browser/parts/statusbar/statusbarPart';
 //#region --- workbench contributions
 
 // Workspace File Watching
-import 'vs/workbench/services/files2/common/workspaceWatcher';
+import 'vs/workbench/services/files/common/workspaceWatcher';
 
 // Telemetry
 import 'vs/workbench/contrib/telemetry/browser/telemetry.contribution';
