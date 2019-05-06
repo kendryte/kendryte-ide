@@ -81,25 +81,25 @@ export abstract class AbstractJsonEditor<JsonType> extends BaseEditor implements
 	}
 
 	protected createEditor(parent: HTMLElement): void {
-		console.log('will create editor: %s', this.descriptor.id);
+		// console.log('will create editor: %s', this.descriptor.id);
 		const container = append(parent, $('div.kendryte-json-editor')) as HTMLDivElement;
 		container.classList.add(this.descriptor.id);
 
 		this.focusTracker = this._register(trackFocus(container));
 		this._register(this.focusTracker.onDidBlur(() => {
-			console.log('json editor lost focus');
+			// console.log('json editor lost focus');
 			this.customJsonEditorService.updateFocus(this.descriptor.id, false);
 		}));
 		this._register(this.focusTracker.onDidFocus(() => {
-			console.log('json editor gained focus');
+			// console.log('json editor gained focus');
 			this.customJsonEditorService.updateFocus(this.descriptor.id, true);
 		}));
 
 		try {
 			this._createEditor(container);
-			console.log('editor created');
+			// console.log('editor created');
 		} catch (e) {
-			console.error('editor failed to create:', e.stack);
+			// console.error('editor failed to create:', e.stack);
 			this.notificationService.error(e);
 			return;
 		}

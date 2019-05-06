@@ -43,7 +43,7 @@ export class SimpleJsonEditorModel<JsonType> extends Disposable implements IJson
 
 		this._register(textFileService.models.onModelSaved(({ resource }) => {
 			if (this.resource.toString() === resource.toString()) {
-				console.log('json model saved by other');
+				// console.log('json model saved by other');
 				this.setDirty(false);
 			}
 		}));
@@ -82,7 +82,7 @@ export class SimpleJsonEditorModel<JsonType> extends Disposable implements IJson
 	}
 
 	private refresh() {
-		console.log('json refresh');
+		// console.log('json refresh');
 		const jsonText = this.reference.object.textEditorModel.getValue();
 
 		const [json, warnings] = parseExtendedJson(jsonText);
@@ -130,7 +130,7 @@ export class SimpleJsonEditorModel<JsonType> extends Disposable implements IJson
 	}
 
 	public async save() {
-		console.log('json model save');
+		// console.log('json model save');
 		await this.textFileService.save(this.resource);
 		this.setDirty(false);
 	}
