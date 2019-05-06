@@ -6,16 +6,18 @@ import { KendrytePackageJsonEditorService } from 'vs/kendryte/vs/workbench/kendr
 import { registerExternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 import { OpenPackageJsonEditorAction } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/openEditor';
 import { ACTION_CATEGORY_TOOLS } from 'vs/kendryte/vs/base/common/menu/tools';
-import { registerJsonEditor } from 'vs/kendryte/vs/workbench/jsonGUIEditor/browser/registerEditorType';
 import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { KENDRYTE_PACKAGE_JSON_EDITOR_ID, KENDRYTE_PACKAGE_JSON_EDITOR_TITLE } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/ids';
+import { CustomJsonRegistry } from 'vs/kendryte/vs/workbench/jsonGUIEditor/common/register';
+import { cmakeSchemaId } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 
-registerJsonEditor(
-	{ id: KENDRYTE_PACKAGE_JSON_EDITOR_ID, title: KENDRYTE_PACKAGE_JSON_EDITOR_TITLE },
-	CMAKE_CONFIG_FILE_NAME,
+CustomJsonRegistry.registerCustomEditor(
+	KENDRYTE_PACKAGE_JSON_EDITOR_ID,
+	KENDRYTE_PACKAGE_JSON_EDITOR_TITLE,
 	KendrytePackageJsonEditor,
 	KendrytePackageJsonEditorInput,
 );
+CustomJsonRegistry.registerCustomJson(KENDRYTE_PACKAGE_JSON_EDITOR_ID, CMAKE_CONFIG_FILE_NAME, cmakeSchemaId);
 
 registerSingleton(IKendrytePackageJsonEditorService, KendrytePackageJsonEditorService);
 registerExternalAction(ACTION_CATEGORY_TOOLS, OpenPackageJsonEditorAction);

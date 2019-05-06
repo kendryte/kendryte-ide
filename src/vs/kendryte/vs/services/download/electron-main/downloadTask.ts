@@ -42,7 +42,7 @@ export class DownloadTask extends Disposable {
 
 	private readonly _progressEvent = new Emitter<Partial<INatureProgressStatus>>();
 	private readonly _finishEvent = new Emitter<[string, Error?]>();
-	public readonly finishEvent = Event.echo(this._finishEvent.event);
+	public readonly finishEvent = this._finishEvent.event;
 
 	private state: State = State.INIT;
 	private message = '';

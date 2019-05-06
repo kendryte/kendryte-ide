@@ -1,24 +1,23 @@
 import { URI } from 'vs/base/common/uri';
-import { FileOperationResult, IContent, IFileService, IFileStat } from 'vs/platform/files/common/files';
 import { getChipPackaging } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingRegistry';
 import { ISaveOptions } from 'vs/workbench/services/textfile/common/textfiles';
 import { IFuncPinMap, ISavedJson } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
-import { VSBuffer } from 'vs/base/common/buffer';
 import { IEditorModel } from 'vs/platform/editor/common/editor';
 import { Emitter } from 'vs/base/common/event';
+import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
+import { exists } from 'vs/base/node/pfs';
 
 export class FpioaModel implements IEditorModel {
 	private readonly _onDispose = new Emitter<void>();
 	public onDispose = this._onDispose.event;
 
 	private content: ISavedJson;
-	private contentHash: string;
 	private dirty: boolean = false;
 	private saveOnGoing: Promise<boolean>;
 
 	constructor(
 		protected uri: URI,
-		@IFileService private fileService: IFileService,
+		@INodeFileSystemService private nodeFileSystemService: INodeFileSystemService,
 	) {
 		// console.log('---------------- constructor');
 	}
@@ -39,14 +38,9 @@ export class FpioaModel implements IEditorModel {
 
 		this.saveOnGoing = Promise.resolve(void 0).then(() => {
 			// console.log(JSON.stringify(this.content));
-			return this.fileService.writeFile(this.uri, VSBuffer.fromString(this.binary()));
-		}).then((result: IFileStat) => {
+			return this.nodeFileSystemService.writeFileIfChanged(this.uri.fsPath, JSON.stringify(this.content));
+		}).then(() => {
 			delete this.saveOnGoing;
-			if (result.etag) {
-				this.contentHash = result.etag;
-			} else {
-				delete this.contentHash;
-			}
 			this.dirty = false;
 			return true;
 		}, (e) => {
@@ -70,32 +64,14 @@ export class FpioaModel implements IEditorModel {
 
 	private async _load(): Promise<this> {
 		// console.log('---------------- load', options);
-		if (await this.fileService.exists(this.uri)) {
-			let data: IContent | undefined;
-			await this.fileService.resolveContent(this.uri, {
-				etag: this.contentHash,
-				encoding: 'utf8',
-				position: 4,
-			}).then((dd) => {
-				data = dd;
-			}, (error) => {
-				const result = error.fileOperationResult;
-				if (result === FileOperationResult.FILE_NOT_MODIFIED_SINCE) {
-					return;
-				}
-				if (result === FileOperationResult.FILE_NOT_FOUND) {
-					this.content = {} as any;
-					return;
-				}
-				throw error;
-			});
+		if (await exists(this.uri.fsPath)) {
+			const { json } = await this.nodeFileSystemService.readJsonFile(this.uri.fsPath);
 
-			if (!data) {
+			if (!json) {
 				return this;
 			}
 
-			this.content = this.parse(data.value);
-			this.contentHash = data.etag;
+			this.content = json;
 			this.dirty = false;
 		} else {
 			this.content = {} as any;
@@ -178,15 +154,5 @@ export class FpioaModel implements IEditorModel {
 
 	getPinMap(): Readonly<IFuncPinMap> {
 		return this.content.funcPinMap;
-	}
-
-	private binary() {
-		// save as binary, then vscode will not open this file in text editor
-		return String.fromCharCode(12, 21, 8, 0) + JSON.stringify(this.content);
-	}
-
-	private parse(buff: string) {
-		// first 4 byte already skip by fs read.
-		return JSON.parse(buff);
 	}
 }

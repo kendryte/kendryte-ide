@@ -210,7 +210,7 @@ class NodeFileSystemService implements INodeFileSystemService {
 	private async resolveModelReference(resource: URI): Promise<IReference<ITextEditorModel>> {
 		const exists = await this.fileService.exists(resource);
 		if (!exists) {
-			await this.fileService.updateContent(resource, '{}', { encoding: encoding.UTF8 });
+			await this.textFileService.write(resource, '{}', { encoding: encoding.UTF8 });
 		}
 		return await this.textModelResolverService.createModelReference(resource);
 	}

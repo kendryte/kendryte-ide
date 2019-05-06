@@ -8,6 +8,11 @@ export interface IJSONResult<T> {
 	warnings: ExParseError[];
 }
 
+export interface IJSONModel<T> {
+	json: T;
+	warnings: ExParseError[];
+}
+
 export interface IFileWithStat<T> {
 	filepath: string;
 	content: T;
@@ -38,7 +43,9 @@ export interface INodeFileSystemService {
 
 	rawWriteFile(file: string, data: string | Buffer): Promise<void>
 
+	/** @deprecated */
 	readJsonFile<T>(file: string): Promise<IJSONResult<T>>;
+	/** @deprecated */
 	editJsonFile(file: string, key: Segment[] | Segment, value: any): Promise<void>;
 	tryWriteInFolder(packagesPath: string): Promise<boolean>;
 	prepareSocketFile(s: string): Promise<string>;

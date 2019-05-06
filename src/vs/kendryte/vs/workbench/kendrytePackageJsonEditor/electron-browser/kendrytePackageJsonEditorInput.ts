@@ -1,18 +1,17 @@
 import { KENDRYTE_PACKAGE_JSON_EDITOR_ID, KENDRYTE_PACKAGE_JSON_EDITOR_INPUT_ID } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/ids';
 import { Verbosity } from 'vs/workbench/common/editor';
-import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { CMAKE_LIBRARY_FOLDER_NAME } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { localize } from 'vs/nls';
-import { KendrytePackageJsonEditorModel } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/node/kendrytePackageJsonEditorModel';
-import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
-import { JsonEditorInputBase } from 'vs/kendryte/vs/workbench/jsonGUIEditor/browser/editorInputBaseImpl';
+import { CMAKE_CONFIG_FILE_NAME, CMAKE_LIBRARY_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
+import { AbstractJsonEditorInput } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditorInput';
+import { ICompileInfo } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { ICustomJsonEditorService } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 
-export class KendrytePackageJsonEditorInput extends JsonEditorInputBase<KendrytePackageJsonEditorModel> {
+export class KendrytePackageJsonEditorInput extends AbstractJsonEditorInput<ICompileInfo> {
 	public static readonly EDITOR_ID: string = KENDRYTE_PACKAGE_JSON_EDITOR_ID;
 	public static readonly ID: string = KENDRYTE_PACKAGE_JSON_EDITOR_INPUT_ID;
 
-	createModel(instantiationService: IInstantiationService) {
-		return instantiationService.createInstance(KendrytePackageJsonEditorModel, this.resource);
+	createModel(customJsonEditorService: ICustomJsonEditorService) {
+		return customJsonEditorService.createJsonModel<ICompileInfo>(this.resource);
 	}
 
 	supportsSplitEditor(): boolean {

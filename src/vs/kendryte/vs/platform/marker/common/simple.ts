@@ -13,7 +13,7 @@ export function createSimpleMarker(severity: MarkerSeverity, message: string, li
 	};
 }
 
-export function createSimpleErrorMarker(e: Error | string, line = 0) {
+export function createSimpleErrorMarker(e: Error | string, line = 0): IMarkerData {
 	return {
 		severity: MarkerSeverity.Error,
 		message: toErrorMessage(e),
@@ -24,7 +24,7 @@ export function createSimpleErrorMarker(e: Error | string, line = 0) {
 	};
 }
 
-export function createSimpleJsonWarningMarkers(warnings: ExParseError[]) {
+export function createSimpleJsonWarningMarkers(warnings: ExParseError[]): IMarkerData[] {
 	return warnings.map((warn) => {
 		return {
 			severity: MarkerSeverity.Warning,

@@ -1,16 +1,8 @@
-import { IEditorModel } from 'vs/platform/editor/common/editor';
+import { RawContextKey } from 'vs/platform/contextkey/common/contextkey';
 
-export interface ResolveAs<T extends IEditorModel> {
-	resolve(): Promise<T>;
+export namespace JsonEditorExtensions {
+	export const CustomJson = 'workbench.registry.kenderyte.json';
 }
 
-export interface IJsonEditorModel<JsonType> extends IEditorModel {
-	readonly data: JsonType;
-	save(): Promise<void>;
-	revert(): Promise<boolean>;
-}
-
-export interface EditorId {
-	id: string;
-	title: string;
-}
+export const JsonEditorFocusContext = new RawContextKey<boolean>('kendryteJsonEditorFocus', false);
+export const JsonEditorFocusIdContext = new RawContextKey<string>('kendryteJsonEditorFocusId', '');

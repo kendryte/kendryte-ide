@@ -4,10 +4,10 @@ import {
 	ACTION_ID_GUI_SWITCH_TO_JSON,
 	ACTION_LABEL_GUI_SWITCH_TO_GUI,
 	ACTION_LABEL_GUI_SWITCH_TO_JSON,
-} from 'vs/kendryte/vs/workbench/jsonGUIEditor/common/actionId';
+} from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/actionId';
 import { vscodeIconClass } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { JsonEditorInputBase } from 'vs/kendryte/vs/workbench/jsonGUIEditor/browser/editorInputBaseImpl';
+import { AbstractJsonEditorInput } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditorInput';
 
 export class ShowJsonEditorAction extends Action {
 	public static readonly ID: string = ACTION_ID_GUI_SWITCH_TO_JSON;
@@ -21,7 +21,7 @@ export class ShowJsonEditorAction extends Action {
 	}
 
 	async run() {
-		if (this.editorService.activeEditor instanceof JsonEditorInputBase) {
+		if (this.editorService.activeEditor instanceof AbstractJsonEditorInput) {
 			await this.editorService.activeEditor.switchTo('json');
 		}
 	}
@@ -39,7 +39,7 @@ export class ShowGuiEditorAction extends Action {
 	}
 
 	async run() {
-		if (this.editorService.activeEditor instanceof JsonEditorInputBase) {
+		if (this.editorService.activeEditor instanceof AbstractJsonEditorInput) {
 			await this.editorService.activeEditor.switchTo('gui');
 		}
 	}

@@ -6,13 +6,10 @@ import { IEditorInput } from 'vs/workbench/common/editor';
 import { IEditorOptions, ITextEditorOptions } from 'vs/platform/editor/common/editor';
 import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { IJsonEditorInputConstructor, JsonEditorInputBase } from 'vs/kendryte/vs/workbench/jsonGUIEditor/browser/editorInputBaseImpl';
-import { URI } from 'vs/base/common/uri';
-import { IPathMatchingFunction } from 'vs/kendryte/vs/workbench/jsonGUIEditor/browser/registerEditorType';
+import { AbstractJsonEditorInput } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditorInput';
+import { CustomJsonRegistry } from 'vs/kendryte/vs/workbench/jsonGUIEditor/common/register';
 
 export class JsonEditorHandlerContribution extends Disposable implements IWorkbenchContribution {
-	public static readonly inputMatchList: [IPathMatchingFunction, IJsonEditorInputConstructor][] = [];
-
 	constructor(
 		@IEditorService private readonly editorService: IEditorService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
@@ -26,7 +23,7 @@ export class JsonEditorHandlerContribution extends Disposable implements IWorkbe
 	}
 
 	private onEditorOpening(editor: IEditorInput, options: IEditorOptions | ITextEditorOptions | undefined, group: IEditorGroup): IOpenEditorOverride | undefined {
-		if (editor instanceof JsonEditorInputBase) {
+		if (editor instanceof AbstractJsonEditorInput) {
 			return;
 		}
 
@@ -38,21 +35,13 @@ export class JsonEditorHandlerContribution extends Disposable implements IWorkbe
 		if (!resource) {
 			return;
 		}
-		const editorInput = JsonEditorHandlerContribution.createJsonEditorInputByPath(resource, this.instantiationService);
-
-		if (editorInput) {
-			return { override: this.editorService.openEditor(editorInput, options, group) };
+		const id = CustomJsonRegistry.matchPath(resource);
+		if (!id) {
+			return;
 		}
 
-		return;
-	}
-
-	static createJsonEditorInputByPath(resource: URI, instantiationService: IInstantiationService): JsonEditorInputBase<any> | undefined {
-		for (const [matcher, ctor] of JsonEditorHandlerContribution.inputMatchList) {
-			if (matcher(resource)) {
-				return instantiationService.createInstance(ctor, resource);
-			}
-		}
-		return;
+		const editorInputCtor = CustomJsonRegistry.getEditorInputById(id);
+		const editorInput: IEditorInput = this.instantiationService.createInstance(editorInputCtor, resource);
+		return { override: this.editorService.openEditor(editorInput, options, group) };
 	}
 }

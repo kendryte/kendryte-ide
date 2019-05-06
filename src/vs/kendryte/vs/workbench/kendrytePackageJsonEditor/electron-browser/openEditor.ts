@@ -1,17 +1,14 @@
 import { Action } from 'vs/base/common/actions';
 import { ACTION_ID_OPEN_PROJECT_SETTINGS, ACTION_LABEL_OPEN_PROJECT_SETTINGS } from 'vs/kendryte/vs/base/common/menu/tools';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { localize } from 'vs/nls';
 import { URI } from 'vs/base/common/uri';
-import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
-import { KendrytePackageJsonEditorInput } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/kendrytePackageJsonEditorInput';
-import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
-import { exists } from 'vs/base/node/pfs';
-import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import { ICustomJsonEditorService } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
+import { KENDRYTE_PACKAGE_JSON_EDITOR_ID } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/ids';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
+import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 
 export class OpenPackageJsonEditorAction extends Action {
 	static readonly ID: string = ACTION_ID_OPEN_PROJECT_SETTINGS;
@@ -20,12 +17,10 @@ export class OpenPackageJsonEditorAction extends Action {
 	constructor(
 		id: string = OpenPackageJsonEditorAction.ID, label: string = OpenPackageJsonEditorAction.LABEL,
 		@IEditorService private editorService: IEditorService,
-		@IInstantiationService private instantiationService: IInstantiationService,
+		@ICustomJsonEditorService private customJsonEditorService: ICustomJsonEditorService,
 		@IWorkspaceContextService private workspaceContextService: IWorkspaceContextService,
 		@INotificationService private notificationService: INotificationService,
 		@IKendryteWorkspaceService private kendryteWorkspaceService: IKendryteWorkspaceService,
-		@INodeFileSystemService private nodeFileSystemService: INodeFileSystemService,
-		@ICMakeService private cmakeService: ICMakeService,
 	) {
 		super(id, label);
 	}
@@ -37,15 +32,7 @@ export class OpenPackageJsonEditorAction extends Action {
 		}
 
 		const file = this.kendryteWorkspaceService.requireCurrentWorkspaceFile(CMAKE_CONFIG_FILE_NAME);
-		if (!await exists(file)) {
-			await this.nodeFileSystemService.rawWriteFile(file, JSON.stringify({}));
-			await this.cmakeService.rescanCurrentFolder();
-		}
-
-		const input = this.instantiationService.createInstance(
-			KendrytePackageJsonEditorInput,
-			URI.file(file),
-		);
+		const input = this.customJsonEditorService.openEditorAs(URI.file(file), KENDRYTE_PACKAGE_JSON_EDITOR_ID);
 		return this.editorService.openEditor(input, {
 			revealIfOpened: true,
 			pinned: true,

@@ -3,8 +3,7 @@ import { $, append } from 'vs/base/browser/dom';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { KendrytePackageJsonEditorModel } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/node/kendrytePackageJsonEditorModel';
-import { CMAKE_CONFIG_FILE_NAME, CMakeProjectTypes, ICompileInfoPossibleKeys } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { CMAKE_CONFIG_FILE_NAME, CMakeProjectTypes, ICompileInfo, ICompileInfoPossibleKeys } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { localize } from 'vs/nls';
@@ -19,10 +18,11 @@ import { PackageJsonValidate } from 'vs/kendryte/vs/workbench/kendrytePackageJso
 import { SingleFileFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/singleFile';
 import { FolderListFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/folderList';
 import { SingleFolderFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/singleFolder';
-import { JsonEditorBase } from 'vs/kendryte/vs/workbench/jsonGUIEditor/browser/editorBaseImpl';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
-import { EditorId } from 'vs/kendryte/vs/workbench/jsonGUIEditor/common/type';
 import { INotificationService } from 'vs/platform/notification/common/notification';
+import { AbstractJsonEditor } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditor';
+import { EditorId } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/type';
+import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 
 interface IControlList {
 	name: IUISection<string>;
@@ -49,13 +49,12 @@ interface IControlList {
 	// executable
 }
 
-export class KendrytePackageJsonEditor extends JsonEditorBase<KendrytePackageJsonEditorModel> {
+export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo> {
 	private h1: HTMLHeadingElement;
 	private readonly controls: IControlList = {} as any;
 	private scroll: DomScrollableElement;
 	private readonly sectionCreator: SectionFactory;
 	private json: HTMLDivElement;
-	private readonly instantiationService: IInstantiationService;
 
 	constructor(
 		id: EditorId,
@@ -65,9 +64,10 @@ export class KendrytePackageJsonEditor extends JsonEditorBase<KendrytePackageJso
 		@IContextViewService contextViewService: IContextViewService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@INotificationService notificationService: INotificationService,
-		@IInstantiationService instantiationService: IInstantiationService,
+		@ICustomJsonEditorService customJsonEditorService: ICustomJsonEditorService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
 	) {
-		super(id, telemetryService, themeService, storageService, contextKeyService, notificationService);
+		super(id, telemetryService, themeService, storageService, contextKeyService, notificationService, customJsonEditorService);
 
 		this.sectionCreator = this._register(instantiationService.createInstance(SectionFactory));
 		this._register(this.sectionCreator.onDidHeightChange(() => {
@@ -81,16 +81,11 @@ export class KendrytePackageJsonEditor extends JsonEditorBase<KendrytePackageJso
 		}));
 	}
 
-	protected updateModel(model?: KendrytePackageJsonEditorModel) {
+	protected updateModel(model?: IJsonEditorModel<ICompileInfo>) {
 		if (!model) {
 			return;
 		}
 		this.sectionCreator.setRootPath(resolvePath(model.resource.fsPath, '..'));
-
-		if (!this.editorInited) {
-			console.warn('Skip because editor not ready');
-			return; // there must be error before, nothing can do now.
-		}
 
 		const data = model.data;
 		this.json.innerText = JSON.stringify(data, null, 4);
@@ -402,10 +397,6 @@ export class KendrytePackageJsonEditor extends JsonEditorBase<KendrytePackageJso
 			debugger;
 			throw new Error('model is null');
 		}
-		model.write(property, value).catch((e) => {
-			this.notificationService.error(e);
-		}).then(() => {
-			this.json.innerText = JSON.stringify(model.data, null, 4);
-		});
+		model.update(property, value);
 	}
 }

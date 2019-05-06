@@ -24,6 +24,7 @@ import {
 import { IOpenOCDService } from 'vs/kendryte/vs/services/openocd/common/openOCDService';
 import { LaunchVisitor, WorkspaceMaixLaunch } from 'vs/kendryte/vs/workbench/cmake/common/launchConfig';
 import { createActionInstance } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
+import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
 
 export class MaixCMakeDebugAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_DEBUG;
@@ -39,6 +40,7 @@ export class MaixCMakeDebugAction extends Action {
 		@IFileService private fileService: IFileService,
 		@ITextModelService private textModelService: ITextModelService,
 		@IOpenOCDService private openOCDService: IOpenOCDService,
+		@ITextFileService private textFileService: ITextFileService,
 	) {
 		super(id, label);
 	}
@@ -53,7 +55,7 @@ export class MaixCMakeDebugAction extends Action {
 		const resource = config.uri;
 		const exists = await this.fileService.exists(resource);
 		if (!exists) {
-			await this.fileService.updateContent(resource, `{
+			await this.textFileService.write(resource, `{
 	"$schema": "vscode://schemas/launch",
     "version": "0.2.0",
     "configurations": [

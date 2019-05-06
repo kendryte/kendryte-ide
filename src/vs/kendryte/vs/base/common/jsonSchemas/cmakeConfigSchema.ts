@@ -14,7 +14,7 @@ export const CMAKE_LIBRARY_FOLDER_NAME = CMAKE_LIBRARY_FOLDER_NAME_NEW;
 export const CMAKE_LIST_GENERATED_WARNING = '# ' + DONT_MODIFY_MARKER;
 export const CMAKE_LIST_GENERATED_WARNING_OLD = '# [NEVER REMOVE THIS LINE] WARNING: this file is generated, please edit ' + CMAKE_CONFIG_FILE_NAME + ' file instead.';
 
-const cmakeSchemaId = 'vscode://schemas/CMakeLists';
+export const cmakeSchemaId = 'vscode://schemas/CMakeLists';
 const cmakeSchemaIdExe = cmakeSchemaId + '/exe';
 const cmakeSchemaIdLib = cmakeSchemaId + '/lib';
 
