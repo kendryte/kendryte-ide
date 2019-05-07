@@ -2,7 +2,7 @@ import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 import { URI } from 'vs/base/common/uri';
 import { CustomJsonRegistry } from 'vs/kendryte/vs/workbench/jsonGUIEditor/common/register';
-import { SimpleJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/simpleJsonEditorModel';
+import { SimpleJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/node/simpleJsonEditorModel';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { IMarkerService } from 'vs/platform/markers/common/markers';
@@ -10,8 +10,9 @@ import { ITextFileService } from 'vs/workbench/services/textfile/common/textfile
 import { ITextModelService } from 'vs/editor/common/services/resolverService';
 import { IFileService } from 'vs/platform/files/common/files';
 import * as encoding from 'vs/base/node/encoding';
-import { JsonEditorFocusContext, JsonEditorFocusIdContext } from 'vs/kendryte/vs/workbench/jsonGUIEditor/common/type';
+import { IJsonEditorModelConstructor, JsonEditorFocusContext, JsonEditorFocusIdContext } from 'vs/kendryte/vs/workbench/jsonGUIEditor/common/type';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
+import { IEditorInput } from 'vs/workbench/common/editor';
 
 class CustomJsonEditorService implements ICustomJsonEditorService {
 	public _serviceBrand: any;
@@ -35,7 +36,7 @@ class CustomJsonEditorService implements ICustomJsonEditorService {
 		this.jsonEditorFocusIdContext = JsonEditorFocusIdContext.bindTo(contextKeyService);
 	}
 
-	createJsonModel(resource: URI) {
+	createJsonModel(resource: URI, ctor: IJsonEditorModelConstructor = SimpleJsonEditorModel) {
 		const path = resource.fsPath;
 		if (this.referenceMap.has(path)) {
 			return this.referenceMap.get(path)!;
@@ -46,12 +47,12 @@ class CustomJsonEditorService implements ICustomJsonEditorService {
 			return undefined;
 		}
 
-		const jsonModel = this.instantiationService.createInstance(SimpleJsonEditorModel, id, resource);
+		const jsonModel = this.instantiationService.createInstance(ctor, id, resource);
 
-		this.referenceMap.set(resource.fsPath, jsonModel);
+		this.referenceMap.set(path, jsonModel);
 
 		jsonModel.onDispose(() => {
-			this.referenceMap.delete(resource.fsPath);
+			this.referenceMap.delete(path);
 		});
 
 		return jsonModel;
@@ -70,9 +71,9 @@ class CustomJsonEditorService implements ICustomJsonEditorService {
 		return await this.textModelResolverService.createModelReference(resource);
 	}
 
-	openEditorAs(resource: URI, editorId: string) {
+	openEditorAs<T extends IEditorInput>(resource: URI, editorId: string) {
 		const inputCtor = CustomJsonRegistry.getEditorInputById(editorId);
-		return this.instantiationService.createInstance(inputCtor, resource);
+		return this.instantiationService.createInstance(inputCtor, resource) as T;
 	}
 
 	updateFocus(id: string, focus: boolean) {

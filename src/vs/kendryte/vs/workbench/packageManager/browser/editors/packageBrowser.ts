@@ -3,7 +3,7 @@ import { $, append, Dimension, getTotalHeight } from 'vs/base/browser/dom';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { localize } from 'vs/nls';
-import { vsiconClass } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
+import { visualStudioIconClass } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
 import { PANEL_BACKGROUND } from 'vs/workbench/common/theme';
 import { SimpleNavBar } from 'vs/kendryte/vs/workbench/commonDomBlocks/browser/simpleNavBar';
 import { IPackageRegistryService, PACKAGE_MANAGER_LOG_CHANNEL_ID } from 'vs/kendryte/vs/workbench/packageManager/common/type';
@@ -97,9 +97,9 @@ export class PackageBrowserEditor extends BaseEditor {
 		function onWorkspaceChange(isEmpty: boolean) {
 			navbar.clear();
 			if (!isEmpty) {
-				navbar.push(CMakeProjectTypes.library, localize('library', 'Library'), vsiconClass('library'), '');
+				navbar.push(CMakeProjectTypes.library, localize('library', 'Library'), visualStudioIconClass('library'), '');
 			}
-			navbar.push(CMakeProjectTypes.example, localize('example', 'Example'), vsiconClass('example'), '');
+			navbar.push(CMakeProjectTypes.example, localize('example', 'Example'), visualStudioIconClass('example'), '');
 		}
 
 		this._register(this.workspaceService.onDidChangeWorkbenchState((state) => {

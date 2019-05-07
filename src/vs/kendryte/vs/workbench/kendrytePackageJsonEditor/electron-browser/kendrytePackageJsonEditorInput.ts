@@ -14,10 +14,6 @@ export class KendrytePackageJsonEditorInput extends AbstractJsonEditorInput<ICom
 		return customJsonEditorService.createJsonModel<ICompileInfo>(this.resource);
 	}
 
-	supportsSplitEditor(): boolean {
-		return false;
-	}
-
 	matches(otherInput: KendrytePackageJsonEditorInput): boolean {
 		if (this === otherInput) {
 			return true;

@@ -1,46 +1,32 @@
 import { Registry } from 'vs/platform/registry/common/platform';
-import { Extensions as WorkbenchExtensions, IWorkbenchContributionsRegistry } from 'vs/workbench/common/contributions';
-import { LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
-import { registerFlashSchemas } from 'vs/kendryte/vs/base/common/jsonSchemas/flashSectionsSchema';
+import { flashSchemaId, registerFlashSchemas } from 'vs/kendryte/vs/base/common/jsonSchemas/flashSectionsSchema';
 import { Extensions as JSONExtensions, IJSONContributionRegistry } from 'vs/platform/jsonschemas/common/jsonContributionRegistry';
-import { FlashManagerHandlerContribution } from 'vs/kendryte/vs/workbench/flashManager/common/replaceEditor';
-import { registerActionWithKey, registerExternalAction, registerInternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
+import { registerExternalAction, registerInternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 import { ACTION_CATEGORY_TOOLS } from 'vs/kendryte/vs/base/common/menu/tools';
 import { OpenFlashManagerAction } from 'vs/kendryte/vs/workbench/flashManager/common/openFlashManagerAction';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IFlashManagerService } from 'vs/kendryte/vs/workbench/flashManager/common/flashManagerService';
 import { FlashManagerService } from 'vs/kendryte/vs/workbench/flashManager/node/flashManagerService';
-import { EditorDescriptor, Extensions as EditorExtensions, IEditorRegistry } from 'vs/workbench/browser/editor';
-import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
-import { Extensions as EditorInputExtensions, IEditorInputFactoryRegistry } from 'vs/workbench/common/editor';
-import { KENDRYTE_PACKAGE_JSON_EDITOR_TITLE } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/ids';
-import { FlashManagerEditorInput, FlashManagerEditorInputFactory } from 'vs/kendryte/vs/workbench/flashManager/common/editorInput';
-import { FlashManagerEditor } from 'vs/kendryte/vs/workbench/flashManager/browser/main';
-import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
-import { FlashManagerFocusContext } from 'vs/kendryte/vs/workbench/flashManager/common/type';
-import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
-import { SaveFlashConfigAction } from 'vs/kendryte/vs/workbench/flashManager/common/saveAction';
+import { FlashManagerEditorInput } from 'vs/kendryte/vs/workbench/flashManager/common/editorInput';
+import { FlashManagerEditor } from 'vs/kendryte/vs/workbench/flashManager/browser/flashManagerEditor';
 import { FlashAllAction } from 'vs/kendryte/vs/workbench/flashManager/node/flashAllAction';
 import { localize } from 'vs/nls';
 import { CreateZipAction, CreateZipWithProgramAction } from 'vs/kendryte/vs/workbench/flashManager/node/createZipAction';
-
-const workbenchContributionsRegistry = Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench);
-workbenchContributionsRegistry.registerWorkbenchContribution(FlashManagerHandlerContribution, LifecyclePhase.Starting);
+import { CustomJsonRegistry } from 'vs/kendryte/vs/workbench/jsonGUIEditor/common/register';
+import { FLASH_MANAGER_CONFIG_FILE_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
+import { KENDRYTE_FLASH_MANAGER_ID, KENDRYTE_FLASH_MANAGER_TITLE } from 'vs/kendryte/vs/workbench/flashManager/common/type';
 
 registerFlashSchemas((id, schema) => {
 	Registry.as<IJSONContributionRegistry>(JSONExtensions.JSONContribution).registerSchema(id, schema);
 });
 
-Registry.as<IEditorRegistry>(EditorExtensions.Editors).registerEditor(
-	new EditorDescriptor(
-		FlashManagerEditor,
-		FlashManagerEditor.ID,
-		KENDRYTE_PACKAGE_JSON_EDITOR_TITLE,
-	),
-	new SyncDescriptor(FlashManagerEditorInput),
+CustomJsonRegistry.registerCustomEditor(
+	KENDRYTE_FLASH_MANAGER_ID,
+	KENDRYTE_FLASH_MANAGER_TITLE,
+	FlashManagerEditor,
+	FlashManagerEditorInput,
 );
-Registry.as<IEditorInputFactoryRegistry>(EditorInputExtensions.EditorInputFactories)
-	.registerEditorInputFactory(FlashManagerEditor.ID, FlashManagerEditorInputFactory);
+CustomJsonRegistry.registerCustomJson(KENDRYTE_FLASH_MANAGER_ID, `${PROJECT_CONFIG_FOLDER_NAME}/${FLASH_MANAGER_CONFIG_FILE_NAME}`, flashSchemaId);
 
 registerSingleton(IFlashManagerService, FlashManagerService);
 registerExternalAction(ACTION_CATEGORY_TOOLS, OpenFlashManagerAction);
@@ -49,12 +35,3 @@ const ACTION_CATEGORY_FLASH_MANAGER = localize('flashManager', 'Flash Manager');
 registerExternalAction(ACTION_CATEGORY_FLASH_MANAGER, FlashAllAction);
 registerExternalAction(ACTION_CATEGORY_FLASH_MANAGER, CreateZipAction);
 registerInternalAction(ACTION_CATEGORY_FLASH_MANAGER, CreateZipWithProgramAction);
-
-registerActionWithKey(
-	ACTION_CATEGORY_FLASH_MANAGER,
-	SaveFlashConfigAction,
-	{ primary: KeyCode.KEY_S + KeyMod.CtrlCmd },
-	FlashManagerFocusContext,
-	KeybindingWeight.ExternalExtension,
-);
-

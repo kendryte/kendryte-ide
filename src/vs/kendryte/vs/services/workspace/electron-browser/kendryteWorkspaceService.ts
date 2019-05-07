@@ -14,9 +14,10 @@ import { EXTEND_JSON_MARKER_ID } from 'vs/kendryte/vs/base/common/jsonComments';
 import { URI } from 'vs/base/common/uri';
 import { createSimpleJsonWarningMarkers } from 'vs/kendryte/vs/platform/marker/common/simple';
 import { IMarkerService } from 'vs/platform/markers/common/markers';
+import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import IContextKey = monaco.editor.IContextKey;
 
-class WorkspaceService implements IKendryteWorkspaceService {
+class KendryteWorkspaceService implements IKendryteWorkspaceService {
 	public _serviceBrand: any;
 
 	private readonly _onCurrentWorkingDirectoryChange = new Emitter<void | string>();
@@ -34,6 +35,7 @@ class WorkspaceService implements IKendryteWorkspaceService {
 		@ILogService private readonly logService: ILogService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IMarkerService private readonly markerService: IMarkerService,
+		@IStorageService private readonly storageService: IStorageService,
 	) {
 		const my = (item: IWorkspaceFolder) => {
 			return item.uri.fsPath === this._currentWorkspacePath;
@@ -62,7 +64,27 @@ class WorkspaceService implements IKendryteWorkspaceService {
 
 		if (workspaceContextService.getWorkbenchState() !== WorkbenchState.EMPTY) {
 			this.flushStatus();
-			this.changeWorkspaceByIndex(0);
+			this.trySwithLastProject();
+		}
+	}
+
+	private trySwithLastProject() {
+		const knownWorkspace = this.storageService.get('lastOpenWorkspace', StorageScope.WORKSPACE, '');
+		if (knownWorkspace) {
+			try {
+				this.changeWorkspaceByName(knownWorkspace);
+				return;
+			} catch (e) {
+			}
+		}
+		this.changeWorkspaceByIndex(0);
+	}
+
+	private rememberSelectedProject() {
+		if (this._currentWorkspace) {
+			this.storageService.store('lastOpenWorkspace', this._currentWorkspace.name, StorageScope.WORKSPACE);
+		} else {
+			this.storageService.remove('lastOpenWorkspace', StorageScope.WORKSPACE);
 		}
 	}
 
@@ -180,6 +202,8 @@ class WorkspaceService implements IKendryteWorkspaceService {
 		this._currentWorkspace = ws;
 		this._currentWorkspacePath = newPath;
 
+		this.rememberSelectedProject();
+
 		if (actualChanged) {
 			this._onCurrentWorkingDirectoryChange.fire(newPath);
 		}
@@ -210,4 +234,4 @@ class WorkspaceService implements IKendryteWorkspaceService {
 
 }
 
-registerSingleton(IKendryteWorkspaceService, WorkspaceService);
+registerSingleton(IKendryteWorkspaceService, KendryteWorkspaceService);

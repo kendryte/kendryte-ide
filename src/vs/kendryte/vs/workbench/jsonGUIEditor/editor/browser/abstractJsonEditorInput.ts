@@ -14,9 +14,6 @@ export interface ISwitchTypeEvent {
 export abstract class AbstractJsonEditorInput<JsonType> extends EditorInput implements IJsonEditorInput<JsonType> {
 	public readonly model: IJsonEditorModel<JsonType>;
 
-	private readonly _onRefresh = this._register(new Emitter<void>());
-	public readonly onRefresh = this._onRefresh.event;
-
 	private readonly _onSwitchType = this._register(new Emitter<ISwitchTypeEvent>());
 	public readonly onSwitchType = this._onSwitchType.event;
 
@@ -38,6 +35,7 @@ export abstract class AbstractJsonEditorInput<JsonType> extends EditorInput impl
 		this._register(this.model.onDidChangeDirtyState(() => {
 			this._onDidChangeDirty.fire();
 		}));
+		this._register(model);
 	}
 
 	protected abstract createModel(
@@ -50,6 +48,10 @@ export abstract class AbstractJsonEditorInput<JsonType> extends EditorInput impl
 
 	getPreferredEditorId(candidates: string[]): string {
 		return this.descriptor.id;
+	}
+
+	supportsSplitEditor(): boolean {
+		return false;
 	}
 
 	confirmSave(): Promise<ConfirmResult> {
@@ -95,7 +97,18 @@ export abstract class AbstractJsonEditorInput<JsonType> extends EditorInput impl
 
 	async resolve() {
 		await this.model.load();
-		this._onRefresh.fire();
 		return this.model;
+	}
+
+	matches(otherInput: AbstractJsonEditorInput<any>): boolean {
+		if (this === otherInput) {
+			return true;
+		}
+		try {
+			return otherInput.getTypeId() === this.getTypeId() &&
+			       otherInput.getResource().toString() === this.getResource().toString();
+		} catch (e) {
+			return false;
+		}
 	}
 }

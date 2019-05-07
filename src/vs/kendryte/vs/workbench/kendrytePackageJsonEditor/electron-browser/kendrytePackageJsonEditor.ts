@@ -23,8 +23,9 @@ import { INotificationService } from 'vs/platform/notification/common/notificati
 import { AbstractJsonEditor } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditor';
 import { EditorId } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/type';
 import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
+import { OpenManagerControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/dependency';
 
-interface IControlList {
+interface IControlList extends Record<ICompileInfoPossibleKeys, IUISection<any>> {
 	name: IUISection<string>;
 	version: IUISection<string>;
 	homepage: IUISection<string>;
@@ -41,6 +42,7 @@ interface IControlList {
 	prebuilt: IUISection<string>;
 	entry: IUISection<string>;
 	definitions: IUISection<string[] | string>;
+	dependency: IUISection<string[]>;
 
 	// library
 	include: IUISection<string[]>;
@@ -350,6 +352,17 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo> 
 			SingleFileFieldControl,
 		);
 
+		this.createSection(
+			'dependency',
+			container,
+			localize('kendrytePackageJsonEditor.dependency.title', 'Project dependencies'),
+			localize('kendrytePackageJsonEditor.dependency.desc', 'One package per line'),
+			($section, property) => this.sectionCreator.createTextAreaMap($section, property,
+				PackageJsonValidate.Dependency, 'eg. kendryte_sdk = 1.2.3',
+			),
+			OpenManagerControl,
+		);
+
 		this.json = append(container, $('code.json'));
 
 		this.scroll.scanDomNode();
@@ -388,7 +401,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo> 
 			}));
 		}
 
-		this.controls[property] = bundle;
+		this.controls[property] = bundle as any;
 	}
 
 	private updateSimple(property: ICompileInfoPossibleKeys, value: any): void {

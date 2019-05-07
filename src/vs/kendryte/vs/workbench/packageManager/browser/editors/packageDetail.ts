@@ -14,7 +14,7 @@ import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
 import { Event } from 'vs/base/common/event';
 import { isPromiseCanceledError } from 'vs/base/common/errors';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { vsiconClass } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
+import { visualStudioIconClass } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { InstallSingleDependencyAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/installDependencyAction';
 import { IRequestService } from 'vs/platform/request/node/request';
@@ -126,7 +126,7 @@ export class PackageDetailEditor extends BaseEditor {
 				this.icon.src = data.remote.icon;
 				this.icon.style.display = 'initial';
 			} else {
-				this.iconDisable.className = 'icon no ' + vsiconClass(assertNotNull(data.local).type);
+				this.iconDisable.className = 'icon no ' + visualStudioIconClass(assertNotNull(data.local).type);
 				this.iconDisable.style.display = 'initial';
 			}
 
@@ -134,7 +134,7 @@ export class PackageDetailEditor extends BaseEditor {
 			this.description.innerText = data.remote.description || localize('no.description', 'No description');
 			this.version.innerText = data.local ? data.local.version : localize('not.install', 'Not Installed');
 		} else if (data.local) {
-			this.iconDisable.className = 'icon no ' + vsiconClass(data.local.type);
+			this.iconDisable.className = 'icon no ' + visualStudioIconClass(data.local.type);
 			this.iconDisable.style.display = 'initial';
 			this.name.innerText = data.local.name;
 			this.description.innerText = localize('local.package', 'Local package');

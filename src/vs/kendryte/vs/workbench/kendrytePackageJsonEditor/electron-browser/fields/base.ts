@@ -15,6 +15,7 @@ import { CMAKE_LIBRARY_FOLDER_NAME } from 'vs/kendryte/vs/base/common/jsonSchema
 import { alwaysIgnorePattern, ignorePattern } from 'vs/kendryte/vs/platform/fileDialog/common/globalIgnore';
 import { Emitter } from 'vs/base/common/event';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
+import { ICommandService } from 'vs/platform/commands/common/commands';
 
 export enum SelectType {
 	SelectSingle = 1,
@@ -37,6 +38,7 @@ export abstract class AbstractFieldControl<T> extends Disposable {
 		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 		@IThemeService private readonly themeService: IThemeService,
 		@IConfigurationService protected readonly configurationService: IConfigurationService,
+		@ICommandService protected readonly commandService: ICommandService,
 	) {
 		super();
 

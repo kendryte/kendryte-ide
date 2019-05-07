@@ -5,6 +5,7 @@ import { AbstractJsonEditorInput } from 'vs/kendryte/vs/workbench/jsonGUIEditor/
 import { Registry } from 'vs/platform/registry/common/platform';
 import { JsonEditorExtensions } from 'vs/kendryte/vs/workbench/jsonGUIEditor/common/type';
 import { ICustomJsonRegistry } from 'vs/kendryte/vs/workbench/jsonGUIEditor/common/register';
+import { ICustomJsonEditorService } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 
 export interface ISerializedJsonEditorInput {
 	resource: string;
@@ -36,7 +37,10 @@ export class CommonJsonEditorInputFactory implements IEditorInputFactory {
 			debugger;
 			return;
 		}
-		const input = this.registry.getEditorInputById(id);
-		return instantiationService.createInstance(input, resource) as AbstractJsonEditorInput<any>;
+		return instantiationService.invokeFunction((access) => {
+			return access
+				.get<ICustomJsonEditorService>(ICustomJsonEditorService)
+				.openEditorAs<AbstractJsonEditorInput<any>>(resource, id);
+		});
 	}
 }

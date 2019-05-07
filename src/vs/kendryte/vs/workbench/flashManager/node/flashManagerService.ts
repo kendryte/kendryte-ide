@@ -1,12 +1,5 @@
-import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
-import { IEditor } from 'vs/workbench/common/editor';
-import { URI } from 'vs/base/common/uri';
-import { IEditorOptions } from 'vs/platform/editor/common/editor';
 import { IFlashManagerService } from 'vs/kendryte/vs/workbench/flashManager/common/flashManagerService';
 import { ISerialPortService } from 'vs/kendryte/vs/services/serialPort/common/type';
-import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { FlashManagerEditorInput } from 'vs/kendryte/vs/workbench/flashManager/common/editorInput';
 import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { FLASH_MANAGER_CONFIG_FILE_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { FlashManagerEditorModel } from 'vs/kendryte/vs/workbench/flashManager/common/editorModel';
@@ -20,6 +13,10 @@ import { createSimpleErrorMarker } from 'vs/kendryte/vs/platform/marker/common/s
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { MemoryAllocationCalculator, parseMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
 import { wrapHeaderFile } from 'vs/kendryte/vs/base/common/cpp/wrapHeaderFile';
+import { ICustomJsonEditorService } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
+import { URI } from 'vs/base/common/uri';
+import { dispose, IDisposable } from 'vs/base/common/lifecycle';
+import { IFlashManagerConfigJson } from 'vs/kendryte/vs/base/common/jsonSchemas/flashSectionsSchema';
 
 const MARKER_ID = 'flash.manager.service';
 const CONST_NAME = 'KENDRYTE_IDE_FLASH_MANGER_OUT';
@@ -28,18 +25,21 @@ export class FlashManagerService implements IFlashManagerService {
 	_serviceBrand: any;
 	private readonly logger: IChannelLogger;
 
+	private toDisposeModels: IDisposable[] = [];
+
 	constructor(
 		@ISerialPortService serialPortService: ISerialPortService,
 		@IMakefileService makefileService: IMakefileService,
 		@IChannelLogService channelLogService: IChannelLogService,
-		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@IEditorService private readonly editorService: IEditorService,
+		@ICustomJsonEditorService private readonly customJsonEditorService: ICustomJsonEditorService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IMarkerService private readonly markerService: IMarkerService,
 	) {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 
-		makefileService.onPrepareBuild((event) => event.waitUntil(this.runIfExists(event)));
+		makefileService.onPrepareBuild((event) => event.waitUntil(this.runIfExists(event).finally(() => {
+			this.toDisposeModels = dispose(this.toDisposeModels);
+		})));
 	}
 
 	async runIfExists(event: IBeforeBuildEvent) {
@@ -59,27 +59,18 @@ export class FlashManagerService implements IFlashManagerService {
 		}
 	}
 
-	async openEditor(resource: URI, options?: IEditorOptions, group?: IEditorGroup): Promise<IEditor | null> {
-		const input = this.instantiationService.createInstance(FlashManagerEditorInput, resource);
-		return this.editorService.openEditor(input, options, group);
-	}
-
-	getFlashManagerModelNotResolved(resource: string): FlashManagerEditorModel {
-		return this.instantiationService.createInstance(FlashManagerEditorModel, URI.file(resource));
-	}
-
-	async getFlashManagerModel(resource: string): Promise<FlashManagerEditorModel> {
-		this.logger.info(`Reading config file: ${resource}`);
-		const model = this.getFlashManagerModelNotResolved(resource);
+	async getFlashManagerModel(fsPath: string) {
+		const model = this.customJsonEditorService.createJsonModel<IFlashManagerConfigJson>(URI.file(fsPath))!;
+		console.assert(model, 'not registered');
+		this.toDisposeModels.push(model);
 		await model.load();
-		return model;
+		return model as FlashManagerEditorModel;
 	}
 
 	public async runGenerateMemoryMap(model: FlashManagerEditorModel, memory?: MemoryAllocationCalculator) {
 		try {
 			await this._runGenerateMemoryMap(model, memory);
 			this.markerService.changeAll(MARKER_ID, []);
-			return model;
 		} catch (e) {
 			this.logger.error('    error: ' + e.message);
 			const sourceFilePath = model!.resource.fsPath.replace(/\.json$/i, '.h');

@@ -24,6 +24,7 @@ export enum PackageJsonValidate {
 	Url,
 	ProjectName,
 	Definitions,
+	Dependency,
 }
 
 export type PackageJsonValidatorType = PackageJsonValidate | PackageJsonValidate[];

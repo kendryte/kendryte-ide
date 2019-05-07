@@ -51,6 +51,7 @@
 @include create('add-add-folder');
 @include create('add-file');
 @include create('clear-window');
+@include create('browser-download');
 @include create_code('AddFile');
 @include create_code('AddFolder');
 @include create_code('checked');

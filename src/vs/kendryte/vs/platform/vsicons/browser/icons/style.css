@@ -81,6 +81,16 @@
   .vs-dark .monaco-workbench .octicon.octicon-vs.clear-window:before {
     background-image: url("clear-window-dark.svg"); }
 
+.monaco-workbench .visualstudio-icon.browser-download:before {
+  background-image: url("browser-download.svg"); }
+  .vs-dark .monaco-workbench .visualstudio-icon.browser-download:before {
+    background-image: url("browser-download-dark.svg"); }
+
+.monaco-workbench .octicon.octicon-vs.browser-download:before {
+  background-image: url("browser-download.svg"); }
+  .vs-dark .monaco-workbench .octicon.octicon-vs.browser-download:before {
+    background-image: url("browser-download-dark.svg"); }
+
 .monaco-workbench .vscode-icon.AddFile:before {
   background-image: url("AddFile.svg"); }
   .vs-dark .monaco-workbench .vscode-icon.AddFile:before {

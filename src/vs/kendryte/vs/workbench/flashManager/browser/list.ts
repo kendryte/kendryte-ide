@@ -5,11 +5,11 @@ import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { IMessage, InputBox, MessageType } from 'vs/base/browser/ui/inputbox/inputBox';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
-import { PublicDisposable } from 'vs/kendryte/vs/base/common/lifecycle/PublicDisposable';
+import { PublicDisposable } from 'vs/kendryte/vs/base/common/lifecycle/publicDisposable';
 import { localize } from 'vs/nls';
 import { attachButtonStyler, attachInputBoxStyler } from 'vs/platform/theme/common/styler';
 import { Action } from 'vs/base/common/actions';
-import { vscodeIconClass, vsiconClass } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
+import { vscodeIconClass, visualStudioIconClass } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
 import { Emitter } from 'vs/base/common/event';
 import { IFileDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { URI } from 'vs/base/common/uri';
@@ -17,7 +17,6 @@ import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { Button } from 'vs/base/browser/ui/button/button';
 import { isValidFlashAddressString, parseMemoryAddress, validMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
-import { IFlashSectionUI } from 'vs/kendryte/vs/workbench/flashManager/common/type';
 import { IFlashSection } from 'vs/kendryte/vs/base/common/jsonSchemas/flashSectionsSchema';
 import { LazyInputBox } from 'vs/kendryte/vs/base/browser/ui/lazyInputBox';
 import { FLASH_SAFE_ADDRESS } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
@@ -63,17 +62,17 @@ interface ITemplateData {
 	readonly moveDownButton: Button;
 }
 
-export class FlashSectionDelegate implements IListVirtualDelegate<IFlashSectionUI> {
-	public getHeight(element: IFlashSectionUI): number {
+export class FlashSectionDelegate implements IListVirtualDelegate<IFlashSection> {
+	public getHeight(element: IFlashSection): number {
 		return 150;
 	}
 
-	public getTemplateId(element: IFlashSectionUI): string {
+	public getTemplateId(element: IFlashSection): string {
 		return TEMPLATE_ID;
 	}
 }
 
-export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemplateData> {
+export class FlashSectionRender implements IPagedRenderer<IFlashSection, ITemplateData> {
 	public readonly templateId: string = TEMPLATE_ID;
 
 	private rootPath: string = '/';
@@ -96,7 +95,7 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 	) {
 	}
 
-	public renderElement(element: IFlashSectionUI, index: number, templateData: ITemplateData, dynamicHeightProbing?: boolean): void {
+	public renderElement(element: IFlashSection, index: number, templateData: ITemplateData, dynamicHeightProbing?: boolean): void {
 		// console.log('render item ', index);
 		templateData.elementDispose = dispose(templateData.elementDispose);
 
@@ -136,7 +135,7 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 		}));
 	}
 
-	public disposeElement(element: IFlashSectionUI, index: number, templateData: ITemplateData, dynamicHeightProbing?: boolean): void {
+	public disposeElement(element: IFlashSection, index: number, templateData: ITemplateData, dynamicHeightProbing?: boolean): void {
 		templateData.elementDispose = dispose(templateData.elementDispose);
 	}
 
@@ -185,7 +184,7 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 		const nameInputLabel = append(parent, $('label.name'));
 		nameInputLabel.textContent = localize('nameLabel', 'Section name: ');
 
-		const nameInput = _disposable.register(new LazyInputBox(nameInputLabel, this.contextViewService, {
+		const nameInput = _disposable.registerWith(new LazyInputBox(nameInputLabel, this.contextViewService, {
 			placeholder: localize('namePlaceholder', 'Reference name'),
 			validationOptions: {
 				validation(val: string) {
@@ -196,20 +195,20 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 				},
 			},
 		}));
-		_disposable.register(attachInputBoxStyler(nameInput, this.themeService));
+		_disposable.registerWith(attachInputBoxStyler(nameInput, this.themeService));
 
 		return nameInput;
 	}
 
 	private createSwapCheckBox(parent: HTMLElement, _disposable: PublicDisposable) {
-		const input = _disposable.register(new MyCheckBox(parent, {
+		const input = _disposable.registerWith(new MyCheckBox(parent, {
 			icon: 'vscode-icon checked',
 			title: localize('swapLabel', 'Swap bytes'),
 			description: '',
 			isChecked: true,
 		}));
 
-		_disposable.register(attachMyCheckboxStyler(input, this.themeService));
+		_disposable.registerWith(attachMyCheckboxStyler(input, this.themeService));
 
 		return input;
 	}
@@ -218,7 +217,7 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 		const addressInputLabel = append(parent, $('label.address'));
 		addressInputLabel.textContent = localize('addressLabel', 'Flash address: ');
 
-		const addressInput = _disposable.register(new LazyInputBox(addressInputLabel, this.contextViewService, {
+		const addressInput = _disposable.registerWith(new LazyInputBox(addressInputLabel, this.contextViewService, {
 			placeholder: localize('addressPlaceholder', 'Flash address'),
 			validationOptions: {
 				validation(val: string) {
@@ -239,12 +238,12 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 				},
 			},
 			actions: [
-				new Action('auto', localize('auto', 'Auto determine'), vsiconClass('clear-window'), true, async () => {
+				new Action('auto', localize('auto', 'Auto determine'), visualStudioIconClass('clear-window'), true, async () => {
 					addressInput.value = '';
 				}),
 			],
 		}));
-		_disposable.register(attachInputBoxStyler(addressInput, this.themeService));
+		_disposable.registerWith(attachInputBoxStyler(addressInput, this.themeService));
 
 		return addressInput;
 	}
@@ -253,11 +252,11 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 		const label = append(parent, $('label.address'));
 		label.textContent = localize('addressEndLabel', 'End: ');
 
-		const input = _disposable.register(new InputBox(label, undefined));
+		const input = _disposable.registerWith(new InputBox(label, undefined));
 		input.disable();
 		input.inputElement.readOnly = true;
 
-		_disposable.register(attachInputBoxStyler(input, this.themeService));
+		_disposable.registerWith(attachInputBoxStyler(input, this.themeService));
 
 		return input;
 	}
@@ -266,7 +265,7 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 		const label = append(parent, $('label.file'));
 		label.textContent = localize('fileLabel', 'File path:');
 
-		const input: InputBox = _disposable.register(new LazyInputBox(label, this.contextViewService, {
+		const input: InputBox = _disposable.registerWith(new LazyInputBox(label, this.contextViewService, {
 			placeholder: localize('addressPlaceholder', 'Flash address'),
 			validationOptions: {
 				validation(val: string) {
@@ -279,7 +278,7 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 				}),
 			],
 		}));
-		_disposable.register(attachInputBoxStyler(input, this.themeService));
+		_disposable.registerWith(attachInputBoxStyler(input, this.themeService));
 
 		return input;
 	}
@@ -310,16 +309,16 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSectionUI, ITemp
 	}
 
 	private createRemoveButton(parent: HTMLElement, _disposable: PublicDisposable) {
-		const button = _disposable.register(new Button(parent, {}));
-		_disposable.register(attachButtonStyler(button, this.themeService));
+		const button = _disposable.registerWith(new Button(parent, {}));
+		_disposable.registerWith(attachButtonStyler(button, this.themeService));
 		button.element.classList.add('remove');
 		append(button.element, $('span.octicon.octicon-x'));
 		return button;
 	}
 
 	private createMoveButton(action: string, parent: HTMLElement, _disposable: PublicDisposable) {
-		const button = _disposable.register(new Button(parent, {}));
-		_disposable.register(attachButtonStyler(button, this.themeService));
+		const button = _disposable.registerWith(new Button(parent, {}));
+		_disposable.registerWith(attachButtonStyler(button, this.themeService));
 		button.element.classList.add('move');
 		button.element.classList.add(action);
 		append(button.element, $('span.octicon.octicon-chevron-' + action));

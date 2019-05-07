@@ -1,12 +1,9 @@
 import 'vs/css!vs/kendryte/vs/workbench/flashManager/browser/style';
-import { BaseEditor } from 'vs/workbench/browser/parts/editor/baseEditor';
 import {
 	ACTION_ID_FLASH_MANGER_CREATE_ZIP,
 	ACTION_ID_FLASH_MANGER_CREATE_ZIP_PROGRAM,
 	ACTION_ID_FLASH_MANGER_FLASH_ALL,
 	FlashManagerFocusContext,
-	IFlashSectionUI,
-	KENDRYTE_FLASH_MANAGER_ID,
 	KENDRYTE_FLASH_MANAGER_TITLE,
 } from 'vs/kendryte/vs/workbench/flashManager/common/type';
 import { $, append, Dimension, getTotalHeight, trackFocus } from 'vs/base/browser/dom';
@@ -14,9 +11,6 @@ import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
-import { EditorOptions } from 'vs/workbench/common/editor';
-import { CancellationToken } from 'vs/base/common/cancellation';
-import { FlashManagerEditorInput } from 'vs/kendryte/vs/workbench/flashManager/common/editorInput';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { WorkbenchList } from 'vs/platform/list/browser/listService';
 import { FlashSectionDelegate, FlashSectionRender } from 'vs/kendryte/vs/workbench/flashManager/browser/list';
@@ -28,16 +22,18 @@ import { vscodeIcon } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender
 import { listErrorForeground } from 'vs/platform/theme/common/colorRegistry';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { createActionInstance } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
-import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
 import { humanSize } from 'vs/kendryte/vs/base/common/speedShow';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
+import { AbstractJsonEditor } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditor';
+import { IFlashManagerConfigJson, IFlashSection } from 'vs/kendryte/vs/base/common/jsonSchemas/flashSectionsSchema';
+import { EditorId } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/type';
+import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
+import { FlashManagerEditorInput } from 'vs/kendryte/vs/workbench/flashManager/common/editorInput';
 
-export class FlashManagerEditor extends BaseEditor {
-	public static readonly ID: string = KENDRYTE_FLASH_MANAGER_ID;
-
+export class FlashManagerEditor extends AbstractJsonEditor<IFlashManagerConfigJson> {
 	protected _input: FlashManagerEditorInput | null;
-	private _inputEvents: IDisposable[] = [];
+
 	private _parent: HTMLDivElement;
 	private titleContainer: HTMLElement;
 	private _lastDimension: Dimension;
@@ -49,58 +45,57 @@ export class FlashManagerEditor extends BaseEditor {
 	private btnFlashAll: Button;
 	private btnCreateZip: Button;
 	private btnCreateZip2: Button;
-	private sectionList: WorkbenchList<IFlashSectionUI>;
+	private sectionList: WorkbenchList<IFlashSection>;
 	private baseAddressInput: InputBox;
 
 	private readonly render: FlashSectionRender;
 	private context: IContextKey<boolean>;
 
 	constructor(
+		id: EditorId,
 		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
-		@IContextKeyService contextKeyService: IContextKeyService,
 		@IStorageService storageService: IStorageService,
-		@IContextViewService private readonly contextViewService: IContextViewService,
+		@IContextKeyService contextKeyService: IContextKeyService,
+		@INotificationService notificationService: INotificationService,
+		@ICustomJsonEditorService customJsonEditorService: ICustomJsonEditorService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@INotificationService private readonly notificationService: INotificationService,
+		@IContextViewService private readonly contextViewService: IContextViewService,
 	) {
-		super(FlashManagerEditor.ID, telemetryService, themeService, storageService);
+		super(id, telemetryService, themeService, storageService, contextKeyService, notificationService, customJsonEditorService);
 
 		this.context = FlashManagerFocusContext.bindTo(contextKeyService);
 		this.render = this.instantiationService.createInstance(FlashSectionRender);
 	}
 
-	async setInput(input: FlashManagerEditorInput, options: EditorOptions | null, token: CancellationToken): Promise<void> {
-		if (this._input === input) {
+	protected async updateModel(model?: IJsonEditorModel<IFlashManagerConfigJson>) {
+		if (!model) {
+			this.sectionList.splice(0, this.sectionList.length);
+			this.btnAddFile.enabled = false;
+			this.btnFlashAll.enabled = false;
+
 			return;
 		}
-		this.clearInput();
+		const input = this._input!;
 
 		this.render.setNewRoot(input.rootPath);
 
-		await input.resolve();
-		await super.setInput(input, options, token);
 		this.refreshFullList();
 		this.refreshTitle();
 
-		this._inputEvents.push(input.onReload(() => {
-			this.refreshFullList();
-			this.refreshTitle();
-		}));
-
-		this._inputEvents.push(input.onItemUpdate((itemIds) => {
+		this._registerInput(input.onItemUpdate((itemIds) => {
 			this.refreshLine(itemIds);
 			this.refreshTitle();
 		}));
-		this._inputEvents.push(this.render.onFieldChange(({ id, field, value }) => {
+		this._registerInput(this.render.onFieldChange(({ id, field, value }) => {
 			input.changeSectionFieldValue(id, field, value);
 		}));
-		this._inputEvents.push(this.render.onDeleteClick((id) => {
+		this._registerInput(this.render.onDeleteClick((id) => {
 			const index = input.deleteItem(id);
 			this.sectionList.splice(index, 1);
 			// console.log('delete %s - %s', index, id);
 		}));
-		this._inputEvents.push(this.render.onMove(({ id, toDown }) => {
+		this._registerInput(this.render.onMove(({ id, toDown }) => {
 			const index = input.findSectionIndex(id);
 			if (toDown) {
 				this.onMoveItem(index, index + 1);
@@ -108,21 +103,6 @@ export class FlashManagerEditor extends BaseEditor {
 				this.onMoveItem(index - 1, index);
 			}
 		}));
-	}
-
-	public dispose(): void {
-		this.clearInput();
-		super.dispose();
-	}
-
-	clearInput() {
-		if (this._inputEvents) {
-			this._inputEvents = dispose(this._inputEvents);
-		}
-		this.sectionList.splice(0, this.sectionList.length);
-		this.btnAddFile.enabled = false;
-		this.btnFlashAll.enabled = false;
-		super.clearInput();
 	}
 
 	public layout(dimension: Dimension = this._lastDimension): void {
@@ -140,7 +120,7 @@ export class FlashManagerEditor extends BaseEditor {
 		this.sectionList.layout(dimension.height - getTotalHeight(this.titleContainer), w);
 	}
 
-	protected createEditor(parent: HTMLElement): void {
+	protected _createEditor(parent: HTMLElement): void {
 		const focusTracker = this._register(trackFocus(parent));
 		this._register(focusTracker.onDidFocus(() => {
 			this.context.set(true);
@@ -173,14 +153,14 @@ export class FlashManagerEditor extends BaseEditor {
 			new FlashSectionDelegate,
 			[this.render],
 			{
-				identityProvider: { getId(e: IFlashSectionUI) {return e.name;} },
+				identityProvider: { getId(e: IFlashSection) {return e.name;} },
 				multipleSelectionSupport: false,
 				keyboardSupport: false,
 				supportDynamicHeights: false,
 				mouseSupport: false,
 				horizontalScrolling: false,
 			},
-		) as WorkbenchList<IFlashSectionUI>);
+		) as WorkbenchList<IFlashSection>);
 	}
 
 	private createButtonBar(parent: HTMLElement) {
@@ -246,7 +226,7 @@ export class FlashManagerEditor extends BaseEditor {
 
 	private refreshTitle() {
 		const errorMessage = this._input!.errorMessage;
-		const data = this._input!.modelData;
+		const data = this._input!.model.data;
 
 		// console.log('update error message', errorMessage);
 		if (errorMessage) {
@@ -289,7 +269,7 @@ export class FlashManagerEditor extends BaseEditor {
 	}
 
 	private onMoveItem(index1: number, index2: any) {
-		if (index1 < 0 || index2 >= this._input!.modelData.downloadSections.length) {
+		if (index1 < 0 || index2 >= this._input!.model.data.downloadSections.length) {
 			return; // just ignore out range
 		}
 

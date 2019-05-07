@@ -11,6 +11,13 @@ import { MakefileServiceResolve } from 'vs/kendryte/vs/services/makefileService/
 import { MakefileServiceWritter } from 'vs/kendryte/vs/services/makefileService/node/write';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { CONFIG_KEY_BUILD_VERBOSE } from 'vs/kendryte/vs/base/common/configKeys';
+import { IMarkerService } from 'vs/platform/markers/common/markers';
+import { URI } from 'vs/base/common/uri';
+import { createSimpleErrorMarker } from 'vs/kendryte/vs/platform/marker/common/simple';
+import { PathAttachedError } from 'vs/kendryte/vs/platform/marker/common/errorWithPath';
+import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
+
+const MARKER_ID = 'makefile';
 
 export class MakefileService implements IMakefileService {
 	public _serviceBrand: any;
@@ -29,6 +36,7 @@ export class MakefileService implements IMakefileService {
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
+		@IMarkerService private readonly markerService: IMarkerService,
 	) {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 
@@ -49,7 +57,20 @@ export class MakefileService implements IMakefileService {
 		}
 	}
 
-	public async generateMakefile(projectPath: string) {
+	async generateMakefile(projectPath: string) {
+		return this._generateMakefile(projectPath).then(() => {
+			this.markerService.changeAll(MARKER_ID, []);
+		}, (e) => {
+			if (e instanceof PathAttachedError) {
+				this.markerService.changeOne(MARKER_ID, e.resource, [createSimpleErrorMarker(e)]);
+			} else {
+				this.markerService.changeOne(MARKER_ID, URI.file(projectPath + '/' + CMAKE_CONFIG_FILE_NAME), [createSimpleErrorMarker(e)]);
+			}
+			throw e;
+		});
+	}
+
+	private async _generateMakefile(projectPath: string) {
 		this.logger.info('Generate CMakeLists.txt file:');
 
 		await this.refreshProjectMap();

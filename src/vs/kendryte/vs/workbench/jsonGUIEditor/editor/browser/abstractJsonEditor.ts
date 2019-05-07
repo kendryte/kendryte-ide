@@ -35,6 +35,10 @@ export abstract class AbstractJsonEditor<JsonType> extends BaseEditor implements
 		this.inJsonGuiEditorContextKey = CONTEXT_JSON_GUI_EDITOR.bindTo(contextKeyService);
 	}
 
+	_registerInput(dis: IDisposable) {
+		this._inputEvents.push(dis);
+	}
+
 	async setInput(input: AbstractJsonEditorInput<JsonType>, options: EditorOptions, token: CancellationToken): Promise<void> {
 		this.inJsonGuiEditorContextKey.set(true);
 		await super.setInput(input, options, token);
@@ -83,7 +87,7 @@ export abstract class AbstractJsonEditor<JsonType> extends BaseEditor implements
 	protected createEditor(parent: HTMLElement): void {
 		// console.log('will create editor: %s', this.descriptor.id);
 		const container = append(parent, $('div.kendryte-json-editor')) as HTMLDivElement;
-		container.classList.add(this.descriptor.id);
+		container.classList.add(this.descriptor.id.split('.').pop() || 'invalid-editor-id');
 
 		this.focusTracker = this._register(trackFocus(container));
 		this._register(this.focusTracker.onDidBlur(() => {

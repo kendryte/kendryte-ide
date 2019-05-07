@@ -7,7 +7,7 @@ export function vsicon(name: string) {
 	return ico;
 }
 
-export function vsiconClass(name: string) {
+export function visualStudioIconClass(name: string) {
 	return 'visualstudio-icon ' + name;
 }
 

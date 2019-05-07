@@ -1,16 +1,14 @@
 import { IJSONSchema, IJSONSchemaMap } from 'vs/base/common/jsonSchema';
 import { localize } from 'vs/nls';
 
-const flashSchemaId = 'vscode://schemas/flasher';
+export const flashSchemaId = 'vscode://schemas/flasher';
 
 export interface IFlashManagerConfigJson {
-	readonly baseAddress: string;
-	readonly downloadSections: ReadonlyArray<Readonly<IFlashSection>>;
-}
-
-export interface IFlashManagerConfigJsonWritable extends IFlashManagerConfigJson {
 	baseAddress: string;
 	downloadSections: IFlashSection[];
+	/* ui fields */
+	endAddress: string;
+	totalSize: number;
 }
 
 export interface IFlashSection {
@@ -19,6 +17,10 @@ export interface IFlashSection {
 	autoAddress: boolean;
 	filename: string;
 	swapBytes: boolean;
+	/* ui fields */
+	readonly id: string;
+	filesize: number;
+	addressEnd: string;
 }
 
 const downloadSectionProps: IJSONSchemaMap = {

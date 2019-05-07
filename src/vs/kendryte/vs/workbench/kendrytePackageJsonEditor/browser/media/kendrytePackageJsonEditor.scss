@@ -1,64 +1,69 @@
-.kendryte-package-json-editor > .monaco-scrollable-element {
+.kendryte-package-json-editor {
+	display: block;
 	height: 100%;
 	
-	> .wrap {
+	> .monaco-scrollable-element {
 		height: 100%;
-		padding: 12px 0;
 		
-		max-width: 800px;
-		margin: auto;
-		
-		overflow-x: visible;
-		overflow-y: scroll;
-		box-sizing: border-box;
-		
-		> hr {
-			margin-bottom: 12px;
-		}
-		
-		> .section {
-			display: flex;
-			margin-bottom: 1em;
+		> .wrap {
+			height: 100%;
+			padding: 12px 0;
 			
-			> .left {
-				width: 30%;
-				max-width: 250px;
-				
-				> h3 {
-					margin-top: 0;
-				}
+			max-width: 800px;
+			margin: auto;
+			
+			overflow-x: visible;
+			overflow-y: scroll;
+			box-sizing: border-box;
+			
+			> hr {
+				margin-bottom: 12px;
 			}
 			
-			> .right {
-				position: relative;
-				flex: 1;
+			> .section {
+				display: flex;
+				margin-bottom: 1em;
 				
-				textarea.input {
-					width: 100%;
+				> .left {
+					width: 30%;
+					max-width: 250px;
+					
+					> h3 {
+						margin-top: 0;
+					}
 				}
 				
-				> .control {
-					display: flex;
-					flex-direction: row;
+				> .right {
+					position: relative;
+					flex: 1;
 					
-					> * {
-						flex: 0;
-						white-space: nowrap;
-						margin-right: 0.3em;
+					textarea.input {
+						width: 100%;
+					}
+					
+					> .control {
+						display: flex;
+						flex-direction: row;
 						
-						.icon {
-							margin-right: 2px;
+						> * {
+							flex: 0;
+							white-space: nowrap;
+							margin-right: 0.3em;
+							
+							.icon {
+								margin-right: 2px;
+							}
 						}
 					}
 				}
 			}
-		}
-		
-		> code.json {
-			margin-top: 15px;
-			white-space: pre;
-			width: 100%;
-			opacity: 0.88;
+			
+			> code.json {
+				margin-top: 15px;
+				white-space: pre;
+				width: 100%;
+				opacity: 0.88;
+			}
 		}
 	}
 }
