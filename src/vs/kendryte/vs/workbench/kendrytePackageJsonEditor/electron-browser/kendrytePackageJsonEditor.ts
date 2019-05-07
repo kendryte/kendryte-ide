@@ -24,6 +24,7 @@ import { AbstractJsonEditor } from 'vs/kendryte/vs/workbench/jsonGUIEditor/edito
 import { EditorId } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/type';
 import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 import { OpenManagerControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/dependency';
+import { rememberEditorScroll, restoreEditorScroll } from 'vs/kendryte/vs/workbench/jsonGUIEditor/browser/rememberEditorScroll';
 
 interface IControlList extends Record<ICompileInfoPossibleKeys, IUISection<any>> {
 	name: IUISection<string>;
@@ -85,17 +86,23 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo> 
 
 	protected updateModel(model?: IJsonEditorModel<ICompileInfo>) {
 		if (!model) {
+			rememberEditorScroll(this._input!.model, this.scroll.getScrollPosition().scrollTop);
 			return;
 		}
+
+		this.scroll.setScrollPosition({ scrollTop: restoreEditorScroll(model) });
+
 		this.sectionCreator.setRootPath(resolvePath(model.resource.fsPath, '..'));
 
-		const data = model.data;
-		this.json.innerText = JSON.stringify(data, null, 4);
 		this.h1.innerText = this._input!.getTitle();
-		this.scroll.scanDomNode();
 
-		if (data.type === CMakeProjectTypes.library) {
-			if (data.prebuilt) {
+		this._registerInput(this._input!.model.onContentChange((itemIds) => {
+			this.json.innerText = JSON.stringify(model.data, null, 4);
+			this.scroll.scanDomNode();
+		}));
+
+		if (model.data.type === CMakeProjectTypes.library) {
+			if (model.data.prebuilt) {
 				this.controls.type.widget.set(CMakeProjectTypes.prebuiltLibrary);
 				this.onTypeChange(CMakeProjectTypes.prebuiltLibrary);
 			} else {
@@ -159,7 +166,6 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo> 
 
 		parent.classList.add('kendryte-package-json-editor');
 		this.h1 = append(container, $('h1'));
-		(append(container, $('div.muted')) as HTMLSpanElement).innerText = localize('kendrytePackageJsonEditorAutoSave', 'Your settings will saved automatically');
 		append(container, $('hr'));
 
 		this.createSection(

@@ -60,11 +60,11 @@ export abstract class AbstractJsonEditor<JsonType> extends BaseEditor implements
 	}
 
 	clearInput(): void {
+		this.updateModel();
+
 		this._inputEvents = dispose(this._inputEvents);
 		super.clearInput();
 		this.inJsonGuiEditorContextKey.set(false);
-
-		this.updateModel();
 	}
 
 	protected getModel() {
