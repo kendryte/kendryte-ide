@@ -16,10 +16,12 @@ import { localize } from 'vs/nls';
 import { IFlashManagerService } from 'vs/kendryte/vs/workbench/flashManager/common/flashManagerService';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
+import { IDisposable } from 'vs/base/common/lifecycle';
 
 export class CreateZipAction extends Action {
 	static readonly ID: string = ACTION_ID_FLASH_MANGER_CREATE_ZIP;
 	static readonly LABEL: string = ACTION_LABEL_FLASH_MANGER_CREATE_ZIP;
+	private model: IDisposable;
 
 	constructor(
 		id = CreateZipAction.ID, label = CreateZipAction.LABEL,
@@ -32,7 +34,7 @@ export class CreateZipAction extends Action {
 	}
 
 	protected async createSections(path: string) {
-		const model = await this.flashManagerService.getFlashManagerModel(path);
+		const model = this.model = await this.flashManagerService.getFlashManagerModel(path);
 
 		const sections = await model.createSections();
 		return sections.map(({ varName, startHex, filepath }) => {
@@ -104,6 +106,13 @@ export class CreateZipAction extends Action {
 
 		handle.progress.done();
 		handle.updateMessage(localize('successCreateFile', 'Successful create zip file: {0}.', target));
+	}
+
+	public dispose() {
+		super.dispose();
+		if (this.model) {
+			this.model.dispose();
+		}
 	}
 }
 

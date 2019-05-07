@@ -93,7 +93,7 @@ export class KendryteStatusControllerService implements IDisposable, IKendryteSt
 		this.messageButtonMap.set(id, button);
 		this.messageIdStack.push(id);
 
-		button.onBeforeDispose(() => {
+		button.onDispose(() => {
 			this.messageButtonMap.delete(id);
 			if (id === this.messageIdStack.top()) {
 				this.messageIdStack.pop();

@@ -1,5 +1,5 @@
-import { Emitter } from 'vs/base/common/event';
-import { IReference, toDisposable } from 'vs/base/common/lifecycle';
+import { Emitter, Event } from 'vs/base/common/event';
+import { Disposable, IReference } from 'vs/base/common/lifecycle';
 import { URI } from 'vs/base/common/uri';
 import { IMarkerService } from 'vs/platform/markers/common/markers';
 import { createSimpleJsonWarningMarkers } from 'vs/kendryte/vs/platform/marker/common/simple';
@@ -17,11 +17,11 @@ import { ITextFileEditorModel, ITextFileService, StateChange } from 'vs/workbenc
 import { JSONPath } from 'vs/base/common/json';
 import { memoize } from 'vs/base/common/decorators';
 import { globals } from 'vs/base/common/platform';
-import { StatefulDisposable } from 'vs/kendryte/vs/base/common/lifecycle/statefulDisposable';
+import once = Event.once;
 
-export class SimpleJsonEditorModel<JsonType> extends StatefulDisposable implements IJsonEditorModel<JsonType> {
-	private readonly _onDispose = this._register(new Emitter<void>());
-	public readonly onDispose = this._onDispose.event;
+export class SimpleJsonEditorModel<JsonType> extends Disposable implements IJsonEditorModel<JsonType> {
+	private readonly _onDispose = new Emitter<void>();
+	public readonly onDispose = once(this._onDispose.event);
 
 	public reference: IReference<IResolvedTextEditorModel>;
 
@@ -172,15 +172,18 @@ export class SimpleJsonEditorModel<JsonType> extends StatefulDisposable implemen
 
 	dispose() {
 		// console.log('json model disposed');
-		this._register(toDisposable(() => {
-			if (this.changeEventDelay) {
-				globals.clearImmediate(this.changeEventDelay);
-				delete this.changeEventDelay;
-			}
-		}));
-		this._onDispose.fire();
-		this.markerService.changeOne(this.editorId, this.resource, []);
+
+		if (this.changeEventDelay) {
+			globals.clearImmediate(this.changeEventDelay);
+			delete this.changeEventDelay;
+		}
+
 		super.dispose();
+
+		this.markerService.changeOne(this.editorId, this.resource, []);
+
+		this._onDispose.fire();
+		this._onDispose.dispose();
 	}
 
 	private setDirty(newState: boolean) {

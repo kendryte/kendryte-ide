@@ -1,5 +1,5 @@
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
+import { ICustomJsonEditorService } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 import { URI } from 'vs/base/common/uri';
 import { CustomJsonRegistry } from 'vs/kendryte/vs/workbench/jsonGUIEditor/common/register';
 import { SimpleJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/node/simpleJsonEditorModel';
@@ -18,7 +18,6 @@ class CustomJsonEditorService implements ICustomJsonEditorService {
 	public _serviceBrand: any;
 
 	private focusList = new Set<string>();
-	private readonly referenceMap = new Map<string, IJsonEditorModel<any>>();
 
 	private readonly jsonEditorFocusContext: IContextKey<boolean>;
 	private readonly jsonEditorFocusIdContext: IContextKey<string>;
@@ -37,25 +36,12 @@ class CustomJsonEditorService implements ICustomJsonEditorService {
 	}
 
 	createJsonModel(resource: URI, ctor: IJsonEditorModelConstructor = SimpleJsonEditorModel) {
-		const path = resource.fsPath;
-		if (this.referenceMap.has(path)) {
-			return this.referenceMap.get(path)!;
-		}
-
 		const id = CustomJsonRegistry.matchPath(resource);
 		if (!id) {
 			return undefined;
 		}
 
-		const jsonModel = this.instantiationService.createInstance(ctor, id, resource);
-
-		this.referenceMap.set(path, jsonModel);
-
-		jsonModel.onDispose(() => {
-			this.referenceMap.delete(path);
-		});
-
-		return jsonModel;
+		return this.instantiationService.createInstance(ctor, id, resource);
 	}
 
 	async createTextReference(editorId: string, resource: URI) {

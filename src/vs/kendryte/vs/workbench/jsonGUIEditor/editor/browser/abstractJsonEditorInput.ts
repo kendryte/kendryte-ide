@@ -29,13 +29,24 @@ export abstract class AbstractJsonEditorInput<JsonType> extends EditorInput impl
 			throw new Error('Cannot find json model for file: ' + resource.toString());
 		}
 		this.model = model;
+		let oneDispose = false;
 		this._register(this.model.onDispose(() => {
+			if (oneDispose) {
+				return;
+			}
+			oneDispose = true;
 			this.dispose();
+		}));
+		this._register(this.onDispose(() => {
+			if (oneDispose) {
+				return;
+			}
+			oneDispose = true;
+			model.dispose();
 		}));
 		this._register(this.model.onDidChangeDirtyState(() => {
 			this._onDidChangeDirty.fire();
 		}));
-		this._register(model);
 	}
 
 	protected abstract createModel(

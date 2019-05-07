@@ -8,15 +8,15 @@ import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/commo
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { IMarkerService } from 'vs/platform/markers/common/markers';
 import { exists } from 'vs/base/node/pfs';
-import { IBeforeBuildEvent, IMakefileService } from 'vs/kendryte/vs/services/makefileService/common/type';
+import { IBeforeBuildEvent } from 'vs/kendryte/vs/services/makefileService/common/type';
 import { createSimpleErrorMarker } from 'vs/kendryte/vs/platform/marker/common/simple';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { MemoryAllocationCalculator, parseMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
 import { wrapHeaderFile } from 'vs/kendryte/vs/base/common/cpp/wrapHeaderFile';
 import { ICustomJsonEditorService } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 import { URI } from 'vs/base/common/uri';
-import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { IFlashManagerConfigJson } from 'vs/kendryte/vs/base/common/jsonSchemas/flashSectionsSchema';
+import { DisposableSet } from 'vs/kendryte/vs/base/common/lifecycle/disposableSet';
 
 const MARKER_ID = 'flash.manager.service';
 const CONST_NAME = 'KENDRYTE_IDE_FLASH_MANGER_OUT';
@@ -25,26 +25,27 @@ export class FlashManagerService implements IFlashManagerService {
 	_serviceBrand: any;
 	private readonly logger: IChannelLogger;
 
-	private toDisposeModels: IDisposable[] = [];
-
 	constructor(
 		@ISerialPortService serialPortService: ISerialPortService,
-		@IMakefileService makefileService: IMakefileService,
 		@IChannelLogService channelLogService: IChannelLogService,
 		@ICustomJsonEditorService private readonly customJsonEditorService: ICustomJsonEditorService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IMarkerService private readonly markerService: IMarkerService,
 	) {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
-
-		makefileService.onPrepareBuild((event) => event.waitUntil(this.runIfExists(event).finally(() => {
-			this.toDisposeModels = dispose(this.toDisposeModels);
-		})));
 	}
 
-	async runIfExists(event: IBeforeBuildEvent) {
+	handlePrecompileEvent(event: IBeforeBuildEvent) {
+		const disposableSet = new DisposableSet<FlashManagerEditorModel>();
+		return this._handlePrecompileEvent(event, disposableSet).finally(() => {
+			disposableSet.dispose();
+		});
+	}
+
+	private async _handlePrecompileEvent(event: IBeforeBuildEvent, _disposables: DisposableSet<FlashManagerEditorModel>) {
 		const mainFile = resolvePath(event.projects[0].path, PROJECT_CONFIG_FOLDER_NAME, FLASH_MANAGER_CONFIG_FILE_NAME);
 		const mainModel = await this.getFlashManagerModel(mainFile);
+		_disposables.add(mainModel);
 		const memory = new MemoryAllocationCalculator(parseMemoryAddress(mainModel.data.baseAddress), Infinity);
 
 		for (const project of event.projects) {
@@ -52,6 +53,7 @@ export class FlashManagerService implements IFlashManagerService {
 			if (await exists(configFile)) {
 				this.logger.info('[Flash Manager] Enabled for %s.', project.json.name);
 				const model = await this.getFlashManagerModel(configFile);
+				_disposables.add(model);
 				await this.runGenerateMemoryMap(model, memory);
 			} else {
 				this.logger.info('[Flash Manager] NOT enabled for %s.', project.json.name);
@@ -60,9 +62,8 @@ export class FlashManagerService implements IFlashManagerService {
 	}
 
 	async getFlashManagerModel(fsPath: string) {
-		const model = this.customJsonEditorService.createJsonModel<IFlashManagerConfigJson>(URI.file(fsPath))!;
+		const model = this.customJsonEditorService.createJsonModel<IFlashManagerConfigJson>(URI.file(fsPath), FlashManagerEditorModel)!;
 		console.assert(model, 'not registered');
-		this.toDisposeModels.push(model);
 		await model.load();
 		return model as FlashManagerEditorModel;
 	}

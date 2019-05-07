@@ -1,4 +1,5 @@
 import { Disposable, dispose, IDisposable } from 'vs/base/common/lifecycle';
+import { setImmediate } from 'vs/base/common/platform';
 
 export class StatefulDisposable implements IDisposable {
 	static None = Disposable.None;
@@ -8,7 +9,10 @@ export class StatefulDisposable implements IDisposable {
 
 	public dispose(): void {
 		if (this._lifecycle_disposable_isDisposed) {
-			throw new Error('Disposing object that has already been disposed.');
+			const e = new Error('Disposing object that has already been disposed.');
+			setImmediate(() => {
+				throw e;
+			});
 		}
 		this._lifecycle_disposable_isDisposed = true;
 		this._toDispose = dispose(this._toDispose);
@@ -17,7 +21,10 @@ export class StatefulDisposable implements IDisposable {
 	protected _register<T extends IDisposable>(t: T): T {
 		if (this._lifecycle_disposable_isDisposed) {
 			t.dispose();
-			throw new Error('Registering disposable on object that has already been disposed.');
+			const e = new Error('Registering disposable on object that has already been disposed.');
+			setImmediate(() => {
+				throw e;
+			});
 		} else {
 			this._toDispose.push(t);
 		}
@@ -28,5 +35,5 @@ export class StatefulDisposable implements IDisposable {
 	/* extended */
 	protected get toDispose(): IDisposable[] { return this._toDispose; }
 
-	protected get isDisposed(): boolean { return this._lifecycle_disposable_isDisposed; }
+	public get isDisposed(): boolean { return this._lifecycle_disposable_isDisposed; }
 }

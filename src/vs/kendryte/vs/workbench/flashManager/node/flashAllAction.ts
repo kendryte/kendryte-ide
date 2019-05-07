@@ -16,6 +16,7 @@ import { parseMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/c
 import { createReadStream } from 'fs';
 import { IFlashManagerService } from 'vs/kendryte/vs/workbench/flashManager/common/flashManagerService';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
+import { IDisposable } from 'vs/base/common/lifecycle';
 
 interface IMySection {
 	name: string;
@@ -31,6 +32,7 @@ export class FlashAllAction extends Action {
 	static readonly LABEL = ACTION_LABEL_FLASH_MANGER_FLASH_ALL;
 	private readonly logger: IChannelLogger;
 	private readonly bootLoader: string;
+	private model: IDisposable;
 
 	constructor(
 		id = FlashAllAction.ID, label = FlashAllAction.LABEL,
@@ -55,7 +57,7 @@ export class FlashAllAction extends Action {
 		} else {
 			rootPath = this.kendryteWorkspaceService.requireCurrentWorkspaceFile();
 		}
-		const model = await this.flashManagerService.getFlashManagerModel(rootPath);
+		const model = this.model = await this.flashManagerService.getFlashManagerModel(rootPath);
 
 		const sections: IMySection[] = (await model.createSections()).map((item) => {
 			return {
@@ -167,6 +169,13 @@ export class FlashAllAction extends Action {
 					report,
 				),
 			]);
+		}
+	}
+
+	public dispose() {
+		super.dispose();
+		if (this.model) {
+			this.model.dispose();
 		}
 	}
 }

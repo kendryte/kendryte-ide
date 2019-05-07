@@ -15,6 +15,7 @@ import { CreateZipAction, CreateZipWithProgramAction } from 'vs/kendryte/vs/work
 import { CustomJsonRegistry } from 'vs/kendryte/vs/workbench/jsonGUIEditor/common/register';
 import { FLASH_MANAGER_CONFIG_FILE_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { KENDRYTE_FLASH_MANAGER_ID, KENDRYTE_FLASH_MANAGER_TITLE } from 'vs/kendryte/vs/workbench/flashManager/common/type';
+import 'vs/kendryte/vs/workbench/flashManager/node/flashHookContribution';
 
 registerFlashSchemas((id, schema) => {
 	Registry.as<IJSONContributionRegistry>(JSONExtensions.JSONContribution).registerSchema(id, schema);
