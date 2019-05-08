@@ -33,7 +33,7 @@ function createMatcher(pathMatch: string | RegExp | IPathMatchingFunction): IPat
 	if (typeof pathMatch === 'string') {
 		const pathEnd = normalizePosixPath('/' + pathMatch);
 		return (resource: URI) => {
-			return resource.fsPath.endsWith(pathEnd);
+			return normalizePosixPath(resource.fsPath).endsWith(pathEnd);
 		};
 	} else if (pathMatch instanceof RegExp) {
 		return (resource: URI) => {
