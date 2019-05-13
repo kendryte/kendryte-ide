@@ -36,6 +36,9 @@ export const CONFIG_DESCRIPTION_OPENOCD_PORT = localize('debug.openocd.port', 'o
 export const CONFIG_KEY_OPENOCD_CORE = 'debug.openocd.core';
 export const CONFIG_DESCRIPTION_OPENOCD_CORE = localize('debug.openocd.core', 'which core to debug, -1 means all core');
 
+export const CONFIG_KEY_OPENOCD_EXTRA_ARGS = 'debug.openocd.extraArgs';
+export const CONFIG_DESCRIPTION_OPENOCD_EXTRA_ARGS = localize('debug.openocd.extraArgs', 'extra arguments passing to openocd executable');
+
 //
 export const CONFIG_KEY_JTAG_ID = 'debug.jtag.id';
 export const CONFIG_DESCRIPTION_JTAG_ID = localize('debug.jtag.id.desc', 'Serial number of JLink device, 0 means use first available.');

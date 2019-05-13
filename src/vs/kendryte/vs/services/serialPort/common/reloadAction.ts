@@ -5,7 +5,7 @@ import { ACTION_ID_REFRESH_SERIAL_DEVICE } from 'vs/kendryte/vs/services/serialP
 import BaseSeverity from 'vs/base/common/severity';
 import { ISerialPortService } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { registerExternalAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
-import { SerialPortActionCategory } from 'vs/kendryte/vs/base/common/menu/serialPort';
+import { ACTION_CATEGORY_SERIAL_PORT } from 'vs/kendryte/vs/base/common/menu/serialPort';
 
 class ReloadSerialPortDevicesAction extends Action {
 	public static readonly ID = ACTION_ID_REFRESH_SERIAL_DEVICE;
@@ -31,4 +31,4 @@ class ReloadSerialPortDevicesAction extends Action {
 	}
 }
 
-registerExternalAction(SerialPortActionCategory, ReloadSerialPortDevicesAction);
+registerExternalAction(ACTION_CATEGORY_SERIAL_PORT, ReloadSerialPortDevicesAction);

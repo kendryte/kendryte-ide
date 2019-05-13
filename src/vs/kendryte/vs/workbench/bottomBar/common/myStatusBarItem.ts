@@ -28,7 +28,7 @@ export class MyStatusBarItem implements IStatusButtonData, IStatusButtonMethod {
 	private _contextKey: IContextKeyObject | null;
 
 	private readonly _beforeDispose = new Emitter<void>();
-	public readonly onBeforeDispose = this._beforeDispose.event;
+	public readonly onDispose = this._beforeDispose.event;
 
 	constructor(
 		private readonly statusbarService: IStatusbarService,

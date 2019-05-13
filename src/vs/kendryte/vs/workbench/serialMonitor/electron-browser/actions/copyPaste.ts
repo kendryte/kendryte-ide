@@ -10,7 +10,7 @@ import { ISerialMonitorControlService } from 'vs/kendryte/vs/workbench/serialMon
 import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
 import { registerActionWithKey } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
-import { SerialPortActionCategory } from 'vs/kendryte/vs/base/common/menu/serialPort';
+import { ACTION_CATEGORY_SERIAL_PORT } from 'vs/kendryte/vs/base/common/menu/serialPort';
 
 export class SerialPortCopyAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_ACTION_COPY;
@@ -31,7 +31,7 @@ export class SerialPortCopyAction extends Action {
 	}
 }
 
-registerActionWithKey(SerialPortActionCategory, SerialPortCopyAction, {
+registerActionWithKey(ACTION_CATEGORY_SERIAL_PORT, SerialPortCopyAction, {
 	primary: KeyMod.CtrlCmd | KeyCode.KEY_C,
 	linux: { primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KEY_C },
 }, ContextKeyExpr.and(CONTEXT_IN_SERIAL_PORT_OUTPUT, CONTEXT_SERIAL_PORT_HAS_SELECT));
@@ -55,7 +55,7 @@ export class SerialPortPasteAction extends Action {
 	}
 }
 
-registerActionWithKey(SerialPortActionCategory, SerialPortPasteAction, {
+registerActionWithKey(ACTION_CATEGORY_SERIAL_PORT, SerialPortPasteAction, {
 	primary: KeyMod.CtrlCmd | KeyCode.KEY_V,
 	linux: { primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KEY_V },
 }, CONTEXT_IN_SERIAL_PORT_OUTPUT);

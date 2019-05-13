@@ -2,12 +2,13 @@ import { createDecorator } from 'vs/platform/instantiation/common/instantiation'
 import { IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
 import { Event } from 'vs/base/common/event';
 import { localize } from 'vs/nls';
+import { ERROR_REQUIRE_FOLDER } from 'vs/base/common/messages';
 
 export const CMAKE_CHANNEL = 'maix-make-run';
 export const CMAKE_CHANNEL_TITLE = 'Build/Run';
 
-export const CMAKE_ERROR_REQUIRE_FOLDER = localize('ErrorRequireFolder', 'You must open a folder to do this.');
-export const CMAKE_ERROR_NOT_PROJECT = localize('ErrorNotProject', 'You must open a folder to do this.');
+export const CMAKE_ERROR_REQUIRE_FOLDER = ERROR_REQUIRE_FOLDER;
+export const CMAKE_ERROR_NOT_PROJECT = localize('ErrorNotProject', 'This is not a cmake project.');
 
 export interface ICMakeSelection {
 	variant: string;
@@ -18,24 +19,27 @@ export interface CurrentItem extends IQuickPickItem {
 	current?: boolean;
 }
 
+export type IProjectList = ReadonlyMap<string/* project name */, string/* absolute path of CONTAIN DIR */>;
+
 export interface ICMakeService {
 	_serviceBrand: any;
 
-	readonly onCMakeProjectChange: Event<Error | null>;
+	readonly onCMakeStatusChange: Event<Error | null>;
 	readonly onCMakeSelectionChange: Event<ICMakeSelection>;
 
-	readonly isEnabled: boolean;
 	rescanCurrentFolder(): Promise<void>;
 	cleanupMake(): Promise<void>;
 	getOutputFile(): Promise<string>;
 	configure(): Promise<void>;
 	build(): Promise<void>;
-	setVariant(variant: string): void;
-	setTarget(target: string): void;
-	getTargetList(): Promise<CurrentItem[]>;
-	getVariantList(): Promise<CurrentItem[]>;
 	ensureConfiguration(): Promise<any>;
 	shutdown(force?: boolean): Promise<void>;
+
+	setVariant(variant: string): void;
+	setTarget(target: string): void;
+
+	getTargetList(): Promise<CurrentItem[]>;
+	getVariantList(): Promise<CurrentItem[]>;
 }
 
 export const ICMakeService = createDecorator<ICMakeService>('ICMakeService');

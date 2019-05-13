@@ -1,22 +1,15 @@
 import 'vs/css!vs/kendryte/vs/workbench/kendrytePackageJsonEditor/browser/media/kendrytePackageJsonEditor';
-import { BaseEditor } from 'vs/workbench/browser/parts/editor/baseEditor';
-import { KENDRYTE_PACKAGE_JSON_EDITOR_ID } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/ids';
 import { $, append } from 'vs/base/browser/dom';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { EditorOptions } from 'vs/workbench/common/editor';
-import { CancellationToken } from 'vs/base/common/cancellation';
-import { KendrytePackageJsonEditorInput } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/kendrytePackageJsonEditorInput';
-import { KendrytePackageJsonEditorModel } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/node/kendrytePackageJsonEditorModel';
-import { CMAKE_CONFIG_FILE_NAME, CMakeProjectTypes, ICompileInfoPossibleKeys } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { CMAKE_CONFIG_FILE_NAME, CMakeProjectTypes, ICompileInfo, ICompileInfoPossibleKeys } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { localize } from 'vs/nls';
 import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
-import { INotificationService } from 'vs/platform/notification/common/notification';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { IUISection, IUISectionWidget } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/type';
 import { SectionFactory } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/sectionFactory';
 import { SourceFileListFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/sourceFileList';
@@ -25,8 +18,15 @@ import { PackageJsonValidate } from 'vs/kendryte/vs/workbench/kendrytePackageJso
 import { SingleFileFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/singleFile';
 import { FolderListFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/folderList';
 import { SingleFolderFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/singleFolder';
+import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
+import { INotificationService } from 'vs/platform/notification/common/notification';
+import { AbstractJsonEditor } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditor';
+import { EditorId } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/type';
+import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
+import { OpenManagerControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/dependency';
+import { rememberEditorScroll, restoreEditorScroll } from 'vs/kendryte/vs/workbench/jsonGUIEditor/browser/rememberEditorScroll';
 
-interface IControlList {
+interface IControlList extends Record<ICompileInfoPossibleKeys, IUISection<any>> {
 	name: IUISection<string>;
 	version: IUISection<string>;
 	homepage: IUISection<string>;
@@ -43,6 +43,7 @@ interface IControlList {
 	prebuilt: IUISection<string>;
 	entry: IUISection<string>;
 	definitions: IUISection<string[] | string>;
+	dependency: IUISection<string[]>;
 
 	// library
 	include: IUISection<string[]>;
@@ -51,26 +52,25 @@ interface IControlList {
 	// executable
 }
 
-export class KendrytePackageJsonEditor extends BaseEditor {
-	public static readonly ID: string = KENDRYTE_PACKAGE_JSON_EDITOR_ID;
-	protected _input: KendrytePackageJsonEditorInput;
-	protected _model: KendrytePackageJsonEditorModel;
+export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo> {
 	private h1: HTMLHeadingElement;
-	private controls: IControlList = {} as any;
+	private readonly controls: IControlList = {} as any;
 	private scroll: DomScrollableElement;
 	private readonly sectionCreator: SectionFactory;
 	private json: HTMLDivElement;
-	private editorInited: boolean = false;
 
 	constructor(
+		id: EditorId,
 		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
 		@IContextViewService contextViewService: IContextViewService,
+		@IContextKeyService contextKeyService: IContextKeyService,
+		@INotificationService notificationService: INotificationService,
+		@ICustomJsonEditorService customJsonEditorService: ICustomJsonEditorService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@INotificationService private readonly notificationService: INotificationService,
 	) {
-		super(KendrytePackageJsonEditor.ID, telemetryService, themeService, storageService);
+		super(id, telemetryService, themeService, storageService, contextKeyService, notificationService, customJsonEditorService);
 
 		this.sectionCreator = this._register(instantiationService.createInstance(SectionFactory));
 		this._register(this.sectionCreator.onDidHeightChange(() => {
@@ -84,23 +84,25 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 		}));
 	}
 
-	async setInput(input: KendrytePackageJsonEditorInput, options: EditorOptions, token: CancellationToken): Promise<void> {
-		super.setInput(input, options, token);
-		this._model = await input.resolve();
-		this.sectionCreator.setRootPath(resolvePath(this._model.resource.fsPath, '..'));
-
-		if (!this.editorInited) {
-			console.warn('Skip because editor not ready');
-			return; // there must be error before, nothing can do now.
+	protected updateModel(model?: IJsonEditorModel<ICompileInfo>) {
+		if (!model) {
+			rememberEditorScroll(this._input!.model, this.scroll.getScrollPosition().scrollTop);
+			return;
 		}
 
-		const data = this._model.data;
-		this.json.innerText = JSON.stringify(data, null, 4);
-		this.h1.innerText = input.getTitle();
-		this.scroll.scanDomNode();
+		this.scroll.setScrollPosition({ scrollTop: restoreEditorScroll(model) });
 
-		if (data.type === CMakeProjectTypes.library) {
-			if (data.prebuilt) {
+		this.sectionCreator.setRootPath(resolvePath(model.resource.fsPath, '..'));
+
+		this.h1.innerText = this._input!.getTitle();
+
+		this._registerInput(this._input!.model.onContentChange((itemIds) => {
+			this.json.innerText = JSON.stringify(model.data, null, 4);
+			this.scroll.scanDomNode();
+		}));
+
+		if (model.data.type === CMakeProjectTypes.library) {
+			if (model.data.prebuilt) {
 				this.controls.type.widget.set(CMakeProjectTypes.prebuiltLibrary);
 				this.onTypeChange(CMakeProjectTypes.prebuiltLibrary);
 			} else {
@@ -117,7 +119,7 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 				continue;
 			}
 			const set = this.controls[secName].widget.set as Function;
-			set(this._model.data[secName]);
+			set(model.data[secName]);
 		}
 	}
 
@@ -150,31 +152,11 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 		}
 	}
 
-	clearInput(): void {
-		delete this._input;
-		this._options = null;
-		delete this._model;
-	}
-
-	get data() {
-		return this._model.data;
-	}
-
 	public layout(): void {
 		this.scroll.scanDomNode();
 	}
 
-	protected createEditor(parent: HTMLElement): void {
-		try {
-			this._createEditor(parent);
-		} catch (e) {
-			this.notificationService.error(e);
-			return;
-		}
-		this.editorInited = true;
-	}
-
-	private _createEditor(parent: HTMLElement): void {
+	protected _createEditor(parent: HTMLElement): void {
 		const container = $('div.wrap');
 		this.scroll = this._register(new DomScrollableElement(container, {
 			horizontal: ScrollbarVisibility.Hidden,
@@ -184,7 +166,6 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 
 		parent.classList.add('kendryte-package-json-editor');
 		this.h1 = append(container, $('h1'));
-		(append(container, $('div.muted')) as HTMLSpanElement).innerText = localize('kendrytePackageJsonEditorAutoSave', 'Your settings will saved automatically');
 		append(container, $('hr'));
 
 		this.createSection(
@@ -349,7 +330,7 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 			'exampleSource',
 			container,
 			localize('kendrytePackageJsonEditor.exampleSource.title', 'Examples'),
-			localize('kendrytePackageJsonEditor.exampleSource.desc', 'You can add example in your library (example is a folder contains kendryte-package.json, and it\'s project type is executable).'),
+			localize('kendrytePackageJsonEditor.exampleSource.desc', 'You can add example in your library (example is a folder contains {0}, and it\'s project type is executable).', CMAKE_CONFIG_FILE_NAME),
 			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
 				PackageJsonValidate.Sources, 'eg. test/',
 			),
@@ -375,6 +356,17 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 				PackageJsonValidate.File, localize('kendrytePackageJsonEditor.extraList.placeholder', 'Do not use this in most project.'),
 			),
 			SingleFileFieldControl,
+		);
+
+		this.createSection(
+			'dependency',
+			container,
+			localize('kendrytePackageJsonEditor.dependency.title', 'Project dependencies'),
+			localize('kendrytePackageJsonEditor.dependency.desc', 'One package per line'),
+			($section, property) => this.sectionCreator.createTextAreaMap($section, property,
+				PackageJsonValidate.Dependency, 'eg. kendryte_sdk = 1.2.3',
+			),
+			OpenManagerControl,
 		);
 
 		this.json = append(container, $('code.json'));
@@ -415,14 +407,15 @@ export class KendrytePackageJsonEditor extends BaseEditor {
 			}));
 		}
 
-		this.controls[property] = bundle;
+		this.controls[property] = bundle as any;
 	}
 
 	private updateSimple(property: ICompileInfoPossibleKeys, value: any): void {
-		this._model.write(property, value).catch((e) => {
-			this.notificationService.error(e);
-		}).then(() => {
-			this.json.innerText = JSON.stringify(this._model.data, null, 4);
-		});
+		const model = this.getModel();
+		if (!model) {
+			debugger;
+			throw new Error('model is null');
+		}
+		model.update(property, value);
 	}
 }

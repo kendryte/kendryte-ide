@@ -2818,7 +2818,7 @@ dot-prop@^4.1.0:
   dependencies:
     is-obj "^1.0.0"
 
-duplexer@~0.1.1:
+duplexer@^0.1.1, duplexer@~0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/duplexer/-/duplexer-0.1.1.tgz#ace6ff808c1ce66b57d1ebf97977acb02334cfc1"
   integrity sha1-rOb/gIwc5mtX0ev5eXessCM0z8E=
@@ -3322,6 +3322,19 @@ event-stream@3.3.4, event-stream@^3.3.4:
     split "0.3"
     stream-combiner "~0.0.4"
     through "~2.3.1"
+
+event-stream@~3.3.4:
+  version "3.3.5"
+  resolved "https://registry.yarnpkg.com/event-stream/-/event-stream-3.3.5.tgz#e5dd8989543630d94c6cf4d657120341fa31636b"
+  integrity sha512-vyibDcu5JL20Me1fP734QBH/kenBGLZap2n0+XXM7mvuUPzJ20Ydqj1aKcIeMdri1p+PU+4yAKugjN8KCVst+g==
+  dependencies:
+    duplexer "^0.1.1"
+    from "^0.1.7"
+    map-stream "0.0.7"
+    pause-stream "^0.0.11"
+    split "^1.0.1"
+    stream-combiner "^0.2.2"
+    through "^2.3.8"
 
 events@^1.0.0:
   version "1.1.1"
@@ -3880,7 +3893,7 @@ from2@^2.1.0:
     inherits "^2.0.1"
     readable-stream "^2.0.0"
 
-from@~0:
+from@^0.1.7, from@~0:
   version "0.1.7"
   resolved "https://registry.yarnpkg.com/from/-/from-0.1.7.tgz#83c60afc58b9c56997007ed1a768b3ab303a44fe"
   integrity sha1-g8YK/Fi5xWmXAH7Rp2izqzA6RP4=
@@ -4007,10 +4020,10 @@ gauge@~2.7.3:
     strip-ansi "^3.0.1"
     wide-align "^1.1.0"
 
-gc-signals@^0.0.1:
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/gc-signals/-/gc-signals-0.0.1.tgz#91e3b7904168b58aa3dc78b619b7b4495b4038ab"
-  integrity sha1-keO3kEFotYqj3Hi2Gbe0SVtAOKs=
+gc-signals@^0.0.2:
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/gc-signals/-/gc-signals-0.0.2.tgz#1cfa8a00adecaeeb93ea0dda72dad9e9f333e62f"
+  integrity sha512-Ghj4Co6x5bd3dvbAFuiDc6gN+BVK8ic8CBn70dXjzrtbC5hq4a+s4S6acEvftMP7LcQuHKN5v+30PGXhkCLoCQ==
 
 generate-function@^2.0.0:
   version "2.0.0"
@@ -4410,6 +4423,14 @@ gulp-flatmap@^1.0.2:
     plugin-error "0.1.2"
     through2 "2.0.3"
 
+gulp-gunzip@^1.0.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/gulp-gunzip/-/gulp-gunzip-1.1.0.tgz#56f81b4ed8106ba3c905e310661ee7f11eb5ac03"
+  integrity sha512-3INeprGyz5fUtAs75k6wVslGuRZIjKAoQp39xA7Bz350ReqkrfYaLYqjZ67XyIfLytRXdzeX04f+DnBduYhQWw==
+  dependencies:
+    through2 "~2.0.3"
+    vinyl "~2.0.1"
+
 gulp-json-editor@^2.5.0:
   version "2.5.0"
   resolved "https://registry.yarnpkg.com/gulp-json-editor/-/gulp-json-editor-2.5.0.tgz#23aaa7d30f8425cf60cf1aefae098c257da11ada"
@@ -4524,6 +4545,17 @@ gulp-uglify@^3.0.0:
     through2 "^2.0.0"
     uglify-js "^3.0.5"
     vinyl-sourcemaps-apply "^0.2.0"
+
+gulp-untar@^0.0.7:
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/gulp-untar/-/gulp-untar-0.0.7.tgz#92067d79e0fa1e92d60562a100233a44a5aa08b4"
+  integrity sha512-0QfbCH2a1k2qkTLWPqTX+QO4qNsHn3kC546YhAP3/n0h+nvtyGITDuDrYBMDZeW4WnFijmkOvBWa5HshTic1tw==
+  dependencies:
+    event-stream "~3.3.4"
+    streamifier "~0.1.1"
+    tar "^2.2.1"
+    through2 "~2.0.3"
+    vinyl "^1.2.0"
 
 gulp-vinyl-zip@^2.1.2:
   version "2.1.2"
@@ -4880,6 +4912,11 @@ ignore@^4.0.6:
   version "4.0.6"
   resolved "https://registry.yarnpkg.com/ignore/-/ignore-4.0.6.tgz#750e3db5862087b4737ebac8207ffd1ef27b25fc"
   integrity sha512-cyFDKrqc/YdcWFniJhzI42+AzS+gNwmUzOSFcRCQYwySuBBBy/KjuxWLZ/FHEH6Moq1NizMOBWyTcv8O4OZIMg==
+
+immediate@~3.0.5:
+  version "3.0.6"
+  resolved "https://registry.yarnpkg.com/immediate/-/immediate-3.0.6.tgz#9db1dbd0faf8de6fbe0f5dd5e56bb606280de69b"
+  integrity sha1-nbHb0Pr43m++D13V5Wu2BigN5ps=
 
 import-fresh@^3.0.0:
   version "3.0.0"
@@ -5657,6 +5694,16 @@ jsprim@^1.2.2:
     json-schema "0.2.3"
     verror "1.10.0"
 
+jszip@^3.2.1:
+  version "3.2.1"
+  resolved "https://registry.yarnpkg.com/jszip/-/jszip-3.2.1.tgz#c5d32df7274042282b157efb16e522b43435e01a"
+  integrity sha512-iCMBbo4eE5rb1VCpm5qXOAaUiRKRUKiItn8ah2YQQx9qymmSAY98eyQfioChEYcVQLh0zxJ3wS4A0mh90AVPvw==
+  dependencies:
+    lie "~3.3.0"
+    pako "~1.0.2"
+    readable-stream "~2.3.6"
+    set-immediate-shim "~1.0.1"
+
 just-debounce@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/just-debounce/-/just-debounce-1.0.0.tgz#87fccfaeffc0b68cd19d55f6722943f929ea35ea"
@@ -5784,6 +5831,13 @@ levn@~0.2.5:
   dependencies:
     prelude-ls "~1.1.0"
     type-check "~0.3.1"
+
+lie@~3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/lie/-/lie-3.3.0.tgz#dcf82dee545f46074daf200c7c1c5a08e0f40f6a"
+  integrity sha512-UaiMJzeWRlEujzAuw5LokY1L5ecNQYZKfmyZ9L7wDHb/p5etKaxXhohBcrw0EYby+G/NA52vRSN4N39dxHAIwQ==
+  dependencies:
+    immediate "~3.0.5"
 
 liftoff@^2.5.0:
   version "2.5.0"
@@ -6066,7 +6120,7 @@ map-obj@^1.0.0, map-obj@^1.0.1:
   resolved "https://registry.yarnpkg.com/map-obj/-/map-obj-1.0.1.tgz#d933ceb9205d82bdcf4886f6742bdc2b4dea146d"
   integrity sha1-2TPOuSBdgr3PSIb2dCvcK03qFG0=
 
-map-stream@~0.0.7:
+map-stream@0.0.7, map-stream@~0.0.7:
   version "0.0.7"
   resolved "https://registry.yarnpkg.com/map-stream/-/map-stream-0.0.7.tgz#8a1f07896d82b10926bd3744a2420009f88974a8"
   integrity sha1-ih8HiW2CsQkmvTdEokIACfiJdKg=
@@ -7108,6 +7162,11 @@ p-try@^2.0.0:
   resolved "https://registry.yarnpkg.com/p-try/-/p-try-2.0.0.tgz#85080bb87c64688fa47996fe8f7dfbe8211760b1"
   integrity sha512-hMp0onDKIajHfIkdRk3P4CdCmErkYAxxDtP3Wx/4nZ3aGlau2VKh3mZpcuFkH27WQkL/3WBCPOktzA9ZOAnMQQ==
 
+pako@~1.0.2:
+  version "1.0.10"
+  resolved "https://registry.yarnpkg.com/pako/-/pako-1.0.10.tgz#4328badb5086a426aa90f541977d4955da5c9732"
+  integrity sha512-0DTvPVU3ed8+HNXOu5Bs+o//Mbdj9VNQMUOe9oKCwh8l0GNwpTDMKCWbRjgtD291AWnkAgkqA/LOnQS8AmS1tw==
+
 pako@~1.0.5:
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/pako/-/pako-1.0.6.tgz#0101211baa70c4bca4a0f63f2206e97b7dfaf258"
@@ -7285,7 +7344,7 @@ path-type@^3.0.0:
   dependencies:
     pify "^3.0.0"
 
-pause-stream@0.0.11:
+pause-stream@0.0.11, pause-stream@^0.0.11:
   version "0.0.11"
   resolved "https://registry.yarnpkg.com/pause-stream/-/pause-stream-0.0.11.tgz#fe5a34b0cbce12b5aa6a2b403ee2e73b602f1445"
   integrity sha1-/lo0sMvOErWqaitAPuLnO2AvFEU=
@@ -8109,7 +8168,7 @@ read@^1.0.7:
   dependencies:
     mute-stream "~0.0.4"
 
-"readable-stream@1 || 2", readable-stream@^2.0.6, readable-stream@^2.1.4, readable-stream@^2.3.0, readable-stream@^2.3.3, readable-stream@^2.3.5, readable-stream@^2.3.6:
+"readable-stream@1 || 2", readable-stream@^2.0.6, readable-stream@^2.1.4, readable-stream@^2.3.0, readable-stream@^2.3.3, readable-stream@^2.3.5, readable-stream@^2.3.6, readable-stream@~2.3.6:
   version "2.3.6"
   resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-2.3.6.tgz#b11c27d88b8ff1fbe070643cf94b0c79ae1b0aaf"
   integrity sha512-tQtKA9WIAhBF3+VLAseyMqZeBjW0AHJoxOtYqSUZNJxauErmLbVm2FW1y+J/YA9dUrAC39ITejlZWhVIwawkKw==
@@ -8122,7 +8181,7 @@ read@^1.0.7:
     string_decoder "~1.1.1"
     util-deprecate "~1.0.1"
 
-"readable-stream@2 || 3", readable-stream@^3.0.0:
+"readable-stream@2 || 3":
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-3.1.1.tgz#ed6bbc6c5ba58b090039ff18ce670515795aeb06"
   integrity sha512-DkN66hPyqDhnIQ6Jcsvx9bFjhw214O4poMBcIMgPVpQvNy9a0e0Uhg5SqySyDKAmUlwt8LonTBz1ezOnM8pUdA==
@@ -8163,6 +8222,15 @@ readable-stream@^2.0.0, readable-stream@^2.0.1, readable-stream@^2.0.2, readable
     safe-buffer "~5.1.1"
     string_decoder "~1.0.3"
     util-deprecate "~1.0.1"
+
+readable-stream@^3.0.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-3.2.0.tgz#de17f229864c120a9f56945756e4f32c4045245d"
+  integrity sha512-RV20kLjdmpZuTF1INEb9IA3L68Nmi+Ri7ppZqo78wj//Pn62fCoJyV9zalccNzDD/OuJpMG4f+pfMl8+L6QdGw==
+  dependencies:
+    inherits "^2.0.3"
+    string_decoder "^1.1.1"
+    util-deprecate "^1.0.1"
 
 readable-stream@~2.0.0:
   version "2.0.6"
@@ -8591,17 +8659,24 @@ right-align@^0.1.1:
   dependencies:
     align-text "^0.1.1"
 
-rimraf@2, rimraf@^2.4.2, rimraf@^2.5.1, rimraf@^2.5.4, rimraf@^2.6.1, rimraf@^2.6.2:
-  version "2.6.2"
-  resolved "https://registry.yarnpkg.com/rimraf/-/rimraf-2.6.2.tgz#2ed8150d24a16ea8651e6d6ef0f47c4158ce7a36"
-  integrity sha512-lreewLK/BlghmxtfH36YYVg1i8IAce4TI7oao75I1g245+6BctqTVQiBP3YUJ9C6DQOXJmkYR9X9fCLtCOJc5w==
+rimraf@2, rimraf@^2.5.1:
+  version "2.6.3"
+  resolved "https://registry.yarnpkg.com/rimraf/-/rimraf-2.6.3.tgz#b2d104fe0d8fb27cf9e0a1cda8262dd3833c6cab"
+  integrity sha512-mwqeW5XsA2qAejG46gYdENaxXjx9onRNCfn7L0duuP4hCuTIi/QO7PDK07KJfp1d+izWPrzEJDcSqBa0OZQriA==
   dependencies:
-    glob "^7.0.5"
+    glob "^7.1.3"
 
 rimraf@^2.2.8:
   version "2.6.1"
   resolved "https://registry.yarnpkg.com/rimraf/-/rimraf-2.6.1.tgz#c2338ec643df7a1b7fe5c54fa86f57428a55f33d"
   integrity sha1-wjOOxkPfeht/5cVPqG9XQopV8z0=
+  dependencies:
+    glob "^7.0.5"
+
+rimraf@^2.4.2, rimraf@^2.5.4, rimraf@^2.6.1, rimraf@^2.6.2:
+  version "2.6.2"
+  resolved "https://registry.yarnpkg.com/rimraf/-/rimraf-2.6.2.tgz#2ed8150d24a16ea8651e6d6ef0f47c4158ce7a36"
+  integrity sha512-lreewLK/BlghmxtfH36YYVg1i8IAce4TI7oao75I1g245+6BctqTVQiBP3YUJ9C6DQOXJmkYR9X9fCLtCOJc5w==
   dependencies:
     glob "^7.0.5"
 
@@ -8813,7 +8888,7 @@ set-getter@^0.1.0:
   dependencies:
     to-object-path "^0.3.0"
 
-set-immediate-shim@^1.0.1:
+set-immediate-shim@^1.0.1, set-immediate-shim@~1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/set-immediate-shim/-/set-immediate-shim-1.0.1.tgz#4b2b1b27eb808a9f8dcc481a58e5e56f599f3f61"
   integrity sha1-SysbJ+uAip+NzEgaWOXlb1mfP2E=
@@ -9147,6 +9222,13 @@ split@0.3:
   dependencies:
     through "2"
 
+split@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/split/-/split-1.0.1.tgz#605bd9be303aa59fb35f9229fbea0ddec9ea07d9"
+  integrity sha512-mTyOoPbrivtXnwnIxZRFYRrPNtEFKlpB2fvjSnCQUiAA6qAZzqwna5envK4uk6OIeP17CsdF3rSBGYVBsU0Tkg==
+  dependencies:
+    through "2"
+
 sprintf-js@~1.0.2:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/sprintf-js/-/sprintf-js-1.0.3.tgz#04e6926f662895354f3dd015203633b857297e2c"
@@ -9205,6 +9287,14 @@ stream-browserify@^2.0.1:
     inherits "~2.0.1"
     readable-stream "^2.0.2"
 
+stream-combiner@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/stream-combiner/-/stream-combiner-0.2.2.tgz#aec8cbac177b56b6f4fa479ced8c1912cee52858"
+  integrity sha1-rsjLrBd7Vrb0+kec7YwZEs7lKFg=
+  dependencies:
+    duplexer "~0.1.1"
+    through "~2.3.4"
+
 stream-combiner@~0.0.4:
   version "0.0.4"
   resolved "https://registry.yarnpkg.com/stream-combiner/-/stream-combiner-0.0.4.tgz#4d5e433c185261dde623ca3f44c586bcf5c4ad14"
@@ -9248,7 +9338,7 @@ streamfilter@^1.0.5:
   dependencies:
     readable-stream "^2.0.2"
 
-streamifier@^0.1.1:
+streamifier@^0.1.1, streamifier@~0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/streamifier/-/streamifier-0.1.1.tgz#97e98d8fa4d105d62a2691d1dc07e820db8dfc4f"
   integrity sha1-l+mNj6TRBdYqJpHR3AfoINuN/E8=
@@ -9636,7 +9726,7 @@ through2@~0.4.0:
     readable-stream "~1.0.17"
     xtend "~2.1.1"
 
-through@2, through@^2.3.6, through@^2.3.8, through@~2.3, through@~2.3.1, through@~2.3.8:
+through@2, through@^2.3.6, through@^2.3.8, through@~2.3, through@~2.3.1, through@~2.3.4, through@~2.3.8:
   version "2.3.8"
   resolved "https://registry.yarnpkg.com/through/-/through-2.3.8.tgz#0dd4c9ffaabc357960b1b724115d7e0e86a2e1f5"
   integrity sha1-DdTJ/6q8NXlgsbckEV1+Doai4fU=
@@ -9904,10 +9994,10 @@ typescript-tslint-plugin@^0.0.7:
     minimatch "^3.0.4"
     vscode-languageserver "^5.1.0"
 
-typescript@3.4.1:
-  version "3.4.1"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.4.1.tgz#b6691be11a881ffa9a05765a205cb7383f3b63c6"
-  integrity sha512-3NSMb2VzDQm8oBTLH6Nj55VVtUEpe/rgkIzMir0qVoLyjDZlnMBva0U6vDiV3IH+sl/Yu6oP5QwsAQtHPmDd2Q==
+typescript@3.4.5:
+  version "3.4.5"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.4.5.tgz#2d2618d10bb566572b8d7aad5180d84257d70a99"
+  integrity sha512-YycBxUb49UUhdNMU5aJ7z5Ej2XGmaIBL0x34vZ82fn3hGvD+bgrMrVDpatgz2f7YxUMJxMkbWxJZeAvDxVe7Vw==
 
 typescript@^2.6.2:
   version "2.6.2"
@@ -10302,7 +10392,7 @@ vinyl-sourcemaps-apply@^0.2.0, vinyl-sourcemaps-apply@^0.2.1:
   dependencies:
     source-map "^0.5.1"
 
-vinyl@^1.0.0:
+vinyl@^1.0.0, vinyl@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/vinyl/-/vinyl-1.2.0.tgz#5c88036cf565e5df05558bfc911f8656df218884"
   integrity sha1-XIgDbPVl5d8FVYv8kR+GVt8hiIQ=
@@ -10516,10 +10606,10 @@ vscode-windows-registry@1.0.1:
   dependencies:
     nan "^2.12.1"
 
-vscode-xterm@3.13.0-beta2:
-  version "3.13.0-beta2"
-  resolved "https://registry.yarnpkg.com/vscode-xterm/-/vscode-xterm-3.13.0-beta2.tgz#4517a96ef30d8a8d6f27c60bfc374a405811ee6e"
-  integrity sha512-9iu3oxpFbyUzsAPYeipMSaI7I/nY4WHlpq2kJXXzibZAO9l7pVFBxFR9H0gfDBVn1+fMJsLIzRWGX9lKC83lfQ==
+vscode-xterm@3.13.0-beta3:
+  version "3.13.0-beta3"
+  resolved "https://registry.yarnpkg.com/vscode-xterm/-/vscode-xterm-3.13.0-beta3.tgz#ab642ed77df07c2adfca7b15ae39c18328db3fc6"
+  integrity sha512-XvgD/P6CCV0+79UYM7CEL6Ziv2RiDopI3Wa1hIm3Dm8InWxkl3QwykINlempMNub+r0gwVwLKSQYr+Q/jg1IAw==
 
 vso-node-api@6.1.2-preview:
   version "6.1.2-preview"

@@ -3,7 +3,7 @@ import { resolve as resolveNative } from 'path';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { extract as extractZip } from 'vs/base/node/zip';
 import { lstat, mkdirp, readdir, rename, rimraf } from 'vs/base/node/pfs';
-import { osTempDir, resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { osTempDir, resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { ILogService } from 'vs/platform/log/common/log';
 import { basename } from 'vs/base/common/path';
 import decompress = require('decompress');

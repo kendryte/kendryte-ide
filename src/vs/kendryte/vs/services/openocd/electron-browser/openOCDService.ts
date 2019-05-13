@@ -15,6 +15,7 @@ import {
 	CONFIG_KEY_JTAG_ID,
 	CONFIG_KEY_JTAG_SPEED,
 	CONFIG_KEY_OPENOCD_CORE,
+	CONFIG_KEY_OPENOCD_EXTRA_ARGS,
 	CONFIG_KEY_OPENOCD_PORT,
 	CONFIG_KEY_OPENOCD_USE,
 } from 'vs/kendryte/vs/base/common/configKeys';
@@ -33,12 +34,14 @@ import { timeout } from 'vs/base/common/async';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { IDebugService } from 'vs/workbench/contrib/debug/common/debug';
+import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 
 const libUsbError = /\bLIBUSB_ERROR_IO\b/;
 const libUsbDisconnect = /\bLIBUSB_ERROR_NO_DEVICE\b/;
 const TDOHigh = /\bTDO seems to be stuck high\b/;
 const startOk = /\bExamined RISCV core\b/;
 const commonError = / IR capture error; saw /;
+const listenBusy = /couldn't bind .+ to socket on port/;
 
 export class OpenOCDService implements IOpenOCDService {
 	_serviceBrand: any;
@@ -54,8 +57,9 @@ export class OpenOCDService implements IOpenOCDService {
 
 	constructor(
 		@ILifecycleService lifecycleService: ILifecycleService,
+		@INodePathService nodePathService: INodePathService,
 		@IChannelLogService private readonly channelLogService: IChannelLogService,
-		@INodePathService private readonly nodePathService: INodePathService,
+		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IInstantiationService private readonly IInstantiationService: IInstantiationService,
@@ -132,9 +136,14 @@ export class OpenOCDService implements IOpenOCDService {
 			args.push(`-m${debugCore}`);
 		}
 
+		const extraArgs = this.configurationService.getValue<string>(CONFIG_KEY_OPENOCD_EXTRA_ARGS);
+		if (extraArgs) {
+			args.push(...extraArgs.split(/\s+/));
+		}
+
 		this.logger.info(' + %s %s', this.openocd, args.join(' '));
 		const child = this.child = spawn(this.openocd, args, {
-			cwd: this.nodePathService.workspaceFilePath(),
+			cwd: this.kendryteWorkspaceService.requireCurrentWorkspace(),
 		});
 
 		if (!restart || !this.okPromise) {
@@ -199,7 +208,7 @@ export class OpenOCDService implements IOpenOCDService {
 	}
 
 	private async createConfigFile() {
-		const file = this.nodePathService.workspaceFilePath('.vscode/openocd.cfg');
+		const file = this.kendryteWorkspaceService.requireCurrentWorkspaceFile('.vscode/openocd.cfg');
 		this.logger.info('config file write to: ' + file);
 		const data = await this.createConfigContent();
 		await this.nodeFileSystemService.writeFileIfChanged(file, data);
@@ -279,6 +288,13 @@ export class OpenOCDService implements IOpenOCDService {
 			this.stop().catch(undefined);
 		} else if (TDOHigh.test(line)) {
 			this.restart().catch(undefined);
+		} else if (listenBusy.test(line)) {
+			Promise.all([
+				this.configurationService.updateValue(CONFIG_KEY_OPENOCD_PORT, 0, ConfigurationTarget.WORKSPACE),
+				this.configurationService.updateValue(CONFIG_KEY_OPENOCD_PORT, 0, ConfigurationTarget.USER),
+			]).then(() => {
+				return this.stop();
+			}).catch(undefined);
 		} else if (this.okWait) {
 			if (startOk.test(line)) {
 				this.okPromise.complete(undefined);

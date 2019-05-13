@@ -12,14 +12,16 @@ import { IOpenOCDService } from 'vs/kendryte/vs/services/openocd/common/openOCDS
 import { IDebugService } from 'vs/workbench/contrib/debug/common/debug';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { getEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
+import { ILogService, LogLevel } from 'vs/platform/log/common/log';
 
 export class MaixCMakeRunAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_RUN;
 	public static readonly LABEL = ACTION_LABEL_MAIX_CMAKE_RUN;
+	private readonly logLevel: LogLevel;
 
 	constructor(
 		id = MaixCMakeRunAction.ID, label = MaixCMakeRunAction.LABEL,
@@ -28,8 +30,10 @@ export class MaixCMakeRunAction extends Action {
 		@ICommandService private commandService: ICommandService,
 		@ICMakeService private cMakeService: ICMakeService,
 		@INodePathService private nodePathService: INodePathService,
+		@ILogService logService: ILogService,
 	) {
 		super(id, label);
+		this.logLevel = logService.getLevel();
 	}
 
 	async run() {
@@ -50,6 +54,7 @@ export class MaixCMakeRunAction extends Action {
 			gdb,
 			env: getEnvironment(this.nodePathService),
 			port,
+			logLevel: this.logLevel,
 		});
 	}
 }

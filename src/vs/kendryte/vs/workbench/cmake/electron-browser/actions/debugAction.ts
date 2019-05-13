@@ -2,7 +2,7 @@ import { Action } from 'vs/base/common/actions';
 import { IDebugService, ILaunch } from 'vs/workbench/contrib/debug/common/debug';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { ILogService } from 'vs/platform/log/common/log';
 import { DebugScript } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
 import { visit } from 'vs/base/common/json';
@@ -24,6 +24,7 @@ import {
 import { IOpenOCDService } from 'vs/kendryte/vs/services/openocd/common/openOCDService';
 import { LaunchVisitor, WorkspaceMaixLaunch } from 'vs/kendryte/vs/workbench/cmake/common/launchConfig';
 import { createActionInstance } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
+import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
 
 export class MaixCMakeDebugAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_DEBUG;
@@ -39,6 +40,7 @@ export class MaixCMakeDebugAction extends Action {
 		@IFileService private fileService: IFileService,
 		@ITextModelService private textModelService: ITextModelService,
 		@IOpenOCDService private openOCDService: IOpenOCDService,
+		@ITextFileService private textFileService: ITextFileService,
 	) {
 		super(id, label);
 	}
@@ -53,10 +55,8 @@ export class MaixCMakeDebugAction extends Action {
 		const resource = config.uri;
 		const exists = await this.fileService.exists(resource);
 		if (!exists) {
-			await this.fileService.updateContent(resource, `{
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+			await this.textFileService.write(resource, `{
+	"$schema": "vscode://schemas/launch",
     "version": "0.2.0",
     "configurations": [
     ]

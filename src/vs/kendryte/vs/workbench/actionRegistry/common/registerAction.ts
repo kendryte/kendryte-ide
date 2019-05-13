@@ -60,7 +60,7 @@ export function registerExternalAction(category: string, Action: IActionToRegist
 	});
 }
 
-export function registerActionWithKey(category: string, Action: IActionToRegister, keybindings: IKeybindings, keybindingContext: ContextKeyExpr, keybindingWeight?: number) {
+export function registerActionWithKey(category: string, Action: IActionToRegister, keybindings: IKeybindings, keybindingContext?: ContextKeyExpr, keybindingWeight?: number) {
 	if (DescRegistry[Action.ID]) {
 		throw new Error(`Action ${Action.ID} has already registered.`);
 	}

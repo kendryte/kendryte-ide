@@ -6,15 +6,16 @@ import { attachButtonStyler } from 'vs/platform/theme/common/styler';
 import { $ } from 'vs/base/browser/dom';
 import { URI } from 'vs/base/common/uri';
 import { IFileDialogService } from 'vs/platform/dialogs/common/dialogs';
-import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { FileFilter } from 'vs/platform/windows/common/windows';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { async as fastGlobAsync, Pattern } from 'fast-glob';
 import { CMAKE_LIBRARY_FOLDER_NAME } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { alwaysIgnorePattern, ignorePattern } from 'vs/kendryte/vs/platform/fileDialog/common/globalIgnore';
 import { Emitter } from 'vs/base/common/event';
+import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
+import { ICommandService } from 'vs/platform/commands/common/commands';
 
 export enum SelectType {
 	SelectSingle = 1,
@@ -34,9 +35,10 @@ export abstract class AbstractFieldControl<T> extends Disposable {
 	constructor(
 		control: IUISection<T>,
 		@IFileDialogService private readonly fileDialogService: IFileDialogService,
-		@INodePathService private readonly nodePathService: INodePathService,
+		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 		@IThemeService private readonly themeService: IThemeService,
 		@IConfigurationService protected readonly configurationService: IConfigurationService,
+		@ICommandService protected readonly commandService: ICommandService,
 	) {
 		super();
 
@@ -65,7 +67,7 @@ export abstract class AbstractFieldControl<T> extends Disposable {
 	protected selectFileSystem(type: 'folder', select: SelectType): Promise<string[]>;
 	protected selectFileSystem(type: 'file', select: SelectType, filters?: FileFilter[]): Promise<string[]>;
 	protected async selectFileSystem(type: 'file' | 'folder', select: SelectType, filters?: FileFilter[]): Promise<string[]> {
-		const workspaceRoot = this.nodePathService.workspaceFilePath();
+		const workspaceRoot = this.kendryteWorkspaceService.requireCurrentWorkspace();
 		const ret = await this.fileDialogService.showOpenDialog({
 			title: localize('select', 'select ') + this.title,
 			defaultUri: URI.file(workspaceRoot),
@@ -125,7 +127,7 @@ export abstract class AbstractFieldControl<T> extends Disposable {
 		const glob = `${sourceDir}${recursive ? '/**' : ''}/*.{${types.join(',')}}`;
 		// console.log('glob files: "%s" in %s', glob, sourceDir);
 		return fastGlobAsync(glob, {
-			cwd: this.nodePathService.workspaceFilePath(),
+			cwd: this.kendryteWorkspaceService.requireCurrentWorkspace(),
 			stats: false,
 			onlyFiles: true,
 			followSymlinkedDirectories: false,

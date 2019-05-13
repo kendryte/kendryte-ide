@@ -1,5 +1,7 @@
 import { localize } from 'vs/nls';
 
+export const ACTION_CATEGORY_DEV_TOOLS = localize('developerTools', 'IDE Debug Tools');
+
 export const ACTION_ID_REPORT_BUG = 'workbench.action.process.report';
 export const ACTION_LABEL_REPORT_BUG = localize('openocd.action.report', 'Generate Help Data');
 

@@ -11,12 +11,11 @@ export interface INodePathService {
 	getPackagesPath(project?: string): string;
 	/** @deprecated*/
 	rawToolchainPath(): string;
-	workspaceFilePath(s?: string): string;
-	createUserLink(existsFile: string, linkFile: string): Promise<void>;
+	/** @deprecated do not use */createUserLink(existsFile: string, linkFile: string): Promise<void>;
 	ensureTempDir(name?: string): Promise<string>;
 	/** @deprecated osTempDir */tempDir(name?: string): string;
 	createAppLink(): Promise<void>;
-	getPackageFile(): string;
+	kendrytePaths(): string[];
 }
 
 export const INodePathService = createDecorator<INodePathService>('nodePathService');

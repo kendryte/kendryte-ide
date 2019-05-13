@@ -29,7 +29,7 @@ import { format } from 'util';
 import { buttonBackground, buttonForeground } from 'vs/platform/theme/common/colorRegistry';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import { ILogService } from 'vs/platform/log/common/log';
-import { SerialPortActionCategory } from 'vs/kendryte/vs/base/common/menu/serialPort';
+import { ACTION_CATEGORY_SERIAL_PORT } from 'vs/kendryte/vs/base/common/menu/serialPort';
 import { ACTION_ID_REFRESH_SERIAL_DEVICE } from 'vs/kendryte/vs/services/serialPort/common/actionId';
 import { SerialOpenMode } from 'vs/kendryte/vs/workbench/serialMonitor/common/localSettings';
 import { SerialMonitorData } from 'vs/kendryte/vs/workbench/serialMonitor/common/serialMonitorData';
@@ -203,9 +203,9 @@ class SerialMonitorPanel extends Panel {
 		}));
 
 		// xterm
-		this.xterm = this._register(this.instantiationService.createInstance(OutputXTerminal));
+		this.xterm = this._register(this.instantiationService.createInstance(OutputXTerminal, xtermContainer));
+		await this.xterm.waitForTerminalInit();
 		context.setOutput(this.xterm);
-		await this.xterm.attachToElement(xtermContainer);
 	}
 
 	private createButton($target: HTMLElement, label: string, cb: (btn: Button) => void, title?: string): Button & { styler: IDisposable } {
@@ -467,7 +467,7 @@ class SerialMonitorPanel extends Panel {
 Registry.as<PanelRegistry>(PanelExtensions.Panels).registerPanel(new PanelDescriptor(
 	SerialMonitorPanel,
 	SERIAL_PANEL_ID,
-	SerialPortActionCategory,
+	ACTION_CATEGORY_SERIAL_PORT,
 	'serial-monitor-panel-tab',
 	100,
 ));

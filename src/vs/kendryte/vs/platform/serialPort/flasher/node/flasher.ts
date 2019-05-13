@@ -1,0 +1,561 @@
+import { QuotingBuffer, UnQuotedBuffer } from 'vs/kendryte/vs/platform/serialPort/flasher/node/quotedBuffer';
+import { EscapeBuffer, UnEscapeBuffer } from 'vs/kendryte/vs/platform/serialPort/flasher/node/escapeBuffer';
+import { ISPParseBuffer, ISPSerializeBuffer } from 'vs/kendryte/vs/platform/serialPort/flasher/node/ispBuffer';
+import { Disposable } from 'vs/base/common/lifecycle';
+import { ISPError, ISPOperation, ISPRequest, ISPResponse } from 'vs/kendryte/vs/platform/serialPort/flasher/node/bufferConsts';
+import { createReadStream, ReadStream } from 'fs';
+import { GarbageData, StreamChain } from 'vs/kendryte/vs/platform/serialPort/flasher/node/streamChain';
+import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
+import { Event } from 'vs/base/common/event';
+import { DeferredPromise } from 'vs/base/test/common/utils';
+import { ISPMemoryPacker } from 'vs/kendryte/vs/platform/serialPort/flasher/node/ispMemoryPacker';
+import { addDisposableEventEmitterListener } from 'vs/kendryte/vs/base/node/disposableEvents';
+import { TimeoutBuffer } from 'vs/kendryte/vs/platform/serialPort/flasher/node/timoutBuffer';
+import { disposableStream } from 'vs/kendryte/vs/base/node/disposableStream';
+import { SubProgress } from 'vs/kendryte/vs/platform/config/common/progress';
+import { lstat } from 'vs/base/node/pfs';
+import { timeout } from 'vs/base/common/async';
+import { ISPFlashPacker } from 'vs/kendryte/vs/platform/serialPort/flasher/node/ispFlashPacker';
+import { ChunkBuffer } from 'vs/kendryte/vs/platform/serialPort/flasher/node/chunkBuffer';
+import { createCipheriv, createHash } from 'crypto';
+import { drainStream } from 'vs/kendryte/vs/base/common/drainStream';
+import { ISerialPortService, SerialPortBaseBinding } from 'vs/kendryte/vs/services/serialPort/common/type';
+import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
+import { throwNull } from 'vs/kendryte/vs/base/common/assertNotNull';
+import { CHIP_BAUDRATE, PROGRAM_BASE } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
+import { memoize } from 'vs/base/common/decorators';
+import { localize } from 'vs/nls';
+import { SpeedMeter } from 'vs/kendryte/vs/base/common/speedShow';
+import { DATA_LEN_WRITE_FLASH, DATA_LEN_WRITE_MEMORTY } from 'vs/kendryte/vs/platform/open/common/chipConst';
+import { HexDumpLoggerStream } from 'vs/kendryte/vs/base/node/loggerStream';
+import { stringifyMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
+import { FourBytesReverser } from 'vs/kendryte/vs/platform/serialPort/flasher/node/fourBytesReverser';
+
+export enum FlashTargetType {
+	OnBoard = 0,
+	InChip = 1,
+}
+
+export class SerialLoader extends Disposable {
+	protected readonly streamChain: StreamChain<ISPRequest, ISPResponse>;
+	protected readonly timeout: TimeoutBuffer;
+	protected readonly cancel: CancellationTokenSource;
+	protected readonly token: CancellationToken;
+
+	private _application: string | undefined;
+	private _bootLoader: string | undefined;
+	private _baudRate: number = CHIP_BAUDRATE;
+	private _encryptionKey: Buffer | undefined;
+	private _targetType: FlashTargetType;
+
+	protected aborted: Error;
+	public readonly abortedPromise: Promise<never>;
+
+	protected applicationStreamSize: number;
+	protected bootLoaderStreamSize: number;
+
+	public get onError(): Event<Error> { return this.streamChain.onError; }
+
+	private deferred: DeferredPromise<ISPResponse>;
+	private deferredWait: ISPOperation[];
+	private deferredReturn: ISPError;
+
+	constructor(
+		private readonly serialPortService: ISerialPortService,
+		private readonly device: SerialPortBaseBinding,
+		protected readonly logger: IChannelLogger,
+		developmentMode: boolean,
+	) {
+		super();
+
+		this.timeout = this._register(new TimeoutBuffer(5));
+
+		const inputChain = [
+			new ISPSerializeBuffer(),
+			new EscapeBuffer(),
+			new QuotingBuffer(),
+			new HexDumpLoggerStream(logger.trace.bind(logger), '[TO  DEV]'),
+		];
+		const outputChain = [
+			this.timeout,
+			new HexDumpLoggerStream(logger.trace.bind(logger), '[DEV OUT]'),
+			new UnQuotedBuffer(),
+			new UnEscapeBuffer(),
+			new ISPParseBuffer(),
+		];
+
+		this.streamChain = new StreamChain([...inputChain, device, ...outputChain]);
+
+		if (developmentMode) {
+			this.logger.warn('This is debug mode, RW timeout is disabled.');
+			this.timeout.disable();
+		}
+
+		this.cancel = new CancellationTokenSource();
+		this._register(this.streamChain);
+		this._register(this.cancel);
+		this.token = this.cancel.token;
+
+		this._register(
+			addDisposableEventEmitterListener(device, 'close', () => this.handleError(new Error('Broken pipe'))),
+		);
+
+		this.abortedPromise = new Promise<never>((resolve, reject) => {
+			this._register(this.cancel.token.onCancellationRequested(() => {
+				reject(this.aborted);
+			}));
+			this._register({
+				dispose() {
+					setTimeout(() => {
+						resolve(void 0); // to prevent dead promise in any way, but this is very not OK.
+					}, 100);
+				},
+			});
+		});
+
+		this._register(this.streamChain.onGarbage(garbage => this.logGarbage(garbage)));
+		this._register(this.streamChain.onError(err => this.handleError(err)));
+		this._register(this.streamChain.onData(data => this.handleData(data)));
+	}
+
+	public setFlashTarget(target: FlashTargetType) {
+		this._targetType = target;
+	}
+
+	public setBootLoader(loader: string) {
+		this._bootLoader = loader;
+	}
+
+	public setProgram(application: string, encryptionKey?: Buffer) {
+		this._application = application;
+		this._encryptionKey = encryptionKey;
+	}
+
+	public setBaudRate(br: number) {
+		this._baudRate = br;
+	}
+
+	@memoize
+	protected get bootLoaderStream(): ReadStream {
+		return this._register(disposableStream(
+			createReadStream(throwNull(this._bootLoader), { highWaterMark: DATA_LEN_WRITE_MEMORTY }),
+		));
+	}
+
+	@memoize
+	protected get applicationStream(): ReadStream {
+		return this._register(disposableStream(
+			createReadStream(throwNull(this._application), { highWaterMark: DATA_LEN_WRITE_FLASH }),
+		));
+	}
+
+	protected async writeMemoryChunks(content: ReadStream, baseAddress: number, length: number, report?: SubProgress) {
+		const speed = new SpeedMeter();
+		speed.start();
+
+		const cancel = this.cancel.token;
+
+		const packedData = new ISPMemoryPacker(baseAddress, length, async (bytesProcessed: number): Promise<void> => {
+			const op = await this.expect(ISPOperation.ISP_MEMORY_WRITE);
+			if (op.op === ISPOperation.ISP_DEBUG_INFO) {
+				this.logger.info(op.text);
+			} else if (op.op === ISPOperation.ISP_MEMORY_WRITE && op.err === ISPError.ISP_RET_OK) {
+				speed.setCurrent(bytesProcessed);
+				if (report) {
+					report.message(localize('serial.memory.writing', 'Writing Memory @ {0}', speed.getSpeed()));
+					report.progress(bytesProcessed);
+				}
+			} else {
+				throw this.ispError(op);
+			}
+			if (cancel.isCancellationRequested) {
+				throw new Error('user cancel');
+			}
+		});
+		content.pipe(packedData).pipe(this.streamChain);
+
+		await packedData.finishPromise();
+		speed.complete();
+		this.logger.info('  - speed: %s', speed.getSpeed());
+	}
+
+	protected async writeFlashProgramChunks(content: ReadStream, baseAddress: number, length: number, report?: SubProgress, encryption = false) {
+		const shaSize = 32;
+		const headerIsEncryptSize = 1;
+		const headerDataLenSize = 4;
+
+		const AES_MAX_LARGER_SIZE = 16;
+
+		let contentBuffer: Buffer;
+		const headerSize = headerIsEncryptSize + headerDataLenSize; // isEncrypt(1bit) + appLen(4bit) + appCode
+		if (this._encryptionKey && encryption) {
+			const aesType = `aes-${this._encryptionKey.length}-cbc`;
+			const encrypt = createCipheriv(aesType, this._encryptionKey, Buffer.allocUnsafe(16));
+			contentBuffer = await drainStream(content.pipe(encrypt), length + AES_MAX_LARGER_SIZE, headerSize, shaSize);
+		} else {
+			contentBuffer = await drainStream(content, length, headerSize, shaSize);
+		}
+
+		// dataStartAt = headerSize
+		const dataEndAt = contentBuffer.length - shaSize;
+		const dataSize = contentBuffer.length - shaSize - headerSize;
+
+		if (this._encryptionKey && encryption) {
+			contentBuffer.writeUInt8(1, 0);
+		} else {
+			contentBuffer.writeUInt8(0, 0);
+		}
+		contentBuffer.writeUInt32LE(dataSize, 1);
+
+		createHash('sha256').update(contentBuffer.slice(0, dataEndAt)).digest()
+			.copy(contentBuffer, contentBuffer.length - shaSize);
+
+		const speed = new SpeedMeter();
+		speed.start();
+
+		const cancel = this.cancel.token;
+
+		const chunkPacker = new ISPFlashPacker(baseAddress, length, async (bytesProcessed: number): Promise<void> => {
+			const op = await this.expect(ISPOperation.ISP_FLASH_WRITE);
+			if (op.op === ISPOperation.ISP_FLASH_WRITE && op.err === ISPError.ISP_RET_OK) {
+				speed.setCurrent(bytesProcessed);
+				if (report) {
+					report.message(localize('serial.flash.writing', 'Writing Program @ {0}', speed.getSpeed()));
+					report.progress(bytesProcessed);
+				}
+			} else {
+				throw this.ispError(op);
+			}
+			if (cancel.isCancellationRequested) {
+				throw new Error('user cancel');
+			}
+		});
+
+		const splitter = new ChunkBuffer(DATA_LEN_WRITE_FLASH);
+		splitter.pipe(chunkPacker)
+			.pipe(this.streamChain);
+		splitter.end(contentBuffer);
+
+		await chunkPacker.finishPromise();
+
+		speed.complete();
+		this.logger.info('  - speed: %s', speed.getSpeed());
+	}
+
+	private async flashBootGreeting() {
+		let received = false;
+
+		const p = this.expect(ISPOperation.ISP_FLASH_GREETING).finally(() => {
+			received = true;
+		});
+
+		let i = 0;
+		while (!received) {
+			this.logger.info(' - Greeting %s.', ++i);
+			this.send(ISPOperation.ISP_FLASH_GREETING, Buffer.alloc(3));
+			await timeout(300);
+		}
+
+		return p.then(() => {
+			this.logger.info('   - got hello.');
+		}, (e) => {
+			this.logger.error('   - no hello:' + (e ? e.message || e : 'no message'));
+			throw e;
+		});
+	}
+
+	async executeBootloader(report: SubProgress) {
+		await this.executeProgram(PROGRAM_BASE);
+
+		report.message('flashing program init...');
+		await Promise.race<any>([this.abortedPromise, this.selectFlashTarget()]);
+
+		if (this._baudRate !== CHIP_BAUDRATE) {
+			report.message(`update baudrate to ${this._baudRate}...`);
+			await Promise.race<any>([this.abortedPromise, this.changeBaudRate()]);
+		}
+	}
+
+	async executeProgram(address = PROGRAM_BASE) {
+		this.logger.info('Boot from memory: 0x%s.', address.toString(16));
+		const buff = Buffer.allocUnsafe(8);
+		buff.writeUInt32LE(address, 0);
+		buff.writeUInt32LE(0, 4);
+		this.send(ISPOperation.ISP_MEMORY_BOOT, buff);
+		await timeout(500);
+		this.logger.info('  boot command sent');
+
+		await this.flashBootGreeting();
+	}
+
+	async selectFlashTarget() {
+		this.logger.info('Select flash: %s', FlashTargetType[this._targetType]);
+
+		const buff = Buffer.allocUnsafe(8);
+		buff.writeUInt32LE(this._targetType, 0);
+		buff.writeUInt32LE(0, 4);
+
+		this.send(ISPOperation.ISP_FLASH_SELECT, buff);
+
+		await this.expect(ISPOperation.ISP_FLASH_SELECT);
+		this.logger.info(' - Complete.');
+	}
+
+	async flashBootLoader(report: SubProgress) {
+		this.logger.info('Writing boot loader to memory (at 0x%s)', PROGRAM_BASE.toString(16));
+		await this.writeMemoryChunks(this.bootLoaderStream, PROGRAM_BASE, this.bootLoaderStreamSize, report);
+		this.logger.info(' - Complete.');
+	}
+
+	async changeBaudRate(br = this._baudRate) {
+		br = parseInt(br as any);
+		this.logger.info('Change baud rate to:', br);
+
+		const buff = Buffer.allocUnsafe(12);
+		buff.writeUInt32LE(0, 0);
+		buff.writeUInt32LE(4, 4);
+		buff.writeUInt32LE(br, 8);
+
+		this.send(ISPOperation.ISP_CHANGE_BAUD_RATE, buff);
+
+		this.logger.info(' - Change connection baudrate...');
+		await this.serialPortService.updatePortBaudRate(this.device, br);
+		// this.streamChain.restartPipe();
+
+		// this.logger.info(' - wait for ISP_CHANGE_BAUD_RATE (0x%s)...', ISPOperation.ISP_CHANGE_BAUD_RATE.toString(16));
+		// await this.expect(ISPOperation.ISP_CHANGE_BAUD_RATE);
+
+		await this.flashBootGreeting();
+
+		this.logger.info(' - Complete.');
+	}
+
+	async flashMainProgram(report: SubProgress) {
+		this.logger.info('Downloading program to flash');
+		await this.writeFlashProgramChunks(this.applicationStream, 0, this.applicationStreamSize, report);
+		this.logger.info(' - Complete.');
+	}
+
+	async flashData(stream: ReadStream, address: number, reverse4Bytes: boolean, report: SubProgress) {
+		const length = await this.getSize(stream);
+		this.logger.info(`Downloading data to flash: size=${length} address=${stringifyMemoryAddress(address)}`);
+		const speed = new SpeedMeter();
+
+		speed.start();
+		const cancel = this.cancel.token;
+		const chunkPacker = new ISPFlashPacker(address, length, async (bytesProcessed: number): Promise<void> => {
+			const op = await this.expect(ISPOperation.ISP_FLASH_WRITE);
+			if (op.op === ISPOperation.ISP_FLASH_WRITE && op.err === ISPError.ISP_RET_OK) {
+				speed.setCurrent(bytesProcessed);
+				if (report) {
+					report.message(localize('serial.flash.writing', 'Writing Flash @ {0}', speed.getSpeed()));
+					report.progress(bytesProcessed);
+				}
+			} else {
+				throw this.ispError(op);
+			}
+			if (cancel.isCancellationRequested) {
+				throw new Error('user cancel');
+			}
+		});
+
+		let source = reverse4Bytes ?
+			stream.pipe(new FourBytesReverser()) :
+			stream;
+
+		source
+			.pipe(new ChunkBuffer(DATA_LEN_WRITE_FLASH))
+			.pipe(chunkPacker)
+			.pipe(this.streamChain);
+
+		await chunkPacker.finishPromise();
+
+		speed.complete();
+		this.logger.info('  - speed: %s', speed.getSpeed());
+
+		this.logger.info(' - Complete.');
+	}
+
+	rebootNormalMode() {
+		return this.serialPortService.sendReboot(this.device);
+	}
+
+	async rebootISPMode() {
+		this.logger.info('Greeting');
+		try {
+			this.logger.info('try reboot as KD233');
+			await this.serialPortService.sendRebootISPKD233(this.device);
+			this.send(ISPOperation.ISP_NOP, Buffer.alloc(3));
+			await this.setTimeout('greeting kd233 board', 1000, this.expect(ISPOperation.ISP_NOP));
+			this.logger.info(' - Hello.');
+			return;
+		} catch (e) {
+			this.logger.info('Failed to boot as KD233: %s', e.message);
+		}
+		try {
+			this.logger.info('try reboot as other board');
+			await this.serialPortService.sendRebootISPDan(this.device);
+			this.send(ISPOperation.ISP_NOP, Buffer.alloc(3));
+			await this.setTimeout('greeting other board', 1000, this.expect(ISPOperation.ISP_NOP));
+			this.logger.info(' - Hello.');
+			return;
+		} catch (e) {
+			this.logger.info('Failed to boot as other board: %s', e.message);
+			throw e;
+		}
+	}
+
+	protected logGarbage({ content, source }: GarbageData) {
+		if (typeof content === 'object' && !Buffer.isBuffer(content)) {
+			console.warn('[%s] Unexpected data: ', source, Buffer.from(content));
+			this.logger.error('[%s] Unexpected data: %j', source, content);
+		} else {
+			console.warn('[%s] Unexpected data: ', source, content);
+			if (source === UnQuotedBuffer['name']) {
+				this.logger.write('%s', content);
+			} else {
+				this.logger.error('[%s] Unexpected data: %s', source, (content as any).toString('hex'));
+			}
+		}
+	}
+
+	protected send(op: ISPOperation, data: Buffer, raw = false) {
+		this.streamChain.write({
+			op,
+			buffer: data,
+			raw,
+		});
+	}
+
+	protected setTimeout(what: string, ms: number, promise: Promise<any>) {
+		const to = setTimeout(() => {
+			console.error('timeout');
+			deferred.error(new Error('Timeout ' + what)).catch();
+		}, ms);
+		console.log('timeout %s registered', to);
+		const deferred = this.deferred;
+		return promise.then(() => {
+			console.log('timeout %s cancel(success)', to);
+			clearTimeout(to);
+		}, (e) => {
+			console.log('timeout %s cancel(reject %s)', to, e.message);
+			clearTimeout(to);
+			throw e;
+		});
+	}
+
+	protected expect(what: ISPOperation | ISPOperation[], ret: ISPError = ISPError.ISP_RET_OK): Promise<any> {
+		if (this.deferred) {
+			console.warn('deferred already exists: ', this.deferredWait.map(e => ISPOperation[e]));
+			throw new Error('program error: expect.');
+		}
+		const self = this.deferred = new DeferredPromise<ISPResponse>();
+		this.deferredWait = Array.isArray(what) ? what : [what];
+		this.deferredReturn = ret;
+		this.deferred.p.catch(() => {
+			if (this.deferred === self) {
+				delete this.deferred;
+			}
+		});
+		return this.deferred.p;
+	}
+
+	protected handleData(data: ISPResponse) {
+		// console.log('[OUTPUT] op: %s, err: %s | %s', ISPOperation[data.op], ISPError[data.err], data.text);
+		if (data.op === ISPOperation.ISP_DEBUG_INFO) {
+			this.logger.log(data.text);
+			return;
+		}
+		const deferred = this.deferred;
+		delete this.deferred;
+		if (deferred) {
+			if (this.deferredWait && this.deferredWait.indexOf(data.op) !== -1) {
+				if (this.deferredReturn === undefined || data.err === this.deferredReturn) {
+					deferred.complete(data).catch();
+				} else {
+					deferred.error(this.ispError(data)).catch();
+				}
+			} else {
+				let op = ISPOperation[data.op];
+				if (op === undefined) {
+					op = '0x' + data.op.toString(16);
+				}
+				const exp = (this.deferredWait || []).map(e => ISPOperation[e]).join(', ');
+
+				deferred.error(new Error(`Unexpected response [${op}] from chip (expect ${exp}).`));
+			}
+		} else {
+			console.warn('not expect any data: %O', data);
+			this.logger.warn('%j', data);
+		}
+	}
+
+	private ispError(data: ISPResponse) {
+		let message = ISPError[data.err];
+		if (!message) {
+			message = '0x' + (data.err as number).toString(16);
+		}
+		if (data.text) {
+			message += ` - ${data.text}`;
+		}
+		return new Error(`Error from chip: ${message}`);
+	}
+
+	protected handleError(error: Error) {
+		this.abort(error);
+	}
+
+	public abort(error: Error) {
+		this.logger.info('abort operation with %s', error.message);
+		if (this.aborted) {
+			return;
+		}
+		this.aborted = error || new Error('Unknown Error');
+		this.cancel.cancel();
+		this.streamChain.dispose();
+	}
+
+	protected async getSize(stream: ReadStream) {
+		return (await lstat(stream.path as string)).size;
+	}
+
+	public async run(report: SubProgress) {
+		const p = this._run(report);
+		p.catch((err) => {
+			console.warn(err.stack);
+			this.logger.error(err.stack);
+		});
+		return p;
+	}
+
+	public async _run(report: SubProgress) {
+		this.applicationStreamSize = await this.getSize(this.applicationStream);
+		this.bootLoaderStreamSize = await this.getSize(this.bootLoaderStream);
+		report.splitWith([
+			0, // greeting...
+			this.bootLoaderStreamSize, // flashing bootloader...
+			0, // booting up bootloader...
+			this.applicationStreamSize,
+		]);
+
+		report.message('greeting...');
+		await Promise.race<any>([this.abortedPromise, this.rebootISPMode()]);
+		report.next();
+
+		report.message('flashing bootloader...');
+		await Promise.race<any>([this.abortedPromise, this.flashBootLoader(report)]);
+		report.next();
+
+		report.message('booting up bootloader...');
+		await Promise.race<any>([this.abortedPromise, this.executeBootloader(report)]);
+		report.next();
+
+		report.message('flashing program...');
+		await Promise.race<any>([this.abortedPromise, this.flashMainProgram(report)]);
+
+		report.message('reboot to run the program...');
+		await Promise.race<any>([this.abortedPromise, this.rebootNormalMode()]);
+
+		this.logger.info('finished.');
+	}
+}

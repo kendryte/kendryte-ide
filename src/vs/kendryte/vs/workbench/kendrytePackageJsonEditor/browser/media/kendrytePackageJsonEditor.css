@@ -1,41 +1,44 @@
-.kendryte-package-json-editor > .monaco-scrollable-element {
+.kendryte-package-json-editor {
+  display: block;
   height: 100%; }
-  .kendryte-package-json-editor > .monaco-scrollable-element > .wrap {
-    height: 100%;
-    padding: 12px 0;
-    max-width: 800px;
-    margin: auto;
-    overflow-x: visible;
-    overflow-y: scroll;
-    box-sizing: border-box; }
-    .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > hr {
-      margin-bottom: 12px; }
-    .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section {
-      display: flex;
-      margin-bottom: 1em; }
-      .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .left {
-        width: 30%;
-        max-width: 250px; }
-        .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .left > h3 {
-          margin-top: 0; }
-      .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right {
-        position: relative;
-        flex: 1; }
-        .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right textarea.input {
-          width: 100%; }
-        .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control {
-          display: flex;
-          flex-direction: row; }
-          .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control > * {
-            flex: 0;
-            white-space: nowrap;
-            margin-right: 0.3em; }
-            .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control > * .icon {
-              margin-right: 2px; }
-    .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > code.json {
-      margin-top: 15px;
-      white-space: pre;
-      width: 100%;
-      opacity: 0.88; }
+  .kendryte-package-json-editor > .monaco-scrollable-element {
+    height: 100%; }
+    .kendryte-package-json-editor > .monaco-scrollable-element > .wrap {
+      height: 100%;
+      padding: 12px 0;
+      max-width: 800px;
+      margin: auto;
+      overflow-x: visible;
+      overflow-y: scroll;
+      box-sizing: border-box; }
+      .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > hr {
+        margin-bottom: 12px; }
+      .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section {
+        display: flex;
+        margin-bottom: 1em; }
+        .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .left {
+          width: 30%;
+          max-width: 250px; }
+          .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .left > h3 {
+            margin-top: 0; }
+        .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right {
+          position: relative;
+          flex: 1; }
+          .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right textarea.input {
+            width: 100%; }
+          .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control {
+            display: flex;
+            flex-direction: row; }
+            .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control > * {
+              flex: 0;
+              white-space: nowrap;
+              margin-right: 0.3em; }
+              .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control > * .icon {
+                margin-right: 2px; }
+      .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > code.json {
+        margin-top: 15px;
+        white-space: pre;
+        width: 100%;
+        opacity: 0.88; }
 
 /*# sourceMappingURL=kendrytePackageJsonEditor.css.map */

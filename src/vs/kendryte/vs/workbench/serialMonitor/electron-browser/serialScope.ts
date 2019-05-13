@@ -81,7 +81,7 @@ export class SerialScope extends Disposable implements ISerialPrivateReplService
 		this.logService.debug('setOutput()');
 		this.serialMonitorControlService.setSingleton(xterm);
 		this.lineInputStream.setTerminal(xterm);
-		this._register(xterm.onData((data: string) => {
+		this._register(xterm.onXTermInputData((data: string) => {
 			this.acceptTypeInput(data);
 		}));
 	}

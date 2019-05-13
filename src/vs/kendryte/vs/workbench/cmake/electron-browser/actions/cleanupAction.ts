@@ -23,5 +23,7 @@ export class MaixCMakeCleanupAction extends Action {
 		this.outputService.showChannel(CMAKE_CHANNEL, true);
 
 		await this.cmakeService.cleanupMake();
+
+
 	}
 }

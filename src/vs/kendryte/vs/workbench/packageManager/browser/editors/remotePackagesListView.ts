@@ -8,7 +8,7 @@ import { IListVirtualDelegate } from 'vs/base/browser/ui/list/list';
 import { IRemotePackageInfo } from 'vs/kendryte/vs/workbench/packageManager/common/distribute';
 import { IPagedRenderer } from 'vs/base/browser/ui/list/listPaging';
 import { $, append } from 'vs/base/browser/dom';
-import { vsiconClass } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
+import { visualStudioIconClass } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
 import { Button } from 'vs/base/browser/ui/button/button';
 import { ISelectData, SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
@@ -138,7 +138,7 @@ class ListRenderer implements IPagedRenderer<IRemotePackageInfo, ITemplateData> 
 			templateData.icon.className = 'icon custom';
 			templateData.icon.style.backgroundImage = `url(${element.icon})`;
 		} else {
-			templateData.icon.className = 'icon ' + vsiconClass(element.type);
+			templateData.icon.className = 'icon ' + visualStudioIconClass(element.type);
 			templateData.icon.style.backgroundImage = '';
 		}
 		templateData.title.textContent = element.name || '';

@@ -8,6 +8,7 @@ import { URI, UriComponents } from 'vs/base/common/uri';
 import { IChannel } from 'vs/base/parts/ipc/common/ipc';
 import { IExtensionDescription } from 'vs/platform/extensions/common/extensions';
 import { IRemoteAgentEnvironment } from 'vs/platform/remote/common/remoteAgentEnvironment';
+import { IDiagnosticInfoOptions, IDiagnosticInfo } from 'vs/platform/diagnostics/common/diagnosticsService';
 
 export interface IGetEnvironmentDataArguments {
 	language: string;
@@ -19,7 +20,7 @@ export interface IRemoteAgentEnvironmentDTO {
 	pid: number;
 	appRoot: UriComponents;
 	appSettingsHome: UriComponents;
-	appSettingsPath: UriComponents;
+	settingsPath: UriComponents;
 	logsPath: UriComponents;
 	extensionsPath: UriComponents;
 	extensionHostLogsPath: UriComponents;
@@ -27,7 +28,6 @@ export interface IRemoteAgentEnvironmentDTO {
 	userHome: UriComponents;
 	extensions: IExtensionDescription[];
 	os: platform.OperatingSystem;
-	syncExtensions: boolean;
 }
 
 export class RemoteExtensionEnvironmentChannelClient {
@@ -46,16 +46,23 @@ export class RemoteExtensionEnvironmentChannelClient {
 					pid: data.pid,
 					appRoot: URI.revive(data.appRoot),
 					appSettingsHome: URI.revive(data.appSettingsHome),
-					appSettingsPath: URI.revive(data.appSettingsPath),
+					settingsPath: URI.revive(data.settingsPath),
 					logsPath: URI.revive(data.logsPath),
 					extensionsPath: URI.revive(data.extensionsPath),
 					extensionHostLogsPath: URI.revive(data.extensionHostLogsPath),
 					globalStorageHome: URI.revive(data.globalStorageHome),
 					userHome: URI.revive(data.userHome),
 					extensions: data.extensions.map(ext => { (<any>ext).extensionLocation = URI.revive(ext.extensionLocation); return ext; }),
-					os: data.os,
-					syncExtensions: data.syncExtensions
+					os: data.os
 				};
 			});
+	}
+
+	getDiagnosticInfo(options: IDiagnosticInfoOptions): Promise<IDiagnosticInfo> {
+		return this.channel.call<IDiagnosticInfo>('getDiagnosticInfo', options);
+	}
+
+	disableTelemetry(): Promise<void> {
+		return this.channel.call<void>('disableTelemetry');
 	}
 }

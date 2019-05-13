@@ -4,7 +4,7 @@ import { registerActionWithKey } from 'vs/kendryte/vs/workbench/actionRegistry/c
 import { ClearTerminalAction } from 'vs/workbench/contrib/terminal/browser/terminalActions';
 import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
 import { Action } from 'vs/base/common/actions';
-import { SerialPortActionCategory } from 'vs/kendryte/vs/base/common/menu/serialPort';
+import { ACTION_CATEGORY_SERIAL_PORT } from 'vs/kendryte/vs/base/common/menu/serialPort';
 
 export class SerialPortClearAction extends Action {
 	public static readonly ID = SERIAL_MONITOR_ACTION_CLEAR;
@@ -24,7 +24,7 @@ export class SerialPortClearAction extends Action {
 	}
 }
 
-registerActionWithKey(SerialPortActionCategory, SerialPortClearAction, {
+registerActionWithKey(ACTION_CATEGORY_SERIAL_PORT, SerialPortClearAction, {
 	primary: KeyMod.CtrlCmd | KeyCode.KEY_K,
 	linux: { primary: KeyCode.Unknown },
 }, CONTEXT_IN_SERIAL_PORT_OUTPUT);

@@ -2,7 +2,7 @@ import { IDisposable } from 'vs/base/common/lifecycle';
 import { Event } from 'vs/base/common/event';
 
 export interface IMyDisposable extends IDisposable {
-	readonly onBeforeDispose: Event<void>;
+	readonly onDispose: Event<void>;
 }
 
 export class DisposableSet<T extends IMyDisposable> implements IDisposable, Set<T> {
@@ -10,7 +10,7 @@ export class DisposableSet<T extends IMyDisposable> implements IDisposable, Set<
 	private readonly _set: Set<T> = new Set();
 
 	add(value: T): this {
-		value.onBeforeDispose(() => {
+		value.onDispose(() => {
 			this.simpleDelete(value);
 		});
 		this._set.add(value);

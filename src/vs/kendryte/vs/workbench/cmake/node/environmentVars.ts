@@ -3,7 +3,7 @@ import { isWindows } from 'vs/base/common/platform';
 import { normalize } from 'path';
 import { PathListSep, ShellExportCommand } from 'vs/kendryte/vs/base/common/platformEnv';
 import { writeFile } from 'vs/base/node/pfs';
-import { resolvePath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 
 export function getEnvKey(upperKey: string) {
 	for (const key in process.env) {
@@ -24,10 +24,7 @@ export function hideEnv(env: any, watchKey: string) {
 export function getEnvironment(nodePathService: INodePathService) {
 	const env: any = {};
 
-	const myPath: string[] = [
-		nodePathService.getPackagesPath('cmake/bin'),
-		nodePathService.getToolchainBinPath(),
-	];
+	const myPath: string[] = nodePathService.kendrytePaths();
 
 	if (isWindows) {
 		const sysRoot = process.env.SystemRoot || 'C:\\Windows';

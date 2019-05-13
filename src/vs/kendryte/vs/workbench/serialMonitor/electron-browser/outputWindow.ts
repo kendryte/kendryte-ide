@@ -1,11 +1,10 @@
-import { Disposable } from 'vs/base/common/lifecycle';
+import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { Terminal as XTermTerminal } from 'vscode-xterm';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
-import { IEditorOptions } from 'vs/editor/common/config/editorOptions';
 import { IConfigurationChangeEvent, IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import * as nls from 'vs/nls';
-import { $, addDisposableListener, append, Dimension } from 'vs/base/browser/dom';
+import { addDisposableListener, Dimension } from 'vs/base/browser/dom';
 import { Emitter, Event } from 'vs/base/common/event';
 import { isMacintosh } from 'vs/base/common/platform';
 import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService';
@@ -14,8 +13,6 @@ import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IAction } from 'vs/base/common/actions';
 import { ContextSubMenu } from 'vs/base/browser/contextmenu';
-import { memoize } from 'vs/base/common/decorators';
-import { OutputWindowFind } from 'vs/kendryte/vs/workbench/serialMonitor/electron-browser/outputWindowFind';
 import { SerialPortCopyAction, SerialPortPasteAction } from 'vs/kendryte/vs/workbench/serialMonitor/electron-browser/actions/copyPaste';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { SerialPortClearAction } from 'vs/kendryte/vs/workbench/serialMonitor/electron-browser/actions/clear';
@@ -23,7 +20,6 @@ import { Separator } from 'vs/base/browser/ui/actionbar/actionbar';
 import { SerialPortShowFindAction } from 'vs/kendryte/vs/workbench/serialMonitor/electron-browser/actions/find';
 import { XtermScrollbackBuffer } from 'vs/kendryte/vs/workbench/serialMonitor/electron-browser/iobuffers/output';
 import { EscapeStringClearScreen } from 'vs/kendryte/vs/base/node/terminalConst';
-import { TerminalWidgetManager } from 'vs/workbench/contrib/terminal/browser/terminalWidgetManager';
 import { TerminalConfigHelper } from 'vs/workbench/contrib/terminal/browser/terminalConfigHelper';
 import { TerminalInstance } from 'vs/workbench/contrib/terminal/browser/terminalInstance';
 import { linuxDistro } from 'vs/workbench/contrib/terminal/node/terminal';
@@ -31,168 +27,195 @@ import { ExtendMap } from 'vs/kendryte/vs/base/common/extendMap';
 import { SerialPortBaseBinding } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { ILocalOptions } from 'vs/kendryte/vs/workbench/serialMonitor/common/localSettings';
 import { CONTEXT_IN_SERIAL_PORT_OUTPUT, CONTEXT_SERIAL_PORT_HAS_SELECT } from 'vs/kendryte/vs/workbench/serialMonitor/common/actionId';
+import { ITerminalInstanceService } from 'vs/workbench/contrib/terminal/browser/terminal';
+import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
+import { IPanelService } from 'vs/workbench/services/panel/common/panelService';
+import { ILogService } from 'vs/platform/log/common/log';
+import { IStorageService } from 'vs/platform/storage/common/storage';
+import { IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
+import { OutputWindowFind } from 'vs/kendryte/vs/workbench/serialMonitor/electron-browser/outputWindowFind';
 
-let Terminal: typeof XTermTerminal;
+interface IContextMenuCache {
+	actions: (IAction | ContextSubMenu)[];
+	copyButton: IAction;
+}
 
-export class OutputXTerminal extends Disposable {
-	private _xterm: XTermTerminal;
-	private _xtermElement: HTMLDivElement;
-	protected _widgetManager: TerminalWidgetManager;
-	protected _configHelper: TerminalConfigHelper;
+export class OutputXTerminal extends TerminalInstance {
+	protected _toDisposable: IDisposable[];
+	protected _isLifecycleDisposed: boolean;
 
-	protected _isVisible = true;
-	protected _wrapperElement: HTMLElement;
+	private terminal: XTermTerminal;
+	private elementWrapper: HTMLDivElement;
+	private parentDisposables: IDisposable[];
 
-	protected scrollbackList = new ExtendMap<NodeJS.WritableStream, XtermScrollbackBuffer>();
-	private currentInstance?: NodeJS.WritableStream;
+	protected scrollbackList: ExtendMap<NodeJS.WritableStream, XtermScrollbackBuffer>;
+	protected readonly myConfigHelper: TerminalConfigHelper;
 
 	private last: XtermScrollbackBuffer;
 	private encoding: ILocalOptions['outputCharset'];
 	private translateLineFeed: string;
 	private hexLineFeed: boolean;
-	private userInputEnabled: boolean = false;
-	private _cancelContextMenu: boolean = false;
+	private userInputEnabled: boolean;
+	private _cancelContextMenu: boolean;
 	private dimension: Dimension;
-	private _hasSelectContext: IContextKey<boolean>;
-	private _hasFocusContext: IContextKey<boolean>;
+	private currentInstance?: NodeJS.WritableStream;
+	protected _hasFocusContext: IContextKey<boolean>;
 
-	private readonly _onData = new Emitter<string>();
-	public readonly onData = this._onData.event;
+	private readonly _onXTermInputData: Emitter<string>;
+	public readonly onXTermInputData: Event<string>;
 
-	private readonly _onDimensionsChanged: Emitter<void> = new Emitter<void>();
-	public get onDimensionsChanged(): Event<void> { return this._onDimensionsChanged.event; }
+	private readonly notificationService: INotificationService;
+	private readonly clipboardService: IClipboardService;
+	private readonly configurationService: IConfigurationService;
+	private readonly instantiationService: IInstantiationService;
+	private readonly contextMenuService: IContextMenuService;
+	private xtermReadyPromise: Promise<void>;
 
 	constructor(
-		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@IThemeService private readonly _themeService: IThemeService,
-		@IConfigurationService private readonly _configurationService: IConfigurationService,
-		@IContextMenuService private readonly _contextMenuService: IContextMenuService,
-		@INotificationService private readonly _notificationService: INotificationService,
-		@IClipboardService private readonly _clipboardService: IClipboardService,
-		@IContextKeyService _contextKeyService: IContextKeyService,
+		container: HTMLDivElement,
+		@ITerminalInstanceService terminalInstanceService: ITerminalInstanceService,
+		@IContextKeyService contextKeyService: IContextKeyService,
+		@IKeybindingService keybindingService: IKeybindingService,
+		@INotificationService notificationService: INotificationService,
+		@IPanelService panelService: IPanelService,
+		@IInstantiationService instantiationService: IInstantiationService,
+		@IClipboardService clipboardService: IClipboardService,
+		@IThemeService themeService: IThemeService,
+		@IConfigurationService configurationService: IConfigurationService,
+		@ILogService logService: ILogService,
+		@IStorageService storageService: IStorageService,
+		@IAccessibilityService accessibilityService: IAccessibilityService,
+		@IContextMenuService contextMenuService: IContextMenuService,
 	) {
-		super();
+		const configHelper = instantiationService.createInstance(TerminalConfigHelper, linuxDistro);
+		configHelper.panelContainer = container;
+		const terminalFocusContextKey = CONTEXT_IN_SERIAL_PORT_OUTPUT.bindTo(contextKeyService);
+		const terminalHasTextContextKey = CONTEXT_SERIAL_PORT_HAS_SELECT.bindTo(contextKeyService);
+		super(
+			terminalFocusContextKey,
+			configHelper,
+			container,
+			{ isRendererOnly: true },
+			terminalInstanceService,
+			contextKeyService,
+			keybindingService,
+			notificationService,
+			panelService,
+			instantiationService,
+			clipboardService,
+			themeService,
+			configurationService,
+			logService,
+			storageService,
+			accessibilityService,
+		);
 
-		this._configHelper = instantiationService.createInstance(TerminalConfigHelper, linuxDistro);
+		delete (this as any)._terminalHasTextContextKey;
 		Object.assign(this, {
-			_getDimension: TerminalInstance.prototype['_getDimension'],
-			_safeSetOption: TerminalInstance.prototype['_safeSetOption'],
-			_setCursorBlink: TerminalInstance.prototype['_setCursorBlink'],
-			_setCursorStyle: TerminalInstance.prototype['_setCursorStyle'],
-			_setCommandsToSkipShell: TerminalInstance.prototype['_setCommandsToSkipShell'],
-			_setEnableBell: TerminalInstance.prototype['_setEnableBell'],
+			_terminalHasTextContextKey: terminalHasTextContextKey,
 		});
 
-		this._hasSelectContext = CONTEXT_SERIAL_PORT_HAS_SELECT.bindTo(_contextKeyService);
-		this._hasFocusContext = CONTEXT_IN_SERIAL_PORT_OUTPUT.bindTo(_contextKeyService);
+		this.myConfigHelper = configHelper;
+		this.scrollbackList = new ExtendMap<NodeJS.WritableStream, XtermScrollbackBuffer>();
+		this.userInputEnabled = false;
+		this._cancelContextMenu = false;
+		this._onXTermInputData = new Emitter<string>();
+		this.onXTermInputData = this._onXTermInputData.event;
+
+		this.notificationService = notificationService;
+		this.clipboardService = clipboardService;
+		this.configurationService = configurationService;
+		this.instantiationService = instantiationService;
+		this.contextMenuService = contextMenuService;
+
+		this._hasFocusContext = CONTEXT_IN_SERIAL_PORT_OUTPUT.bindTo(contextKeyService);
+
+		this.parentDisposables = [];
+		this._toDisposable = [];
+
+		this.setVisible(true);
 	}
 
-	public async attachToElement(container: HTMLElement) {
-		this._configHelper.panelContainer = container;
-		const out1 = append(container, $('.integrated-terminal'));
-		const out2 = append(out1, $('.terminal-outer-container'));
-		this._wrapperElement = append(out2, $('.terminal-wrapper'));
-		this._xtermElement = append(this._wrapperElement, $('div'));
-
-		await this.createXterm();
-
-		this._wrapperElement.style.bottom = '2px';
-
-		this._widgetManager = new TerminalWidgetManager(this._wrapperElement);
+	public dispose(): void {
+		this._isLifecycleDisposed = true;
+		super.dispose();
+		this._toDisposable = dispose(this._toDisposable);
 	}
 
-	async createXterm() {
-		if (!Terminal) {
-			Terminal = (await import('vscode-xterm')).Terminal;
-			// Enable xterm.js addons
-			Terminal.applyAddon(require.__$__nodeRequire('vscode-xterm/lib/addons/search/search'));
-			Terminal.applyAddon(require.__$__nodeRequire('vscode-xterm/lib/addons/webLinks/webLinks'));
-			Terminal.applyAddon(require.__$__nodeRequire('vscode-xterm/lib/addons/winptyCompat/winptyCompat'));
-			// Localize strings
-			Terminal.strings.blankLine = nls.localize('terminal.integrated.a11yBlankLine', 'Blank line');
-			Terminal.strings.promptLabel = nls.localize('terminal.integrated.a11yPromptLabel', 'Terminal input');
-			Terminal.strings.tooMuchOutput = nls.localize('terminal.integrated.a11yTooMuchOutput', 'Too much output to announce, navigate to rows manually to read');
+	protected _register<T extends IDisposable>(t: T): T {
+		if (this._isLifecycleDisposed) {
+			console.warn('Registering disposable on object that has already been disposed.');
+			t.dispose();
+		} else {
+			this._toDisposable.push(t);
 		}
-		const font = this._configHelper.getFont(undefined, true);
-		const config = this._configHelper.config;
-		const accessibilitySupport = this._configurationService.getValue<IEditorOptions>('editor').accessibilitySupport;
 
-		this._xterm = new Terminal({
-			scrollback: config.scrollback,
-			theme: TerminalInstance.prototype['_getXtermTheme'].call(this),
-			drawBoldTextInBrightColors: config.drawBoldTextInBrightColors,
-			fontFamily: font.fontFamily,
-			fontWeight: config.fontWeight,
-			fontWeightBold: config.fontWeightBold,
-			fontSize: font.fontSize,
-			letterSpacing: font.letterSpacing,
-			lineHeight: font.lineHeight,
-			bellStyle: config.enableBell ? 'sound' : 'none',
-			screenReaderMode: accessibilitySupport === 'on',
-			macOptionIsMeta: config.macOptionIsMeta,
-			macOptionClickForcesSelection: config.macOptionClickForcesSelection,
-			rightClickSelectsWord: config.rightClickBehavior === 'selectWord',
-			// TODO: Guess whether to use canvas or dom better
-			rendererType: config.rendererType === 'auto' ? 'canvas' : config.rendererType,
-			// TODO: Remove this once the setting is removed upstream
-			experimentalCharAtlas: 'dynamic',
-		});
-
-		// this._xterm.on('linefeed', () => this._onLineFeed());
-
-		// TODO: process stdio
-
-		// this._xterm.on('focus', () => this._onFocus.fire(this));
-
-		this._register(this._themeService.onThemeChange(theme => TerminalInstance.prototype['_getXtermTheme'].call(this, theme)));
-
-		this._xterm.open(this._xtermElement);
-
-		this._register(this._xterm);
-
-		this._register(addDisposableListener(this._wrapperElement, 'mousedown', (event: MouseEvent) => this.handleMouseDown(event)));
-		this._register(addDisposableListener(this._wrapperElement, 'mouseup', (event: MouseEvent) => this.handleMouseUp(event)));
-		this._register(addDisposableListener(this._wrapperElement, 'contextmenu', (event: MouseEvent) => this.handleContextMenu(event)));
-		this._register(this._configurationService.onDidChangeConfiguration(e => this.reloadConfig(e)));
-		this._register(this._xterm.addDisposableListener('data', (data: string) => this.handleInput(data)));
-
-		this.registerFocusEvents();
-
-		TerminalInstance.prototype.updateConfig.call(this);
+		return t;
 	}
 
-	@memoize
-	public get findWidget() {
-		return this.instantiationService.createInstance(OutputWindowFind, this._wrapperElement, this._xterm);
+	_createXterm(): Promise<void> {
+		if (this.xtermReadyPromise) {
+			return this.xtermReadyPromise;
+		}
+		return this.xtermReadyPromise = new Promise((resolve, reject) => {
+			this.__createXterm().then(resolve, reject);
+		});
+	}
+
+	async __createXterm(): Promise<void> {
+		await super._createXterm();
+		this.terminal = (this as any)._xterm;
+
+		this._register(this.onRendererInput((data: string) => this.handleInput(data)));
+
+		// this.registerFocusEvents();
+	}
+
+	reattachToElement(container: HTMLElement): void {
+		if (!this.elementWrapper) {
+			throw new Error('The terminal instance has not been attached to a container yet');
+		}
+		super.reattachToElement(container);
+		this._attach();
+	}
+
+	_attachToElement(container: HTMLElement): void {
+		// debugger;
+		if (this.elementWrapper) {
+			throw new Error('The terminal instance has already been attached to a container');
+		}
+		super._attachToElement(container);
+		this._attach();
+	}
+
+	private _attach() {
+		delete this._findWidget;
+		delete this.elementWrapper;
+		this._createXterm().then(() => {
+			// console.error(this.myConfigHelper.panelContainer);
+			this.elementWrapper = (this as any)._wrapperElement;
+			this.parentDisposables = dispose(this.parentDisposables);
+			this.parentDisposables.push(addDisposableListener(this.myConfigHelper.panelContainer, 'mousedown', (event: MouseEvent) => this.handleMouseDown(event)));
+			this.parentDisposables.push(addDisposableListener(this.myConfigHelper.panelContainer, 'mouseup', (event: MouseEvent) => this.handleMouseUp(event)));
+			this.parentDisposables.push(addDisposableListener(this.myConfigHelper.panelContainer, 'contextmenu', (event: MouseEvent) => this.handleContextMenu(event)));
+		});
 	}
 
 	public copySelection(): void {
-		if (this._xterm.hasSelection()) {
-			this._clipboardService.writeText(this._xterm.getSelection());
+		if (this.terminal.hasSelection()) {
+			this.clipboardService.writeText(this.terminal.getSelection());
 		} else {
-			this._notificationService.warn(nls.localize('terminal.integrated.copySelection.noSelection', 'The terminal has no selection to copy'));
+			this.notificationService.warn(nls.localize('terminal.integrated.copySelection.noSelection', 'The terminal has no selection to copy'));
 		}
 	}
 
 	public layout(dimension: Dimension = this.dimension): void {
 		this.dimension = dimension;
-
-		const terminalWidth = TerminalInstance.prototype['_evaluateColsAndRows'].call(this, dimension.width, dimension.height);
-		// console.log('layout terminalWidth=', terminalWidth);
-		if (!terminalWidth) {
-			return;
+		if (this.terminal) {
+			this.terminal.element.style.height = dimension.height + 'px';
+			super.layout(dimension);
+			// console.log('terminalInstance: layout: [%s, %s] = (%s, %s)', dimension.width, dimension.height, (this as any)._cols, (this as any)._rows);
 		}
-
-		if (this._xterm) {
-			this._xterm.element.style.width = terminalWidth + 'px';
-			this._xterm.element.style.height = dimension.height + 'px';
-		}
-
-		TerminalInstance.prototype['_resize'].call(this);
-	}
-
-	printScrollBack() {
-
 	}
 
 	handleSerialIncoming(instance: SerialPortBaseBinding | undefined) {
@@ -214,7 +237,7 @@ export class OutputXTerminal extends Disposable {
 			instance.pipe(scrollbackBuffer);
 			return scrollbackBuffer;
 		});
-		buff.pipeTo(this._xterm);
+		buff.pipeTo(this.terminal);
 		this.last = buff;
 	}
 
@@ -234,6 +257,10 @@ export class OutputXTerminal extends Disposable {
 	}
 
 	handleUserType(enabled: boolean) {
+		if (this.userInputEnabled === enabled) {
+			return;
+		}
+		delete this._contextMenuCache;
 		this.userInputEnabled = enabled;
 	}
 
@@ -255,18 +282,19 @@ export class OutputXTerminal extends Disposable {
 	}
 
 	paste() {
-		this._xterm.focus();
+		this.terminal.focus();
 		document.execCommand('paste');
 	}
 
 	private handleContextMenu(event: MouseEvent) {
+		// console.log('context!!');
 		if (!this._cancelContextMenu) {
 			const standardEvent = new StandardMouseEvent(event);
 			const anchor: { x: number, y: number } = { x: standardEvent.posx, y: standardEvent.posy };
-			this._contextMenuService.showContextMenu({
+			this.contextMenuService.showContextMenu({
 				getAnchor: () => anchor,
 				getActions: () => this._getContextMenuActions(),
-				getActionsContext: () => this._wrapperElement,
+				getActionsContext: () => this.elementWrapper,
 			});
 		} else {
 			// console.log('cancel context');
@@ -275,9 +303,9 @@ export class OutputXTerminal extends Disposable {
 	}
 
 	private handleMouseUp(event: MouseEvent) {
-		if (this._configurationService.getValue('terminal.integrated.copyOnSelection')) {
+		if (this.configurationService.getValue('terminal.integrated.copyOnSelection')) {
 			if (event.which === 1) {
-				if (this._xterm.hasSelection()) {
+				if (this.terminal.hasSelection()) {
 					this.copySelection();
 				}
 			}
@@ -286,16 +314,16 @@ export class OutputXTerminal extends Disposable {
 
 	private handleMouseDown(event: MouseEvent) {
 		if (event.which === 3) {
-			if (this._configHelper.config.rightClickBehavior === 'copyPaste') {
-				if (this._xterm.hasSelection()) {
+			if (this.myConfigHelper.config.rightClickBehavior === 'copyPaste') {
+				if (this.terminal.hasSelection()) {
 					this.copySelection();
-					this._xterm.clearSelection();
+					this.terminal.clearSelection();
 				} else {
 					this.paste();
 				}
 				if (isMacintosh) {
 					setTimeout(() => {
-						this._xterm.clearSelection();
+						this.terminal.clearSelection();
 					}, 0);
 				}
 				this._cancelContextMenu = true;
@@ -303,33 +331,35 @@ export class OutputXTerminal extends Disposable {
 		}
 	}
 
+	private _contextMenuCache?: IContextMenuCache;
+
 	private _getContextMenuActions(): (IAction | ContextSubMenu)[] {
-		const acts = this._createContextMenuActions();
-		acts.copy.enabled = this._xterm.hasSelection();
-		acts.paste.enabled = this.userInputEnabled;
-		return acts.list;
+		if (!this._contextMenuCache) {
+			const copy = this.instantiationService.createInstance(SerialPortCopyAction, SerialPortCopyAction.ID, SerialPortCopyAction.LABEL);
+			const find = this.instantiationService.createInstance(SerialPortShowFindAction, SerialPortShowFindAction.ID, SerialPortShowFindAction.LABEL);
+			const clear = this.instantiationService.createInstance(SerialPortClearAction, SerialPortClearAction.ID, SerialPortClearAction.LABEL);
+
+			const actions: (IAction | ContextSubMenu)[] = [];
+			this._contextMenuCache = { copyButton: copy, actions: actions };
+
+			actions.push(find, new Separator(), copy);
+
+			if (this.userInputEnabled) {
+				const paste = this.instantiationService.createInstance(SerialPortPasteAction, SerialPortPasteAction.ID, SerialPortPasteAction.LABEL);
+				actions.push(paste);
+			}
+
+			// actions.push(pasteSomeFile);
+			// actions.push(saveAsFile);
+
+			actions.push(new Separator(), clear);
+
+			this._contextMenuCache.copyButton.enabled = this.terminal.hasSelection();
+		}
+		return this._contextMenuCache.actions;
 	}
 
-	@memoize
-	private _createContextMenuActions() {
-		const copy = this.instantiationService.createInstance(SerialPortCopyAction, SerialPortCopyAction.ID, SerialPortCopyAction.LABEL);
-		const paste = this.instantiationService.createInstance(SerialPortPasteAction, SerialPortPasteAction.ID, SerialPortPasteAction.LABEL);
-
-		return {
-			copy,
-			paste,
-			list: [
-				this.instantiationService.createInstance(SerialPortShowFindAction, SerialPortShowFindAction.ID, SerialPortShowFindAction.LABEL),
-				new Separator(),
-				copy,
-				paste,
-				new Separator(),
-				this.instantiationService.createInstance(SerialPortClearAction, SerialPortClearAction.ID, SerialPortClearAction.LABEL),
-			],
-		};
-	}
-
-	private reloadConfig(e: IConfigurationChangeEvent) {
+	protected reloadConfig(e: IConfigurationChangeEvent) {
 		if (e.affectsConfiguration('terminal.integrated')) {
 			TerminalInstance.prototype.updateConfig.call(this);
 		}
@@ -340,49 +370,10 @@ export class OutputXTerminal extends Disposable {
 		this.layout();
 	}
 
-	private registerFocusEvents() {
-		// copy from terminalInstance
-		this._register(addDisposableListener(this._xterm.textarea, 'focus', (event: KeyboardEvent) => {
-			// console.log('%s -> %s', '_hasFocusContext', true);
-			this._hasFocusContext.set(true);
-		}));
-		this._register(addDisposableListener(this._xterm.textarea, 'blur', (event: KeyboardEvent) => {
-			// console.log('%s -> %s', '_hasFocusContext', 'reset');
-			this._hasFocusContext.reset();
-			this._refreshSelectionContextKey();
-		}));
-		this._register(addDisposableListener(this._xterm.element, 'focus', (event: KeyboardEvent) => {
-			// console.log('%s -> %s', '_hasFocusContext', 'true');
-			this._hasFocusContext.set(true);
-		}));
-		this._register(addDisposableListener(this._xterm.element, 'blur', (event: KeyboardEvent) => {
-			// console.log('%s -> %s', '_hasFocusContext', 'reset');
-			this._hasFocusContext.reset();
-			this._refreshSelectionContextKey();
-		}));
-
-		/// these two may change after time (see terminalInstance)
-		this._register(addDisposableListener(this._xterm.element, 'mousedown', (event: KeyboardEvent) => {
-			const listener = addDisposableListener(document, 'mouseup', (event: KeyboardEvent) => {
-				setTimeout(() => this._refreshSelectionContextKey(), 0);
-				listener.dispose();
-			});
-		}));
-
-		this._register(addDisposableListener(this._xterm.element, 'keyup', (event: KeyboardEvent) => {
-			setTimeout(() => this._refreshSelectionContextKey(), 0);
-		}));
-	}
-
-	private _refreshSelectionContextKey() {
-		// console.log('%s -> %s', '_hasSelectContext', this._xterm.hasSelection());
-		this._hasSelectContext.set(this._xterm.hasSelection());
-	}
-
 	clearScreen(instance = this.currentInstance) {
 		if (instance === this.currentInstance) {
-			this._xterm.write(EscapeStringClearScreen.toString());
-			this._xterm.clear();
+			this.terminal.write(EscapeStringClearScreen.toString());
+			this.terminal.clear();
 		}
 
 		if (!instance || !this.scrollbackList.has(instance)) {
@@ -393,19 +384,40 @@ export class OutputXTerminal extends Disposable {
 		buff.flush();
 	}
 
-	focusFindWidget() {
-		const sel = this._xterm.getSelection();
-		if (this._xterm.hasSelection() && (sel.indexOf('\n') === -1)) {
-			this.findWidget.reveal(sel);
-		} else {
-			this.findWidget.reveal();
-		}
+	waitForTerminalInit() {
+		return this.xtermReadyPromise;
 	}
 
 	private handleInput(data: string) {
 		if (!this.userInputEnabled) {
 			return;
 		}
-		this._onData.fire(data);
+		this._onXTermInputData.fire(data);
+	}
+
+	private _findWidget: OutputWindowFind;
+
+	private createWidget() {
+		if (!this._findWidget && this.elementWrapper) {
+			this._findWidget = this.instantiationService.createInstance(OutputWindowFind, this.elementWrapper, this.terminal);
+		}
+		return this._findWidget;
+	}
+
+	async focusFindWidget() {
+		const sel = this.terminal.getSelection();
+		await this.createWidget();
+		if (this.terminal.hasSelection() && (sel.indexOf('\n') === -1)) {
+			this._findWidget.reveal(sel);
+		} else {
+			this._findWidget.reveal();
+		}
+	}
+}
+
+const selfDesc = Object.getOwnPropertyDescriptors(OutputXTerminal.prototype);
+for (const [key, desc] of Object.entries(Object.getOwnPropertyDescriptors(TerminalInstance.prototype))) {
+	if (!selfDesc.hasOwnProperty(key)) {
+		Object.defineProperty(OutputXTerminal.prototype, key, desc);
 	}
 }

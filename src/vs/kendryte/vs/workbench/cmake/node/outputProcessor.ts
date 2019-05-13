@@ -8,7 +8,7 @@ import { normalize } from 'path';
 import { isAbsolute } from 'vs/base/common/path';
 import { isWindows } from 'vs/base/common/platform';
 import { escapeRegExpCharacters } from 'vs/base/common/strings';
-import { normalizePosixPath } from 'vs/kendryte/vs/base/node/resolvePath';
+import { normalizePosixPath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { IKendryteStatusControllerService } from 'vs/kendryte/vs/workbench/bottomBar/common/type';
 import { ExtendMap } from 'vs/kendryte/vs/base/common/extendMap';
 

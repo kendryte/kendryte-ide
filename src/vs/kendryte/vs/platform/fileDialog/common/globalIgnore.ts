@@ -7,7 +7,6 @@ export const alwaysIgnorePattern = [
 ];
 export const rootIgnorePattern = [
 	'build/**',
-	'config/**',
 ];
 
 export const ignorePattern = [

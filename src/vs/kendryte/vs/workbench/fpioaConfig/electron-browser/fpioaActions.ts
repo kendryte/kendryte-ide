@@ -1,11 +1,11 @@
 import { Action } from 'vs/base/common/actions';
-import { localize } from 'vs/nls';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { FpioaEditorInput } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaEditorInput';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
-import { INotificationService } from 'vs/platform/notification/common/notification';
 import { ACTION_ID_OPEN_FPIOA_EDIT, ACTION_LABEL_OPEN_FPIOA_EDIT } from 'vs/kendryte/vs/base/common/menu/tools';
+import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
+import { FPIOA_FILE_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
+import { URI } from 'vs/base/common/uri';
 
 export class FpioaEditorAction extends Action {
 	public static readonly ID = ACTION_ID_OPEN_FPIOA_EDIT;
@@ -16,19 +16,14 @@ export class FpioaEditorAction extends Action {
 		label: string,
 		@IEditorService private editorService: IEditorService,
 		@IInstantiationService private instantiationService: IInstantiationService,
-		@IWorkspaceContextService private workspaceContextService: IWorkspaceContextService,
-		@INotificationService private notificationService: INotificationService,
+		@IKendryteWorkspaceService private kendryteWorkspaceService: IKendryteWorkspaceService,
 	) {
 		super(id, label);
 	}
 
 	async run(switchTab: string): Promise<any> {
-		if (this.workspaceContextService.getWorkbenchState() === WorkbenchState.EMPTY) {
-			this.notificationService.error(localize('workspace.required', 'You must open source folder to do that.'));
-			return new Error('Can not edit fpioa whithout workspace');
-		}
-
-		const input = this.instantiationService.createInstance(FpioaEditorInput, '{}');
+		const resource = this.kendryteWorkspaceService.requireCurrentWorkspaceFile(PROJECT_CONFIG_FOLDER_NAME, FPIOA_FILE_NAME);
+		const input = this.instantiationService.createInstance(FpioaEditorInput, URI.file(resource));
 		return this.editorService.openEditor(input, {
 			revealIfOpened: true,
 			pinned: true,

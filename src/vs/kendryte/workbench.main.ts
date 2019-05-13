@@ -1,5 +1,7 @@
 //// included by "vs/workbench/workbench.main.ts"
-
+// json editors base
+import 'vs/kendryte/vs/workbench/jsonGUIEditor/service/electron-browser/contribution';
+import 'vs/kendryte/vs/workbench/jsonGUIEditor/common/contribution';
 // Settings support
 import 'vs/kendryte/vs/workbench/config/browser/categoryContribution';
 import 'vs/kendryte/vs/workbench/config/electron-browser/pathSettingsContribution';
@@ -23,6 +25,7 @@ import 'vs/kendryte/vs/services/github/node/githubServiceContribution';
 import 'vs/kendryte/vs/services/path/electron-browser/contribution';
 import 'vs/kendryte/vs/services/fileCompress/electron-browser/contribution';
 import 'vs/kendryte/vs/services/fileSystem/node/nodeFileSystemService';
+import 'vs/kendryte/vs/services/workspace/electron-browser/contribution';
 import 'vs/kendryte/vs/services/download/node/nodeRequestService'; // network request
 import 'vs/kendryte/vs/services/download/electron-browser/nodeDownloadService'; // download
 import 'vs/kendryte/vs/services/download/electron-browser/downloadWithProgressService'; // download
@@ -31,9 +34,10 @@ import 'vs/kendryte/vs/platform/vscode/electron-browser/relaunchRenderService';
 // import 'vs/kendryte/vs/workbench/patchSettings2/browser/settingsTreePathcer';
 // import 'vs/kendryte/vs/workbench/patchSettings2/browser/registerTypes';
 // IO Config
-import 'vs/kendryte/vs/workbench/fpioaConfig/node/generateorContribution';
 import 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaContribution';
 import 'vs/kendryte/vs/workbench/fpioaConfig/common/packagings/includeAllContribution';
+// flash manager
+import 'vs/kendryte/vs/workbench/flashManager/electron-browser/flashManagerContribution';
 // Serial Devices
 import 'vs/kendryte/vs/services/serialPort/node/serialPortService';
 import 'vs/kendryte/vs/services/serialPort/common/configContribution';
@@ -49,6 +53,7 @@ import 'vs/kendryte/vs/workbench/topMenu/electron-browser/kendryteMenuContributi
 import 'vs/kendryte/vs/workbench/topMenu/node/shortcutsContribution';
 // cmake
 import 'vs/kendryte/vs/workbench/cmake/electron-browser/cmakeContribution';
+import 'vs/kendryte/vs/services/makefileService/node/contribution';
 // bottom buttons
 import 'vs/kendryte/vs/workbench/bottomBar/electron-browser/statusBarContribution';
 import 'vs/kendryte/vs/workbench/bottomBar/common/kendryteButtonContribution';

@@ -1,6 +1,6 @@
 import { localize } from 'vs/nls';
 
-export const ACTION_CATEGORY_WEBLINK = localize('weblink', 'Web Link');
+export const ACTION_CATEGORY_WEBLINK = localize('weblink', 'External Link');
 
 export const ACTION_ID_OPEN_FORUM = 'workbench.action.weblink.forum';
 export const ACTION_LABEL_OPEN_FORUM = localize('openocd.action.weblink.forum', 'Open Forum');
