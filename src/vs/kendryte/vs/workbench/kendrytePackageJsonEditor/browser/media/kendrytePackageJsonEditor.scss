@@ -1,63 +1,70 @@
 .kendryte-package-json-editor {
 	display: block;
 	height: 100%;
-	
+
 	> .monaco-scrollable-element {
 		height: 100%;
-		
+
 		> .wrap {
 			height: 100%;
 			padding: 12px 0;
-			
+
 			max-width: 800px;
 			margin: auto;
-			
+
 			overflow-x: visible;
 			overflow-y: scroll;
 			box-sizing: border-box;
-			
+
 			> hr {
 				margin-bottom: 12px;
 			}
-			
+
 			> .section {
 				display: flex;
 				margin-bottom: 1em;
-				
+
 				> .left {
 					width: 30%;
 					max-width: 250px;
-					
+
 					> h3 {
 						margin-top: 0;
 					}
 				}
-				
+
 				> .right {
 					position: relative;
 					flex: 1;
-					
+					margin-left: 6px;
+
 					textarea.input {
 						width: 100%;
 					}
-					
+
 					> .control {
 						display: flex;
 						flex-direction: row;
-						
+
+						> .monaco-button {
+							display: flex;
+							align-items: center;
+						}
+
 						> * {
 							flex: 0;
 							white-space: nowrap;
-							margin-right: 0.3em;
-							
+							margin-right: 0.6em;
+
 							.icon {
-								margin-right: 2px;
+								display: inline-block;
+								margin-right: 6px;
 							}
 						}
 					}
 				}
 			}
-			
+
 			> code.json {
 				margin-top: 15px;
 				white-space: pre;

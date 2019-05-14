@@ -3,12 +3,19 @@
 	.octicon-vs,
 	.vscode-icon {
 		&:before {
+			display: inline-block;
 			background-repeat: no-repeat;
 			background-size: contain;
 			content: ' ';
-			display: inline-block;
 			height: 1em;
 			width: 1em;
+		}
+	}
+
+	span.visualstudio-icon.icon,
+	span.vscode-icon.icon {
+		&::before {
+			display: block;
 		}
 	}
 }
@@ -20,7 +27,7 @@
 @mixin create_code($name) {
 	.monaco-workbench .vscode-icon.#{$name}:before {
 		background-image: url("#{$name}.svg");
-		
+
 		.vs-dark & {
 			background-image: url("#{$name}_inverse.svg");
 		}
@@ -30,14 +37,14 @@
 @mixin create($name) {
 	.monaco-workbench .visualstudio-icon.#{$name}:before {
 		background-image: url("#{$name}.svg");
-		
+
 		.vs-dark & {
 			background-image: url("#{$name}-dark.svg");
 		}
 	}
 	.monaco-workbench .octicon.octicon-vs.#{$name}:before {
 		background-image: url("#{$name}.svg");
-		
+
 		.vs-dark & {
 			background-image: url("#{$name}-dark.svg");
 		}

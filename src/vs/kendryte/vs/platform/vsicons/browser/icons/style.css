@@ -1,119 +1,187 @@
 .monaco-workbench .visualstudio-icon:before,
 .monaco-workbench .octicon-vs:before,
 .monaco-workbench .vscode-icon:before {
+  display: inline-block;
   background-repeat: no-repeat;
   background-size: contain;
   content: ' ';
-  display: inline-block;
   height: 1em;
-  width: 1em; }
+  width: 1em;
+}
+
+.monaco-workbench span.visualstudio-icon.icon::before,
+.monaco-workbench span.vscode-icon.icon::before {
+  display: block;
+}
 
 .monaco-workbench .octicon.octicon-vs {
-  font-family: initial !important; }
+  font-family: initial !important;
+}
 
 .monaco-workbench .visualstudio-icon.library:before {
-  background-image: url("library.svg"); }
-  .vs-dark .monaco-workbench .visualstudio-icon.library:before {
-    background-image: url("library-dark.svg"); }
+  background-image: url("library.svg");
+}
+
+.vs-dark .monaco-workbench .visualstudio-icon.library:before {
+  background-image: url("library-dark.svg");
+}
 
 .monaco-workbench .octicon.octicon-vs.library:before {
-  background-image: url("library.svg"); }
-  .vs-dark .monaco-workbench .octicon.octicon-vs.library:before {
-    background-image: url("library-dark.svg"); }
+  background-image: url("library.svg");
+}
+
+.vs-dark .monaco-workbench .octicon.octicon-vs.library:before {
+  background-image: url("library-dark.svg");
+}
 
 .monaco-workbench .visualstudio-icon.example:before {
-  background-image: url("example.svg"); }
-  .vs-dark .monaco-workbench .visualstudio-icon.example:before {
-    background-image: url("example-dark.svg"); }
+  background-image: url("example.svg");
+}
+
+.vs-dark .monaco-workbench .visualstudio-icon.example:before {
+  background-image: url("example-dark.svg");
+}
 
 .monaco-workbench .octicon.octicon-vs.example:before {
-  background-image: url("example.svg"); }
-  .vs-dark .monaco-workbench .octicon.octicon-vs.example:before {
-    background-image: url("example-dark.svg"); }
+  background-image: url("example.svg");
+}
+
+.vs-dark .monaco-workbench .octicon.octicon-vs.example:before {
+  background-image: url("example-dark.svg");
+}
 
 .monaco-workbench .visualstudio-icon.select:before {
-  background-image: url("select.svg"); }
-  .vs-dark .monaco-workbench .visualstudio-icon.select:before {
-    background-image: url("select-dark.svg"); }
+  background-image: url("select.svg");
+}
+
+.vs-dark .monaco-workbench .visualstudio-icon.select:before {
+  background-image: url("select-dark.svg");
+}
 
 .monaco-workbench .octicon.octicon-vs.select:before {
-  background-image: url("select.svg"); }
-  .vs-dark .monaco-workbench .octicon.octicon-vs.select:before {
-    background-image: url("select-dark.svg"); }
+  background-image: url("select.svg");
+}
+
+.vs-dark .monaco-workbench .octicon.octicon-vs.select:before {
+  background-image: url("select-dark.svg");
+}
 
 .monaco-workbench .visualstudio-icon.add-folder:before {
-  background-image: url("add-folder.svg"); }
-  .vs-dark .monaco-workbench .visualstudio-icon.add-folder:before {
-    background-image: url("add-folder-dark.svg"); }
+  background-image: url("add-folder.svg");
+}
+
+.vs-dark .monaco-workbench .visualstudio-icon.add-folder:before {
+  background-image: url("add-folder-dark.svg");
+}
 
 .monaco-workbench .octicon.octicon-vs.add-folder:before {
-  background-image: url("add-folder.svg"); }
-  .vs-dark .monaco-workbench .octicon.octicon-vs.add-folder:before {
-    background-image: url("add-folder-dark.svg"); }
+  background-image: url("add-folder.svg");
+}
+
+.vs-dark .monaco-workbench .octicon.octicon-vs.add-folder:before {
+  background-image: url("add-folder-dark.svg");
+}
 
 .monaco-workbench .visualstudio-icon.add-add-folder:before {
-  background-image: url("add-add-folder.svg"); }
-  .vs-dark .monaco-workbench .visualstudio-icon.add-add-folder:before {
-    background-image: url("add-add-folder-dark.svg"); }
+  background-image: url("add-add-folder.svg");
+}
+
+.vs-dark .monaco-workbench .visualstudio-icon.add-add-folder:before {
+  background-image: url("add-add-folder-dark.svg");
+}
 
 .monaco-workbench .octicon.octicon-vs.add-add-folder:before {
-  background-image: url("add-add-folder.svg"); }
-  .vs-dark .monaco-workbench .octicon.octicon-vs.add-add-folder:before {
-    background-image: url("add-add-folder-dark.svg"); }
+  background-image: url("add-add-folder.svg");
+}
+
+.vs-dark .monaco-workbench .octicon.octicon-vs.add-add-folder:before {
+  background-image: url("add-add-folder-dark.svg");
+}
 
 .monaco-workbench .visualstudio-icon.add-file:before {
-  background-image: url("add-file.svg"); }
-  .vs-dark .monaco-workbench .visualstudio-icon.add-file:before {
-    background-image: url("add-file-dark.svg"); }
+  background-image: url("add-file.svg");
+}
+
+.vs-dark .monaco-workbench .visualstudio-icon.add-file:before {
+  background-image: url("add-file-dark.svg");
+}
 
 .monaco-workbench .octicon.octicon-vs.add-file:before {
-  background-image: url("add-file.svg"); }
-  .vs-dark .monaco-workbench .octicon.octicon-vs.add-file:before {
-    background-image: url("add-file-dark.svg"); }
+  background-image: url("add-file.svg");
+}
+
+.vs-dark .monaco-workbench .octicon.octicon-vs.add-file:before {
+  background-image: url("add-file-dark.svg");
+}
 
 .monaco-workbench .visualstudio-icon.clear-window:before {
-  background-image: url("clear-window.svg"); }
-  .vs-dark .monaco-workbench .visualstudio-icon.clear-window:before {
-    background-image: url("clear-window-dark.svg"); }
+  background-image: url("clear-window.svg");
+}
+
+.vs-dark .monaco-workbench .visualstudio-icon.clear-window:before {
+  background-image: url("clear-window-dark.svg");
+}
 
 .monaco-workbench .octicon.octicon-vs.clear-window:before {
-  background-image: url("clear-window.svg"); }
-  .vs-dark .monaco-workbench .octicon.octicon-vs.clear-window:before {
-    background-image: url("clear-window-dark.svg"); }
+  background-image: url("clear-window.svg");
+}
+
+.vs-dark .monaco-workbench .octicon.octicon-vs.clear-window:before {
+  background-image: url("clear-window-dark.svg");
+}
 
 .monaco-workbench .visualstudio-icon.browser-download:before {
-  background-image: url("browser-download.svg"); }
-  .vs-dark .monaco-workbench .visualstudio-icon.browser-download:before {
-    background-image: url("browser-download-dark.svg"); }
+  background-image: url("browser-download.svg");
+}
+
+.vs-dark .monaco-workbench .visualstudio-icon.browser-download:before {
+  background-image: url("browser-download-dark.svg");
+}
 
 .monaco-workbench .octicon.octicon-vs.browser-download:before {
-  background-image: url("browser-download.svg"); }
-  .vs-dark .monaco-workbench .octicon.octicon-vs.browser-download:before {
-    background-image: url("browser-download-dark.svg"); }
+  background-image: url("browser-download.svg");
+}
+
+.vs-dark .monaco-workbench .octicon.octicon-vs.browser-download:before {
+  background-image: url("browser-download-dark.svg");
+}
 
 .monaco-workbench .vscode-icon.AddFile:before {
-  background-image: url("AddFile.svg"); }
-  .vs-dark .monaco-workbench .vscode-icon.AddFile:before {
-    background-image: url("AddFile_inverse.svg"); }
+  background-image: url("AddFile.svg");
+}
+
+.vs-dark .monaco-workbench .vscode-icon.AddFile:before {
+  background-image: url("AddFile_inverse.svg");
+}
 
 .monaco-workbench .vscode-icon.AddFolder:before {
-  background-image: url("AddFolder.svg"); }
-  .vs-dark .monaco-workbench .vscode-icon.AddFolder:before {
-    background-image: url("AddFolder_inverse.svg"); }
+  background-image: url("AddFolder.svg");
+}
+
+.vs-dark .monaco-workbench .vscode-icon.AddFolder:before {
+  background-image: url("AddFolder_inverse.svg");
+}
 
 .monaco-workbench .vscode-icon.checked:before {
-  background-image: url("checked.svg"); }
-  .vs-dark .monaco-workbench .vscode-icon.checked:before {
-    background-image: url("checked_inverse.svg"); }
+  background-image: url("checked.svg");
+}
+
+.vs-dark .monaco-workbench .vscode-icon.checked:before {
+  background-image: url("checked_inverse.svg");
+}
 
 .monaco-workbench .vscode-icon.json:before {
-  background-image: url("json.svg"); }
-  .vs-dark .monaco-workbench .vscode-icon.json:before {
-    background-image: url("json_inverse.svg"); }
+  background-image: url("json.svg");
+}
+
+.vs-dark .monaco-workbench .vscode-icon.json:before {
+  background-image: url("json_inverse.svg");
+}
 
 .monaco-workbench .vscode-icon.PreferencesEditor:before {
-  background-image: url("PreferencesEditor.svg"); }
-  .vs-dark .monaco-workbench .vscode-icon.PreferencesEditor:before {
-    background-image: url("PreferencesEditor_inverse.svg"); }
+  background-image: url("PreferencesEditor.svg");
+}
 
-/*# sourceMappingURL=style.css.map */
+.vs-dark .monaco-workbench .vscode-icon.PreferencesEditor:before {
+  background-image: url("PreferencesEditor_inverse.svg");
+}
