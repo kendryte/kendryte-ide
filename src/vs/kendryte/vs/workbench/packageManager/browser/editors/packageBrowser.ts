@@ -136,7 +136,7 @@ export class PackageBrowserEditor extends BaseEditor {
 		this.packageRegistryService.queryPackages(this.type, this.search, 1).then((list) => {
 			this.updateList(list);
 		}, (e) => {
-			this.logger.error(e);
+			this.logger.error(e.stack || e);
 			this.showError(e.message);
 		});
 	}
