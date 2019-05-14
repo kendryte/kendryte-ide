@@ -83,7 +83,6 @@ set _CHIPNAME riscv
 jtag newtap $_CHIPNAME cpu -irlen 5 -expected-id 0x04e4796b
 set _TARGETNAME $_CHIPNAME.cpu
 target create $_TARGETNAME riscv -chain-position $_TARGETNAME
-init
 
 $_TARGETNAME configure -event reset-start {
     adapter_khz 100
@@ -92,6 +91,7 @@ $_TARGETNAME configure -event reset-start {
 $_TARGETNAME configure -event reset-init {
 	adapter_khz ${config.speed}
 }
+init
 `.trim() + '\n';
 }
 
