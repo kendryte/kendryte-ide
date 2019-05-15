@@ -23,18 +23,24 @@
             margin-top: 0; }
         .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right {
           position: relative;
-          flex: 1; }
+          flex: 1;
+          margin-left: 6px; }
           .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right textarea.input {
             width: 100%; }
           .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control {
             display: flex;
-            flex-direction: row; }
+            flex-direction: row;
+            margin-top: 8px; }
+            .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control > .monaco-button {
+							display: flex;
+							align-items: center; }
             .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control > * {
               flex: 0;
               white-space: nowrap;
-              margin-right: 0.3em; }
+              margin-right: 0.6em; }
               .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control > * .icon {
-                margin-right: 2px; }
+                display: inline-block;
+                margin-right: 6px; }
       .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > code.json {
         margin-top: 15px;
         white-space: pre;

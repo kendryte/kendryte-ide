@@ -25,7 +25,7 @@ import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/com
 const templateId = 'local-package-list';
 
 class Delegate implements IListVirtualDelegate<ILibraryProject> {
-	getHeight() { return 85; }
+	getHeight() { return 75; }
 
 	getTemplateId() { return templateId; }
 }
@@ -61,11 +61,15 @@ export class Renderer implements IPagedRenderer<ILibraryProject, ITemplateData> 
 		container.style.padding = '5px 8px';
 
 		const nameDiv: HTMLDivElement = append(container, $('div'));
-		nameDiv.style.fontSize = '20px';
+		nameDiv.style.fontSize = '13px';
+		nameDiv.style.fontWeight = 'bold';
 		nameDiv.style.overflow = 'hidden';
 		nameDiv.style.textOverflow = 'ellipsis';
 
 		const versionDiv: HTMLDivElement = append(container, $('div'));
+		versionDiv.style.opacity = '0.85';
+		versionDiv.style.fontSize = '80%';
+		versionDiv.style.marginTop = '4px';
 		versionDiv.style.overflow = 'hidden';
 		versionDiv.style.textOverflow = 'ellipsis';
 		versionDiv.style.marginBottom = '5px';
@@ -74,7 +78,9 @@ export class Renderer implements IPagedRenderer<ILibraryProject, ITemplateData> 
 		Object.assign(controls.style, <CSSStyleDeclaration>{
 			display: 'flex',
 			flexDirection: 'row',
-			lineHeight: '24px',
+			// lineHeight: '24px',
+			fontSize: '11px',
+			marginTop: '12px',
 		});
 
 		const left: HTMLDivElement = append(controls, $('div'));
@@ -82,14 +88,17 @@ export class Renderer implements IPagedRenderer<ILibraryProject, ITemplateData> 
 
 		const deleteBtn: HTMLAnchorElement = append(left, $('a'));
 		deleteBtn.innerHTML = renderOcticons('$(trashcan)');
-		deleteBtn.style.fontSize = '24px';
+		// deleteBtn.style.fontSize = '24px';
 
 		const right: HTMLDivElement = append(controls, $('div'));
 
 		const detailBtn = new Button(right);
 		detailBtn.element.innerHTML = renderOcticons('$(home) ' + localize('detail', 'Detail'));
 		detailBtn.element.style.display = 'block';
-		detailBtn.element.style.paddingLeft = detailBtn.element.style.paddingRight = '12px';
+		// detailBtn.element.style.paddingLeft = detailBtn.element.style.paddingRight = '6px';
+		detailBtn.element.style.padding = '3px 6px';
+		detailBtn.element.style.fontSize = '11px';
+		detailBtn.element.childNodes[0].style.fontSize = '13px'
 		toDispose.push(detailBtn);
 		toDispose.push(attachButtonStyler(detailBtn, this.themeService));
 

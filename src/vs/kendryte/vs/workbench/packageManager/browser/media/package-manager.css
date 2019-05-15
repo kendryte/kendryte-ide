@@ -18,6 +18,10 @@
 	overflow: auto;
 }
 
+#package-manager > .package-title-bar > h1 {
+	padding: 5px 12px;
+}
+
 #package-manager > .error-message,
 #package-manager > .error-message > * {
 	padding: 0 20px;
@@ -89,6 +93,7 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: flex-end;
+	margin-right: 24px;
 }
 
 #package-manager .pm-navbar > .navbar {
