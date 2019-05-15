@@ -4,6 +4,7 @@
 	"recommendations": [
 		"ms-vscode.vscode-typescript-tslint-plugin",
 		"dbaeumer.vscode-eslint",
-		"msjsdiag.debugger-for-chrome"
+		"msjsdiag.debugger-for-chrome",
+		"spook.easysass",
 	]
 }
