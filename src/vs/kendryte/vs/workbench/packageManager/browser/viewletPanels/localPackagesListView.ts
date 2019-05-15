@@ -98,7 +98,8 @@ export class Renderer implements IPagedRenderer<ILibraryProject, ITemplateData> 
 		// detailBtn.element.style.paddingLeft = detailBtn.element.style.paddingRight = '6px';
 		detailBtn.element.style.padding = '3px 6px';
 		detailBtn.element.style.fontSize = '11px';
-		detailBtn.element.childNodes[0].style.fontSize = '13px'
+		const icon = detailBtn.element.childNodes as NodeListOf<HTMLElement>;
+		icon[0].style.fontSize = '13px'
 		toDispose.push(detailBtn);
 		toDispose.push(attachButtonStyler(detailBtn, this.themeService));
 
