@@ -31,10 +31,10 @@ registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeConfigureAction);
 
 // RUN
 registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeDebugAction);
-registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeBuildDebugAction);
+registerInternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeBuildDebugAction);
 
 registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeRunAction);
-registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeBuildRunAction);
+registerInternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeBuildRunAction);
 
 // clean
 registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeCleanupAction);

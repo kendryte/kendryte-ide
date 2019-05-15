@@ -6,8 +6,9 @@ import { IConstructorSignature2, IInstantiationService, ServicesAccessor } from 
 import { IKeybindings } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
 import { CommandsRegistry } from 'vs/platform/commands/common/commands';
-import { INotificationService } from 'vs/platform/notification/common/notification';
+import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { TypeConstraint } from 'vs/base/common/types';
+import { toErrorMessage } from 'vs/base/common/errorMessage';
 
 const DescRegistry: { [id: string]: SyncActionDescriptor; } = {};
 
@@ -24,20 +25,13 @@ export function registerInternalAction(category: string, Action: IActionToRegist
 	}
 	DescRegistry[Action.ID] = new SyncActionDescriptor(Action, Action.ID, Action.LABEL_SHORT || Action.LABEL);
 
-	Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
-		.registerWorkbenchAction(
-			DescRegistry[Action.ID],
-			`${category}: ${Action.LABEL}`,
-			category,
-		);
-
 	CommandsRegistry.registerCommand({
 		id: Action.ID,
 		handler(access: ServicesAccessor, ...args: any[]) {
 			const actionObject = access.get(IInstantiationService).createInstance(DescRegistry[Action.ID].syncDescriptor);
 			const notificationService = access.get(INotificationService);
 			Promise.resolve(actionObject.run(args, undefined)).catch((e) => {
-				notificationService.error(`Failed to run action: ${Action.ID}\n${e.message}`);
+				notificationService.notify({ severity: Severity.Error, message: toErrorMessage(e), source: Action.ID });
 				throw e;
 			}).finally(() => {
 				actionObject.dispose();
@@ -52,12 +46,19 @@ export function registerInternalAction(category: string, Action: IActionToRegist
 
 export function registerExternalAction(category: string, Action: IActionToRegister) {
 	registerInternalAction(category, Action);
-	MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
-		command: {
-			id: Action.ID,
-			title: `${category}: ${Action.LABEL_SHORT || Action.LABEL}`,
-		},
-	});
+
+	Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions)
+		.registerWorkbenchAction(
+			DescRegistry[Action.ID],
+			`${category}: ${Action.LABEL_SHORT || Action.LABEL}`,
+			category,
+		);
+	/*	MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
+			command: {
+				id: Action.ID,
+				title: `${category}: ${Action.LABEL_SHORT || Action.LABEL}`,
+			},
+		});*/
 }
 
 export function registerActionWithKey(category: string, Action: IActionToRegister, keybindings: IKeybindings, keybindingContext?: ContextKeyExpr, keybindingWeight?: number) {

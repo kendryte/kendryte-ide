@@ -1,15 +1,15 @@
 import { canceled } from 'vs/base/common/errors';
-import { ICMakeProtocolProgress } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/event';
 
 export type ValueCallback<T = any> = (value: T | Thenable<T>) => void;
+export type ProgressCallback<T = any> = (value: T) => void;
 
-export class DeferredPromise<T> {
+export class DeferredPromise<T, PT = any> {
 
 	public p: Promise<T>;
 	private completeCallback: ValueCallback<T>;
 	private errorCallback: (err: any) => void;
 	private _state: boolean | null = null;
-	private cbList: Function[] = [];
+	private cbList: ProgressCallback<PT>[] = [];
 
 	constructor() {
 		this.p = new Promise<any>((c, e) => {
@@ -21,13 +21,13 @@ export class DeferredPromise<T> {
 		});
 	}
 
-	notify(progress: ICMakeProtocolProgress): void {
+	notify(progress: PT): void {
 		for (const cb of this.cbList) {
 			cb(progress);
 		}
 	}
 
-	progress(fn: (p: T) => void): void {
+	progress(fn: ProgressCallback<PT>): void {
 		this.cbList.push(fn);
 	}
 

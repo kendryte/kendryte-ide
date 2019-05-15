@@ -113,7 +113,6 @@ export class PackageRegistryService implements IPackageRegistryService {
 			return this.cached[type];
 		}
 		this.logger.info('fetch registry file from remote.');
-
 		const downId = await this.downloadService.downloadTemp(this.registryUrl(type), true, this.logger);
 		const filePath = await this.downloadService.waitResultFile(downId);
 		const fileContent = await readFile(filePath, 'utf8');
