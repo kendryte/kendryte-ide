@@ -25,7 +25,7 @@ import { IOpenerService } from 'vs/platform/opener/common/opener';
 import 'vs/css!vs/kendryte/vs/workbench/packageManager/browser/editors/detailPage';
 import { DeleteDependencyAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/deleteDependencyAction';
 import { OpenUrlAction } from 'vs/kendryte/vs/platform/open/common/openUrlAction';
-import { assertNotNull } from 'vs/kendryte/vs/base/common/assertNotNull';
+import { editorBackground, foreground } from 'vs/platform/theme/common/colorRegistry';
 
 const githubUrlReg = /^https?:\/\/github.com\/([^\/]+)\/([^\/]+)/;
 
@@ -45,15 +45,17 @@ export class PackageDetailEditor extends BaseEditor {
 
 	constructor(
 		@ITelemetryService telemetryService: ITelemetryService,
-		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
+		@IThemeService private readonly _themeService: IThemeService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IWorkbenchLayoutService private layoutService: IWorkbenchLayoutService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@IRequestService private readonly requestService: IRequestService,
 		@IOpenerService private readonly openerService: IOpenerService,
 	) {
-		super(PackageDetailEditor.ID, telemetryService, themeService, storageService);
+		super(PackageDetailEditor.ID, telemetryService, _themeService, storageService);
+
+		this.renderBody = this.renderBody.bind(this);
 	}
 
 	protected createEditor(parent: HTMLElement): void {
@@ -90,7 +92,18 @@ export class PackageDetailEditor extends BaseEditor {
 			},
 		);
 		this.webviewElement.mountTo(this.layoutService.getContainer(Parts.EDITOR_PART));
+		this.renderBody('');
 		this._register(this.webviewElement);
+
+		this._register(this.webviewElement.onDidClickLink(link => {
+			if (!link) {
+				return;
+			}
+			// Whitelist supported schemes for links
+			if (['http', 'https', 'mailto'].indexOf(link.scheme) >= 0 || (link.scheme === 'command' && link.path === ShowCurrentReleaseNotesAction.ID)) {
+				this.openerService.open(link);
+			}
+		}));
 
 		append(root, $('hr'));
 
@@ -126,7 +139,7 @@ export class PackageDetailEditor extends BaseEditor {
 				this.icon.src = data.remote.icon;
 				this.icon.style.display = 'initial';
 			} else {
-				this.iconDisable.className = 'icon no ' + visualStudioIconClass(assertNotNull(data.local).type);
+				this.iconDisable.className = 'icon no ' + visualStudioIconClass(data.remote.type);
 				this.iconDisable.style.display = 'initial';
 			}
 
@@ -169,29 +182,23 @@ export class PackageDetailEditor extends BaseEditor {
 				const isGithub = githubUrlReg.exec(data.remote.homepage);
 				if (isGithub) {
 					const readmeUrl = `https://raw.githubusercontent.com/${isGithub[1]}/${isGithub[2]}/master/README.md`;
-					this.webviewElement.contents = await this.requestService.request({
+					this.renderBody(`Loading...`);
+					await this.requestService.request({
 						type: 'get',
 						url: readmeUrl,
 						followRedirects: 5,
 					}, token).then(asText)
 						.then(marked.parse)
-						.then(renderBody);
-
-					this.webviewElement.onDidClickLink(link => {
-						if (!link) {
-							return;
-						}
-						// Whitelist supported schemes for links
-						if (['http', 'https', 'mailto'].indexOf(link.scheme) >= 0 || (link.scheme === 'command' && link.path === ShowCurrentReleaseNotesAction.ID)) {
-							this.openerService.open(link);
-						}
-					}, null, this.elementDisposables);
+						.then(this.renderBody);
 				} else {
-					// how to do now?
+					this.renderBody(`Homepage: <a href="${data.remote.homepage}">${data.remote.homepage}</a>`);
 				}
 			} catch (e) {
 				console.error('README load failed:', e);
+				this.renderBody(`<h1>Failed to open page</h1><p>The link is <a href="${data.remote.homepage}">${data.remote.homepage}</a></p><p>${e.message}</p>`);
 			}
+		} else {
+			this.renderBody(`<h1>This package does not have a homepage</h1>`);
 		}
 
 		this.layout();
@@ -207,18 +214,24 @@ export class PackageDetailEditor extends BaseEditor {
 
 		this.webviewElement.layout();
 	}
-}
 
-function renderBody(body: string): string {
-	return `<!DOCTYPE html>
+	renderBody(body: string): void {
+		const theme = this._themeService.getTheme();
+		const style = `background-color: ${theme.getColor(editorBackground)}; color: ${theme.getColor(foreground)};`;
+		const html = `<!DOCTYPE html>
 		<html>
 			<head>
+				<title>README</title>
 				<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; media-src https:; script-src 'none'; style-src vscode-core-resource:; child-src 'none'; frame-src 'none';">
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; media-src https:; script-src 'none'; style-src 'unsafe-inline'; child-src 'none'; frame-src 'none';">
+				<style type="text/css">${style}</style>
 			</head>
-			<body>
+			<body class="kendryte-ide ${theme.type}">
 				<a id="scroll-to-top" role="button" aria-label="scroll to top" href="#"><span class="icon"></span></a>
 				${body}
 			</body>
 		</html>`;
+		console.log(html);
+		this.webviewElement.contents = html;
+	}
 }
