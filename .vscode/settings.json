@@ -56,5 +56,11 @@
 			"url": "./.vscode/cglicenses.schema.json"
 		}
 	],
-	"git.ignoreLimitWarning": true
+	"git.ignoreLimitWarning": true,
+	"easysass.formats":[
+        {
+            "format": "expanded",
+            "extension": ".css"
+        },
+    ]
 }

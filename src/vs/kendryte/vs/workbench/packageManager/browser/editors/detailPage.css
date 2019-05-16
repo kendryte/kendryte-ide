@@ -28,6 +28,15 @@
 	line-height: 1.4em;
 }
 
+.package-editor > .header > .details > .title > .version {
+	margin-left: 10px;
+	padding: 4px 8px;
+	border-radius: 4px;
+	background-color: rgba(173, 173, 173, 0.31);
+	opacity: 0.6;
+	font-size: 16px;
+}
+
 .package-editor > .actions {
 	margin-top: 10px;
 }
