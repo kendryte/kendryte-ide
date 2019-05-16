@@ -90,7 +90,6 @@ export class SectionFactory extends Disposable {
 			},
 			flexibleHeight: textarea,
 		}));
-		input.width = 320;
 		this._register(attachInputBoxStyler(input, this.themeService));
 		this._register(input.onDidHeightChange(() => {
 			this._onDidHeightChange.fire();
