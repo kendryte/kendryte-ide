@@ -18,7 +18,7 @@ export interface IStatusButtonData {
 	showBeak: boolean;
 	align: StatusbarAlignment;
 	position: number;
-	contextKey: ContextKeyExpr | null;
+	setContextKey(v: ContextKeyExpr | null): void;
 }
 
 export interface IStatusButtonMethod { // extends IMyDisposable

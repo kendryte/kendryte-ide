@@ -43,7 +43,7 @@ export class MyStatusBarItem implements IStatusButtonData, IStatusButtonMethod {
 		return this._contextKey ? this._contextKey : null;
 	}
 
-	set contextKey(v: ContextKeyExpr | null) {
+	setContextKey(v: ContextKeyExpr | null) {
 		if (v) {
 			this._contextKey = {
 				expr: v,

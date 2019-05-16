@@ -1,4 +1,15 @@
-import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE, CMakeInternalVariants, CurrentItem, ICMakeSelection, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import {
+	CMAKE_CHANNEL,
+	CMAKE_CHANNEL_TITLE,
+	CMAKE_ERROR_MARKER,
+	CMakeInternalVariants,
+	CMakeStatus,
+	CONTEXT_CMAKE_STATUS,
+	CurrentItem,
+	ICMakeSelection,
+	ICMakeService,
+	ICMakeStatus,
+} from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { ChildProcess, spawn } from 'child_process';
@@ -44,14 +55,18 @@ import { ILogService, LogLevel } from 'vs/platform/log/common/log';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { CONFIG_KEY_CMAKE_DEBUG, CONFIG_KEY_MAKE_PROGRAM } from 'vs/kendryte/vs/base/common/configKeys';
 import { IKendryteStatusControllerService } from 'vs/kendryte/vs/workbench/bottomBar/common/type';
-import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
-import { CONTEXT_CMAKE_CONFIGURE_SEEMS_OK, CONTEXT_CMAKE_CURRENT_IS_PROJECT } from 'vs/kendryte/vs/workbench/cmake/common/contextKey';
+import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { CMakeError, CMakeErrorType } from 'vs/kendryte/vs/workbench/cmake/common/errors';
 import { DeferredPromise } from 'vs/kendryte/vs/base/common/deferredPromise';
 import { localize } from 'vs/nls';
 import { CMAKE_CONFIG_FILE_NAME, PROJECT_BUILD_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 import { IMakefileService } from 'vs/kendryte/vs/services/makefileService/common/type';
+import { IMarkerService, MarkerSeverity } from 'vs/platform/markers/common/markers';
+import { URI } from 'vs/base/common/uri';
+import { createSimpleMarker } from 'vs/kendryte/vs/platform/marker/common/simple';
+
+const regCMakeConfigureError = /CMake Error at (.+?):(\d+?) \((.+)\):/;
 
 export class CMakeService implements ICMakeService {
 	_serviceBrand: any;
@@ -79,11 +94,8 @@ export class CMakeService implements ICMakeService {
 	private cmakeConnectionStablePromise: DeferredPromise<void>;
 	private lastProcess: CMakeProcessList;
 
-	private readonly cmakeConfiguredContextKey: IContextKey<boolean>;
-	private readonly cmakeIsProjectContextKey: IContextKey<boolean>;
-
-	private readonly _onCMakeStatusChange = new Emitter<Error | null>();
-	public readonly onCMakeStatusChange = this._onCMakeStatusChange.event;
+	private readonly _onCMakeStatusChange = new Emitter<ICMakeStatus>();
+	public readonly onCMakeStatusChange = Event.debounce<ICMakeStatus>(this._onCMakeStatusChange.event, (_, l) => l, 1000);
 
 	private readonly _onCMakeSelectionChange = new Emitter<ICMakeSelection>();
 	public readonly onCMakeSelectionChange = this._onCMakeSelectionChange.event;
@@ -103,11 +115,14 @@ export class CMakeService implements ICMakeService {
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IKendryteStatusControllerService private readonly kendryteStatusControllerService: IKendryteStatusControllerService,
 		@IMakefileService private readonly makefileService: IMakefileService,
+		@IMarkerService private readonly markerService: IMarkerService,
 	) {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 
-		this.cmakeConfiguredContextKey = CONTEXT_CMAKE_CONFIGURE_SEEMS_OK.bindTo(contextKeyService);
-		this.cmakeIsProjectContextKey = CONTEXT_CMAKE_CURRENT_IS_PROJECT.bindTo(contextKeyService);
+		const cmakeStatusContextKey = CONTEXT_CMAKE_STATUS.bindTo(contextKeyService);
+		this.onCMakeStatusChange(({ status }) => {
+			cmakeStatusContextKey.set(status);
+		});
 
 		lifecycleService.onWillShutdown(e => {
 			return e.join(this.shutdown(true));
@@ -176,6 +191,7 @@ export class CMakeService implements ICMakeService {
 			...staticEnv,
 			...extraConfigEnv,
 			...this.localEnv,
+			LANG: 'en_US.utf-8',
 		};
 	}
 
@@ -395,6 +411,33 @@ export class CMakeService implements ICMakeService {
 			case CMAKE_EVENT_TYPE.MESSAGE:
 				const message = protocolData as ICMakeProtocolMessage;
 				this.logger.info(message.message);
+				if (regCMakeConfigureError.test(message.message)) {
+					const [, file, line] = regCMakeConfigureError.exec(message.message)!;
+					const lines = message.message.split('\n');
+					const markers = lines
+						.slice(1)
+						.map(s => s.trim())
+						.filter(s => s.length > 0);
+
+					const packageFile = URI.file(this.kendryteWorkspaceService.requireCurrentWorkspaceFile(file.replace('CMakeLists.txt', CMAKE_CONFIG_FILE_NAME)));
+					const marker = createSimpleMarker(MarkerSeverity.Error, lines[0] + '\n' + markers.join('\n'), parseInt(line) || 0);
+					marker.relatedInformation = [
+						{
+							resource: packageFile,
+							message: localize('pleaseConfigureProject', 'Please fix your project settings.'),
+							startLineNumber: 0,
+							startColumn: 0,
+							endLineNumber: 0,
+							endColumn: 0,
+						},
+					];
+
+					this.markerService.changeOne(
+						CMAKE_ERROR_MARKER,
+						URI.file(this.kendryteWorkspaceService.requireCurrentWorkspaceFile(file)),
+						[marker],
+					);
+				}
 				return;
 			case CMAKE_EVENT_TYPE.SIGNAL:
 				switch ((protocolData as ICMakeProtocolSignal).name) {
@@ -434,21 +477,15 @@ export class CMakeService implements ICMakeService {
 		const currentFolder = this.kendryteWorkspaceService.getCurrentWorkspace();
 		this.logger.info('rescan current folder: ' + currentFolder);
 
-		this.cmakeConfiguredContextKey.set(false);
-		this.cmakeIsProjectContextKey.set(true);
-		this._onCMakeStatusChange.fire(null);
+		this._onCMakeStatusChange.fire({ status: CMakeStatus.BUSY });
 
 		return this._rescanCurrentFolder(currentFolder).then(() => {
-			this.cmakeConfiguredContextKey.set(true);
-			this._onCMakeStatusChange.fire(null);
-			this.cmakeIsProjectContextKey.set(false);
+			this._onCMakeStatusChange.fire({ status: CMakeStatus.IDLE });
 		}, (e) => {
 			this.logger.info('rescan current folder error!');
 			this.logger.error(e.stack);
 
-			this.cmakeConfiguredContextKey.set(false);
-			this._onCMakeStatusChange.fire(e);
-			this.cmakeIsProjectContextKey.set(false);
+			this._onCMakeStatusChange.fire({ status: CMakeStatus.PROJECT_ERROR, error: e });
 		});
 	}
 
@@ -479,7 +516,7 @@ export class CMakeService implements ICMakeService {
 			const content = await readFile(createdListFile, 'utf8');
 			if (content.indexOf(CMAKE_LIST_GENERATED_WARNING) === -1 && content.indexOf(CMAKE_LIST_GENERATED_WARNING_OLD) === -1) {
 				this.logger.info('    - Error: this file is not created by me, refuse to delete it.');
-				throw new CMakeError(CMakeErrorType.PROJECT_NOT_EXISTS);
+				throw new CMakeError(CMakeErrorType.PROJECT_INVALID);
 			}
 			this.logger.info('    - is safe to delete it.');
 		}
@@ -549,14 +586,12 @@ export class CMakeService implements ICMakeService {
 	}
 
 	public configure(): Promise<void> {
-		this.cmakeIsProjectContextKey.set(true);
+		this._onCMakeStatusChange.fire({ status: CMakeStatus.BUSY });
 		return this._configure().then(() => {
-			this._onCMakeStatusChange.fire(null);
+			this._onCMakeStatusChange.fire({ status: CMakeStatus.IDLE });
 		}, (e) => {
-			this._onCMakeStatusChange.fire(e);
+			this._onCMakeStatusChange.fire({ status: CMakeStatus.CONFIGURE_ERROR, error: e });
 			throw e;
-		}).finally(() => {
-			this.cmakeIsProjectContextKey.set(false);
 		});
 	}
 
@@ -610,13 +645,16 @@ export class CMakeService implements ICMakeService {
 	}
 
 	public build() {
-		this.cmakeIsProjectContextKey.set(true);
-		return this._build().finally(() => {
-			this.cmakeIsProjectContextKey.set(false);
+		this._onCMakeStatusChange.fire({ status: CMakeStatus.BUSY });
+		return this._build().then(() => {
+			this._onCMakeStatusChange.fire({ status: CMakeStatus.IDLE });
+		}, (e) => {
+			this._onCMakeStatusChange.fire({ status: CMakeStatus.MAKE_ERROR, error: e });
+			throw e;
 		});
 	}
 
-	public async _build() {
+	private async _build() {
 		await this.ensureConfiguration();
 
 		this.logger.info('Run cmake build:');

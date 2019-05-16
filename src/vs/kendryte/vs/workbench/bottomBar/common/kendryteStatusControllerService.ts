@@ -31,6 +31,7 @@ export class KendryteStatusControllerService implements IDisposable, IKendryteSt
 				const contextKey = item.getContextKey();
 				if (contextKey && e.affectsSome(contextKey.list)) {
 					const willShow = contextKey.expr.evaluate(contextKeyService.getContext(null));
+					// console.log(' changed, ', contextKey.list.values(), willShow, contextKeyService);
 					if (willShow) {
 						item.show();
 					} else {
@@ -87,7 +88,6 @@ export class KendryteStatusControllerService implements IDisposable, IKendryteSt
 
 		const button = this.createInstance();
 		button.align = StatusbarAlignment.LEFT;
-		button.contextKey = null;
 		button.position = StatusBarLeftLocation.MESSAGE;
 
 		this.messageButtonMap.set(id, button);
@@ -110,17 +110,22 @@ export class KendryteStatusControllerService implements IDisposable, IKendryteSt
 	}
 
 	private onReady() {
-		this.instanceList.forEach((item) => {
-			if (item.contextKey) {
-				if (item.contextKey.evaluate(this.contextKeyService.getContext(null))) {
-					item.show();
-				} else {
-					item.hide();
-				}
+		for (const item of this.instanceList) {
+			this.refreshShowStatusByContext(item);
+		}
+	}
+
+	private refreshShowStatusByContext(button: MyStatusBarItem) {
+		const contextKey = button.getContextKey();
+		if (contextKey) {
+			if (contextKey.expr.evaluate(this.contextKeyService.getContext(null))) {
+				button.show();
 			} else {
-				item.show();
+				button.hide();
 			}
-		});
+		} else {
+			button.show();
+		}
 	}
 
 	dispose() {

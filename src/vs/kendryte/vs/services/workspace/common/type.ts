@@ -16,7 +16,7 @@ export interface IKendryteWorkspaceService {
 
 	requireCurrentWorkspace(): string;
 	getCurrentWorkspace(): string | undefined;
-	getAllWorkspace(): string[];
+	getAllWorkspace(): ReadonlyArray<string>;
 
 	getCurrentFolderName(): string;
 

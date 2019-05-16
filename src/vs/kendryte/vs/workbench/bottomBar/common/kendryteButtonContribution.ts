@@ -25,8 +25,7 @@ import {
 import { Registry } from 'vs/platform/registry/common/platform';
 import { LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
 import { localize } from 'vs/nls';
-import { CONTEXT_CMAKE_CURRENT_IS_PROJECT } from 'vs/kendryte/vs/workbench/cmake/common/contextKey';
-import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import { CMakeStatus, CONTEXT_CMAKE_STATUS, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { ACTION_ID_SERIAL_MONITOR_TOGGLE, ACTION_LABEL_SERIAL_MONITOR_TOGGLE } from 'vs/kendryte/vs/workbench/serialMonitor/common/actionId';
 import 'vs/css!./buttonSize';
 import { ISerialPortService } from 'vs/kendryte/vs/services/serialPort/common/type';
@@ -37,6 +36,10 @@ import { ACTION_ID_SELECT_FOLDER, ACTION_LABEL_SELECT_FOLDER } from 'vs/kendryte
 import { CONTEXT_KENDRYTE_MULTIPLE_PROJECT } from 'vs/kendryte/vs/services/workspace/common/contextKey';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 import { basename } from 'vs/base/common/path';
+import { CMakeError, CMakeErrorType } from 'vs/kendryte/vs/workbench/cmake/common/errors';
+import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD } from 'vs/kendryte/vs/workbench/cmake/common/actionIds';
+import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
+import { escapeRegExpCharacters } from 'vs/base/common/strings';
 
 class KendryteButtonContribution extends Disposable implements IWorkbenchContribution {
 	private currentHasError: boolean = false;
@@ -94,55 +97,60 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 	}
 
 	private createCMakeButtons() {
-		const cmakeButtonsShow = CONTEXT_CMAKE_CURRENT_IS_PROJECT.isEqualTo(false as any);
-		const folderSelectShow = CONTEXT_KENDRYTE_MULTIPLE_PROJECT.isEqualTo(true as any);
+		const folderSelectShow = CONTEXT_KENDRYTE_MULTIPLE_PROJECT;
+		const showStatus = [CMakeStatus.CONFIGURE_ERROR, CMakeStatus.IDLE, CMakeStatus.MAKE_ERROR];
+		const cmakeButtonsShow = ContextKeyExpr.regex(CONTEXT_CMAKE_STATUS.toNegated().keys()[0], new RegExp(`^(${showStatus.map(escapeRegExpCharacters).join('|')})$`));
 
 		const cmakeButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
 		cmakeButton.text = '$(book)';
 		cmakeButton.tooltip = localize('cmake', 'CMake');
 		// cmakeButton.command = ACTION_ID_MAIX_CMAKE_CONFIGURE;
-		cmakeButton.contextKey = cmakeButtonsShow;
+
+		const okButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
+		okButton.text = '$(check)';
+		okButton.tooltip = ACTION_LABEL_CMAKE_NO_ERROR;
+		okButton.command = ACTION_ID_SHOW_CMAKE_LOG;
+		okButton.hide();
 
 		const errorButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
 		errorButton.text = '$(alert)';
-		errorButton.tooltip = ACTION_LABEL_CMAKE_NO_ERROR;
 		errorButton.command = ACTION_ID_SHOW_CMAKE_LOG;
-		errorButton.contextKey = cmakeButtonsShow;
+		errorButton.hide();
 
 		const workspaceButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
 		workspaceButton.tooltip = ACTION_LABEL_SELECT_FOLDER;
 		workspaceButton.command = ACTION_ID_SELECT_FOLDER;
-		workspaceButton.contextKey = folderSelectShow;
+		workspaceButton.setContextKey(folderSelectShow);
 
 		const cleanButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
 		cleanButton.text = '$(trashcan)';
 		cleanButton.tooltip = ACTION_LABEL_MAIX_CMAKE_CLEANUP;
 		cleanButton.command = ACTION_ID_MAIX_CMAKE_CLEANUP;
-		cleanButton.contextKey = cmakeButtonsShow;
+		cleanButton.setContextKey(cmakeButtonsShow);
 
 		const buildButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
 		buildButton.text = '$(checklist)';
 		buildButton.tooltip = ACTION_LABEL_MAIX_CMAKE_BUILD;
 		buildButton.command = ACTION_ID_MAIX_CMAKE_BUILD;
-		buildButton.contextKey = cmakeButtonsShow;
+		buildButton.setContextKey(cmakeButtonsShow);
 
 		const debugButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
 		debugButton.text = '$(bug)';
 		debugButton.tooltip = ACTION_LABEL_MAIX_CMAKE_BUILD_DEBUG;
 		debugButton.command = ACTION_ID_MAIX_CMAKE_BUILD_DEBUG;
-		debugButton.contextKey = cmakeButtonsShow;
+		debugButton.setContextKey(cmakeButtonsShow);
 
 		const launchButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
 		launchButton.text = '$(triangle-right)';
 		launchButton.tooltip = ACTION_LABEL_MAIX_CMAKE_BUILD_RUN;
 		launchButton.command = ACTION_ID_MAIX_CMAKE_BUILD_RUN;
-		launchButton.contextKey = cmakeButtonsShow;
+		launchButton.setContextKey(cmakeButtonsShow);
 
 		const uploadButton = this.statusControl.createInstance(StatusBarLeftLocation.CMAKE);
 		uploadButton.text = '$(desktop-download)';
 		uploadButton.tooltip = ACTION_LABEL_MAIX_SERIAL_BUILD_UPLOAD;
 		uploadButton.command = ACTION_ID_MAIX_SERIAL_BUILD_UPLOAD;
-		uploadButton.contextKey = cmakeButtonsShow;
+		uploadButton.setContextKey(cmakeButtonsShow);
 
 		this._register(this.themeService.onThemeChange(() => {
 			this.updateErrorButtonColor(errorButton);
@@ -153,17 +161,35 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 		}));
 		this.onWorkspaceChange(workspaceButton, this.kendryteWorkspaceService.getCurrentWorkspace());
 
-		this._register(this.cmakeService.onCMakeStatusChange((e) => {
-			if (e) {
+		this._register(this.cmakeService.onCMakeStatusChange(({ status, error }) => {
+			if (error) {
+				errorButton.hide();
 				this.currentHasError = true;
-				errorButton.text = '$(alert)';
-				errorButton.tooltip = localize('error', 'CMake Error: {0}', e.message);
-				errorButton.command = '';
+				errorButton.command = ACTION_ID_SHOW_CMAKE_LOG;
+				errorButton.tooltip = localize('cmakeErrorUnknown', 'Click to view CMake logs...');
+				if (error instanceof CMakeError) {
+					errorButton.text = '$(alert) ' + error.message.substr(0, 100) + (error.message.length > 100 ? '...' : '');
+					switch (error.type) {
+						case CMakeErrorType.NO_WORKSPACE:
+							if (this.kendryteWorkspaceService.getAllWorkspace().length === 0) {
+								errorButton.command = 'workbench.action.files.openFolder';
+								errorButton.tooltip = localize('cmakeNeedOpenFolder', 'Please open any folder to continue...');
+							}
+							break;
+						case CMakeErrorType.PROJECT_NOT_EXISTS:
+							errorButton.command = ACTION_ID_MAIX_CMAKE_HELLO_WORLD;
+							errorButton.tooltip = localize('cmakeNeedProject', 'Click to create hello world project...');
+							break;
+					}
+				} else {
+					errorButton.text = '$(alert)';
+				}
+				errorButton.show();
+				okButton.hide();
 			} else {
 				this.currentHasError = false;
-				errorButton.text = '$(check)';
-				errorButton.command = ACTION_ID_SHOW_CMAKE_LOG;
-				errorButton.tooltip = ACTION_LABEL_CMAKE_NO_ERROR;
+				errorButton.hide();
+				okButton.show();
 			}
 			this.updateErrorButtonColor(errorButton);
 		}));

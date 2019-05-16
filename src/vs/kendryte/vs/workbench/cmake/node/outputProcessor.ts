@@ -1,17 +1,16 @@
 import { Severity } from 'vs/platform/notification/common/notification';
 import { IMarkerData, IMarkerService, MarkerSeverity } from 'vs/platform/markers/common/markers';
-import { URI } from 'vs/base/common/uri';
 import { TextProgressBar } from 'vs/kendryte/vs/base/common/textProgressBar';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
-import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
-import { normalize } from 'path';
 import { isAbsolute } from 'vs/base/common/path';
-import { isWindows } from 'vs/base/common/platform';
-import { escapeRegExpCharacters } from 'vs/base/common/strings';
-import { normalizePosixPath } from 'vs/kendryte/vs/base/common/resolvePath';
+import { normalizePosixPath, resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { IKendryteStatusControllerService } from 'vs/kendryte/vs/workbench/bottomBar/common/type';
 import { ExtendMap } from 'vs/kendryte/vs/base/common/extendMap';
+import { CMAKE_ERROR_MARKER } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
+import { URI } from 'vs/base/common/uri';
 
+const regLdMissingReference = /^(.*?):(\d+): (undefined reference to .+)$/;
 const regGCCError = /^(.*?):(\d+):(\d+):\s+(\w*)(?:\serror|warning)?:\s+(.*)/;
 const regCMakeProgress = /^\[\s*(\d+)%]/;
 
@@ -52,24 +51,23 @@ export abstract class CMakeProcessor implements IDisposable {
 	abstract dispose(): void;
 }
 
-interface MarkerStore {
-	uri: URI;
-	markers: IMarkerData[];
-}
-
 export class CMakeBuildErrorProcessor extends CMakeProcessor {
-	private readonly errorMarkers = new ExtendMap<string, MarkerStore>();
-	private cwd: IWorkspaceFolder;
+	private readonly errorMarkers = new ExtendMap<string/* abs path */, IMarkerData[]>();
+	private readonly currentProjectPath: string;
 
 	constructor(
-		@IMarkerService protected markerService: IMarkerService,
-		@IWorkspaceContextService protected workspaceContextService: IWorkspaceContextService,
+		@IMarkerService private readonly markerService: IMarkerService,
+		@IKendryteWorkspaceService kendryteWorkspaceService: IKendryteWorkspaceService,
 	) {
 		super();
-		this.cwd = workspaceContextService.getWorkspace().folders[0];
+		this.currentProjectPath = kendryteWorkspaceService.requireCurrentWorkspace();
 	}
 
 	protected onData(line: string) {
+		const m1 = regLdMissingReference.exec(line);
+		if (m1) {
+			this.diagnostic('error', 'LD: ' + m1[3], m1[1], m1[2], '0');
+		}
 		const m2 = regGCCError.exec(line);
 		if (m2) {
 			this.diagnostic(m2[4], m2[5], m2[1], m2[2], m2[3]);
@@ -78,66 +76,41 @@ export class CMakeBuildErrorProcessor extends CMakeProcessor {
 	}
 
 	protected diagnostic(_severity: string, message: string, file: string, _line: string, _column: string) {
-		message = 'CMake: ' + message;
 		let severity = MarkerSeverity.fromSeverity(Severity.fromValue(_severity)) || MarkerSeverity.Info;
 		if (severity === MarkerSeverity.Hint) {
 			severity = MarkerSeverity.Info;
 		}
-		const errorMarkers = this.errorMarkers;
 
 		const line = parseInt(_line);
 		const column = parseInt(_column);
 
-		if (isWindows) {
-
-		}
-		file = normalize(file);
-		const cwd = this.cwd.uri.fsPath;
-		if (isAbsolute(file)) {
-			if (isWindows) {
-				const reg = new RegExp('^' + escapeRegExpCharacters(cwd), 'i');
-				if (reg.test(file)) {
-					file = file.replace(reg, '').replace(/^[\\\/]+/, '');
-				}
-			} else if (file.indexOf(cwd) === 0) {
-				file = file.replace(cwd, '').replace(/^\/+/, '');
-			}
-		}
 		file = normalizePosixPath(file);
+		if (!isAbsolute(file)) {
+			file = resolvePath(this.currentProjectPath, file);
+		}
 
-		const entry = errorMarkers.entry(file, () => {
-			let fileRes: URI;
-
-			if (isAbsolute(file)) {
-				if (isWindows) {
-					file = normalizePosixPath('/' + file);
-				}
-				fileRes = URI.parse('file://' + file);
-			} else {
-				fileRes = this.cwd.toResource(file);
-			}
-			return { uri: fileRes, markers: [] };
+		const list = this.errorMarkers.entry(file, () => {
+			return [];
 		});
 
-		entry.markers.push({
+		list.push({
 			message,
 			severity,
-			file,
 			startLineNumber: line,
 			startColumn: column,
 			endLineNumber: line,
 			endColumn: column,
-		} as IMarkerData);
+		});
 	}
 
 	public finalize() {
-		for (const { uri, markers } of Array.from<MarkerStore>(this.errorMarkers.values())) {
-			this.markerService.changeOne('cmake/build', uri, markers);
+		for (const [file, markers] of this.errorMarkers.entries()) {
+			this.markerService.changeOne(CMAKE_ERROR_MARKER, URI.file(file), markers);
 		}
 	}
 
 	public dispose() {
-		this.markerService.changeAll('cmake/build', []);
+		this.markerService.changeAll(CMAKE_ERROR_MARKER, []);
 	}
 }
 

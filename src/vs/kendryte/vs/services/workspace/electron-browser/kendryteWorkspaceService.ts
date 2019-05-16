@@ -62,8 +62,8 @@ class KendryteWorkspaceService implements IKendryteWorkspaceService {
 			}
 		});
 
+		this.flushStatus();
 		if (workspaceContextService.getWorkbenchState() !== WorkbenchState.EMPTY) {
-			this.flushStatus();
 			this.trySwithLastProject();
 		}
 	}
@@ -93,6 +93,7 @@ class KendryteWorkspaceService implements IKendryteWorkspaceService {
 			return resolvePath(item.uri.fsPath);
 		});
 
+		console.log('this._allWorkspacePaths.length = ', this._allWorkspacePaths.length);
 		this.isNotEmpty.set(this._allWorkspacePaths.length !== 0);
 		this.isMultiple.set(this._allWorkspacePaths.length > 1);
 	}
@@ -138,9 +139,7 @@ class KendryteWorkspaceService implements IKendryteWorkspaceService {
 	}
 
 	getAllWorkspace() {
-		return this._allWorkspacePaths.map((f) => {
-			return f;
-		});
+		return this._allWorkspacePaths;
 	}
 
 	getAllWorkspaceFile(...s: string[]) {

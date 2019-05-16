@@ -3,12 +3,26 @@ import { IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
 import { Event } from 'vs/base/common/event';
 import { localize } from 'vs/nls';
 import { ERROR_REQUIRE_FOLDER } from 'vs/base/common/messages';
+import { CMakeError } from 'vs/kendryte/vs/workbench/cmake/common/errors';
+import { RawContextKey } from 'vs/platform/contextkey/common/contextkey';
 
 export const CMAKE_CHANNEL = 'maix-make-run';
 export const CMAKE_CHANNEL_TITLE = 'Build/Run';
 
+export const CMAKE_ERROR_MARKER = 'cmake/error';
+
 export const CMAKE_ERROR_REQUIRE_FOLDER = ERROR_REQUIRE_FOLDER;
 export const CMAKE_ERROR_NOT_PROJECT = localize('ErrorNotProject', 'This is not a cmake project.');
+
+export enum CMakeStatus {
+	BUSY = 'busy',
+	PROJECT_ERROR = 'project,error',
+	CONFIGURE_ERROR = 'configure,error',
+	IDLE = 'idle',
+	MAKE_ERROR = 'make,error',
+}
+
+export const CONTEXT_CMAKE_STATUS = new RawContextKey<CMakeStatus>('cmakeProjectStatus', CMakeStatus.BUSY);
 
 export interface ICMakeSelection {
 	variant: string;
@@ -21,10 +35,15 @@ export interface CurrentItem extends IQuickPickItem {
 
 export type IProjectList = ReadonlyMap<string/* project name */, string/* absolute path of CONTAIN DIR */>;
 
+export interface ICMakeStatus {
+	status: CMakeStatus;
+	error?: CMakeError | Error;
+}
+
 export interface ICMakeService {
 	_serviceBrand: any;
 
-	readonly onCMakeStatusChange: Event<Error | null>;
+	readonly onCMakeStatusChange: Event<ICMakeStatus>;
 	readonly onCMakeSelectionChange: Event<ICMakeSelection>;
 
 	rescanCurrentFolder(): Promise<void>;
