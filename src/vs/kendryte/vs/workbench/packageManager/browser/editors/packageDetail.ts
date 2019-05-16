@@ -7,7 +7,6 @@ import { EditorOptions } from 'vs/workbench/common/editor';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IPackageLocalRemoteInfo, PackageDetailCompletionInput } from 'vs/kendryte/vs/workbench/packageManager/common/editors/packageDetailInput';
 import { WebviewElement } from 'vs/workbench/contrib/webview/electron-browser/webviewElement';
-import { IWorkbenchLayoutService, Parts } from 'vs/workbench/services/layout/browser/layoutService';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { localize } from 'vs/nls';
 import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
@@ -36,6 +35,7 @@ export class PackageDetailEditor extends BaseEditor {
 	private name: HTMLSpanElement;
 	private description: HTMLDivElement;
 	private webviewElement: WebviewElement;
+	private webviewElementEvent: IDisposable;
 	private actionsBar: ActionBar;
 	private version: HTMLSpanElement;
 	private elementDisposables: IDisposable[] = [];
@@ -48,7 +48,6 @@ export class PackageDetailEditor extends BaseEditor {
 		@IStorageService storageService: IStorageService,
 		@IThemeService private readonly _themeService: IThemeService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@IWorkbenchLayoutService private layoutService: IWorkbenchLayoutService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@IRequestService private readonly requestService: IRequestService,
 		@IOpenerService private readonly openerService: IOpenerService,
@@ -82,33 +81,9 @@ export class PackageDetailEditor extends BaseEditor {
 			.filter(error => !!error)
 			.on(this.onError, this, this._toDispose);
 
-		this.webviewElement = this.instantiationService.createInstance(
-			WebviewElement,
-			{
-				allowSvgs: false,
-			},
-			{
-				allowScripts: false,
-			},
-		);
-		this.webviewElement.mountTo(this.layoutService.getContainer(Parts.EDITOR_PART));
-		this.renderBody('');
-		this._register(this.webviewElement);
-
-		this._register(this.webviewElement.onDidClickLink(link => {
-			if (!link) {
-				return;
-			}
-			// Whitelist supported schemes for links
-			if (['http', 'https', 'mailto'].indexOf(link.scheme) >= 0 || (link.scheme === 'command' && link.path === ShowCurrentReleaseNotesAction.ID)) {
-				this.openerService.open(link);
-			}
-		}));
-
 		append(root, $('hr'));
 
 		this.content = append(root, $('.content'));
-		this.webviewElement.mountTo(this.content);
 	}
 
 	private onError(err: Error) {
@@ -122,9 +97,33 @@ export class PackageDetailEditor extends BaseEditor {
 	async setInput(input: PackageDetailCompletionInput, options: EditorOptions, token: CancellationToken): Promise<void> {
 		super.setInput(input, options, token);
 
+		if (this.webviewElement) {
+			this.webviewElementEvent.dispose();
+			this.webviewElement.dispose();
+		}
+		this.webviewElement = this.instantiationService.createInstance(
+			WebviewElement,
+			{
+				allowSvgs: true,
+			},
+			{
+				allowScripts: false,
+			},
+		);
+		this.renderBody('');
+		this.webviewElementEvent = this.webviewElement.onDidClickLink(link => {
+			if (!link) {
+				return;
+			}
+			// Whitelist supported schemes for links
+			if (['http', 'https', 'mailto'].indexOf(link.scheme) >= 0 || (link.scheme === 'command' && link.path === ShowCurrentReleaseNotesAction.ID)) {
+				this.openerService.open(link);
+			}
+		})
+		this.webviewElement.mountTo(this.content);
+
 		this.actionsBar.clear();
 		dispose(this.elementDisposables);
-		this.webviewElement.contents = '';
 		this.elementDisposables.length = 0;
 		this.icon.style.display = 'none';
 		this.iconDisable.style.display = 'none';
@@ -212,19 +211,23 @@ export class PackageDetailEditor extends BaseEditor {
 
 		this.content.style.height = (dimension.height - this.content.offsetTop).toFixed(0) + 'px';
 
-		this.webviewElement.layout();
+		if (this.webviewElement) {
+			this.webviewElement.layout();
+		}
 	}
 
 	renderBody(body: string): void {
+		const styleSheetPath = require.toUrl('./markdown.css').replace('file://', 'vscode-core-resource://');
 		const theme = this._themeService.getTheme();
-		const style = `background-color: ${theme.getColor(editorBackground)}; color: ${theme.getColor(foreground)};`;
+		const style = `body {background-color: ${theme.getColor(editorBackground)}; color: ${theme.getColor(foreground)};}`;
 		const html = `<!DOCTYPE html>
 		<html>
 			<head>
 				<title>README</title>
 				<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; media-src https:; script-src 'none'; style-src 'unsafe-inline'; child-src 'none'; frame-src 'none';">
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; media-src https:; script-src 'none'; style-src vscode-core-resource:; child-src 'none'; frame-src 'none';">
 				<style type="text/css">${style}</style>
+				<link rel="stylesheet" type="text/css" href="${styleSheetPath}">
 			</head>
 			<body class="kendryte-ide ${theme.type}">
 				<a id="scroll-to-top" role="button" aria-label="scroll to top" href="#"><span class="icon"></span></a>
