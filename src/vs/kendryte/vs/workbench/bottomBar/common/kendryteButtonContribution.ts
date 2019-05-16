@@ -171,10 +171,10 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 					errorButton.text = '$(alert) ' + error.message.substr(0, 100) + (error.message.length > 100 ? '...' : '');
 					switch (error.type) {
 						case CMakeErrorType.NO_WORKSPACE:
-							if (this.kendryteWorkspaceService.getAllWorkspace().length === 0) {
-								errorButton.command = 'workbench.action.files.openFolder';
+							if (this.kendryteWorkspaceService.isEmpty()) {
+								errorButton.command = this.kendryteWorkspaceService.isEmptyWorkspace() ? 'workbench.action.addRootFolder' : 'workbench.action.files.openFolder';
 								errorButton.tooltip = localize('cmakeNeedOpenFolder', 'Please open any folder to continue...');
-							}
+							} // else not known wy
 							break;
 						case CMakeErrorType.PROJECT_NOT_EXISTS:
 							errorButton.command = ACTION_ID_MAIX_CMAKE_HELLO_WORLD;

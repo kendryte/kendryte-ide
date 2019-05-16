@@ -1,7 +1,6 @@
 import { Action } from 'vs/base/common/actions';
 import { ACTION_ID_OPEN_PROJECT_SETTINGS, ACTION_LABEL_OPEN_PROJECT_SETTINGS } from 'vs/kendryte/vs/base/common/menu/tools';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { localize } from 'vs/nls';
 import { URI } from 'vs/base/common/uri';
@@ -18,7 +17,6 @@ export class OpenPackageJsonEditorAction extends Action {
 		id: string = OpenPackageJsonEditorAction.ID, label: string = OpenPackageJsonEditorAction.LABEL,
 		@IEditorService private editorService: IEditorService,
 		@ICustomJsonEditorService private customJsonEditorService: ICustomJsonEditorService,
-		@IWorkspaceContextService private workspaceContextService: IWorkspaceContextService,
 		@INotificationService private notificationService: INotificationService,
 		@IKendryteWorkspaceService private kendryteWorkspaceService: IKendryteWorkspaceService,
 	) {
@@ -26,7 +24,7 @@ export class OpenPackageJsonEditorAction extends Action {
 	}
 
 	async run(switchTab: string): Promise<any> {
-		if (this.workspaceContextService.getWorkbenchState() === WorkbenchState.EMPTY) {
+		if (this.kendryteWorkspaceService.isEmpty()) {
 			this.notificationService.error(localize('workspace.required', 'You must open source folder to do that.'));
 			return new Error('Can not use flash manager whithout workspace');
 		}

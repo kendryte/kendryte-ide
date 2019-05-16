@@ -32,6 +32,8 @@ export interface IKendryteWorkspaceService {
 	getProjectSetting(dir: string): string;
 	isKendryteProject(dir: string): Promise<boolean>;
 	readProjectSetting(dir: string): Promise<ILoadedCompileInfo | null>;
+	isEmpty(): boolean;
+	isEmptyWorkspace(): boolean;
 }
 
 export const IKendryteWorkspaceService = createDecorator<IKendryteWorkspaceService>('kendryteWorkspaceService');

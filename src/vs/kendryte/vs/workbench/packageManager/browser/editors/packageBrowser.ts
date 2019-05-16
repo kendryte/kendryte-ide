@@ -15,11 +15,11 @@ import { renderOcticons } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { ILogService } from 'vs/platform/log/common/log';
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
-import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { CMakeProjectTypes } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 
 export class PackageBrowserEditor extends BaseEditor {
 	static readonly ID: string = 'workbench.editor.package-market';
@@ -40,7 +40,7 @@ export class PackageBrowserEditor extends BaseEditor {
 		@IPackageRegistryService private packageRegistryService: IPackageRegistryService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IChannelLogService channelLogService: IChannelLogService,
-		@IWorkspaceContextService private workspaceService: IWorkspaceContextService,
+		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 		@IStorageService storageService: IStorageService,
 		@IContextViewService private contextViewProvider: IContextViewService,
 	) {
@@ -102,11 +102,11 @@ export class PackageBrowserEditor extends BaseEditor {
 			navbar.push(CMakeProjectTypes.example, localize('example', 'Example'), visualStudioIconClass('example'), '');
 		}
 
-		this._register(this.workspaceService.onDidChangeWorkbenchState((state) => {
-			onWorkspaceChange(state === WorkbenchState.EMPTY);
+		this._register(this.kendryteWorkspaceService.workspaceContextService.onDidChangeWorkbenchState((state) => {
+			onWorkspaceChange(this.kendryteWorkspaceService.isEmpty());
 		}));
 		setImmediate(() => {
-			onWorkspaceChange(this.workspaceService.getWorkbenchState() === WorkbenchState.EMPTY);
+			onWorkspaceChange(this.kendryteWorkspaceService.isEmpty());
 		});
 
 		this._register(navbar.onChange(({ id }) => this.onTabChange(id as CMakeProjectTypes)));

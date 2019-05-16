@@ -493,10 +493,6 @@ export class CMakeService implements ICMakeService {
 		this.logger.info('Workspace folder changed, stopping CMake server...');
 		await this.shutdown();
 
-		if (!currentFolder) {
-			throw new Error('No folder opened.');
-		}
-
 		this._CMakeProjectExists = false;
 
 		this.logger.info('detecting project in ' + currentFolder);

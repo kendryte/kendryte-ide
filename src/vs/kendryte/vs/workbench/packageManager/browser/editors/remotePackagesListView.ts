@@ -22,11 +22,11 @@ import { IPackageRegistryService } from 'vs/kendryte/vs/workbench/packageManager
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IWindowService } from 'vs/platform/windows/common/windows';
 import { URI } from 'vs/base/common/uri';
-import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { CMakeProjectTypes } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { selectBoxNames } from 'vs/kendryte/vs/base/browser/ui/selectBox';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { IFileDialogService } from 'vs/platform/dialogs/common/dialogs';
+import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 
 const TEMPLATE_ID = 'remote-packages';
 
@@ -70,7 +70,7 @@ class ListRenderer implements IPagedRenderer<IRemotePackageInfo, ITemplateData> 
 		@INotificationService private readonly notificationService: INotificationService,
 		@IFileDialogService private readonly fileDialogService: IFileDialogService,
 		@IWindowService private readonly windowService: IWindowService,
-		@IWorkspaceContextService private readonly workspaceService: IWorkspaceContextService,
+		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 	) {
 	}
 
@@ -223,7 +223,7 @@ class ListRenderer implements IPagedRenderer<IRemotePackageInfo, ITemplateData> 
 				return this.packageRegistryService.installExample(currentElement, selectedVersion, p[0].fsPath);
 			}).then((path) => {
 				if (path) {
-					const isEmptyWorkspace = this.workspaceService.getWorkbenchState() === WorkbenchState.EMPTY;
+					const isEmptyWorkspace = this.kendryteWorkspaceService.isEmpty();
 					this.windowService.openWindow([
 						{
 							folderUri: URI.file(path),

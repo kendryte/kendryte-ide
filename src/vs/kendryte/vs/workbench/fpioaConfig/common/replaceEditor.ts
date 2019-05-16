@@ -5,17 +5,17 @@ import { IEditorInput } from 'vs/workbench/common/editor';
 import { IEditorOptions, ITextEditorOptions } from 'vs/platform/editor/common/editor';
 import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { endsWith } from 'vs/base/common/strings';
-import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { basename, dirname } from 'vs/base/common/path';
 import { FPIOA_FILE_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { IFpioaService } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
 import { FpioaEditorInput } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaEditorInput';
+import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 
 export class FpioaHandlerContribution extends Disposable implements IWorkbenchContribution {
 	constructor(
 		@IEditorService private readonly editorService: IEditorService,
 		@IFpioaService private readonly fpioaEditorService: IFpioaService,
-		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
+		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 	) {
 		super();
 
@@ -37,7 +37,7 @@ export class FpioaHandlerContribution extends Disposable implements IWorkbenchCo
 			return;
 		}
 
-		if (this.workspaceContextService.getWorkbenchState() === WorkbenchState.EMPTY) {
+		if (this.kendryteWorkspaceService.isEmpty()) {
 			return;
 		}
 

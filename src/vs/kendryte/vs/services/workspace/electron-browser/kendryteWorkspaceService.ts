@@ -4,7 +4,7 @@ import { IWorkspaceContextService, IWorkspaceFolder, IWorkspaceFolderData, Workb
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { Emitter } from 'vs/base/common/event';
-import { ILogService } from 'vs/platform/log/common/log';
+import { LogLevel } from 'vs/platform/log/common/log';
 import { ERROR_REQUIRE_FOLDER } from 'vs/base/common/messages';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { CONTEXT_KENDRYTE_MULTIPLE_PROJECT, CONTEXT_KENDRYTE_NOT_EMPTY } from 'vs/kendryte/vs/services/workspace/common/contextKey';
@@ -15,6 +15,7 @@ import { URI } from 'vs/base/common/uri';
 import { createSimpleJsonWarningMarkers } from 'vs/kendryte/vs/platform/marker/common/simple';
 import { IMarkerService } from 'vs/platform/markers/common/markers';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
+import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import IContextKey = monaco.editor.IContextKey;
 
 class KendryteWorkspaceService implements IKendryteWorkspaceService {
@@ -28,15 +29,19 @@ class KendryteWorkspaceService implements IKendryteWorkspaceService {
 	private _allWorkspacePaths: string[];
 	private isNotEmpty: IContextKey<boolean>;
 	private isMultiple: IContextKey<boolean>;
+	private logger: IChannelLogger;
 
 	constructor(
 		@IContextKeyService contextKeyService: IContextKeyService,
+		@IChannelLogService channelLogService: IChannelLogService,
 		@IWorkspaceContextService public readonly workspaceContextService: IWorkspaceContextService,
-		@ILogService private readonly logService: ILogService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IMarkerService private readonly markerService: IMarkerService,
 		@IStorageService private readonly storageService: IStorageService,
 	) {
+		this.logger = channelLogService.createChannel('workspace');
+		this.logger.setLevel(LogLevel.Debug);
+
 		const my = (item: IWorkspaceFolder) => {
 			return item.uri.fsPath === this._currentWorkspacePath;
 		};
@@ -45,10 +50,11 @@ class KendryteWorkspaceService implements IKendryteWorkspaceService {
 		this.isMultiple = CONTEXT_KENDRYTE_MULTIPLE_PROJECT.bindTo(contextKeyService);
 
 		workspaceContextService.onDidChangeWorkspaceFolders((event) => {
+			this.logger.debug('Change status: %O', event);
 			this.flushStatus();
 
 			if (event.removed.findIndex(my) !== -1) {
-				if (workspaceContextService.getWorkbenchState() === WorkbenchState.EMPTY) {
+				if (this.isEmpty()) {
 					this.changeWorkspaceByIndex(-1);
 				} else {
 					this.changeWorkspaceByIndex(0);
@@ -57,43 +63,60 @@ class KendryteWorkspaceService implements IKendryteWorkspaceService {
 				const newOne = workspaceContextService.getWorkspace().folders.find(my);
 				console.log(newOne, newOne === this._currentWorkspace);
 				debugger;
-			} else if (workspaceContextService.getWorkbenchState() === WorkbenchState.EMPTY) {
+			} else if (this.isEmpty()) {
 				this.changeWorkspaceByIndex(-1);
+			} else if (event.added.length === this._allWorkspacePaths.length) {
+				this.changeWorkspaceByIndex(0);
 			}
 		});
 
 		this.flushStatus();
-		if (workspaceContextService.getWorkbenchState() !== WorkbenchState.EMPTY) {
-			this.trySwithLastProject();
+		if (!this.isEmpty()) {
+			this.trySwitchLastProject();
 		}
 	}
 
-	private trySwithLastProject() {
+	isEmpty() {
+		return this.workspaceContextService.getWorkbenchState() === WorkbenchState.EMPTY || this.isEmptyWorkspace();
+	}
+
+	isEmptyWorkspace() {
+		return this.workspaceContextService.getWorkbenchState() === WorkbenchState.WORKSPACE &&
+		       this.workspaceContextService.getWorkspace().folders.length === 0;
+	}
+
+	private trySwitchLastProject() {
 		const knownWorkspace = this.storageService.get('lastOpenWorkspace', StorageScope.WORKSPACE, '');
+		this.logger.debug('Last known workspace: %s', knownWorkspace);
 		if (knownWorkspace) {
 			try {
 				this.changeWorkspaceByName(knownWorkspace);
 				return;
 			} catch (e) {
+				this.logger.debug('  - ignore this error.');
 			}
 		}
 		this.changeWorkspaceByIndex(0);
 	}
 
 	private rememberSelectedProject() {
+		this.logger.debug('rememberSelectedProject()');
 		if (this._currentWorkspace) {
+			this.logger.debug('  remember: %s', this._currentWorkspace.name);
 			this.storageService.store('lastOpenWorkspace', this._currentWorkspace.name, StorageScope.WORKSPACE);
 		} else {
+			this.logger.debug('  forgot.');
 			this.storageService.remove('lastOpenWorkspace', StorageScope.WORKSPACE);
 		}
 	}
 
 	private flushStatus() {
+		this.logger.debug('flushStatus()');
 		this._allWorkspacePaths = this.workspaceContextService.getWorkspace().folders.map((item) => {
 			return resolvePath(item.uri.fsPath);
 		});
 
-		console.log('this._allWorkspacePaths.length = ', this._allWorkspacePaths.length);
+		this.logger.debug('  folder count =', this._allWorkspacePaths.length);
 		this.isNotEmpty.set(this._allWorkspacePaths.length !== 0);
 		this.isMultiple.set(this._allWorkspacePaths.length > 1);
 	}
@@ -149,41 +172,49 @@ class KendryteWorkspaceService implements IKendryteWorkspaceService {
 	}
 
 	changeWorkspaceByName(name: string) {
+		this.logger.debug('changeWorkspaceByName(%s)', name);
 		const folder = this.workspaceContextService.getWorkspace().folders.find((item) => {
 			return item.name === name;
 		});
 		if (!folder) {
+			this.logger.error('  error: no such folder.');
 			throw new Error(`Workspace name ${name} did not opened`);
 		}
 		this._changeWorkspace(folder);
 	}
 
 	changeWorkspaceByPath(path: string) {
+		this.logger.debug('changeWorkspaceByPath(%s)', path);
 		path = resolvePath(path);
 		const index = this._allWorkspacePaths.findIndex((wsPath) => {
 			return wsPath === path;
 		});
 		const folder = this.workspaceContextService.getWorkspace().folders[index];
 		if (!folder) {
+			this.logger.error('  error: no such folder.');
 			throw new Error(`Workspace path ${path} did not opened`);
 		}
 		this._changeWorkspace(folder);
 	}
 
 	changeWorkspaceByIndex(index: number) {
+		this.logger.debug('changeWorkspaceByIndex(%s)', index);
 		if (index === -1) {
 			this._closeWorkspace();
 			return;
 		}
 		const sel = this.workspaceContextService.getWorkspace().folders[index];
 		if (!sel) {
+			this.logger.error('  error: no such folder.');
 			throw new Error(`Workspace index ${index} does not exists`);
 		}
 		this._changeWorkspace(sel);
 	}
 
 	private _closeWorkspace() {
+		this.logger.info('_closeWorkspace()');
 		const actualChanged = !!this._currentWorkspace;
+		this.logger.info('  actualChanged =', actualChanged);
 		delete this._currentWorkspace;
 		delete this._currentWorkspacePath;
 
@@ -193,10 +224,13 @@ class KendryteWorkspaceService implements IKendryteWorkspaceService {
 	}
 
 	private _changeWorkspace(ws: IWorkspaceFolderData) {
+		this.logger.info('_changeWorkspace()');
 		const newPath = resolvePath(ws.uri.fsPath);
+		this.logger.info('  newPath =', newPath);
 		const actualChanged = this._currentWorkspacePath !== newPath;
+		this.logger.info('  actualChanged =', actualChanged);
 
-		this.logService.info('switch workspace: ' + newPath);
+		this.logger.info('Switch workspace: ' + newPath);
 
 		this._currentWorkspace = ws;
 		this._currentWorkspacePath = newPath;
@@ -223,7 +257,7 @@ class KendryteWorkspaceService implements IKendryteWorkspaceService {
 			return null;
 		}
 
-		// console.log('load project file: %s', file);
+		this.logger.info('Load project file: %s', file);
 		const { json, warnings } = await this.nodeFileSystemService.readJsonFile(file);
 
 		this.markerService.changeOne(EXTEND_JSON_MARKER_ID, URI.file(file), createSimpleJsonWarningMarkers(warnings));
