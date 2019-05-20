@@ -5,7 +5,6 @@ import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { CMAKE_CONFIG_FILE_NAME, CMakeProjectTypes, ICompileInfo, ICompileInfoPossibleKeys } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { localize } from 'vs/nls';
 import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
@@ -25,6 +24,11 @@ import { EditorId } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/t
 import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 import { OpenManagerControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/dependency';
 import { rememberEditorScroll, restoreEditorScroll } from 'vs/kendryte/vs/workbench/jsonGUIEditor/browser/rememberEditorScroll';
+import { ITextResourceConfigurationService } from 'vs/editor/common/services/resourceConfiguration';
+import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
+import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
+import { IWindowService } from 'vs/platform/windows/common/windows';
+import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 
 interface IControlList extends Record<ICompileInfoPossibleKeys, IUISection<any>> {
 	name: IUISection<string>;
@@ -62,15 +66,19 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo> 
 	constructor(
 		id: EditorId,
 		@ITelemetryService telemetryService: ITelemetryService,
-		@IThemeService themeService: IThemeService,
+		@IInstantiationService instantiationService: IInstantiationService,
 		@IStorageService storageService: IStorageService,
-		@IContextViewService contextViewService: IContextViewService,
+		@ITextResourceConfigurationService configurationService: ITextResourceConfigurationService,
+		@IThemeService themeService: IThemeService,
+		@ITextFileService textFileService: ITextFileService,
+		@IEditorService editorService: IEditorService,
+		@IEditorGroupsService editorGroupService: IEditorGroupsService,
+		@IWindowService windowService: IWindowService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@INotificationService notificationService: INotificationService,
 		@ICustomJsonEditorService customJsonEditorService: ICustomJsonEditorService,
-		@IInstantiationService private readonly instantiationService: IInstantiationService,
 	) {
-		super(id, telemetryService, themeService, storageService, contextKeyService, notificationService, customJsonEditorService);
+		super(id, telemetryService, instantiationService, storageService, configurationService, themeService, textFileService, editorService, editorGroupService, windowService, contextKeyService, notificationService, customJsonEditorService);
 
 		this.sectionCreator = this._register(instantiationService.createInstance(SectionFactory));
 		this._register(this.sectionCreator.onDidHeightChange(() => {
@@ -152,7 +160,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo> 
 		}
 	}
 
-	public layout(): void {
+	_layout(): void {
 		this.scroll.scanDomNode();
 	}
 

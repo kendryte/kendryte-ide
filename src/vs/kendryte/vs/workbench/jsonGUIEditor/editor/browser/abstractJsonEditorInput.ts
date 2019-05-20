@@ -4,18 +4,14 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { Emitter } from 'vs/base/common/event';
 import { EditorId, IJsonEditorInput } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/type';
 import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
-
-export interface ISwitchTypeEvent {
-	type: 'json' | 'gui';
-	data: any;
-	dirty: boolean;
-}
+import { IEditorModel } from 'vs/platform/editor/common/editor';
 
 export abstract class AbstractJsonEditorInput<JsonType> extends EditorInput implements IJsonEditorInput<JsonType> {
 	public readonly model: IJsonEditorModel<JsonType>;
 
-	private readonly _onSwitchType = this._register(new Emitter<ISwitchTypeEvent>());
+	private readonly _onSwitchType = this._register(new Emitter<void>());
 	public readonly onSwitchType = this._onSwitchType.event;
+	private _jsonMode: boolean = false;
 
 	public constructor(
 		private readonly descriptor: EditorId,
@@ -79,11 +75,16 @@ export abstract class AbstractJsonEditorInput<JsonType> extends EditorInput impl
 	}
 
 	async switchTo(type: 'json' | 'gui') {
-		this._onSwitchType.fire({
-			type,
-			data: this.model.data,
-			dirty: this.isDirty(),
-		});
+		const jsonMode = type === 'json';
+		if (this._jsonMode === jsonMode) {
+			return;
+		}
+		this._jsonMode = jsonMode;
+		this._onSwitchType.fire();
+	}
+
+	get jsonMode() {
+		return this._jsonMode;
 	}
 
 	async revert(options?: IRevertOptions): Promise<boolean> {
@@ -106,8 +107,13 @@ export abstract class AbstractJsonEditorInput<JsonType> extends EditorInput impl
 		return this.descriptor.id;
 	}
 
-	async resolve() {
+	async resolve(): Promise<IEditorModel>;
+	async resolve(toRaw: false): Promise<IJsonEditorModel<JsonType>>;
+	async resolve(toRaw: boolean = true) {
 		await this.model.load();
+		if (toRaw) {
+			return this.model.reference.object;
+		}
 		return this.model;
 	}
 

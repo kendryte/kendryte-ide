@@ -1,38 +1,90 @@
-import { BaseEditor } from 'vs/workbench/browser/parts/editor/baseEditor';
+import 'vs/css!vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/style';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { EditorOptions } from 'vs/workbench/common/editor';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
-import { CONTEXT_JSON_GUI_EDITOR } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/context';
+import { CONTEXT_JSON_GUI_EDITOR, CONTEXT_JSON_GUI_EDITOR_JSON_MODE } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/context';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { INotificationService } from 'vs/platform/notification/common/notification';
+import { AbstractJsonEditorInput } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditorInput';
 import { EditorId, IJsonEditor } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/type';
-import { AbstractJsonEditorInput, ISwitchTypeEvent } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditorInput';
 import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
-import { $, append, IFocusTracker, trackFocus } from 'vs/base/browser/dom';
+import { $, append, Dimension, hide, IFocusTracker, show, trackFocus } from 'vs/base/browser/dom';
+import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
+import { ITextResourceConfigurationService } from 'vs/editor/common/services/resourceConfiguration';
+import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
+import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
+import { IWindowService } from 'vs/platform/windows/common/windows';
+import { AbstractTextResourceEditor } from 'vs/workbench/browser/parts/editor/textResourceEditor';
 
-export abstract class AbstractJsonEditor<JsonType> extends BaseEditor implements IJsonEditor {
-	protected readonly inJsonGuiEditorContextKey: IContextKey<boolean>;
+export abstract class AbstractJsonEditor<JsonType> extends AbstractTextResourceEditor implements IJsonEditor {
+	private readonly inJsonGuiEditorContextKey: IContextKey<boolean>;
+	private readonly inJsonRawEditorContextKey: IContextKey<boolean>;
+
 	protected _input: AbstractJsonEditorInput<JsonType> | null;
 	private _inputEvents: IDisposable[] = [];
-	protected isJsonMode: boolean = false;
 	protected editorInited: boolean = false;
 	private _awaitingUpdate: boolean = false;
 	private focusTracker: IFocusTracker;
 
+	private containerRaw?: HTMLDivElement;
+	private containerGui?: HTMLDivElement;
+
 	protected constructor(
 		public readonly descriptor: EditorId,
 		@ITelemetryService telemetryService: ITelemetryService,
-		@IThemeService themeService: IThemeService,
+		@IInstantiationService instantiationService: IInstantiationService,
 		@IStorageService storageService: IStorageService,
+		@ITextResourceConfigurationService configurationService: ITextResourceConfigurationService,
+		@IThemeService themeService: IThemeService,
+		@ITextFileService textFileService: ITextFileService,
+		@IEditorService editorService: IEditorService,
+		@IEditorGroupsService editorGroupService: IEditorGroupsService,
+		@IWindowService windowService: IWindowService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@INotificationService protected readonly notificationService: INotificationService,
 		@ICustomJsonEditorService protected readonly customJsonEditorService: ICustomJsonEditorService,
 	) {
-		super(descriptor.id, telemetryService, themeService, storageService);
+		super(
+			descriptor.id,
+			telemetryService,
+			instantiationService,
+			storageService,
+			configurationService,
+			themeService,
+			editorGroupService,
+			textFileService,
+			editorService,
+			windowService,
+		);
 		this.inJsonGuiEditorContextKey = CONTEXT_JSON_GUI_EDITOR.bindTo(contextKeyService);
+		this.inJsonRawEditorContextKey = CONTEXT_JSON_GUI_EDITOR_JSON_MODE.bindTo(contextKeyService);
+	}
+
+	getConfigurationOverrides() {
+		const opts = super.getConfigurationOverrides();
+		opts.readOnly = false;
+		return opts;
+	}
+
+	protected abstract _layout(dimension: Dimension): void;
+
+	private _lastDimension: Dimension;
+
+	layout(dimension: Dimension = this._lastDimension) {
+		if (!dimension) {
+			return;
+		}
+		this._lastDimension = dimension;
+		super.layout(dimension);
+		this._layout(dimension);
+	}
+
+	public getTitle(): string {
+		return this.descriptor.title;
 	}
 
 	_registerInput(dis: IDisposable) {
@@ -40,15 +92,17 @@ export abstract class AbstractJsonEditor<JsonType> extends BaseEditor implements
 	}
 
 	async setInput(input: AbstractJsonEditorInput<JsonType>, options: EditorOptions, token: CancellationToken): Promise<void> {
-		this.inJsonGuiEditorContextKey.set(true);
 		await super.setInput(input, options, token);
 
-		const model = await input.resolve();
+		const model = await input.resolve(false);
 		if (!model) {
 			debugger;
 		}
 
-		this._inputEvents.push(input.onSwitchType(event => { this.onSwitchType(event);}));
+		this._inputEvents.push(input.onSwitchType(event => {
+			this.switchJsonType();
+			this.updateModel(model);
+		}));
 
 		if (!this.editorInited) {
 			console.warn('Skip because editor not ready');
@@ -57,6 +111,7 @@ export abstract class AbstractJsonEditor<JsonType> extends BaseEditor implements
 		}
 
 		this.updateModel(model);
+		this.switchJsonType();
 	}
 
 	clearInput(): void {
@@ -64,7 +119,8 @@ export abstract class AbstractJsonEditor<JsonType> extends BaseEditor implements
 
 		this._inputEvents = dispose(this._inputEvents);
 		super.clearInput();
-		this.inJsonGuiEditorContextKey.set(false);
+
+		this.switchJsonType();
 	}
 
 	protected getModel() {
@@ -77,16 +133,35 @@ export abstract class AbstractJsonEditor<JsonType> extends BaseEditor implements
 	protected abstract updateModel(model: IJsonEditorModel<JsonType>): void | Promise<void>;
 	protected abstract updateModel(): void | Promise<void>;
 
-	private onSwitchType(event: ISwitchTypeEvent) {
-		const isJsonMode = event.type === 'json';
-		if (isJsonMode !== this.isJsonMode) {
-
+	private switchJsonType() {
+		if (!this._input) {
+			console.log('json mode: blur');
+			this.inJsonGuiEditorContextKey.set(false);
+			this.inJsonRawEditorContextKey.set(false);
+			return;
+		}
+		const isJsonMode: boolean = this._input.jsonMode;
+		console.log('json mode: ', isJsonMode);
+		if (isJsonMode) {
+			this.inJsonRawEditorContextKey.set(true);
+			this.inJsonGuiEditorContextKey.set(false);
+			hide(this.containerGui!);
+			show(this.containerRaw!);
+		} else {
+			this.inJsonGuiEditorContextKey.set(true);
+			this.inJsonRawEditorContextKey.set(false);
+			hide(this.containerRaw!);
+			show(this.containerGui!);
 		}
 	}
 
 	protected createEditor(parent: HTMLElement): void {
+		this.containerRaw = append(parent, $('div.kendryte-json-editor-raw')) as HTMLDivElement;
+		hide(this.containerRaw);
+		super.createEditor(this.containerRaw);
+
 		// console.log('will create editor: %s', this.descriptor.id);
-		const container = append(parent, $('div.kendryte-json-editor')) as HTMLDivElement;
+		const container = this.containerGui = append(parent, $('div.kendryte-json-editor')) as HTMLDivElement;
 		container.classList.add(this.descriptor.id.split('.').pop() || 'invalid-editor-id');
 
 		this.focusTracker = this._register(trackFocus(container));
@@ -113,6 +188,10 @@ export abstract class AbstractJsonEditor<JsonType> extends BaseEditor implements
 			this.updateModel(this._input!.model);
 			this._awaitingUpdate = false;
 		}
+	}
+
+	protected getAriaLabel(): string {
+		return this.getTitle();
 	}
 
 	protected abstract _createEditor(parent: HTMLElement): void

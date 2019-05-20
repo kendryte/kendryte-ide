@@ -30,13 +30,17 @@ import { IFlashManagerConfigJson, IFlashSection } from 'vs/kendryte/vs/base/comm
 import { EditorId } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/type';
 import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 import { FlashManagerEditorInput } from 'vs/kendryte/vs/workbench/flashManager/common/editorInput';
+import { ITextResourceConfigurationService } from 'vs/editor/common/services/resourceConfiguration';
+import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
+import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
+import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
+import { IWindowService } from 'vs/platform/windows/common/windows';
 
 export class FlashManagerEditor extends AbstractJsonEditor<IFlashManagerConfigJson> {
 	protected _input: FlashManagerEditorInput | null;
 
 	private _parent: HTMLDivElement;
 	private titleContainer: HTMLElement;
-	private _lastDimension: Dimension;
 
 	private information: HTMLSpanElement;
 	private error: HTMLSpanElement;
@@ -54,15 +58,20 @@ export class FlashManagerEditor extends AbstractJsonEditor<IFlashManagerConfigJs
 	constructor(
 		id: EditorId,
 		@ITelemetryService telemetryService: ITelemetryService,
-		@IThemeService themeService: IThemeService,
+		@IInstantiationService instantiationService: IInstantiationService,
 		@IStorageService storageService: IStorageService,
+		@ITextResourceConfigurationService configurationService: ITextResourceConfigurationService,
+		@IThemeService themeService: IThemeService,
+		@ITextFileService textFileService: ITextFileService,
+		@IEditorService editorService: IEditorService,
+		@IEditorGroupsService editorGroupService: IEditorGroupsService,
+		@IWindowService windowService: IWindowService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@INotificationService notificationService: INotificationService,
 		@ICustomJsonEditorService customJsonEditorService: ICustomJsonEditorService,
-		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IContextViewService private readonly contextViewService: IContextViewService,
 	) {
-		super(id, telemetryService, themeService, storageService, contextKeyService, notificationService, customJsonEditorService);
+		super(id, telemetryService, instantiationService, storageService, configurationService, themeService, textFileService, editorService, editorGroupService, windowService, contextKeyService, notificationService, customJsonEditorService);
 
 		this.context = FlashManagerFocusContext.bindTo(contextKeyService);
 		this.render = this.instantiationService.createInstance(FlashSectionRender);
@@ -105,12 +114,7 @@ export class FlashManagerEditor extends AbstractJsonEditor<IFlashManagerConfigJs
 		}));
 	}
 
-	public layout(dimension: Dimension = this._lastDimension): void {
-		if (!dimension) {
-			return;
-		}
-		this._lastDimension = dimension;
-
+	_layout(dimension: Dimension): void {
 		const w = Math.min(dimension.width, 800);
 		Object.assign(this._parent.style, {
 			height: dimension.height + 'px',

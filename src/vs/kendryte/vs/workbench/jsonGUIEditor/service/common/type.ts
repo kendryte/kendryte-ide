@@ -24,6 +24,8 @@ export interface IJsonEditorModel<JsonType> extends IEditorModel {
 	readonly data: DeepReadonly<JsonType>;
 	readonly resource: URI;
 
+	readonly reference: IReference<IResolvedTextEditorModel>;
+
 	save(): Promise<void>;
 	update(key: string | JSONPath, value: any): boolean;
 	isDirty(): boolean;

@@ -1,9 +1,9 @@
-.kendryte-package-json-editor {
+.kendryte-json-editor.kendrytePackageJsonEditor {
   display: block;
   height: 100%; }
-  .kendryte-package-json-editor > .monaco-scrollable-element {
+  .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element {
     height: 100%; }
-    .kendryte-package-json-editor > .monaco-scrollable-element > .wrap {
+    .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap {
       height: 100%;
       padding: 12px 0;
       max-width: 800px;
@@ -11,37 +11,36 @@
       overflow-x: visible;
       overflow-y: scroll;
       box-sizing: border-box; }
-      .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > hr {
+      .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > hr {
         margin-bottom: 12px; }
-      .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section {
+      .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section {
         display: flex;
         margin-bottom: 1em; }
-        .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .left {
+        .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .left {
           width: 30%;
           max-width: 250px; }
-          .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .left > h3 {
+          .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .left > h3 {
             margin-top: 0; }
-        .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right {
+        .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right {
           position: relative;
           flex: 1;
           margin-left: 6px; }
-          .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right textarea.input {
+          .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right textarea.input {
             width: 100%; }
-          .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control {
+          .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right > .control {
             display: flex;
-            flex-direction: row;
-            margin-top: 8px; }
-            .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control > .monaco-button {
-							display: flex;
-							align-items: center; }
-            .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control > * {
+            flex-direction: row; }
+            .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right > .control > .monaco-button {
+              display: flex;
+              align-items: center; }
+            .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right > .control > * {
               flex: 0;
               white-space: nowrap;
               margin-right: 0.6em; }
-              .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > .section > .right > .control > * .icon {
+              .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right > .control > * .icon {
                 display: inline-block;
                 margin-right: 6px; }
-      .kendryte-package-json-editor > .monaco-scrollable-element > .wrap > code.json {
+      .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > code.json {
         margin-top: 15px;
         white-space: pre;
         width: 100%;
