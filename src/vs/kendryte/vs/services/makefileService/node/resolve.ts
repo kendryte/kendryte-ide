@@ -59,7 +59,7 @@ export class MakefileServiceResolve {
 		}
 
 		const isRoot = list.length === 0;
-		const shouldHaveSourceCode = (projectJson.type === CMakeProjectTypes.executable) ||
+		const shouldHaveSourceCode = (!projectJson.type) || (projectJson.type === CMakeProjectTypes.executable) ||
 		                             (projectJson.type === CMakeProjectTypes.library && !projectJson.prebuilt);
 
 		const isWorkspaceProject = isRoot || this._projectNameMap.has(projectJson.name);

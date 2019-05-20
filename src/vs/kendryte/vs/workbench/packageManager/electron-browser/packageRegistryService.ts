@@ -19,7 +19,7 @@ import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/commo
 import { URI } from 'vs/base/common/uri';
 import { dumpDate } from 'vs/kendryte/vs/base/common/dumpDate';
 import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
-import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
+import { INotificationHandle, INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { PACKAGE_MANAGER_DISTRIBUTE_URL } from 'vs/kendryte/vs/base/common/constants/remoteRegistry';
 import { INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
@@ -174,26 +174,26 @@ export class PackageRegistryService implements IPackageRegistryService {
 
 	public async installAll(): Promise<void> {
 		const workspaces = await this.kendryteWorkspaceService.getAllWorkspace();
+
+		const handle = unClosableNotify(this.notificationService, {
+			severity: Severity.Info,
+			message: 'Installing...',
+			source: 'Package Manager',
+		});
+		handle.progress.infinite();
+
 		for (const workspacePath of workspaces) {
-			await this._installSingleWorkspace(workspacePath);
+			await this._installSingleWorkspace(workspacePath, handle).catch((e) => {
+				handle.dispose();
+				throw e;
+			});
 		}
+		handle.dispose();
 	}
 
-	public async installProject(dir = this.kendryteWorkspaceService.getCurrentWorkspace()) {
+	public installProject(dir = this.kendryteWorkspaceService.getCurrentWorkspace()) {
 		if (!dir) {
-			return;
-		}
-		await this._installSingleWorkspace(dir);
-	}
-
-	public async _installSingleWorkspace(workspacePath: string): Promise<void> {
-		const pkgInfo = await this.kendryteWorkspaceService.readProjectSetting(workspacePath);
-		if (!pkgInfo) {
-			return; // not a project
-		}
-		if (!pkgInfo.dependency) {
-			await this.openPackageFile(workspacePath);
-			throw new Error('invalid dependency defined in ' + CMAKE_CONFIG_FILE_NAME + '.');
+			return Promise.resolve();
 		}
 
 		const handle = unClosableNotify(this.notificationService, {
@@ -202,6 +202,21 @@ export class PackageRegistryService implements IPackageRegistryService {
 			source: 'Package Manager',
 		});
 		handle.progress.infinite();
+
+		return this._installSingleWorkspace(dir, handle).finally(() => {
+			handle.dispose();
+		});
+	}
+
+	public async _installSingleWorkspace(workspacePath: string, handle: INotificationHandle): Promise<void> {
+		const pkgInfo = await this.kendryteWorkspaceService.readProjectSetting(workspacePath);
+		if (!pkgInfo) {
+			return; // not a project
+		}
+		if (!pkgInfo.dependency) {
+			await this.openPackageFile(workspacePath);
+			throw new Error('invalid dependency defined in ' + CMAKE_CONFIG_FILE_NAME + '.');
+		}
 
 		const keys = Object.keys(pkgInfo.dependency);
 		let i = 1;
@@ -225,8 +240,6 @@ export class PackageRegistryService implements IPackageRegistryService {
 				await this.downloadFromAbsUrl(this.findUrl(pkgInfo, version), item, version);
 			}
 		}
-
-		handle.dispose();
 	}
 
 	private findUrl(packageInfo: IRemotePackageInfo, version?: string): string {
