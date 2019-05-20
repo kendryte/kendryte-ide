@@ -19,6 +19,9 @@ import { ACTION_CATEGORY_BUILD_DEBUG } from 'vs/kendryte/vs/base/common/menu/cma
 import { MaixCMakeOpenLogAction } from 'vs/kendryte/vs/workbench/cmake/electron-browser/actions/openLogAction';
 import { SelectWorkspaceFolderAction } from 'vs/kendryte/vs/services/workspace/electron-browser/selectProjectAction';
 
+// Import Open Folder action
+import { OpenFolderAction } from 'vs/workbench/browser/actions/workspaceActions';
+
 registerSingleton(ICMakeService, CMakeService);
 
 const category = localize('kendryte', 'Kendryte');
@@ -61,3 +64,6 @@ registerInternalAction(ACTION_CATEGORY_BUILD_DEBUG, MaixCMakeOpenLogAction);
 
 // select project
 registerExternalAction(ACTION_CATEGORY_BUILD_DEBUG, SelectWorkspaceFolderAction);
+
+// open folder
+registerExternalAction('Open Folder', OpenFolderAction);
