@@ -30,7 +30,7 @@ export class MaixSerialUploadAction extends Action {
 
 	constructor(
 		id: string = MaixSerialUploadAction.ID, label: string = MaixSerialUploadAction.LABEL,
-		@IInstantiationService instantiationService: IInstantiationService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@ISerialPortService private serialPortService: ISerialPortService,
 		@INodePathService private nodePathService: INodePathService,
 		@ICMakeService private cMakeService: ICMakeService,
@@ -89,6 +89,7 @@ export class MaixSerialUploadAction extends Action {
 		this.logger.info('==================================');
 
 		const loader = new SerialLoader(
+			this.instantiationService,
 			this.serialPortService,
 			port,
 			this.logger,
@@ -108,7 +109,10 @@ export class MaixSerialUploadAction extends Action {
 				cancellable: true,
 			},
 			(report) => {
-				return loader.run(new SubProgress('', report));
+				const p = new SubProgress('', report);
+				return loader.run(p).finally(() => {
+				    p.dispose();
+				});
 			},
 			() => loader.abort(new Error('user cancel')),
 		);

@@ -253,7 +253,7 @@ exports.configurePortable = function () {
 		}
 
 		if (process.platform === 'darwin') {
-			// return path.dirname(path.dirname(path.dirname(appRoot)));
+			return path.dirname(path.dirname(path.dirname(appRoot)));
 		}
 
 		return path.dirname(path.dirname(appRoot));

@@ -41,3 +41,14 @@ export class ChunkBuffer extends Transform {
 		callback();
 	}
 }
+
+export function* eachChunkPadding(buff: Buffer, size: number) {
+	for (let curr = 0; curr < buff.length; curr += size) {
+		const view = buff.slice(curr, curr + size);
+		if (view.length < size) {
+			yield Buffer.concat([view, Buffer.alloc(size - view.length, 0)]);
+		} else {
+			yield view;
+		}
+	}
+}

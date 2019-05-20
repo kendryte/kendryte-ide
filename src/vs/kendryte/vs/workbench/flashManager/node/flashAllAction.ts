@@ -17,6 +17,7 @@ import { createReadStream } from 'fs';
 import { IFlashManagerService } from 'vs/kendryte/vs/workbench/flashManager/common/flashManagerService';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 import { IDisposable } from 'vs/base/common/lifecycle';
+import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 
 interface IMySection {
 	name: string;
@@ -36,6 +37,7 @@ export class FlashAllAction extends Action {
 
 	constructor(
 		id = FlashAllAction.ID, label = FlashAllAction.LABEL,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@ISerialPortService private readonly serialPortService: ISerialPortService,
 		@IChannelLogService private readonly channelLogService: IChannelLogService,
 		@IEnvironmentService private readonly environmentService: IEnvironmentService,
@@ -100,6 +102,7 @@ export class FlashAllAction extends Action {
 		this.logger.info('==================================');
 
 		const loader = new SerialLoader(
+			this.instantiationService,
 			this.serialPortService,
 			port,
 			this.logger,

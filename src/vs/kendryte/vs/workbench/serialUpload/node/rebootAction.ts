@@ -22,7 +22,7 @@ abstract class MaixSerialRebootActionBase extends Action {
 
 	constructor(
 		id: string, label: string,
-		@IInstantiationService instantiationService: IInstantiationService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@ISerialPortService private serialPortService: ISerialPortService,
 		@IProgressService2 private progressService: IProgressService2,
 		@IChannelLogService channelLogService: IChannelLogService,
@@ -62,6 +62,7 @@ abstract class MaixSerialRebootActionBase extends Action {
 		this.logger.info('==================================');
 
 		const loader = this.loader = new SerialLoader(
+			this.instantiationService,
 			this.serialPortService,
 			port,
 			this.logger,

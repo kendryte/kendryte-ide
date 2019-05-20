@@ -124,7 +124,7 @@ class SerialPortService implements ISerialPortService {
 			serialDevice._beforeClose.fire(reason);
 		}
 
-		return promisify(serialDevice.close.bind(serialDevice))().then(undefined, (e) => {
+		return promisify(serialDevice.close.bind(serialDevice))().then(undefined, (e: Error) => {
 			if (/Port is not open/.test(e.message)) {
 				return void 0;
 			} else {
@@ -276,6 +276,7 @@ class SerialPortService implements ISerialPortService {
 			xany: true,
 		};
 
+		console.log(copts);
 		const port: SerialPortInternalType = new SerialPort(serialDevice, copts) as any;
 
 		const emitter = new Emitter<SerialPortCloseReason>();

@@ -1,4 +1,5 @@
 import { IProgress, IProgressStep } from 'vs/platform/progress/common/progress';
+import { IDisposable } from 'vs/base/common/lifecycle';
 
 export interface INatureProgressStatus {
 	message: string;
@@ -11,12 +12,12 @@ export interface IProgressStatus {
 	percent: number;
 }
 
-export class SubProgress {
+export class SubProgress implements IDisposable {
 	protected parts: number[];
 	protected total: number;
 	protected currentPart: number;
 
-	private scheduleTimer?: NodeJS.Immediate;
+	private scheduleTimer?: any; // timer
 	private readonly scheduleObject: IProgressStatus;
 
 	protected readonly currentObject: IProgressStatus;
@@ -38,12 +39,18 @@ export class SubProgress {
 		});
 	}
 
-	protected schedule(change: Partial<IProgressStatus>) {
+	public dispose(): void {
+		this.clearTimeout();
+	}
+
+	private clearTimeout() {
 		if (this.scheduleTimer) {
-			clearImmediate(this.scheduleTimer);
+			clearTimeout(this.scheduleTimer);
 			delete this.scheduleTimer;
 		}
+	}
 
+	protected schedule(change: Partial<IProgressStatus>) {
 		if (change.hasOwnProperty('message')) {
 			this.scheduleObject.message = change.message as string;
 		}
@@ -51,10 +58,13 @@ export class SubProgress {
 			this.scheduleObject.percent = change.percent as number;
 		}
 
-		// console.log('%d (schedule)', this.scheduleObject.percent);
-		this.scheduleTimer = setImmediate(() => {
-			this.doReport();
-		});
+		if (!this.scheduleTimer) {
+			// console.log('%d (schedule)', this.scheduleObject.percent);
+			this.scheduleTimer = setTimeout(() => {
+				delete this.scheduleTimer;
+				this.doReport();
+			}, 500);
+		}
 	}
 
 	get isInfinity(): boolean {

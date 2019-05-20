@@ -7,16 +7,13 @@ import { createReadStream, ReadStream } from 'fs';
 import { GarbageData, StreamChain } from 'vs/kendryte/vs/platform/serialPort/flasher/node/streamChain';
 import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
 import { Event } from 'vs/base/common/event';
-import { DeferredPromise } from 'vs/base/test/common/utils';
-import { ISPMemoryPacker } from 'vs/kendryte/vs/platform/serialPort/flasher/node/ispMemoryPacker';
 import { addDisposableEventEmitterListener } from 'vs/kendryte/vs/base/node/disposableEvents';
 import { TimeoutBuffer } from 'vs/kendryte/vs/platform/serialPort/flasher/node/timoutBuffer';
 import { disposableStream } from 'vs/kendryte/vs/base/node/disposableStream';
 import { SubProgress } from 'vs/kendryte/vs/platform/config/common/progress';
 import { lstat } from 'vs/base/node/pfs';
 import { timeout } from 'vs/base/common/async';
-import { ISPFlashPacker } from 'vs/kendryte/vs/platform/serialPort/flasher/node/ispFlashPacker';
-import { ChunkBuffer } from 'vs/kendryte/vs/platform/serialPort/flasher/node/chunkBuffer';
+import { eachChunkPadding } from 'vs/kendryte/vs/platform/serialPort/flasher/node/chunkBuffer';
 import { createCipheriv, createHash } from 'crypto';
 import { drainStream } from 'vs/kendryte/vs/base/common/drainStream';
 import { ISerialPortService, SerialPortBaseBinding } from 'vs/kendryte/vs/services/serialPort/common/type';
@@ -30,10 +27,19 @@ import { DATA_LEN_WRITE_FLASH, DATA_LEN_WRITE_MEMORTY } from 'vs/kendryte/vs/pla
 import { HexDumpLoggerStream } from 'vs/kendryte/vs/base/node/loggerStream';
 import { stringifyMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
 import { FourBytesReverser } from 'vs/kendryte/vs/platform/serialPort/flasher/node/fourBytesReverser';
+import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { streamToBuffer } from 'vs/kendryte/vs/base/node/collectingStream';
+import { canceled } from 'vs/base/common/errors';
+import { packISPWritePackage } from 'vs/kendryte/vs/platform/serialPort/flasher/node/ispFlashPackage';
+import { DeferredPromise } from 'vs/kendryte/vs/base/common/deferredPromise';
 
 export enum FlashTargetType {
 	OnBoard = 0,
 	InChip = 1,
+}
+
+interface IFlashProgress {
+	written: number;
 }
 
 export class SerialLoader extends Disposable {
@@ -56,11 +62,12 @@ export class SerialLoader extends Disposable {
 
 	public get onError(): Event<Error> { return this.streamChain.onError; }
 
-	private deferred: DeferredPromise<ISPResponse>;
-	private deferredWait: ISPOperation[];
-	private deferredReturn: ISPError;
+	private deferred?: DeferredPromise<ISPResponse>;
+	private deferredWait?: ISPOperation[];
+	private deferredReturn?: ISPError;
 
 	constructor(
+		protected readonly instantiationService: IInstantiationService, // DEBUG USE
 		private readonly serialPortService: ISerialPortService,
 		private readonly device: SerialPortBaseBinding,
 		protected readonly logger: IChannelLogger,
@@ -153,28 +160,21 @@ export class SerialLoader extends Disposable {
 		const speed = new SpeedMeter();
 		speed.start();
 
-		const cancel = this.cancel.token;
-
-		const packedData = new ISPMemoryPacker(baseAddress, length, async (bytesProcessed: number): Promise<void> => {
-			const op = await this.expect(ISPOperation.ISP_MEMORY_WRITE);
-			if (op.op === ISPOperation.ISP_DEBUG_INFO) {
-				this.logger.info(op.text);
-			} else if (op.op === ISPOperation.ISP_MEMORY_WRITE && op.err === ISPError.ISP_RET_OK) {
-				speed.setCurrent(bytesProcessed);
+		const contentBuffer = await streamToBuffer(content, true);
+		const p = this.packISPWritePackage(
+			ISPOperation.ISP_MEMORY_WRITE,
+			baseAddress,
+			contentBuffer,
+			(progress) => {
+				speed.setCurrent(progress.written);
 				if (report) {
 					report.message(localize('serial.memory.writing', 'Writing Memory @ {0}', speed.getSpeed()));
-					report.progress(bytesProcessed);
+					report.progress(progress.written);
 				}
-			} else {
-				throw this.ispError(op);
-			}
-			if (cancel.isCancellationRequested) {
-				throw new Error('user cancel');
-			}
-		});
-		content.pipe(packedData).pipe(this.streamChain);
+			},
+		);
+		await p;
 
-		await packedData.finishPromise();
 		speed.complete();
 		this.logger.info('  - speed: %s', speed.getSpeed());
 	}
@@ -213,30 +213,20 @@ export class SerialLoader extends Disposable {
 		const speed = new SpeedMeter();
 		speed.start();
 
-		const cancel = this.cancel.token;
-
-		const chunkPacker = new ISPFlashPacker(baseAddress, length, async (bytesProcessed: number): Promise<void> => {
-			const op = await this.expect(ISPOperation.ISP_FLASH_WRITE);
-			if (op.op === ISPOperation.ISP_FLASH_WRITE && op.err === ISPError.ISP_RET_OK) {
-				speed.setCurrent(bytesProcessed);
+		const p = this.packISPWritePackage(
+			ISPOperation.ISP_FLASH_WRITE,
+			baseAddress,
+			contentBuffer,
+			(progress) => {
+				speed.setCurrent(progress.written);
 				if (report) {
 					report.message(localize('serial.flash.writing', 'Writing Program @ {0}', speed.getSpeed()));
-					report.progress(bytesProcessed);
+					report.progress(progress.written);
 				}
-			} else {
-				throw this.ispError(op);
-			}
-			if (cancel.isCancellationRequested) {
-				throw new Error('user cancel');
-			}
-		});
+			},
+		);
 
-		const splitter = new ChunkBuffer(DATA_LEN_WRITE_FLASH);
-		splitter.pipe(chunkPacker)
-			.pipe(this.streamChain);
-		splitter.end(contentBuffer);
-
-		await chunkPacker.finishPromise();
+		await p;
 
 		speed.complete();
 		this.logger.info('  - speed: %s', speed.getSpeed());
@@ -309,17 +299,30 @@ export class SerialLoader extends Disposable {
 
 	async changeBaudRate(br = this._baudRate) {
 		br = parseInt(br as any);
-		this.logger.info('Change baud rate to:', br);
 
 		const buff = Buffer.allocUnsafe(12);
 		buff.writeUInt32LE(0, 0);
 		buff.writeUInt32LE(4, 4);
 		buff.writeUInt32LE(br, 8);
 
-		this.send(ISPOperation.ISP_CHANGE_BAUD_RATE, buff);
+		/*
+		await this.instantiationService.invokeFunction((access) => {
+			const notify = access.get(INotificationService);
+			const handle = notify.prompt(Severity.Warning, 'To be continued...', [{ label: 'do', run() {} }]);
+			return new Promise((resolve, reject) => {
+				handle.onDidClose(() => {
+					resolve();
+				});
+			});
+		});
+		*/
 
-		this.logger.info(' - Change connection baudrate...');
+		this.logger.info(' - Change connection baudrate (to: ' + br + ')...');
+		this.send(ISPOperation.ISP_CHANGE_BAUD_RATE, buff);
+		await timeout(800);
 		await this.serialPortService.updatePortBaudRate(this.device, br);
+		await timeout(200);
+
 		// this.streamChain.restartPipe();
 
 		// this.logger.info(' - wait for ISP_CHANGE_BAUD_RATE (0x%s)...', ISPOperation.ISP_CHANGE_BAUD_RATE.toString(16));
@@ -340,35 +343,27 @@ export class SerialLoader extends Disposable {
 		const length = await this.getSize(stream);
 		this.logger.info(`Downloading data to flash: size=${length} address=${stringifyMemoryAddress(address)}`);
 		const speed = new SpeedMeter();
-
 		speed.start();
-		const cancel = this.cancel.token;
-		const chunkPacker = new ISPFlashPacker(address, length, async (bytesProcessed: number): Promise<void> => {
-			const op = await this.expect(ISPOperation.ISP_FLASH_WRITE);
-			if (op.op === ISPOperation.ISP_FLASH_WRITE && op.err === ISPError.ISP_RET_OK) {
-				speed.setCurrent(bytesProcessed);
-				if (report) {
-					report.message(localize('serial.flash.writing', 'Writing Flash @ {0}', speed.getSpeed()));
-					report.progress(bytesProcessed);
-				}
-			} else {
-				throw this.ispError(op);
-			}
-			if (cancel.isCancellationRequested) {
-				throw new Error('user cancel');
-			}
-		});
 
-		let source = reverse4Bytes ?
+		const source = reverse4Bytes ?
 			stream.pipe(new FourBytesReverser()) :
 			stream;
+		const sourceBuffer = await streamToBuffer(source, true);
 
-		source
-			.pipe(new ChunkBuffer(DATA_LEN_WRITE_FLASH))
-			.pipe(chunkPacker)
-			.pipe(this.streamChain);
+		const p = this.packISPWritePackage(
+			ISPOperation.ISP_FLASH_WRITE,
+			address,
+			sourceBuffer,
+			(progress) => {
+				speed.setCurrent(progress.written);
+				if (report) {
+					report.message(localize('serial.flash.writing', 'Writing Flash @ {0}', speed.getSpeed()));
+					report.progress(progress.written);
+				}
+			},
+		);
 
-		await chunkPacker.finishPromise();
+		await p;
 
 		speed.complete();
 		this.logger.info('  - speed: %s', speed.getSpeed());
@@ -419,6 +414,7 @@ export class SerialLoader extends Disposable {
 		}
 	}
 
+	/** Not sync send, NO WAY to know send out or not */
 	protected send(op: ISPOperation, data: Buffer, raw = false) {
 		this.streamChain.write({
 			op,
@@ -428,42 +424,55 @@ export class SerialLoader extends Disposable {
 	}
 
 	protected setTimeout(what: string, ms: number, promise: Promise<any>) {
-		const to = setTimeout(() => {
-			console.error('timeout');
-			deferred.error(new Error('Timeout ' + what)).catch();
-		}, ms);
-		console.log('timeout %s registered', to);
 		const deferred = this.deferred;
+		if (!deferred) {
+			throw new Error('must expect before set timeout');
+		}
+		const to = setTimeout(() => {
+			if (deferred === this.deferred) {
+				deferred.error(new Error('Timeout ' + what));
+			}
+		}, ms);
 		return promise.then(() => {
-			console.log('timeout %s cancel(success)', to);
 			clearTimeout(to);
 		}, (e) => {
-			console.log('timeout %s cancel(reject %s)', to, e.message);
 			clearTimeout(to);
 			throw e;
 		});
 	}
 
+	protected unexpect() {
+		if (!this.deferred) {
+			return;
+		}
+		if (!this.deferred.completed) {
+			this.deferred.error(new Error('Unknown error'));
+		}
+		delete this.deferred;
+		delete this.deferredWait;
+		delete this.deferredReturn;
+	}
+
 	protected expect(what: ISPOperation | ISPOperation[], ret: ISPError = ISPError.ISP_RET_OK): Promise<any> {
 		if (this.deferred) {
-			console.warn('deferred already exists: ', this.deferredWait.map(e => ISPOperation[e]));
-			throw new Error('program error: expect.');
+			console.warn('deferred already exists: ', this.deferredWait!.map(e => ISPOperation[e]), ', duplicate: ', what);
+			throw new Error('program error: duplicate expect.');
 		}
 		const self = this.deferred = new DeferredPromise<ISPResponse>();
 		this.deferredWait = Array.isArray(what) ? what : [what];
 		this.deferredReturn = ret;
-		this.deferred.p.catch(() => {
+		this.deferred.p.finally(() => {
 			if (this.deferred === self) {
-				delete this.deferred;
+				this.unexpect();
 			}
 		});
 		return this.deferred.p;
 	}
 
 	protected handleData(data: ISPResponse) {
-		// console.log('[OUTPUT] op: %s, err: %s | %s', ISPOperation[data.op], ISPError[data.err], data.text);
+		console.log('[OUTPUT] op: %s, err: %s | %s', ISPOperation[data.op], ISPError[data.err], data.text);
 		if (data.op === ISPOperation.ISP_DEBUG_INFO) {
-			this.logger.log(data.text);
+			this.logger.log('ISP OUTPUT:', data.text);
 			return;
 		}
 		const deferred = this.deferred;
@@ -471,34 +480,52 @@ export class SerialLoader extends Disposable {
 		if (deferred) {
 			if (this.deferredWait && this.deferredWait.indexOf(data.op) !== -1) {
 				if (this.deferredReturn === undefined || data.err === this.deferredReturn) {
-					deferred.complete(data).catch();
+					deferred.complete(data);
 				} else {
-					deferred.error(this.ispError(data)).catch();
+					let errStr = 'ISP return error: ';
+					if (data.op) {
+						errStr += 'op = 0x' + data.op.toString(16);
+					} else {
+						errStr += 'op = {not set}';
+					}
+					if (data.err) {
+						errStr += ', err = 0x' + data.err.toString(16);
+					} else {
+						errStr += ', err = {not set}';
+					}
+					if (data.text) {
+						errStr += ', text = 0x' + data.text;
+					}
+					const err = new Error(errStr);
+					this.logger.error(err.message);
+					this.logger.error(JSON.stringify(data));
+					deferred.error(err);
 				}
 			} else {
 				let op = ISPOperation[data.op];
 				if (op === undefined) {
-					op = '0x' + data.op.toString(16);
+					if (data.op) {
+						op = '0x' + data.op.toString(16);
+					} else {
+						op = '*invalid operation*';
+					}
 				}
-				const exp = (this.deferredWait || []).map(e => ISPOperation[e]).join(', ');
+				const exp = (this.deferredWait || []).map(e => `${ISPOperation[e]}[0x${e.toString(16)}]`).join(', ');
+				const err = new Error(`Unexpected response [${op}] from chip (expect ${exp}).`);
 
-				deferred.error(new Error(`Unexpected response [${op}] from chip (expect ${exp}).`));
+				this.logger.error(err.message);
+				this.logger.error(
+					'    the output is: op=%s, err: %s | %s',
+					data.op ? '0x' + data.op.toString(16) : 'nil',
+					data.err ? '0x' + data.err.toString(16) : 'nil',
+					data.text,
+				);
+				deferred.error(err);
 			}
 		} else {
 			console.warn('not expect any data: %O', data);
 			this.logger.warn('%j', data);
 		}
-	}
-
-	private ispError(data: ISPResponse) {
-		let message = ISPError[data.err];
-		if (!message) {
-			message = '0x' + (data.err as number).toString(16);
-		}
-		if (data.text) {
-			message += ` - ${data.text}`;
-		}
-		return new Error(`Error from chip: ${message}`);
 	}
 
 	protected handleError(error: Error) {
@@ -522,10 +549,65 @@ export class SerialLoader extends Disposable {
 	public async run(report: SubProgress) {
 		const p = this._run(report);
 		p.catch((err) => {
-			console.warn(err.stack);
+			// console.warn(err.stack);
 			this.logger.error(err.stack);
 		});
 		return p;
+	}
+
+	async packISPWritePackage(
+		operation: ISPOperation.ISP_FLASH_WRITE | ISPOperation.ISP_MEMORY_WRITE,
+		baseAddress: number,
+		content: Buffer,
+		progressFunc: (progress: IFlashProgress) => void,
+	) {
+		const cancel = this.cancel.token;
+		const chunkSize = operation === ISPOperation.ISP_MEMORY_WRITE ? DATA_LEN_WRITE_MEMORTY : DATA_LEN_WRITE_FLASH;
+		const flashTarget = operation === ISPOperation.ISP_MEMORY_WRITE ? 'memory' : 'flash';
+		let bytesWritten = 0, chunkWritten = 0;
+		const totalChunk = Math.ceil(content.length / chunkSize);
+
+		this.logger.info(
+			'Writing %s with %s chunk size. total bytes = %s, chunk = %s',
+			flashTarget,
+			chunkSize,
+			content.length,
+			totalChunk,
+		);
+
+		for (const chunk of eachChunkPadding(content, chunkSize)) {
+			let retry = 3;
+			while (true) {
+				if (cancel.isCancellationRequested) {
+					throw canceled();
+				}
+
+				const p = this.setTimeout('flash ' + flashTarget, 1000, this.expect(operation, ISPError.ISP_RET_OK));
+
+				this.send(operation, packISPWritePackage(chunk, baseAddress + bytesWritten));
+
+				const error = await p.then(() => {
+					return undefined;
+				}, (e) => {
+					return e;
+				});
+				if (error) {
+					if (--retry) {
+						continue;
+					} else {
+						throw error;
+					}
+				}
+
+				chunkWritten++;
+				bytesWritten += chunk.length;
+
+				this.logger.trace('chunk [%s/%s] size [%s/%s]', chunkWritten, totalChunk, bytesWritten, content.length);
+
+				progressFunc({ written: bytesWritten });
+				break;
+			}
+		}
 	}
 
 	public async _run(report: SubProgress) {

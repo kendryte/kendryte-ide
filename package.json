@@ -56,7 +56,7 @@
     "request": "^2.88.0",
     "request-progress": "^3.0.0",
     "semver": "^5.5.0",
-    "serialport": "^6.2.2",
+    "serialport": "^7.1.5",
     "source-map-support": "^0.5.9",
     "spdlog": "0.8.1",
     "split2": "^3.0.0",

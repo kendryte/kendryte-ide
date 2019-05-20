@@ -3,28 +3,37 @@ import { canceled } from 'vs/base/common/errors';
 export type ValueCallback<T = any> = (value: T | Thenable<T>) => void;
 export type ProgressCallback<T = any> = (value: T) => void;
 
-export class DeferredPromise<T, PT = any> {
+export interface IProgressHolder<T, PT> {
+	progress(fn: ProgressCallback<PT>): Promise<T> & IProgressHolder<T, PT>;
+}
 
-	public p: Promise<T>;
+export class DeferredPromise<T, PT = any> {
+	public p: Promise<T> & IProgressHolder<T, PT>;
 	private completeCallback: ValueCallback<T>;
 	private errorCallback: (err: any) => void;
 	private _state: boolean | null = null;
 	private cbList: ProgressCallback<PT>[] = [];
 
 	constructor() {
-		this.p = new Promise<any>((c, e) => {
+		this.p = Object.assign(new Promise<any>((c, e) => {
 			this.completeCallback = c;
 			this.errorCallback = e;
+		}), {
+			progress: (fn: ProgressCallback<PT>) => {
+				this.progress(fn);
+				return this.p;
+			},
 		});
 		this.p.finally(() => {
 			delete this.cbList;
 		});
 	}
 
-	notify(progress: PT): void {
+	notify(progress: PT): this {
 		for (const cb of this.cbList) {
 			cb(progress);
 		}
+		return this;
 	}
 
 	progress(fn: ProgressCallback<PT>): void {
