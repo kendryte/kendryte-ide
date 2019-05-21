@@ -269,11 +269,18 @@ exports.configurePortable = function () {
 	
 	debugger;
 	const portableDataPath = getPortableDataPath();
+	process.stderr.isTTY && console.error(
+		'\'target\' in product = %s\nappRoot= %s\nportableDataPath=%s\nenv:VSCODE_DEV = %s\nenv:VSCODE_PORTABLE = %s\n',
+		'target' in product,
+		appRoot,
+		portableDataPath,
+		process.env['VSCODE_DEV'],
+		process.env['VSCODE_PORTABLE'],
+	);
 	if (!fs.existsSync(portableDataPath)) {
 		fs.mkdirSync(portableDataPath);
 	}
 	const isPortable = true;
-	process.stderr.isTTY && console.error('isPortable=%s ; \'target\' in product = %s ; portableDataPath=%s', isPortable, 'target' in product, portableDataPath);
 	const portableTempPath = path.join(portableDataPath, 'tmp');
 	const isTempPortable = isPortable && fs.existsSync(portableTempPath);
 

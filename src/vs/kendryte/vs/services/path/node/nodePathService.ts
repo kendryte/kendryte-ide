@@ -1,6 +1,6 @@
 import product from 'vs/platform/product/node/product';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { isLinux, isWindows } from 'vs/base/common/platform';
+import { isLinux, isMacintosh, isWindows } from 'vs/base/common/platform';
 import { lstatSync } from 'fs';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
@@ -39,6 +39,7 @@ export class NodePathService implements INodePathService {
 
 	@memoize
 	getSelfControllingRoot() {
+		// this is Application/xxxx (/Contents on mac) folder
 		if (!this.environmentService.isBuilt) {
 			// when dev, source code is always version control root
 			return resolvePath(this.environmentService.appRoot);
@@ -119,11 +120,16 @@ export class NodePathService implements INodePathService {
 
 	@memoize
 	private getDataPath() {
+		// this is LocalPackage
 		if (process.env.KENDRYTE_IDE_LOCAL_PACKAGE_DIR) {
 			return resolvePath(process.env.KENDRYTE_IDE_LOCAL_PACKAGE_DIR);
 		}
 		if (this.environmentService.isBuilt) {
-			return resolvePath(this.getSelfControllingRoot(), '../../LocalPackage');
+			if (isMacintosh) {
+				return resolvePath(this.getSelfControllingRoot(), '../../../LocalPackage');
+			} else {
+				return resolvePath(this.getSelfControllingRoot(), '../../LocalPackage');
+			}
 		} else {
 			return resolvePath(this.getSelfControllingRoot(), '../kendryte-ide-shell/build/DebugContents/LocalPackage');
 		}
