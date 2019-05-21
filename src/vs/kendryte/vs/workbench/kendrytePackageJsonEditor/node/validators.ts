@@ -24,7 +24,7 @@ export function validateProjectName(value: string): IMessage | null {
 }
 
 export function validateVersionString(value: string): IMessage | null {
-	if (!/^[0-9]+\.[0-9]+\.[0-9]+(?:-[a-z]+)?$/.test(value)) {
+	if (!/^[0-9]+\.[0-9]+\.[0-9]+(?:-[a-z]+)?$/.test(value) && !/^develop$/.test(value) && !/^master$/.test(value)) {
 		return msg(localize('error.version.invalid', 'Invalid version string, must be: x.y.z[-aaa]'));
 	}
 	return null;
