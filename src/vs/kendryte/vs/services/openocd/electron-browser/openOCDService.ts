@@ -14,7 +14,6 @@ import {
 	CONFIG_KEY_FTDI_VID_PID,
 	CONFIG_KEY_JTAG_ID,
 	CONFIG_KEY_JTAG_SPEED,
-	CONFIG_KEY_OPENOCD_CORE,
 	CONFIG_KEY_OPENOCD_EXTRA_ARGS,
 	CONFIG_KEY_OPENOCD_PORT,
 	CONFIG_KEY_OPENOCD_USE,
@@ -130,11 +129,6 @@ export class OpenOCDService implements IOpenOCDService {
 		this.currentConfigFile = await this.createConfigFile();
 
 		const args = ['-f', this.currentConfigFile];
-
-		const debugCore = this.configurationService.getValue<number>(CONFIG_KEY_OPENOCD_CORE);
-		if (debugCore !== -1) {
-			args.push(`-m${debugCore}`);
-		}
 
 		const extraArgs = this.configurationService.getValue<string>(CONFIG_KEY_OPENOCD_EXTRA_ARGS);
 		if (extraArgs) {

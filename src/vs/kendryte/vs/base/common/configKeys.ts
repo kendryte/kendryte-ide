@@ -33,9 +33,6 @@ export const CONFIG_DESCRIPTION_OPENOCD_USE = localize('debug.openocd.config', '
 export const CONFIG_KEY_OPENOCD_PORT = 'debug.openocd.port';
 export const CONFIG_DESCRIPTION_OPENOCD_PORT = localize('debug.openocd.port', 'openocd listen port, 0 means auto select');
 
-export const CONFIG_KEY_OPENOCD_CORE = 'debug.openocd.core';
-export const CONFIG_DESCRIPTION_OPENOCD_CORE = localize('debug.openocd.core', 'which core to debug, -1 means all core');
-
 export const CONFIG_KEY_OPENOCD_EXTRA_ARGS = 'debug.openocd.extraArgs';
 export const CONFIG_DESCRIPTION_OPENOCD_EXTRA_ARGS = localize('debug.openocd.extraArgs', 'extra arguments passing to openocd executable');
 

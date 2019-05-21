@@ -47,16 +47,50 @@ const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
 };
 
 const setIfNot = new Map<string, any>();
+setIfNot.set('workbench.colorTheme', 'Default Light+');
 setIfNot.set('workbench.list.openMode', 'doubleClick');
+setIfNot.set('workbench.tree.indent', 18);
+setIfNot.set('workbench.view.alwaysShowHeaderActions', true);
+setIfNot.set('workbench.settings.useSplitJSON', true);
 setIfNot.set('editor.cursorBlinking', 'smooth');
 setIfNot.set('editor.cursorStyle', 'line-thin');
+setIfNot.set('editor.autoSurround', 'never');
+setIfNot.set('editor.tabSize', 4);
+setIfNot.set('editor.tabCompletion', 'on');
+setIfNot.set('editor.formatOnSave', true);
+setIfNot.set('editor.formatOnType', true);
 setIfNot.set('git.ignoreMissingGitWarning', true);
+setIfNot.set('explorer.autoReveal', false);
 setIfNot.set('explorer.confirmDelete', false);
+setIfNot.set('explorer.confirmDragAndDrop', false);
+setIfNot.set('files.autoGuessEncoding', true);
+setIfNot.set('files.autoSave', 'afterDelay');
+setIfNot.set('files.autoSaveDelay', 15000);
+setIfNot.set('files.eol', '\n');
+setIfNot.set('files.insertFinalNewline', true);
+setIfNot.set('files.trimTrailingWhitespace', true);
+setIfNot.set('window.doubleClickIconToClose', true);
+setIfNot.set('search.location', 'panel');
+setIfNot.set('search.showLineNumbers', true);
+setIfNot.set('search.smartCase', true);
+setIfNot.set('search.useIgnoreFiles', false);
+setIfNot.set('search.usePCRE2', true);
+setIfNot.set('debug.inlineValues', true);
+setIfNot.set('debug.internalConsoleOptions', 'openOnSessionStart');
+setIfNot.set('debug.openDebug', 'openOnDebugBreak');
+setIfNot.set('debug.openExplorerOnEnd', true);
+setIfNot.set('debug.showInStatusBar', 'never');
+setIfNot.set('terminal.integrated.cursorBlinking', true);
+setIfNot.set('update.showReleaseNotes', false);
+setIfNot.set('C_Cpp.default.cppStandard', 'c++11');
+setIfNot.set('C_Cpp.default.cStandard', 'c11');
+setIfNot.set('C_Cpp.clang_format_fallbackStyle', 'Google');
 setIfNot.forEach((v, k) => {
 	configOverwrites[k] = (a, user) => user === undefined ? v : undefined;
 });
 
 const forceOverride = new Map<string, any>();
+setIfNot.set('C_Cpp.default.intelliSenseMode', 'gcc-x64');
 forceOverride.forEach((v, k) => {
 	configOverwrites[k] = () => v;
 });
@@ -90,19 +124,19 @@ class SettingCategoryContribution implements IWorkbenchContribution {
 			/// }
 		}
 
-		if (key === 'files.exclude') {
+		if (key === 'search.exclude') {
 			this.hideBuildDirectory();
 		}
 	}
 
 	private hideBuildDirectory() {
-		const inspect = this.configurationService.inspect<any>('files.exclude');
+		const inspect = this.configurationService.inspect<any>('search.exclude');
 		let data = inspect.user ? { ...inspect.user } : { ...inspect.default };
 		let changed = { change: false };
 
-		ignore(data, 'config/fpioa.cfg', changed);
+		ignore(data, 'build', changed);
 		if (changed.change) {
-			this.configurationService.updateValue('files.exclude', data, ConfigurationTarget.USER);
+			this.configurationService.updateValue('search.exclude', data, ConfigurationTarget.USER);
 		}
 	}
 }

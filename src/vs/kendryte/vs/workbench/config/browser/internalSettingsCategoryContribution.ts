@@ -24,4 +24,5 @@ commonlyUsedData.settings = [
 	'editor.cursorBlinking',
 	'editor.cursorStyle',
 	'editor.cursorWidth',
+	'C_Cpp.clang_format_fallbackStyle',
 ];
