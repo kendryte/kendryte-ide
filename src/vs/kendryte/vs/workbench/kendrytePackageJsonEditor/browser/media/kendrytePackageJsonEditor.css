@@ -1,49 +1,75 @@
 .kendryte-json-editor.kendrytePackageJsonEditor {
   display: block;
-  height: 100%; }
-  .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element {
-    height: 100%; }
-    .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap {
-      height: 100%;
-      padding: 12px 0;
-      max-width: 800px;
-      margin: auto;
-      overflow-x: visible;
-      overflow-y: scroll;
-      box-sizing: border-box; }
-      .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > hr {
-        margin-bottom: 12px; }
-      .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section {
-        display: flex;
-        margin-bottom: 1em; }
-        .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .left {
-          width: 30%;
-          max-width: 250px; }
-          .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .left > h3 {
-            margin-top: 0; }
-        .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right {
-          position: relative;
-          flex: 1;
-          margin-left: 6px; }
-          .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right textarea.input {
-            width: 100%; }
-          .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right > .control {
-            display: flex;
-            flex-direction: row; }
-            .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right > .control > .monaco-button {
-              display: flex;
-              align-items: center; }
-            .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right > .control > * {
-              flex: 0;
-              white-space: nowrap;
-              margin-right: 0.6em; }
-              .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right > .control > * .icon {
-                display: inline-block;
-                margin-right: 6px; }
-      .kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > code.json {
-        margin-top: 15px;
-        white-space: pre;
-        width: 100%;
-        opacity: 0.88; }
+  height: 100%;
+}
 
-/*# sourceMappingURL=kendrytePackageJsonEditor.css.map */
+.kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element {
+  height: 100%;
+}
+
+.kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap {
+  height: 100%;
+  padding: 12px 0;
+  max-width: 800px;
+  margin: auto;
+  overflow-x: visible;
+  overflow-y: scroll;
+  box-sizing: border-box;
+}
+
+.kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > hr {
+  margin-bottom: 12px;
+}
+
+.kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section {
+  display: flex;
+  margin-bottom: 1em;
+}
+
+.kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .left {
+  width: 30%;
+  max-width: 250px;
+}
+
+.kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .left > h3 {
+  margin-top: 0;
+}
+
+.kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right {
+  position: relative;
+  flex: 1;
+  margin-left: 6px;
+}
+
+.kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right textarea.input {
+  width: 100%;
+}
+
+.kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right > .control {
+  display: flex;
+  flex-direction: row;
+  margin-top: 8px;
+}
+
+.kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right > .control > .monaco-button {
+  display: flex;
+  align-items: center;
+}
+
+.kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right > .control > * {
+  flex: 0;
+  white-space: nowrap;
+  margin-right: 0.6em;
+}
+
+.kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > .section > .right > .control > * .icon {
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.kendryte-json-editor.kendrytePackageJsonEditor > .monaco-scrollable-element > .wrap > code.json {
+  margin-top: 15px;
+  white-space: pre;
+  width: 100%;
+  opacity: 0.88;
+}
