@@ -47,7 +47,7 @@ const configOverwrites: { [id: string]: SettingsOverwiter<any> } = {
 };
 
 const setIfNot = new Map<string, any>();
-setIfNot.set('workbench.colorTheme', 'Default Light+');
+setIfNot.set('workbench.colorTheme', 'Default Dark+');
 setIfNot.set('workbench.list.openMode', 'doubleClick');
 setIfNot.set('workbench.tree.indent', 18);
 setIfNot.set('workbench.view.alwaysShowHeaderActions', true);
