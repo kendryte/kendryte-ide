@@ -43,17 +43,18 @@ export class FlashManagerService implements IFlashManagerService {
 	}
 
 	private async _handlePrecompileEvent(event: IBeforeBuildEvent, _disposables: DisposableSet<FlashManagerEditorModel>) {
-		const mainFile = resolvePath(event.projects[0].path, PROJECT_CONFIG_FOLDER_NAME, FLASH_MANAGER_CONFIG_FILE_NAME);
-		const mainModel = await this.getFlashManagerModel(mainFile);
-		_disposables.add(mainModel);
-		const memory = new MemoryAllocationCalculator(parseMemoryAddress(mainModel.data.baseAddress), Infinity);
-
+		let memory: MemoryAllocationCalculator | undefined;
 		for (const project of event.projects) {
 			const configFile = resolvePath(project.path, PROJECT_CONFIG_FOLDER_NAME, FLASH_MANAGER_CONFIG_FILE_NAME);
 			if (await exists(configFile)) {
 				this.logger.info('[Flash Manager] Enabled for %s.', project.json.name);
 				const model = await this.getFlashManagerModel(configFile);
 				_disposables.add(model);
+
+				if (!memory) {
+					memory = new MemoryAllocationCalculator(parseMemoryAddress(model.data.baseAddress), Infinity);
+				}
+
 				await this.runGenerateMemoryMap(model, memory);
 			} else {
 				this.logger.info('[Flash Manager] NOT enabled for %s.', project.json.name);
@@ -61,11 +62,11 @@ export class FlashManagerService implements IFlashManagerService {
 		}
 	}
 
-	async getFlashManagerModel(fsPath: string) {
-		const model = this.customJsonEditorService.createJsonModel<IFlashManagerConfigJson>(URI.file(fsPath), FlashManagerEditorModel)!;
+	async getFlashManagerModel(fsPath: string, optional = false) {
+		const model = this.customJsonEditorService.createJsonModel<IFlashManagerConfigJson, FlashManagerEditorModel>(URI.file(fsPath), FlashManagerEditorModel)!;
 		console.assert(model, 'not registered');
-		await model.load();
-		return model as FlashManagerEditorModel;
+		await model.load(optional);
+		return model;
 	}
 
 	public async runGenerateMemoryMap(model: FlashManagerEditorModel, memory?: MemoryAllocationCalculator) {

@@ -29,14 +29,16 @@ export interface IJsonEditorModel<JsonType> extends IEditorModel {
 	save(): Promise<void>;
 	update(key: string | JSONPath, value: any): boolean;
 	isDirty(): boolean;
+	isLoaded():boolean;
+	load(optional?: boolean): Promise<this>;
 }
 
 export interface ICustomJsonEditorService {
 	_serviceBrand: any;
 
 	createJsonModel<JsonType>(resource: URI): IJsonEditorModel<JsonType> | undefined;
-	createJsonModel<JsonType>(resource: URI, ctor: IJsonEditorModelConstructor): IJsonEditorModel<JsonType> | undefined;
-	createTextReference(editorId: string, resource: URI): Promise<IReference<IResolvedTextEditorModel>>;
+	createJsonModel<JsonType, Model extends IJsonEditorModel<JsonType> = IJsonEditorModel<JsonType>>(resource: URI, ctor: IJsonEditorModelConstructor): Model | undefined;
+	createTextReference(editorId: string, resource: URI, optional: boolean): Promise<IReference<IResolvedTextEditorModel>>;
 	openEditorAs<T extends IEditorInput>(resource: URI, editorId: string): T;
 	updateFocus(id: string, focus: boolean): void;
 }

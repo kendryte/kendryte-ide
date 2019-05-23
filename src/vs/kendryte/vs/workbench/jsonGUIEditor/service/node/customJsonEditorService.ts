@@ -44,9 +44,9 @@ class CustomJsonEditorService implements ICustomJsonEditorService {
 		return this.instantiationService.createInstance(ctor, id, resource);
 	}
 
-	async createTextReference(editorId: string, resource: URI) {
+	async createTextReference(editorId: string, resource: URI, optional: boolean) {
 		const exists = await this.fileService.exists(resource);
-		if (!exists) {
+		if (!exists && !optional) {
 			const schema = CustomJsonRegistry.getSchemaById(editorId);
 			if (schema) {
 				await this.textFileService.write(resource, JSON.stringify(schema.default), { encoding: encoding.UTF8 });

@@ -6,12 +6,20 @@ import { EditorId, IJsonEditorInput } from 'vs/kendryte/vs/workbench/jsonGUIEdit
 import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 import { IEditorModel } from 'vs/platform/editor/common/editor';
 
-export abstract class AbstractJsonEditorInput<JsonType> extends EditorInput implements IJsonEditorInput<JsonType> {
+export interface IInputState {
+	// marker
+}
+
+export abstract class AbstractJsonEditorInput<JsonType, State extends IInputState = {}> extends EditorInput implements IJsonEditorInput<JsonType> {
 	public readonly model: IJsonEditorModel<JsonType>;
 
 	private readonly _onSwitchType = this._register(new Emitter<void>());
 	public readonly onSwitchType = this._onSwitchType.event;
 	private _jsonMode: boolean = false;
+
+	private readonly _onStateChange = this._register(new Emitter<string[]>());
+	public readonly onStateChange = this._onStateChange.event;
+	private readonly _state: State = {} as any;
 
 	public constructor(
 		private readonly descriptor: EditorId,
@@ -117,15 +125,32 @@ export abstract class AbstractJsonEditorInput<JsonType> extends EditorInput impl
 		return this.model;
 	}
 
-	matches(otherInput: AbstractJsonEditorInput<any>): boolean {
+	matches(otherInput: IJsonEditorInput<any>): boolean {
 		if (this === otherInput) {
 			return true;
 		}
 		try {
 			return otherInput.getTypeId() === this.getTypeId() &&
-			       otherInput.getResource().toString() === this.getResource().toString();
+			       otherInput.getResource()!.toString() === this.getResource().toString();
 		} catch (e) {
 			return false;
 		}
+	}
+
+	public setState(data: Partial<State>): void {
+		let changedKeys = [];
+		for (const [key, value] of Object.entries(data)) {
+			if (this._state[key] !== value) {
+				changedKeys.push(key);
+				this._state[key] = value;
+			}
+		}
+		if (changedKeys.length) {
+			this._onStateChange.fire(changedKeys);
+		}
+	}
+
+	public getState(): State {
+		return this._state;
 	}
 }

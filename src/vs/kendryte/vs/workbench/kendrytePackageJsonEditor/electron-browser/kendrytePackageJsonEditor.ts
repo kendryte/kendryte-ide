@@ -23,12 +23,12 @@ import { AbstractJsonEditor } from 'vs/kendryte/vs/workbench/jsonGUIEditor/edito
 import { EditorId } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/type';
 import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 import { OpenManagerControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/dependency';
-import { rememberEditorScroll, restoreEditorScroll } from 'vs/kendryte/vs/workbench/jsonGUIEditor/browser/rememberEditorScroll';
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/resourceConfiguration';
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
 import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IWindowService } from 'vs/platform/windows/common/windows';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
+import { IInputState } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditorInput';
 
 interface IControlList extends Record<ICompileInfoPossibleKeys, IUISection<any>> {
 	name: IUISection<string>;
@@ -56,7 +56,11 @@ interface IControlList extends Record<ICompileInfoPossibleKeys, IUISection<any>>
 	// executable
 }
 
-export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo> {
+interface IEditorState extends IInputState {
+	scrollTop: number;
+}
+
+export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, IEditorState> {
 	private h1: HTMLHeadingElement;
 	private readonly controls: IControlList = {} as any;
 	private scroll: DomScrollableElement;
@@ -94,11 +98,8 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo> 
 
 	protected updateModel(model?: IJsonEditorModel<ICompileInfo>) {
 		if (!model) {
-			rememberEditorScroll(this._input!.model, this.scroll.getScrollPosition().scrollTop);
 			return;
 		}
-
-		this.scroll.setScrollPosition({ scrollTop: restoreEditorScroll(model) });
 
 		this.sectionCreator.setRootPath(resolvePath(model.resource.fsPath, '..'));
 
@@ -425,5 +426,17 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo> 
 			throw new Error('model is null');
 		}
 		model.update(property, value);
+	}
+
+	wakeup(state: Partial<IEditorState>) {
+		if ('scrollTop' in state) {
+			this.scroll.setScrollPosition({ scrollTop: state.scrollTop });
+		}
+	}
+
+	sleep(): Partial<IEditorState> {
+		return {
+			scrollTop: this.scroll.getScrollPosition().scrollTop,
+		};
 	}
 }

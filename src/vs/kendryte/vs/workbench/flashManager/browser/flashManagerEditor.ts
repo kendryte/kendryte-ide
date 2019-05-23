@@ -15,7 +15,7 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { WorkbenchList } from 'vs/platform/list/browser/listService';
 import { FlashSectionDelegate, FlashSectionRender } from 'vs/kendryte/vs/workbench/flashManager/browser/list';
 import { Button } from 'vs/base/browser/ui/button/button';
-import { attachButtonStyler, attachStyler } from 'vs/platform/theme/common/styler';
+import { attachButtonStyler, attachInputBoxStyler, attachStyler } from 'vs/platform/theme/common/styler';
 import { localize } from 'vs/nls';
 import { renderOcticons } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 import { vscodeIcon } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
@@ -29,14 +29,14 @@ import { AbstractJsonEditor } from 'vs/kendryte/vs/workbench/jsonGUIEditor/edito
 import { IFlashManagerConfigJson, IFlashSection } from 'vs/kendryte/vs/base/common/jsonSchemas/flashSectionsSchema';
 import { EditorId } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/type';
 import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
-import { FlashManagerEditorInput } from 'vs/kendryte/vs/workbench/flashManager/common/editorInput';
+import { FlashManagerEditorInput, IFlashManagerEditorState } from 'vs/kendryte/vs/workbench/flashManager/common/editorInput';
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/resourceConfiguration';
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IWindowService } from 'vs/platform/windows/common/windows';
 
-export class FlashManagerEditor extends AbstractJsonEditor<IFlashManagerConfigJson> {
+export class FlashManagerEditor extends AbstractJsonEditor<IFlashManagerConfigJson, IFlashManagerEditorState> {
 	protected _input: FlashManagerEditorInput | null;
 
 	private _parent: HTMLDivElement;
@@ -206,6 +206,7 @@ export class FlashManagerEditor extends AbstractJsonEditor<IFlashManagerConfigJs
 		append(parent, $('div.spacer'));
 
 		const baseAddressInput = this.baseAddressInput = this._register(new InputBox(parent, this.contextViewService, {}));
+		this._register(attachInputBoxStyler(baseAddressInput, this.themeService));
 		baseAddressInput.element.title = 'Not editable, please wait next IDE update.';
 		baseAddressInput.disable();
 	}
@@ -281,5 +282,12 @@ export class FlashManagerEditor extends AbstractJsonEditor<IFlashManagerConfigJs
 		const newOrder = this._input!.sliceData(index1, 2);
 
 		this.sectionList.splice(index1, 2, newOrder);
+	}
+
+	protected wakeup(state: IFlashManagerEditorState): void {
+	}
+
+	protected sleep(): IFlashManagerEditorState {
+		return {};
 	}
 }

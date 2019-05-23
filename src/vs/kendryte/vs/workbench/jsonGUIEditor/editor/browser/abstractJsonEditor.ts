@@ -8,7 +8,7 @@ import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/c
 import { CONTEXT_JSON_GUI_EDITOR, CONTEXT_JSON_GUI_EDITOR_JSON_MODE } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/context';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { AbstractJsonEditorInput } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditorInput';
+import { AbstractJsonEditorInput, IInputState } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditorInput';
 import { EditorId, IJsonEditor } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/type';
 import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 import { $, append, Dimension, hide, IFocusTracker, show, trackFocus } from 'vs/base/browser/dom';
@@ -20,11 +20,11 @@ import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editor
 import { IWindowService } from 'vs/platform/windows/common/windows';
 import { AbstractTextResourceEditor } from 'vs/workbench/browser/parts/editor/textResourceEditor';
 
-export abstract class AbstractJsonEditor<JsonType> extends AbstractTextResourceEditor implements IJsonEditor {
+export abstract class AbstractJsonEditor<JsonType, State extends IInputState = {}> extends AbstractTextResourceEditor implements IJsonEditor {
 	private readonly inJsonGuiEditorContextKey: IContextKey<boolean>;
 	private readonly inJsonRawEditorContextKey: IContextKey<boolean>;
 
-	protected _input: AbstractJsonEditorInput<JsonType> | null;
+	protected _input: AbstractJsonEditorInput<JsonType, State> | null;
 	private _inputEvents: IDisposable[] = [];
 	protected editorInited: boolean = false;
 	private _awaitingUpdate: boolean = false;
@@ -92,6 +92,10 @@ export abstract class AbstractJsonEditor<JsonType> extends AbstractTextResourceE
 	}
 
 	async setInput(input: AbstractJsonEditorInput<JsonType>, options: EditorOptions, token: CancellationToken): Promise<void> {
+		if (this._input) {
+			this._input!.setState(this.sleep());
+		}
+
 		await super.setInput(input, options, token);
 
 		const model = await input.resolve(false);
@@ -102,6 +106,7 @@ export abstract class AbstractJsonEditor<JsonType> extends AbstractTextResourceE
 		this._inputEvents.push(input.onSwitchType(event => {
 			this.switchJsonType();
 			this.updateModel(model);
+			this.wakeup(input!.getState());
 		}));
 
 		if (!this.editorInited) {
@@ -112,9 +117,11 @@ export abstract class AbstractJsonEditor<JsonType> extends AbstractTextResourceE
 
 		this.updateModel(model);
 		this.switchJsonType();
+		this.wakeup(input!.getState());
 	}
 
 	clearInput(): void {
+		this._input!.setState(this.sleep());
 		this.updateModel();
 
 		this._inputEvents = dispose(this._inputEvents);
@@ -186,6 +193,7 @@ export abstract class AbstractJsonEditor<JsonType> extends AbstractTextResourceE
 
 		if (this._awaitingUpdate) {
 			this.updateModel(this._input!.model);
+			this.wakeup(this._input!.getState());
 			this._awaitingUpdate = false;
 		}
 	}
@@ -195,4 +203,8 @@ export abstract class AbstractJsonEditor<JsonType> extends AbstractTextResourceE
 	}
 
 	protected abstract _createEditor(parent: HTMLElement): void
+
+	protected abstract wakeup(state: Partial<State>): void;
+
+	protected abstract sleep(): Partial<State>;
 }

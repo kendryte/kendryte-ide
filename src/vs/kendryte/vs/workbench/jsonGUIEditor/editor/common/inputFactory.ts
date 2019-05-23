@@ -9,6 +9,7 @@ import { ICustomJsonEditorService } from 'vs/kendryte/vs/workbench/jsonGUIEditor
 
 export interface ISerializedJsonEditorInput {
 	resource: string;
+	data: any;
 }
 
 export class CommonJsonEditorInputFactory implements IEditorInputFactory {
@@ -24,6 +25,7 @@ export class CommonJsonEditorInputFactory implements IEditorInputFactory {
 		}
 		const serialized: ISerializedJsonEditorInput = {
 			resource: editorInput.getResource()!.toString(),
+			data: editorInput.getState(),
 		};
 
 		return JSON.stringify(serialized);
@@ -38,9 +40,13 @@ export class CommonJsonEditorInputFactory implements IEditorInputFactory {
 			return;
 		}
 		return instantiationService.invokeFunction((access) => {
-			return access
+			const input = access
 				.get<ICustomJsonEditorService>(ICustomJsonEditorService)
 				.openEditorAs<AbstractJsonEditorInput<any>>(resource, id);
+			if (input && deserialized.data) {
+				input.setState(deserialized.data);
+			}
+			return input;
 		});
 	}
 }

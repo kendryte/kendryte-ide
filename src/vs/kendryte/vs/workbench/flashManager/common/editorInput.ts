@@ -10,7 +10,7 @@ import { AllocInfo, MemoryAllocationCalculator, parseMemoryAddress, stringifyMem
 import { FLASH_MAX_SIZE, FLASH_SAFE_ADDRESS } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
 import { humanSize } from 'vs/kendryte/vs/base/common/speedShow';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
-import { AbstractJsonEditorInput } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditorInput';
+import { AbstractJsonEditorInput, IInputState } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditorInput';
 import { ICustomJsonEditorService } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 import { EditorId } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -18,7 +18,10 @@ import { FlashManagerEditorModel } from 'vs/kendryte/vs/workbench/flashManager/c
 
 const MARKER_ID = 'flash.manager.editor';
 
-export class FlashManagerEditorInput extends AbstractJsonEditorInput<IFlashManagerConfigJson> {
+export interface IFlashManagerEditorState extends IInputState {
+}
+
+export class FlashManagerEditorInput extends AbstractJsonEditorInput<IFlashManagerConfigJson, IFlashManagerEditorState> {
 	public readonly model: FlashManagerEditorModel;
 
 	private _errors: IMarkerData[] = [];

@@ -21,9 +21,7 @@ interface IReturnSection extends Pick<ISection, Exclude<keyof ISection, 'filenam
 }
 
 export class FlashManagerEditorModel extends SimpleJsonEditorModel<IFlashManagerConfigJson> {
-	public async load(): Promise<this> {
-		await super.load();
-
+	public async _load() {
 		if (!this.jsonData!.downloadSections) {
 			this.update('downloadSections', [], true);
 		}
@@ -32,7 +30,6 @@ export class FlashManagerEditorModel extends SimpleJsonEditorModel<IFlashManager
 		}
 
 		// console.log('Flash Manager Model Load: %O', this.jsonData);
-		return this;
 	}
 
 	public async createSections(memory?: MemoryAllocationCalculator) {

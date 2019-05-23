@@ -24,6 +24,7 @@ export class SimpleJsonEditorModel<JsonType> extends Disposable implements IJson
 	public readonly onDispose = once(this._onDispose.event);
 
 	public reference: IReference<IResolvedTextEditorModel>;
+	private _loadState: boolean = false;
 
 	private readonly _onContentChange = this._register(new Emitter<JsonChangeReason>());
 	public readonly onContentChange = this._onContentChange.event;
@@ -66,9 +67,16 @@ export class SimpleJsonEditorModel<JsonType> extends Disposable implements IJson
 		return this._dirty;
 	}
 
+	isLoaded() {
+		return this._loadState;
+	}
+
+	async _load(): Promise<void> {
+	}
+
 	@memoize
-	async load(): Promise<this> {
-		this.reference = await this.customJsonEditorService.createTextReference(this.editorId, this.resource);
+	async load(optional: boolean = false): Promise<this> {
+		this.reference = await this.customJsonEditorService.createTextReference(this.editorId, this.resource, optional);
 
 		this._register(this.reference);
 		this._register(this.reference.object.onDispose(() => {
@@ -87,9 +95,12 @@ export class SimpleJsonEditorModel<JsonType> extends Disposable implements IJson
 		}));
 
 		this.refresh();
+		await this._load();
 		this.emitChangeEvent(JsonChangeReason.Load);
 
 		this.setDirty(false);
+
+		this._loadState = true;
 		return this;
 	}
 
