@@ -76,6 +76,7 @@ export class NodePathService implements INodePathService {
 
 	kendrytePaths(): string[] {
 		return [
+			resolvePath(this.getInstallationPath(), 'bin'),
 			this.getToolchainBinPath(),
 			this.getPackagesPath('cmake/bin'),
 			this.getPackagesPath('jlink'),

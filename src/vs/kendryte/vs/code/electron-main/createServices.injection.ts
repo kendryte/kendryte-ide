@@ -3,6 +3,7 @@ import { ServiceCollection } from 'vs/platform/instantiation/common/serviceColle
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { getMainServices } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
 import { getMainIPCs } from 'vs/kendryte/vs/platform/instantiation/electron-main/mainIpcExtensions';
+import { getMainContributions } from 'vs/kendryte/vs/base/electron-main/injection/registry';
 
 export function _kendryte_main_hookInstantiationService(
 	serviceCollection: ServiceCollection,
@@ -20,5 +21,7 @@ export function _kendryte_main_hookInstantiationService(
 		serviceCollection.set(id, descriptor);
 	}
 
-
+	for (const ctor of getMainContributions()) {
+		instantiationService.createInstance(ctor);
+	}
 }
