@@ -5,9 +5,11 @@ import { localize } from 'vs/nls';
 import { ERROR_REQUIRE_FOLDER } from 'vs/base/common/messages';
 import { CMakeError } from 'vs/kendryte/vs/workbench/cmake/common/errors';
 import { RawContextKey } from 'vs/platform/contextkey/common/contextkey';
+import { toOpenResource } from 'vs/kendryte/vs/services/channelLogger/common/type';
 
 export const CMAKE_CHANNEL = 'maix-make-run';
 export const CMAKE_CHANNEL_TITLE = 'Build/Run';
+export const CMAKE_CHANNEL_URI = toOpenResource(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 
 export const CMAKE_ERROR_MARKER = 'cmake/error';
 

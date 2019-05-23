@@ -11,6 +11,7 @@ import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/com
 import { URI } from 'vs/base/common/uri';
 
 const regLdMissingReference = /^(.*?):(\d+): (undefined reference to .+)$/;
+const regIsLdPassingMessage = /riscv64-unknown-elf[/\\]bin[/\\]ld(?:\.exe)?/;
 const regGCCError = /^(.*?):(\d+):(\d+):\s+(\w*)(?:\serror|warning)?:\s+(.*)/;
 const regCMakeProgress = /^\[\s*(\d+)%]/;
 
@@ -66,13 +67,18 @@ export class CMakeBuildErrorProcessor extends CMakeProcessor {
 	protected onData(line: string) {
 		const m1 = regLdMissingReference.exec(line);
 		if (m1) {
-			this.diagnostic('error', 'LD: ' + m1[3], m1[1], m1[2], '0');
+			if (!regIsLdPassingMessage.test(m1[1])) {
+				this.diagnostic('error', 'LD: ' + m1[3], m1[1], m1[2], '0');
+			}
+			return true;
 		}
 		const m2 = regGCCError.exec(line);
 		if (m2) {
 			this.diagnostic(m2[4], m2[5], m2[1], m2[2], m2[3]);
+			return true;
 		}
-		return !!m2;
+
+		return false;
 	}
 
 	protected diagnostic(_severity: string, message: string, file: string, _line: string, _column: string) {
@@ -110,7 +116,6 @@ export class CMakeBuildErrorProcessor extends CMakeProcessor {
 	}
 
 	public dispose() {
-		this.markerService.changeAll(CMAKE_ERROR_MARKER, []);
 	}
 }
 
@@ -131,8 +136,10 @@ export class CMakeBuildProgressProcessor extends CMakeProcessor {
 		if (m1) {
 			this.bar.percent(parseInt(m1[1]));
 			this.statusBarController.showMessage(this.CMAKE_PROGRESS).text = this.bar.toString();
+			return true;
+
 		}
-		return !!m1;
+		return false;
 	}
 
 	finalize(): void {

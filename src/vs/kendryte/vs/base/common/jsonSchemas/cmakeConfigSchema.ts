@@ -121,7 +121,7 @@ const baseSchemaProps: IJSONSchemaMap = {
 		description: 'Additional LD file to use',
 		default: '',
 	},
-	definitions: SchemaMap('Constant define map', ['string', 'number']),
+	definitions: SchemaMap('Preprocessor definitions map', ['string', 'number']),
 	entry: {
 		type: 'string',
 		default: 'src/main.c',

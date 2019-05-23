@@ -11,6 +11,7 @@ export interface DefineValue {
 	id: string;
 	config: string;
 	value: string;
+	source: string;
 }
 
 export interface IProjectInfo<T = ICompileInfo> {

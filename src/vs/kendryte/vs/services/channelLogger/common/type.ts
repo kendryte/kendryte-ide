@@ -26,3 +26,13 @@ export interface IChannelLogger extends ILogService {
 	write(message: string, ...args: any[]): void;
 	writeln(message: string): void;
 }
+
+export const OPEN_RESOURCE_SCHEME = 'channel';
+
+export function toOpenResource(title: string, name: string) {
+	return URI.from({
+		scheme: OPEN_RESOURCE_SCHEME,
+		path: '/logger/' + escape(title),
+		fragment: name,
+	});
+}

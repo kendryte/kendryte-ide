@@ -1,6 +1,7 @@
 import {
 	CMAKE_CHANNEL,
 	CMAKE_CHANNEL_TITLE,
+	CMAKE_CHANNEL_URI,
 	CMAKE_ERROR_MARKER,
 	CMakeInternalVariants,
 	CMakeStatus,
@@ -64,9 +65,10 @@ import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/com
 import { IMakefileService } from 'vs/kendryte/vs/services/makefileService/common/type';
 import { IMarkerService, MarkerSeverity } from 'vs/platform/markers/common/markers';
 import { URI } from 'vs/base/common/uri';
-import { createSimpleMarker } from 'vs/kendryte/vs/platform/marker/common/simple';
+import { createSimpleErrorMarker, createSimpleMarker } from 'vs/kendryte/vs/platform/marker/common/simple';
 
 const regCMakeConfigureError = /CMake Error at (.+?):(\d+?) \((.+)\):/;
+const regCMakeUnknownError = /^CMake Error:/;
 
 export class CMakeService implements ICMakeService {
 	_serviceBrand: any;
@@ -437,6 +439,13 @@ export class CMakeService implements ICMakeService {
 						URI.file(this.kendryteWorkspaceService.requireCurrentWorkspaceFile(file)),
 						[marker],
 					);
+				} else if (regCMakeUnknownError.test(message.message)) {
+					const msg = message.message.replace(regCMakeUnknownError, '').trim();
+					this.markerService.changeOne(
+						CMAKE_ERROR_MARKER,
+						CMAKE_CHANNEL_URI,
+						[createSimpleErrorMarker(msg)],
+					);
 				}
 				return;
 			case CMAKE_EVENT_TYPE.SIGNAL:
@@ -582,10 +591,14 @@ export class CMakeService implements ICMakeService {
 	}
 
 	public configure(): Promise<void> {
+		this.markerService.changeAll(CMAKE_ERROR_MARKER, []);
 		this._onCMakeStatusChange.fire({ status: CMakeStatus.BUSY });
 		return this._configure().then(() => {
 			this._onCMakeStatusChange.fire({ status: CMakeStatus.IDLE });
 		}, (e) => {
+			this.markerService.changeOne(CMAKE_ERROR_MARKER, CMAKE_CHANNEL_URI, [
+				createSimpleErrorMarker(localize('cmakeErrorSee', 'Can not configure project, see log for more information')),
+			]);
 			this._onCMakeStatusChange.fire({ status: CMakeStatus.CONFIGURE_ERROR, error: e });
 			throw e;
 		});
@@ -641,10 +654,14 @@ export class CMakeService implements ICMakeService {
 	}
 
 	public build() {
+		this.markerService.changeAll(CMAKE_ERROR_MARKER, []);
 		this._onCMakeStatusChange.fire({ status: CMakeStatus.BUSY });
 		return this._build().then(() => {
 			this._onCMakeStatusChange.fire({ status: CMakeStatus.IDLE });
 		}, (e) => {
+			this.markerService.changeOne(CMAKE_ERROR_MARKER, CMAKE_CHANNEL_URI, [
+				createSimpleErrorMarker(localize('buildErrorSee', 'Can not build project, see log for more information')),
+			]);
 			this._onCMakeStatusChange.fire({ status: CMakeStatus.MAKE_ERROR, error: e });
 			throw e;
 		});
@@ -909,9 +926,11 @@ export class CMakeService implements ICMakeService {
 		});
 
 		const from = this.kendryteWorkspaceService.requireCurrentWorkspaceFile('build/compile_commands.json');
-		const to = this.kendryteWorkspaceService.requireCurrentWorkspaceFile('.vscode/compile_commands.backup.json');
 
-		await this.nodeFileSystemService.writeFileIfChanged(to, await readFile(from));
+		if (await exists(from)) {
+			const to = this.kendryteWorkspaceService.requireCurrentWorkspaceFile('.vscode/compile_commands.backup.json');
+			await this.nodeFileSystemService.writeFileIfChanged(to, await readFile(from));
+		}
 
 		this.logger.info('write config for cpp extension.');
 		await this.nodeFileSystemService.writeFileIfChanged(cppExtConfigFile, JSON.stringify(content, null, 4));

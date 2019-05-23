@@ -7,6 +7,7 @@ import { relativePath, resolvePath } from 'vs/kendryte/vs/base/common/resolvePat
 import { normalizeArray } from 'vs/kendryte/vs/base/common/normalizeArray';
 import { PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { CMAKE_LIST_GENERATED_WARNING, CMakeProjectTypes } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { DefineValue } from 'vs/kendryte/vs/services/makefileService/common/type';
 
 const CMAKE_CWD = '${CMAKE_CURRENT_LIST_DIR}/';
 
@@ -31,6 +32,7 @@ export class MakefileServiceWritter {
 		private readonly _project: DeepReadonly<IProjectInfoResolved>,
 		private readonly _isDebugMode: boolean,
 		private readonly allLinkProjects: ReadonlyArray<string>,
+		private readonly definitions: IterableIterator<DefineValue>,
 		private readonly logger: ILogService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@INodePathService private readonly nodePathService: INodePathService,
@@ -87,6 +89,7 @@ set(PROJECT_NAME ${JSON.stringify(this._project.json.name)})
 
 # [section] Init
 ${this._project.isRoot ? this.rootInitSection : '# not need in sub project'}
+${this._project.isRoot ? this.debugModeProperty() : ''}
 # [/section] Init
 
 # [section] C/C++ compiler flags
@@ -97,7 +100,6 @@ ${this.flags()}
 ${this.readed.fix9985}
 message("======== PROJECT ========")
 project(\${PROJECT_NAME})
-${this.debugModeValue()}
 
 ## [section] Header
 ${this.includeDirs()}
@@ -118,6 +120,7 @@ ${this._project.resolved.extraListContent}
 
 # [section] Target
 ${this.createTarget()}
+${this.debugModeValue()}
 ${this.setProperties()}
 ${this.linkSystemBase()}
 ${this.linkSubProjects()}
@@ -140,13 +143,20 @@ ${this._isDebugMode ? 'message("\n  ${PROJECT_NAME} :: SOURCE_FILES=${SOURCE_FIL
 		);
 	}
 
-	debugModeValue() {
+	debugModeProperty() {
 		if (!this._isDebugMode) {
 			return '# debug mode disabled';
 		}
 		return `# debug mode enabled
 set(-DCMAKE_VERBOSE_MAKEFILE TRUE)
-set_property(GLOBAL PROPERTY JOB_POOLS single_debug=1)
+set_property(GLOBAL PROPERTY JOB_POOLS single_debug=1)`;
+	}
+
+	debugModeValue() {
+		if (!this._isDebugMode) {
+			return '# debug mode disabled';
+		}
+		return `# debug mode enabled
 set_property(TARGET \${PROJECT_NAME} PROPERTY JOB_POOL_COMPILE single_debug)
 set_property(TARGET \${PROJECT_NAME} PROPERTY JOB_POOL_LINK single_debug)`;
 	}
@@ -281,13 +291,9 @@ target_link_libraries(\${PROJECT_NAME} PUBLIC
 		} else {
 			content.push('## no properties');
 		}
-		if (this._project.resolved.definitions.length) {
-			content.push('## set definitions');
-			for (const { id, value } of this._project.resolved.definitions) {
-				content.push(`add_compile_definitions(${id}${value ? '=' + value : ''})`);
-			}
-		} else {
-			content.push('## no definitions');
+		content.push('## set definitions');
+		for (const { id, value } of this.definitions) {
+			content.push(`add_compile_definitions(${id}${value ? '=' + value : ''})`);
 		}
 		return content.join('\n');
 	}

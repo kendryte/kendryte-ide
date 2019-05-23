@@ -58,9 +58,8 @@ export class MakefileService implements IMakefileService {
 	}
 
 	async generateMakefile(projectPath: string) {
-		return this._generateMakefile(projectPath).then(() => {
-			this.markerService.changeAll(MARKER_ID, []);
-		}, (e) => {
+		this.markerService.changeAll(MARKER_ID, []);
+		return this._generateMakefile(projectPath).catch((e) => {
 			if (e instanceof PathAttachedError) {
 				this.markerService.changeOne(MARKER_ID, e.resource, [createSimpleErrorMarker(e)]);
 			} else {
@@ -93,6 +92,7 @@ export class MakefileService implements IMakefileService {
 				project,
 				this.isDebugMode,
 				allProjects,
+				treeResolver.getDefinitions(),
 				this.logger,
 			);
 			await listOutput.write();

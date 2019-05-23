@@ -213,7 +213,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			localize('kendrytePackageJsonEditor.homepage.title', 'Homepage'),
 			localize('kendrytePackageJsonEditor.homepage.desc', 'A link to your project home (eg. github page).'),
 			($section, property) => this.sectionCreator.createTextInput($section, property,
-				PackageJsonValidate.Url, 'http://xxxx',
+				PackageJsonValidate.Url, 'eg. http://xxxx',
 			),
 		);
 
@@ -308,7 +308,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			localize('kendrytePackageJsonEditor.definitions.title', 'C/C++ Definitions'),
 			localize('kendrytePackageJsonEditor.definitions.desc', 'User configurable definitions, will create #define in compile time.'),
 			($section, property) => this.sectionCreator.createTextAreaMap($section, property,
-				PackageJsonValidate.Definitions, 'SOME_VALUE1:str=hello world\nSOME_VALUE2:raw=123',
+				PackageJsonValidate.Definitions, 'eg. SOME_VALUE1:str=hello world\nSOME_VALUE2:raw=123',
 			),
 		);
 
@@ -352,7 +352,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			localize('kendrytePackageJsonEditor.properties.title', 'CMake properties'),
 			localize('kendrytePackageJsonEditor.properties.desc', 'Please check CMake manual to get more information'),
 			($section, property) => this.sectionCreator.createTextAreaMap($section, property,
-				PackageJsonValidate.KeyValue, 'PROPERTY_NAME1=some value\nPROPERTY_NAME2=some other value',
+				PackageJsonValidate.KeyValue, 'eg. PROPERTY_NAME1=some value\nPROPERTY_NAME2=some other value',
 			),
 		);
 
@@ -373,7 +373,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			localize('kendrytePackageJsonEditor.dependency.title', 'Project dependencies'),
 			localize('kendrytePackageJsonEditor.dependency.desc', 'One package per line'),
 			($section, property) => this.sectionCreator.createTextAreaMap($section, property,
-				PackageJsonValidate.Dependency, 'eg. kendryte_sdk = 1.2.3',
+				PackageJsonValidate.Dependency, 'eg. kendryte_sdk=1.2.3',
 			),
 			OpenManagerControl,
 		);

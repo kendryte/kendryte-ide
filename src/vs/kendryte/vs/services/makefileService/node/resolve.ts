@@ -12,6 +12,7 @@ import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/com
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { DeepReadonlyArray } from 'vs/kendryte/vs/base/common/type/deepReadonly';
 import { isSameDrive } from 'vs/kendryte/vs/base/common/fs/isSameDrive';
+import { PathAttachedError } from 'vs/kendryte/vs/platform/marker/common/errorWithPath';
 
 const DefineType = /:(raw|str)$/i;
 
@@ -19,7 +20,6 @@ interface IResolvedData {
 	includeFolders: string[];
 	linkerScripts: string[];
 	extraListContent: string;
-	definitions: DefineValue[];
 	sourceFiles: string[];
 }
 
@@ -33,7 +33,7 @@ export class MakefileServiceResolve {
 	private readonly definitionsRegistry = new ExtendMap<string, DefineValue>();
 
 	constructor(
-		private readonly projectPath: string,
+		private readonly pathToGenerate: string,
 		private readonly _projectNameMap: Map<string/* projectName */, string/* project absolute path */>,
 		private readonly logger: ILogService,
 		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
@@ -42,7 +42,7 @@ export class MakefileServiceResolve {
 	}
 
 	public readProjectJsonList() {
-		return this._readProjectJsonList(this.projectPath);
+		return this._readProjectJsonList(this.pathToGenerate);
 	}
 
 	private async _readProjectJsonList(projectPath: string) {
@@ -90,7 +90,14 @@ export class MakefileServiceResolve {
 				}
 
 				project.directDependency[depProjectName] = depPath;
-				await this._readProjectJsonList(depPath);
+				await this._readProjectJsonList(depPath).catch((e) => {
+					if (e instanceof PathAttachedError) {
+						throw e;
+					}
+					const ee = new PathAttachedError(this.kendryteWorkspaceService.getProjectSetting(projectPath), e.message);
+					ee.stack = e.stack;
+					throw ee;
+				});
 			}
 		}
 
@@ -100,7 +107,17 @@ export class MakefileServiceResolve {
 	public async resolveDependencies(): Promise<DeepReadonlyArray<IProjectInfoResolved>> {
 		const projectTree = await this.createDependencyTree();
 		await this.resolveProjects(projectTree);
+
+		this.logger.info('All defined constants:');
+		for (const item of this.definitionsRegistry.values()) {
+			this.logger.info(' - %s = %s', item.id, item.value);
+		}
+
 		return this.finalProjectList;
+	}
+
+	getDefinitions() {
+		return this.definitionsRegistry.values();
 	}
 
 	private async resolveProjects({ project, children }: IDependencyTree) {
@@ -115,7 +132,7 @@ export class MakefileServiceResolve {
 		}
 
 		const extended = Object.assign(project, {
-			resolved: await this.resolveTree(project, currentDeps, this.definitionsRegistry),
+			resolved: await this.resolveTree(project, currentDeps),
 		});
 		this.finalProjectList.push(extended);
 	}
@@ -123,7 +140,6 @@ export class MakefileServiceResolve {
 	private async resolveTree(
 		project: IProjectInfo,
 		children: IProjectInfoResolved[],
-		definitionsRegistry: ExtendMap<string, DefineValue>,
 	) {
 		const libProject = project.json as ILibraryProject;
 		const ret = <IResolvedData>{
@@ -169,19 +185,23 @@ export class MakefileServiceResolve {
 				const type = DefineType.exec(k);
 				const id = k.replace(DefineType, '');
 
-				const bundle = definitionsRegistry.entry(id, () => {
+				const bundle = this.definitionsRegistry.entry(id, () => {
 					return {
 						id,
 						config: k,
 						value: '',
+						source: libProject.name,
 					};
 				});
+				if (bundle.source !== libProject.name) {
+					this.logger.warn('Overriding definitions of %s of project %s', id, bundle.source);
+				}
+
 				if (type && type[1].toLowerCase() === 'raw') {
 					bundle.value = '' + libProject.definitions[k];
 				} else {
 					bundle.value = JSON.stringify(libProject.definitions[k]);
 				}
-				ret.definitions.push(bundle);
 			}
 		}
 

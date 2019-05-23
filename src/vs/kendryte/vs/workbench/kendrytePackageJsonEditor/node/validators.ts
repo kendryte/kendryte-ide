@@ -79,11 +79,11 @@ export function validateFile(relativeTo: string, value: string): IMessage | null
 	return null;
 }
 
-const regDefs = /^[a-zA-Z_][a-zA-Z0-9_]+:(?:str|raw)=/;
-
 export function validateArgList(value: string): IMessage | null {
 	return null;
 }
+
+const regDefs = /^[a-zA-Z_][a-zA-Z0-9_]+:(?:str|raw)=/;
 
 export function validateDefinitions(value: string): IMessage | null {
 	const lines = value.split(/\n/g).filter(e => e.length > 0);
