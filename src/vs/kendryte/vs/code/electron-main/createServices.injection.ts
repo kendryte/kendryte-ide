@@ -19,4 +19,6 @@ export function _kendryte_main_hookInstantiationService(
 	for (const { id, descriptor } of getMainServices()) {
 		serviceCollection.set(id, descriptor);
 	}
+
+
 }

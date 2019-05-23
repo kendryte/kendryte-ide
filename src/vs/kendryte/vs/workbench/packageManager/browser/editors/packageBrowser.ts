@@ -20,6 +20,7 @@ import { InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { CMakeProjectTypes } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
+import { attachInputBoxStyler } from 'vs/platform/theme/common/styler';
 
 export class PackageBrowserEditor extends BaseEditor {
 	static readonly ID: string = 'workbench.editor.package-market';
@@ -89,6 +90,7 @@ export class PackageBrowserEditor extends BaseEditor {
 		const searchInput = this._register(new InputBox(append(navDiv, $('div.search')), this.contextViewProvider, {
 			placeholder: localize('packageManager.search', 'Search package'),
 		}));
+		this._register(attachInputBoxStyler(searchInput, this.themeService));
 		this._register(searchInput.onDidChange((st) => {
 			this.search = st;
 			this.refreshList();

@@ -1,19 +1,20 @@
-import product from 'vs/platform/product/node/product';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { isLinux, isMacintosh, isWindows } from 'vs/base/common/platform';
 import { lstatSync } from 'fs';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { createLinuxDesktopShortcut, ensureLinkEquals } from 'vs/kendryte/vs/platform/createShortcut/node/shortcuts';
+import { ensureLinkEquals } from 'vs/kendryte/vs/platform/createShortcut/node/shortcuts';
 import { IShortcutOptions } from 'windows-shortcuts';
 import { tmpdir } from 'os';
 import { mkdirp } from 'vs/base/node/pfs';
 import { optional } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
 import { memoize } from 'vs/base/common/decorators';
-import { basename } from 'vs/base/common/path';
 import { processEnvironmentPathList } from 'vs/kendryte/vs/base/common/platformEnv';
+import { createWindowStartupMenuShortcut } from 'vs/kendryte/vs/workbench/topMenu/node/windows';
+import { createLinuxApplicationOrDesktopShortcut } from 'vs/kendryte/vs/workbench/topMenu/node/linux';
+import { createMacApplicationsLink } from 'vs/kendryte/vs/workbench/topMenu/node/darwin';
 
 export class NodePathService implements INodePathService {
 	_serviceBrand: any;
@@ -26,6 +27,7 @@ export class NodePathService implements INodePathService {
 		@ILogService protected logger: ILogService,
 	) {
 		const keys: (keyof NodePathService)[] = [
+			'getInstallationPath',
 			'getIDESourceCodeRoot',
 			'getPackagesPath',
 			'getSelfControllingRoot',
@@ -48,31 +50,27 @@ export class NodePathService implements INodePathService {
 		return resolvePath(this.environmentService.appRoot, '../..');
 	}
 
-	createAppLink(): Promise<void> {
-		if (!this.environmentService.isBuilt) {
-			return Promise.reject(new Error('development mode do not support create link'));
-		}
+	public async createAppLink(): Promise<void> {
 		if (isWindows) {
-			return this.createUserLink(
-				`%APPDATA%/Microsoft/Windows/Start Menu/Programs/${product.nameLong}.lnk`,
-				resolvePath(this.getSelfControllingRoot(), 'bin/code.cmd'),
-				{
-					workingDir: this.getSelfControllingRoot(),
-					desc: product.nameLong,
-					icon: this.environmentService.execPath,
-				},
-			);
+			await createWindowStartupMenuShortcut(this.getInstallationPath());
 		} else if (isLinux) {
-			return createLinuxDesktopShortcut(
-				this.getSelfControllingRoot(),
-				resolvePath(this.getSelfControllingRoot(), 'bin/code'),
-			);
+			await createLinuxApplicationOrDesktopShortcut(this.getInstallationPath());
 		} else {
-			const root = this.getSelfControllingRoot();
-			return this.createUserLink(
-				resolvePath('/Applications', basename(root)),
-				resolvePath(root),
-			);
+			await createMacApplicationsLink(this.getInstallationPath());
+		}
+	}
+
+	@memoize
+	getInstallationPath() {
+		// this is the top most folder, contains updater & applications & etc
+		if (this.environmentService.isBuilt) {
+			if (isMacintosh) {
+				return resolvePath(this.getSelfControllingRoot(), '../../..');
+			} else {
+				return resolvePath(this.getSelfControllingRoot(), '../..');
+			}
+		} else {
+			return resolvePath(this.getSelfControllingRoot(), '../kendryte-ide-shell/build/DebugContents');
 		}
 	}
 
@@ -124,15 +122,8 @@ export class NodePathService implements INodePathService {
 		if (process.env.KENDRYTE_IDE_LOCAL_PACKAGE_DIR) {
 			return resolvePath(process.env.KENDRYTE_IDE_LOCAL_PACKAGE_DIR);
 		}
-		if (this.environmentService.isBuilt) {
-			if (isMacintosh) {
-				return resolvePath(this.getSelfControllingRoot(), '../../../LocalPackage');
-			} else {
-				return resolvePath(this.getSelfControllingRoot(), '../../LocalPackage');
-			}
-		} else {
-			return resolvePath(this.getSelfControllingRoot(), '../kendryte-ide-shell/build/DebugContents/LocalPackage');
-		}
+
+		return resolvePath(this.getInstallationPath(), 'LocalPackage');
 	}
 
 	exeFile(filePath: string) {

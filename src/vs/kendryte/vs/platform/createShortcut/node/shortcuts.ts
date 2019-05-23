@@ -1,11 +1,10 @@
 import { create as createWindowsAsync, IShortcutOptions, IShortcutValue, query as queryWindowsAsync } from 'windows-shortcuts';
 import { isWindows } from 'vs/base/common/platform';
-import { lstat, mkdirp, readlink, rimraf, symlink, writeFile } from 'vs/base/node/pfs';
+import { lstat, mkdirp, readlink, rimraf, symlink } from 'vs/base/node/pfs';
 import * as fs from 'fs';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { dirname, posix } from 'path';
 import { promisify } from 'util';
-import product from 'vs/platform/product/node/product';
 
 const queryWindows = promisify<string, IShortcutValue>(queryWindowsAsync);
 const createWindows = promisify<string, IShortcutOptions>(createWindowsAsync);
@@ -115,37 +114,4 @@ export async function ensureLinkEquals(linkFile: string, existsFile: string, win
 	}
 
 	await createUserLink(linkFile, existsFile, windowsOptions);
-}
-
-export async function createLinuxDesktopShortcut(installPath: string, appPath: string): Promise<void> {
-	const content: string = `#!/usr/bin/env xdg-open
-[Desktop Entry]
-Name=${product.nameLong}
-Comment=Code Editing. Redefined.
-GenericName=Text Editor
-Exec=${appPath} --unity-launch %F
-Icon=${installPath}/icon.png
-Type=Application
-StartupNotify=true
-StartupWMClass=${product.nameShort}
-Categories=Utility;TextEditor;Development;IDE;
-MimeType=text/plain;inode/directory;
-Actions=new-empty-window;
-Keywords=vscode;
-
-[Desktop Action new-empty-window]
-Name=New Empty Window
-Exec=${appPath} --new-window %F
-Icon=${installPath}/icon.png
-`;
-	const desktop = process.env.XDG_DESKTOP_DIR || resolvePath(process.env.HOME || process.env.HOMEPATH || '/', 'Desktop');
-	if (!desktop || desktop === '/Desktop') {
-		throw new Error('Cannot find desktop path to create shortcut.');
-	}
-	await mkdirp(desktop);
-	await writeFile(`${desktop}/${product.applicationName}.desktop`, content);
-
-	fs.chmod(appPath, '0777', (e) => {
-		console.warn('create shortcut, chmod to 777: ', e.message);
-	});
 }

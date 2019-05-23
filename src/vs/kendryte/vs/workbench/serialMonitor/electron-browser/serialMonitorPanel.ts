@@ -145,7 +145,7 @@ class SerialMonitorPanel extends Panel {
 			$centerHead,
 			'　$(pin)　',
 			() => this._doSerialPause(),
-			localize('serial-port.close', 'Pause output'),
+			localize('serial-port.pause', 'Lock output'),
 		);
 		this.stop = this.createButton(
 			$centerHead,

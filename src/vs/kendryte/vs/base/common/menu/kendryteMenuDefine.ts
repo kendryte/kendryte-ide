@@ -1,8 +1,10 @@
 import { isWindows } from 'vs/base/common/platform';
 import { isUpdater } from 'vs/kendryte/vs/base/common/platform';
 import {
+	ACTION_ID_CREATE_SHORTCUTS,
 	ACTION_ID_OPEN_FLASH_MANAGER,
 	ACTION_ID_OPEN_PROJECT_SETTINGS,
+	ACTION_LABEL_CREATE_SHORTCUTS,
 	ACTION_LABEL_OPEN_FLASH_MANAGER,
 	ACTION_LABEL_OPEN_PROJECT_SETTINGS,
 } from 'vs/kendryte/vs/base/common/menu/tools';
@@ -156,7 +158,7 @@ export const ApplicationMenuStructure: MyMenuRegistry = [
 		new MyMenu(ACTION_ID_OPEN_DOCUMENT, ACTION_LABEL_OPEN_DOCUMENT),
 	]),
 	new MySubMenu(ACTION_CATEGORY_DEV_TOOLS, [
-		// new MyMenu(ACTION_ID_CREATE_SHORTCUTS, ACTION_LABEL_CREATE_SHORTCUTS),
+		new MyMenu(ACTION_ID_CREATE_SHORTCUTS, ACTION_LABEL_CREATE_SHORTCUTS),
 		new MyMenuSeparator('reboot'),
 		new MyMenu(ACTION_ID_RELOAD, ACTION_LABEL_RELOAD),
 		new MyMenu(ACTION_ID_REBOOT, ACTION_LABEL_REBOOT),

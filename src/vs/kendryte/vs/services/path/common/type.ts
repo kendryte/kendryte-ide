@@ -3,6 +3,7 @@ import { createDecorator } from 'vs/platform/instantiation/common/instantiation'
 export interface INodePathService {
 	_serviceBrand: any;
 
+	getInstallationPath(): string;
 	getIDESourceCodeRoot(): string;
 	getSelfControllingRoot(): string;
 	exeFile(filePath: string): string;
