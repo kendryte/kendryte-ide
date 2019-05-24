@@ -231,6 +231,11 @@ export class MakefileServiceResolve {
 			ret.linkerScripts.unshift(resolvePath(project.path, libProject.ld_file));
 		}
 
+		if (!Array.isArray(libProject.systemLibrary)) {
+			libProject.systemLibrary = [];
+		}
+		if (project.isSimpleFolder) {
+		}
 		if (Array.isArray(libProject.systemLibrary) && libProject.systemLibrary.length) {
 			ret.linkLibs.unshift(...libProject.systemLibrary);
 		}

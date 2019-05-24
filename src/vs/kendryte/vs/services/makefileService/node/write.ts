@@ -261,30 +261,47 @@ ${addSource.join('\n')}`;
 	}
 
 	private linkSubProjects() {
-		if (!this.project.isRoot) {
-			return '# not root project, no more link';
-		}
 		const names: string[] = [];
-		for (const { json, isSimpleFolder } of this.projectList) {
-			if (isSimpleFolder || json.name === this.project.json.name) {
-				continue;
+		const wrap = (type: string, deps: ReadonlyArray<string>) => {
+			if (deps.length === 0) {
+				return '### no deps';
 			}
-			names.push(JSON.stringify(json.name));
-		}
-
-		let system = '';
-		if (this.project.resolved.linkLibs.length) {
-			system = `target_link_libraries($\{PROJECT_NAME} PUBLIC -Wl,--start-group ${this.project.resolved.linkLibs.join(' ')} -Wl,--end-group)`;
-		} else {
-			system = '### no system library used (this almost error)';
-		}
-		return `## dependencies link
-${system}
-target_link_libraries(\${PROJECT_NAME} PUBLIC
+			return `target_link_libraries(\${PROJECT_NAME} ${type}
 	-Wl,--start-group
-	${names.join('\n\t')}
+	${deps.join('\n\t')}
 	-Wl,--end-group
 )`;
+		};
+		if (!this.project.isRoot) {
+			for (const item of this.project.directDependency) {
+				if (item.isSimpleFolder) {
+					names.push(item.json.name!);
+				}
+			}
+			return '# TODO: !is root';
+			/*
+			return `## directory dependencies link
+${wrap('PRIVATE', names)}`;
+*/
+		} else {
+			for (const { json, isSimpleFolder } of this.projectList) {
+				if (isSimpleFolder || json.name === this.project.json.name) {
+					continue;
+				}
+				names.push(JSON.stringify(json.name));
+			}
+
+			let system: string;
+			if (this.project.resolved.linkLibs.length) {
+				system = `### system library
+${wrap('PUBLIC', this.project.resolved.linkLibs)}`;
+			} else {
+				system = '### no system library used (this almost error)';
+			}
+			return `${system}
+## dependencies link
+${wrap('PUBLIC', names)}`;
+		}
 	}
 
 	private createTarget() {
