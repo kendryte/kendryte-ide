@@ -5,7 +5,7 @@ import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { Emitter } from 'vs/base/common/event';
 import { LogLevel } from 'vs/platform/log/common/log';
-import { ERROR_REQUIRE_FOLDER } from 'vs/base/common/messages';
+import { ERROR_REQUIRE_FOLDER } from 'vs/kendryte/vs/base/common/messages';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { CONTEXT_KENDRYTE_MULTIPLE_PROJECT, CONTEXT_KENDRYTE_NOT_EMPTY } from 'vs/kendryte/vs/services/workspace/common/contextKey';
 import { exists } from 'vs/base/node/pfs';

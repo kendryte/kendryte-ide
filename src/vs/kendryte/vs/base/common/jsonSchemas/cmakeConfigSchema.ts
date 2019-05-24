@@ -5,7 +5,7 @@ import {
 	CMAKE_CONFIG_FILE_NAME as CMAKE_CONFIG_FILE_NAME_NEW,
 	CMAKE_LIBRARY_FOLDER_NAME as CMAKE_LIBRARY_FOLDER_NAME_NEW,
 } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
-import { DONT_MODIFY_MARKER } from 'vs/base/common/messages';
+import { DONT_MODIFY_MARKER } from 'vs/kendryte/vs/base/common/messages';
 
 /** @deprecated */
 export const CMAKE_CONFIG_FILE_NAME = CMAKE_CONFIG_FILE_NAME_NEW;
@@ -19,17 +19,21 @@ const cmakeSchemaIdExe = cmakeSchemaId + '/exe';
 const cmakeSchemaIdLib = cmakeSchemaId + '/lib';
 
 export type ICompileInfo = ILibraryProject | IExecutableProject;
-export type ICompileInfoPossibleKeys = keyof ILibraryProject | keyof IExecutableProject;
+export type ICompileInfoPossible = ILibraryProject & IExecutableProject;
+export type ICompileInfoPossibleKeys = keyof ICompileInfoPossible;
 
 export interface ICommonProject {
 	name: string;
 	version: string;
 	homepage?: string;
 	dependency: { [id: string]: string };
+	localDependency: string[];
+	systemLibrary: string[];
 	properties: { [id: string]: string };
 	header: string[];
 	source: string[];
 	extraList: string;
+	extraList2: string;
 	c_flags: string[];
 	cpp_flags: string[];
 	c_cpp_flags: string[];
@@ -99,6 +103,8 @@ const baseSchemaProps: IJSONSchemaMap = {
 		default: '1.0.0',
 	},
 	dependency: SchemaMap('A memo of dependencies, id => url_or_version', 'string'),
+	localDependency: SchemaArray('A list of local dependencies, one project each line.', 'string'),
+	systemLibrary: SchemaArray('System dependency, like m or gcc.', 'string'),
 	properties: SchemaMap('cmake project properties', 'string'),
 	source: {
 		...SchemaArray('Source file to compile, can use "*" to match file.', 'string'),
@@ -109,6 +115,10 @@ const baseSchemaProps: IJSONSchemaMap = {
 		default: [],
 	},
 	extraList: {
+		type: 'string',
+		description: 'Extra cmake file write into CMakeLists.txt',
+	},
+	extraList2: {
 		type: 'string',
 		description: 'Extra cmake file write into CMakeLists.txt',
 	},

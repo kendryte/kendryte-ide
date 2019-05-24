@@ -1,5 +1,5 @@
 import { Disposable } from 'vs/base/common/lifecycle';
-import { IUISection, IUISectionWidget } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/type';
+import { IUISectionWidget } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/type';
 import { localize } from 'vs/nls';
 import { Button } from 'vs/base/browser/ui/button/button';
 import { attachButtonStyler } from 'vs/platform/theme/common/styler';
@@ -16,6 +16,13 @@ import { alwaysIgnorePattern, ignorePattern } from 'vs/kendryte/vs/platform/file
 import { Emitter } from 'vs/base/common/event';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 import { ICommandService } from 'vs/platform/commands/common/commands';
+import { createSyncDescriptor, SyncDescriptor2 } from 'vs/platform/instantiation/common/descriptors';
+
+export interface IFieldControllerClass<TS, TG> {
+	new(title: string, parent: HTMLDivElement, widget: IUISectionWidget<TS, TG>): AbstractFieldControl<TG>;
+}
+
+export type IFieldControllerClassBinding<TS, TG> = SyncDescriptor2<HTMLDivElement, IUISectionWidget<TS, TG>, AbstractFieldControl<TG>>;
 
 export enum SelectType {
 	SelectSingle = 1,
@@ -23,17 +30,17 @@ export enum SelectType {
 }
 
 export abstract class AbstractFieldControl<T> extends Disposable {
-	protected readonly title: string;
-	protected readonly parent: HTMLDivElement;
-	private readonly widget: IUISectionWidget<T>;
 
 	private readonly _onUpdate = new Emitter<any>();
 	public readonly onUpdate = this._onUpdate.event;
+	private projectPath: string;
 
 	abstract createControlList(): void;
 
 	constructor(
-		control: IUISection<T>,
+		protected readonly title: string,
+		protected readonly parent: HTMLDivElement,
+		private readonly widget: IUISectionWidget<T>,
 		@IFileDialogService private readonly fileDialogService: IFileDialogService,
 		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 		@IThemeService private readonly themeService: IThemeService,
@@ -41,12 +48,11 @@ export abstract class AbstractFieldControl<T> extends Disposable {
 		@ICommandService protected readonly commandService: ICommandService,
 	) {
 		super();
-
-		this.title = control.title;
-		this.parent = control.sectionControl;
-		this.widget = control.widget;
-
 		this.createControlList();
+	}
+
+	public setProjectPath(projectPath: string) {
+		this.projectPath = projectPath;
 	}
 
 	protected createCommonButton(iconClass: string, label: string, title: string) {
@@ -67,7 +73,7 @@ export abstract class AbstractFieldControl<T> extends Disposable {
 	protected selectFileSystem(type: 'folder', select: SelectType): Promise<string[]>;
 	protected selectFileSystem(type: 'file', select: SelectType, filters?: FileFilter[]): Promise<string[]>;
 	protected async selectFileSystem(type: 'file' | 'folder', select: SelectType, filters?: FileFilter[]): Promise<string[]> {
-		const workspaceRoot = this.kendryteWorkspaceService.requireCurrentWorkspace();
+		const workspaceRoot = this.projectPath || this.kendryteWorkspaceService.requireCurrentWorkspace();
 		const ret = await this.fileDialogService.showOpenDialog({
 			title: localize('select', 'select ') + this.title,
 			defaultUri: URI.file(workspaceRoot),
@@ -127,7 +133,7 @@ export abstract class AbstractFieldControl<T> extends Disposable {
 		const glob = `${sourceDir}${recursive ? '/**' : ''}/*.{${types.join(',')}}`;
 		// console.log('glob files: "%s" in %s', glob, sourceDir);
 		return fastGlobAsync(glob, {
-			cwd: this.kendryteWorkspaceService.requireCurrentWorkspace(),
+			cwd: this.projectPath || this.kendryteWorkspaceService.requireCurrentWorkspace(),
 			stats: false,
 			onlyFiles: true,
 			followSymlinkedDirectories: false,
@@ -141,5 +147,12 @@ export abstract class AbstractFieldControl<T> extends Disposable {
 		this.widget.set(value);
 		this._onUpdate.fire(value);
 	}
+
+	static descriptor<TS, TG>(title: string): IFieldControllerClassBinding<TS, TG> {
+		return createFieldControlDescriptor(this as any, title);
+	}
 }
 
+export function createFieldControlDescriptor<TS, TG>(ctor: IFieldControllerClass<TS, TG>, title: string) {
+	return createSyncDescriptor(ctor, title);
+}

@@ -36,7 +36,7 @@ export class NodePathService implements INodePathService {
 			logger.info(` {NodePathService} ${k} = ${this[k]()}`);
 		}
 
-		processEnvironmentPathList.add(...this.kendrytePaths());
+		processEnvironmentPathList.prepend(...this.kendrytePaths());
 	}
 
 	@memoize

@@ -15,11 +15,12 @@ export interface DefineValue {
 }
 
 export interface IProjectInfo<T = ICompileInfo> {
-	json: T;
+	json: Partial<T>;
 	path: string;
 	isWorkspaceProject: boolean;
 	isRoot: boolean;
 	shouldHaveSourceCode: boolean;
+	isSimpleFolder: boolean;
 	directDependency: { [name: string]: string /*path*/ };
 }
 

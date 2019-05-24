@@ -2,7 +2,7 @@ import { createDecorator } from 'vs/platform/instantiation/common/instantiation'
 import { IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
 import { Event } from 'vs/base/common/event';
 import { localize } from 'vs/nls';
-import { ERROR_REQUIRE_FOLDER } from 'vs/base/common/messages';
+import { ERROR_REQUIRE_FOLDER } from 'vs/kendryte/vs/base/common/messages';
 import { CMakeError } from 'vs/kendryte/vs/workbench/cmake/common/errors';
 import { RawContextKey } from 'vs/platform/contextkey/common/contextkey';
 import { toOpenResource } from 'vs/kendryte/vs/services/channelLogger/common/type';

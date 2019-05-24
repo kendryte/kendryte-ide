@@ -1,4 +1,4 @@
-import { DONT_MODIFY_MARKER } from 'vs/base/common/messages';
+import { DONT_MODIFY_MARKER } from 'vs/kendryte/vs/base/common/messages';
 
 export function wrapHeaderFile(code: string, constName: string) {
 	return `// ${DONT_MODIFY_MARKER}

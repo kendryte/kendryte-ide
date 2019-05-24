@@ -60,6 +60,9 @@ ${callFunctions}
 			return PROJECT_CONFIG_FOLDER_NAME + '/' + file;
 		});
 
+		if (!project.json.source) {
+			project.json.source = [];
+		}
 		project.json.source.push(...addedFiles);
 	}
 

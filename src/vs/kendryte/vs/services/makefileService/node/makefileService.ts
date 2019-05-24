@@ -16,6 +16,7 @@ import { URI } from 'vs/base/common/uri';
 import { createSimpleErrorMarker } from 'vs/kendryte/vs/platform/marker/common/simple';
 import { PathAttachedError } from 'vs/kendryte/vs/platform/marker/common/errorWithPath';
 import { CMAKE_CONFIG_FILE_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
+import { MapLike } from 'vs/kendryte/vs/base/common/extendMap';
 
 const MARKER_ID = 'makefile';
 
@@ -83,15 +84,17 @@ export class MakefileService implements IMakefileService {
 
 		const resolvedProjectList = await treeResolver.resolveDependencies();
 
-		const allProjects = resolvedProjectList.map((item) => {
-			return item.json.name;
-		});
+		const depMapper: MapLike<string> = {};
+		for (const item of resolvedProjectList) {
+			depMapper[item.json.name!] = item.path;
+		}
+
 		for (const project of resolvedProjectList) {
 			const listOutput = this.instantiationService.createInstance(
 				MakefileServiceWritter,
 				project,
+				resolvedProjectList,
 				this.isDebugMode,
-				allProjects,
 				treeResolver.getDefinitions(),
 				this.logger,
 			);

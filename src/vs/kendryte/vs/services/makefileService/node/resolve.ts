@@ -1,5 +1,5 @@
 import { DefineValue, IDependencyTree, IProjectInfo } from 'vs/kendryte/vs/services/makefileService/common/type';
-import { missingOrInvalidProject } from 'vs/base/common/messages';
+import { missingJsonField, missingOrInvalidProject } from 'vs/kendryte/vs/base/common/messages';
 import { CMakeProjectTypes, ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { CMAKE_LIBRARY_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
@@ -10,9 +10,11 @@ import { localize } from 'vs/nls';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
-import { DeepReadonlyArray } from 'vs/kendryte/vs/base/common/type/deepReadonly';
 import { isSameDrive } from 'vs/kendryte/vs/base/common/fs/isSameDrive';
 import { PathAttachedError } from 'vs/kendryte/vs/platform/marker/common/errorWithPath';
+import { exists } from 'vs/base/node/pfs';
+import { basename } from 'vs/base/common/path';
+import { DeepReadonlyArray } from 'vs/kendryte/vs/base/common/type/deepReadonly';
 
 const DefineType = /:(raw|str)$/i;
 
@@ -20,6 +22,7 @@ interface IResolvedData {
 	includeFolders: string[];
 	linkerScripts: string[];
 	extraListContent: string;
+	extraList2Content: string;
 	sourceFiles: string[];
 }
 
@@ -29,7 +32,7 @@ export interface IProjectInfoResolved extends IProjectInfo {
 
 export class MakefileServiceResolve {
 	private readonly projectList: IProjectInfo[] = [];
-	private readonly finalProjectList: IProjectInfoResolved[] = this.projectList as any;
+	private readonly finalProjectList: IProjectInfoResolved[] = [];
 	private readonly definitionsRegistry = new ExtendMap<string, DefineValue>();
 
 	constructor(
@@ -41,16 +44,43 @@ export class MakefileServiceResolve {
 	) {
 	}
 
-	public readProjectJsonList() {
-		return this._readProjectJsonList(this.pathToGenerate);
+	public async readProjectJsonList() {
+		await this._readProjectJsonList(this.pathToGenerate);
+		return this.projectList;
 	}
 
-	private async _readProjectJsonList(projectPath: string) {
-		const list = this.projectList;
-
-		if (list.some((project) => project.path === projectPath)) {
-			return list;
+	private async _loadSimpleFolderDependency(name: string, folderPath: string): Promise<IProjectInfo> {
+		this.logger.info('Adding simple folder: ' + folderPath);
+		const loaded = this.projectList.find((project) => project.path === folderPath);
+		if (loaded) {
+			return loaded;
 		}
+
+		const json: Partial<ILibraryProject> = {
+			name,
+			type: CMakeProjectTypes.library,
+		};
+		const project: IProjectInfo = {
+			json,
+			path: folderPath,
+			isWorkspaceProject: false,
+			isRoot: false,
+			shouldHaveSourceCode: true,
+			isSimpleFolder: true,
+			directDependency: {},
+		};
+
+		this.projectList.push(project);
+
+		return project;
+	}
+
+	private async _readProjectJsonList(projectPath: string): Promise<IProjectInfo> {
+		const loaded = this.projectList.find((project) => project.path === projectPath);
+		if (loaded) {
+			return loaded;
+		}
+
 		this.logger.info('Adding project: ' + projectPath);
 
 		const projectJson = await this.kendryteWorkspaceService.readProjectSetting(projectPath);
@@ -58,23 +88,34 @@ export class MakefileServiceResolve {
 			throw new Error(missingOrInvalidProject(projectPath));
 		}
 
-		const isRoot = list.length === 0;
+		const isRoot = this.projectList.length === 0;
 		const shouldHaveSourceCode = (!projectJson.type) || (projectJson.type === CMakeProjectTypes.executable) ||
 		                             (projectJson.type === CMakeProjectTypes.library && !projectJson.prebuilt);
 
 		const isWorkspaceProject = isRoot || this._projectNameMap.has(projectJson.name);
 
-		const project = <IProjectInfo>{
+		const project: IProjectInfo = {
 			json: projectJson,
 			path: projectPath,
 			isWorkspaceProject,
 			isRoot,
 			shouldHaveSourceCode,
+			isSimpleFolder: false,
 			directDependency: {},
 		};
 
-		list.push(project);
+		this.projectList.push(project);
 
+		const handleErr = (e: Error) => {
+			if (e instanceof PathAttachedError) {
+				throw e;
+			}
+			const ee = new PathAttachedError(this.kendryteWorkspaceService.getProjectSetting(projectPath), e.message);
+			ee.stack = e.stack;
+			throw ee;
+		};
+
+		this.logger.info('Dependency:');
 		if (projectJson.dependency && Object.keys(projectJson.dependency).length > 0) {
 			for (const depProjectName of Object.keys(projectJson.dependency)) {
 				const workspaceOverride = this._projectNameMap.get(depProjectName);
@@ -85,23 +126,44 @@ export class MakefileServiceResolve {
 						throw new Error(`project ${project.json.name} and its dependency ${depProjectName} does not locate on the same disk. that is not supported.`);
 					}
 				} else {
-					const topRootPath = list[0].path;
+					const topRootPath = this.projectList[0].path;
 					depPath = resolvePath(topRootPath, CMAKE_LIBRARY_FOLDER_NAME, depProjectName);
 				}
 
 				project.directDependency[depProjectName] = depPath;
-				await this._readProjectJsonList(depPath).catch((e) => {
-					if (e instanceof PathAttachedError) {
-						throw e;
-					}
-					const ee = new PathAttachedError(this.kendryteWorkspaceService.getProjectSetting(projectPath), e.message);
-					ee.stack = e.stack;
-					throw ee;
-				});
+
+				await this._readProjectJsonList(depPath).catch(handleErr);
 			}
+		} else {
+			this.logger.info('   No project dependency');
 		}
 
-		return list;
+		if (projectJson.localDependency && projectJson.localDependency.length > 0) {
+			for (const relPath of projectJson.localDependency) {
+				const absolutePath = resolvePath(projectPath, relPath);
+
+				let p: Promise<IProjectInfo>;
+				if (await exists(this.kendryteWorkspaceService.getProjectSetting(absolutePath))) {
+					p = this._readProjectJsonList(absolutePath);
+				} else if (await exists(resolvePath(absolutePath, 'CMakeLists.txt'))) {
+					const name = (basename(projectPath) + '_' + relPath).replace(/[ .\\/]/, '_');
+					p = this._loadSimpleFolderDependency(name, absolutePath);
+				} else {
+					throw new Error(missingOrInvalidProject(absolutePath));
+				}
+
+				await p.then((subProject) => {
+					if (!subProject.json.name) {
+						throw new PathAttachedError(subProject.path, missingJsonField('name'));
+					}
+					project.directDependency[subProject.json.name] = absolutePath;
+					return subProject;
+				}, handleErr);
+			}
+		} else {
+			this.logger.info('   No folder dependency');
+		}
+		return project;
 	}
 
 	public async resolveDependencies(): Promise<DeepReadonlyArray<IProjectInfoResolved>> {
@@ -146,6 +208,7 @@ export class MakefileServiceResolve {
 			includeFolders: [],
 			linkerScripts: [],
 			extraListContent: '',
+			extraList2Content: '',
 			definitions: [],
 			sourceFiles: [],
 		};
@@ -174,9 +237,13 @@ export class MakefileServiceResolve {
 			const extraListAbsolute = resolvePath(project.path, libProject.extraList);
 			ret.extraListContent = await this.nodeFileSystemService.readFile(extraListAbsolute);
 		}
+		if (project.json.extraList2) {
+			const extraListAbsolute = resolvePath(project.path, libProject.extraList2);
+			ret.extraList2Content = await this.nodeFileSystemService.readFile(extraListAbsolute);
+		}
 
 		/// source file part below
-		if (!project.shouldHaveSourceCode) {
+		if (!project.shouldHaveSourceCode || project.isSimpleFolder) {
 			return ret;
 		}
 
@@ -249,19 +316,20 @@ export class MakefileServiceResolve {
 	}
 
 	private createDependencyTree(): IDependencyTree {
-		const list = this.projectList;
-
 		const nameProjectMap = new Map<string, IProjectInfo>();
-		for (const project of list) {
-			nameProjectMap.set(project.json.name, project);
+		for (const project of this.projectList) {
+			if (nameProjectMap.has(project.json.name!)) {
+				throw new Error('duplicate project name: ' + project.json.name!);
+			}
+			nameProjectMap.set(project.json.name!, project);
 		}
 
 		const tree: IDependencyTree = {
-			project: list[0],
+			project: this.projectList[0],
 			children: [],
 		};
 
-		inner(tree, [list[0]]);
+		inner(tree, [this.projectList[0]]);
 
 		return tree;
 

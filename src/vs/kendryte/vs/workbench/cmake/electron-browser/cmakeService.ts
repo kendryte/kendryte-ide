@@ -14,7 +14,7 @@ import {
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { ChildProcess, spawn } from 'child_process';
-import { exists, fileExists, mkdirp, readFile, rename, rimraf } from 'vs/base/node/pfs';
+import { exists, fileExists, lstat, mkdirp, readFile, rename, rimraf } from 'vs/base/node/pfs';
 import { createConnection } from 'net';
 import * as split2 from 'split2';
 import {
@@ -45,8 +45,8 @@ import { cpus } from 'os';
 import { CMAKE_TARGET_TYPE } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/config';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
-import { DebugScript, getEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
-import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
+import { DebugScript, getLimitedEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
+import { executableExtension, PathListSep, removeEnvironment } from 'vs/kendryte/vs/base/common/platformEnv';
 import { CMakeBuildErrorProcessor, CMakeBuildProgressProcessor, CMakeProcessList } from 'vs/kendryte/vs/workbench/cmake/node/outputProcessor';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ICommandService } from 'vs/platform/commands/common/commands';
@@ -66,6 +66,7 @@ import { IMakefileService } from 'vs/kendryte/vs/services/makefileService/common
 import { IMarkerService, MarkerSeverity } from 'vs/platform/markers/common/markers';
 import { URI } from 'vs/base/common/uri';
 import { createSimpleErrorMarker, createSimpleMarker } from 'vs/kendryte/vs/platform/marker/common/simple';
+import { MapLike } from 'vs/kendryte/vs/base/common/extendMap';
 
 const regCMakeConfigureError = /CMake Error at (.+?):(\d+?) \((.+)\):/;
 const regCMakeUnknownError = /^CMake Error:/;
@@ -178,21 +179,24 @@ export class CMakeService implements ICMakeService {
 		return staticEnv;
 	}
 
-	private async getCMakeEnv() {
+	private async getCMakeEnv(): Promise<MapLike<string>> {
 		const staticEnv = await this.getCMakeDef();
-		const env: any = getEnvironment(this.nodePathService);
-
+		const { env } = getLimitedEnvironment(this.nodePathService, this.configurationService);
 		const extraConfigEnv = {
 			CMAKE_MAKE_PROGRAM: this.configurationService.getValue<string>(CONFIG_KEY_MAKE_PROGRAM) || 'make',
 		};
 
 		this.logger.debug('CMAKE_MAKE_PROGRAM=', extraConfigEnv.CMAKE_MAKE_PROGRAM);
 
-		return {
-			...env,
+		const extra = removeEnvironment('path', {
 			...staticEnv,
 			...extraConfigEnv,
 			...this.localEnv,
+		});
+
+		return {
+			...env,
+			...extra,
 			LANG: 'en_US.utf-8',
 		};
 	}
@@ -258,6 +262,10 @@ export class CMakeService implements ICMakeService {
 		dbg.writeBack(this.kendryteWorkspaceService.requireCurrentWorkspace(), 'cmake-server');
 
 		this.logger.info('Start new CMake Server: %s %s\nCWD=%s', cmakePath.cmake, args.join(' '), options.cwd);
+		this.logger.info('PATH:');
+		(options.env.PATH || options.env.Path).split(PathListSep).forEach((p) => {
+			this.logger.info('  - ' + p);
+		});
 
 		const child = this.cmakeProcess = spawn(cmakePath.cmake, args, options);
 
@@ -733,6 +741,15 @@ export class CMakeService implements ICMakeService {
 		} else {
 			processors.dispose();
 			delete this.lastProcess;
+		}
+
+		const outputFile = await this.getOutputFile() + '.bin';
+		this.logger.info('File path:', outputFile);
+		const stat = await lstat(outputFile);
+		this.logger.info('File size:', stat.size);
+
+		if (stat.size < 10) {
+			throw new Error('Artifact too small');
 		}
 	}
 

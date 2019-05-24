@@ -1,5 +1,5 @@
 import { IUISectionWidget } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/type';
-import { CMakeProjectTypes, ICompileInfoPossibleKeys } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { CMakeProjectTypes, ICompileInfoPossible, ICompileInfoPossibleKeys } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
 import { MapLike } from 'vs/kendryte/vs/base/common/extendMap';
 import { Disposable } from 'vs/base/common/lifecycle';
@@ -12,6 +12,9 @@ import { ISelectData, SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
 import { selectBoxNames } from 'vs/kendryte/vs/base/browser/ui/selectBox';
 import { localize } from 'vs/nls';
 import { KendryteJsonValidator, PackageJsonValidatorType } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/node/validators.class';
+import { $, append } from 'vs/base/browser/dom';
+import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { AbstractFieldControl, IFieldControllerClassBinding } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/base';
 
 export class SectionFactory extends Disposable {
 	private readonly _onDidHeightChange = new Emitter<void>();
@@ -24,16 +27,43 @@ export class SectionFactory extends Disposable {
 	public readonly onUpdate = this._onUpdate.event;
 
 	private readonly validator = new KendryteJsonValidator();
+	private readonly controllers: AbstractFieldControl<any>[] = [];
 
 	constructor(
 		@IContextViewService private readonly contextViewService: IContextViewService,
 		@IThemeService private readonly themeService: IThemeService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
 	) {
 		super();
 	}
 
 	setRootPath(path: string) {
 		this.validator.setRootPath(path);
+		for (const controller of    this.controllers) {
+			controller.setProjectPath(path);
+		}
+	}
+
+	private createFieldControl<TS, TG>(
+		widget: IUISectionWidget<TS, TG>,
+		property: ICompileInfoPossibleKeys,
+		parent: HTMLElement,
+		controllerClass?: IFieldControllerClassBinding<TS, TG>,
+	): IUISectionWidget<TS, TG> {
+		if (!controllerClass) {
+			return widget;
+		}
+		const controlContainer = append(parent, $('div.control'));
+		const controller = this._register(
+			this.instantiationService.createInstance(controllerClass, controlContainer, widget),
+		);
+		this._register(controller.onUpdate((value: TS) => {
+			this.updateSimple(property, value);
+		}));
+
+		this.controllers.push(controller);
+
+		return widget;
 	}
 
 	public createTypeSelect(parent: HTMLElement): IUISectionWidget<CMakeProjectTypes, CMakeProjectTypes> {
@@ -97,11 +127,12 @@ export class SectionFactory extends Disposable {
 		return input;
 	}
 
-	public createTextInput(
+	public createTextInput<T extends ICompileInfoPossibleKeys>(
 		parent: HTMLElement,
-		property: ICompileInfoPossibleKeys,
+		property: T,
 		validation: PackageJsonValidatorType,
 		placeholder: string,
+		controllerClass?: IFieldControllerClassBinding<string[] | string, ICompileInfoPossible[T]>,
 	): IUISectionWidget<string, string> {
 		const input = this._createTextBox(parent, validation, placeholder, false);
 		let setting = false;
@@ -111,21 +142,24 @@ export class SectionFactory extends Disposable {
 			}
 			this.updateSimple(property, data);
 		}));
-		return {
+		const ret = {
 			get() {return input.value;},
-			set(v) {
+			set(v: string) {
 				setting = true;
 				input.value = v || '';
 				setting = false;
 			},
 		};
+		this.createFieldControl(ret, property, parent, controllerClass);
+		return ret;
 	}
 
-	public createTextAreaMap(
+	public createTextAreaMap<T extends ICompileInfoPossibleKeys>(
 		parent: HTMLElement,
-		property: ICompileInfoPossibleKeys,
+		property: T,
 		validation: PackageJsonValidatorType,
 		placeholder: string,
+		controllerClass?: IFieldControllerClassBinding<string[] | string, ICompileInfoPossible[T]>,
 	): IUISectionWidget<string | string[], MapLike<string>> {
 		const input = this._createTextBox(parent, validation, placeholder, true);
 		let setting = false;
@@ -163,14 +197,16 @@ export class SectionFactory extends Disposable {
 			}
 			this.updateSimple(property, ret.get());
 		}));
+		this.createFieldControl(ret, property, parent, controllerClass);
 		return ret;
 	}
 
-	public createTextAreaArray(
+	public createTextAreaArray<T extends ICompileInfoPossibleKeys>(
 		parent: HTMLElement,
-		property: ICompileInfoPossibleKeys,
+		property: T,
 		validation: PackageJsonValidatorType,
 		placeholder: string,
+		controllerClass?: IFieldControllerClassBinding<string[] | string, ICompileInfoPossible[T]>,
 	): IUISectionWidget<string[] | string, string[]> {
 		const input = this._createTextBox(parent, validation, placeholder, true);
 		let setting = false;
@@ -192,6 +228,7 @@ export class SectionFactory extends Disposable {
 			}
 			this.updateSimple(property, ret.get());
 		}));
+		this.createFieldControl(ret, property, parent, controllerClass);
 		return ret;
 	}
 

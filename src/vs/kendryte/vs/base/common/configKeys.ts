@@ -26,6 +26,10 @@ export const CONFIG_KEY_MAKE_PROGRAM = 'cmake.build.make-program';
 export const CONFIG_LABEL_MAKE_PROGRAM = '"make" program';
 export const CONFIG_DESCRIPTION_MAKE_PROGRAM = 'where is "make" program located';
 
+export const CONFIG_KEY_EXTRA_PATH = 'cmake.build.extraPath';
+export const CONFIG_LABEL_EXTRA_PATH = 'Extra PATH';
+export const CONFIG_DESCRIPTION_EXTRA_PATH = 'List of paths to append after PATH environment variable.';
+
 //
 export const CONFIG_KEY_OPENOCD_USE = 'debug.openocd.config';
 export const CONFIG_DESCRIPTION_OPENOCD_USE = localize('debug.openocd.config', 'select how openocd is configured');

@@ -5,7 +5,6 @@ export interface IUISectionWidget<T, TG = any> {
 
 export interface IUISection<T> {
 	title: string;
-	sectionControl: HTMLDivElement;
 	section: HTMLDivElement;
 	widget: IUISectionWidget<T>;
 }

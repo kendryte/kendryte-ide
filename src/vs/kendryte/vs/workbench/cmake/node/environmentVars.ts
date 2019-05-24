@@ -1,56 +1,55 @@
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { isWindows } from 'vs/base/common/platform';
-import { normalize } from 'path';
-import { PathListSep, ShellExportCommand } from 'vs/kendryte/vs/base/common/platformEnv';
+import { environmentPathVarName, getActualEnvironmentKey, PathListSep, PlatformPathArray, ShellExportCommand } from 'vs/kendryte/vs/base/common/platformEnv';
 import { writeFile } from 'vs/base/node/pfs';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
+import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { CONFIG_KEY_EXTRA_PATH } from 'vs/kendryte/vs/base/common/configKeys';
+import { MapLike } from 'vs/kendryte/vs/base/common/extendMap';
 
-export function getEnvKey(upperKey: string) {
-	for (const key in process.env) {
-		if (process.env.hasOwnProperty(key) && upperKey === key.toUpperCase()) {
-			return key;
-		}
-	}
-	return upperKey;
-}
-
-export function hideEnv(env: any, watchKey: string) {
-	const k = getEnvKey(watchKey);
-	if (process.env.hasOwnProperty(k)) {
-		env[k] = '';
-	}
-}
-
-export function getEnvironment(nodePathService: INodePathService) {
+export function getLimitedEnvironment(nodePathService: INodePathService, configurationService: IConfigurationService): { env: MapLike<string>, path: PlatformPathArray } {
 	const env: any = {};
 
-	const myPath: string[] = nodePathService.kendrytePaths();
+	const pathHandler = new PlatformPathArray(environmentPathVarName, env);
+	pathHandler.prepend(...nodePathService.kendrytePaths());
 
 	if (isWindows) {
 		const sysRoot = process.env.SystemRoot || 'C:\\Windows';
-		const dynamic = [
+
+		pathHandler.append(
 			sysRoot + '\\system32',
 			sysRoot + '',
 			sysRoot + '\\System32\\Wbem',
 			sysRoot + '\\System32\\WindowsPowerShell\\v1.0',
 			sysRoot + '\\System32\\OpenSSH',
-		];
-
-		// windows: user may or may not know whats happen, only use very limit set of path
-		env.PATH = env.Path = myPath.map(normalize).concat(dynamic).join(PathListSep);
+		);
 	} else {
-		// linux: user know what he do, just passing all
-		env.PATH = myPath.join(PathListSep) + PathListSep + process.env.PATH;
+		pathHandler.append(
+			'/bin',
+			'/usr/bin',
+			'/usr/local/bin',
+		);
+		if (process.env.HOME) {
+			pathHandler.append(
+				process.env.HOME + '/.bin',
+				process.env.HOME + '/.local/bin',
+			);
+		}
+	}
+
+	const paths = configurationService.getValue<string[]>(CONFIG_KEY_EXTRA_PATH);
+	if (Array.isArray(paths)) {
+		pathHandler.append(...paths);
 	}
 
 	if (isWindows) {
-		env[getEnvKey('PYTHONHOME')] = nodePathService.getPackagesPath('python2library');
-		env[getEnvKey('PYTHONPATH')] = [
+		env[getActualEnvironmentKey('PYTHONHOME')] = nodePathService.getPackagesPath('python2library');
+		env[getActualEnvironmentKey('PYTHONPATH')] = [
 			env.PYTHONHOME,
 			resolvePath(nodePathService.getToolchainPath(), 'share/gdb/python'),
 		].join(PathListSep);
 	} else {
-		env[getEnvKey('PYTHONPATH')] = [
+		env[getActualEnvironmentKey('PYTHONPATH')] = [
 			env.PYTHONHOME || '',
 			'/usr/lib/python2.7/',
 			'/usr/lib/python2/',
@@ -60,9 +59,12 @@ export function getEnvironment(nodePathService: INodePathService) {
 		].join(PathListSep);
 	}
 
-	env[getEnvKey('PYTHONDONTWRITEBYTECODE')] = 'yes'; // prevent create .pyc files
+	env[getActualEnvironmentKey('PYTHONDONTWRITEBYTECODE')] = 'yes'; // prevent create .pyc files
 
-	return env;
+	return {
+		env,
+		path: pathHandler,
+	};
 }
 
 export function unsetEnvironment() {

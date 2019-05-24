@@ -84,10 +84,7 @@ export class SubProgress implements IDisposable {
 	splitWith(parts: number[]) {
 		this.total = 0;
 		for (const value of parts) {
-			if (value < 0) {
-				throw new RangeError('can not have a part with count < 0');
-			}
-			this.total += value;
+			this.total += value < 0 ? 0 : value;
 		}
 		if (this.total <= 0) { // no parts
 			throw new RangeError('total count must >0');
@@ -99,18 +96,23 @@ export class SubProgress implements IDisposable {
 	}
 
 	next() {
-		// console.log('--- next');
+		console.log('--- next');
 		this.currentPart++;
 		if (this.currentPart === this.parts.length) {
 			throw new RangeError('pop part out of range');
 		}
-		this.currentTotalPercentage += this.parts[this.currentPart - 1] / this.total;
+		let nextSize = this.parts[this.currentPart - 1];
+		if (nextSize < 0) {
+			nextSize = 0;
+		}
+		this.currentTotalPercentage += nextSize / this.total;
+		console.log('    ', nextSize, this.currentTotalPercentage);
 		this.infinite();
 	}
 
 	progress(value: number) {
-		// console.log('progress(%s)', value);
-		if (this.parts[this.currentPart] === 0 && value !== 0) {
+		console.log('progress(%s)', value);
+		if (this.parts[this.currentPart] < 0 && value !== 0) {
 			throw new RangeError('not in progress stage');
 		}
 		if (value < 0) {

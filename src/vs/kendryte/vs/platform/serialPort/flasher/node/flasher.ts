@@ -614,10 +614,11 @@ export class SerialLoader extends Disposable {
 		this.applicationStreamSize = await this.getSize(this.applicationStream);
 		this.bootLoaderStreamSize = await this.getSize(this.bootLoaderStream);
 		report.splitWith([
-			0, // greeting...
+			-1, // greeting...
 			this.bootLoaderStreamSize, // flashing bootloader...
-			0, // booting up bootloader...
+			-1, // booting up bootloader...
 			this.applicationStreamSize,
+			-1, // reboot
 		]);
 
 		report.message('greeting...');
@@ -637,6 +638,7 @@ export class SerialLoader extends Disposable {
 
 		report.message('reboot to run the program...');
 		await Promise.race<any>([this.abortedPromise, this.rebootNormalMode()]);
+		report.next();
 
 		this.logger.info('finished.');
 	}

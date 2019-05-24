@@ -8,7 +8,7 @@ import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { URI } from 'vs/base/common/uri';
 import { localize } from 'vs/nls';
-import { getEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
+import { getLimitedEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
 import { IEditor } from 'vs/workbench/common/editor';
 import { JSONVisitor } from 'vs/base/common/json';
 
@@ -62,9 +62,7 @@ export class WorkspaceMaixLaunch implements ILaunch {
 			target: `127.0.0.1:${this.port}`,
 			cwd: '${workspaceRoot}/build',
 			internalConsoleOptions: 'openOnSessionStart' as any,
-			env: {
-				...getEnvironment(this.nodePathService),
-			},
+			env: getLimitedEnvironment(this.nodePathService, this.configurationService).env,
 			autorun: [],
 			gdbpath: this.GDB,
 		};

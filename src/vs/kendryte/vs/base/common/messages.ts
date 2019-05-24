@@ -7,3 +7,8 @@ export const ERROR_REQUIRE_PROJECT = localize('ErrorRequireProject', 'You need t
 export function missingOrInvalidProject(path: string) {
 	return localize('missingOrInvalidProject', 'Missing or invalid project: {0}', path);
 }
+
+export function missingJsonField(fieldName: string) {
+	return localize('missingJsonField', 'Missing field "{0}"', fieldName);
+}
+

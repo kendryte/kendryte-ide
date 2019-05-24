@@ -12,7 +12,6 @@ import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { IUISection, IUISectionWidget } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/type';
 import { SectionFactory } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/sectionFactory';
 import { SourceFileListFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/sourceFileList';
-import { AbstractFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/base';
 import { PackageJsonValidate } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/node/validators.class';
 import { SingleFileFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/singleFile';
 import { FolderListFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/folderList';
@@ -39,6 +38,7 @@ interface IControlList extends Record<ICompileInfoPossibleKeys, IUISection<any>>
 	header: IUISection<string[]>;
 	source: IUISection<string[]>;
 	extraList: IUISection<string>;
+	extraList2: IUISection<string>;
 	c_flags: IUISection<string[]>;
 	cpp_flags: IUISection<string[]>;
 	c_cpp_flags: IUISection<string[]>;
@@ -48,6 +48,8 @@ interface IControlList extends Record<ICompileInfoPossibleKeys, IUISection<any>>
 	entry: IUISection<string>;
 	definitions: IUISection<string[] | string>;
 	dependency: IUISection<string[]>;
+	localDependency: IUISection<string[]>;
+	systemLibrary: IUISection<string[]>;
 
 	// library
 	include: IUISection<string[]>;
@@ -65,7 +67,6 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 	private readonly controls: IControlList = {} as any;
 	private scroll: DomScrollableElement;
 	private readonly sectionCreator: SectionFactory;
-	private json: HTMLDivElement;
 
 	constructor(
 		id: EditorId,
@@ -106,7 +107,6 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 		this.h1.innerText = this._input!.getTitle();
 
 		this._registerInput(this._input!.model.onContentChange((itemIds) => {
-			this.json.innerText = JSON.stringify(model.data, null, 4);
 			this.scroll.scanDomNode();
 		}));
 
@@ -182,7 +182,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.type.title', 'Project type'),
 			localize('kendrytePackageJsonEditor.type.desc', 'Type of your project. Warning: change this will clear others settings.'),
-			($section) => this.sectionCreator.createTypeSelect($section),
+			(property, title, $section) => this.sectionCreator.createTypeSelect($section),
 		);
 
 		this.createSection(
@@ -190,7 +190,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.name.title', 'Project name'),
 			localize('kendrytePackageJsonEditor.name.desc', 'Title of your project. Only a-z, 0-9, -, _ are allowed.'),
-			($section, property) => this.sectionCreator.createTextInput($section, property,
+			(property, title, $section) => this.sectionCreator.createTextInput($section, property,
 				[PackageJsonValidate.Required, PackageJsonValidate.ProjectName],
 				localize('required', 'Required.'),
 			),
@@ -201,7 +201,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.version.title', 'Current version'),
 			localize('kendrytePackageJsonEditor.version.desc', 'Apply when publish.'),
-			($section, property) => this.sectionCreator.createTextInput($section, property,
+			(property, title, $section) => this.sectionCreator.createTextInput($section, property,
 				[PackageJsonValidate.Required, PackageJsonValidate.VersionString],
 				localize('required', 'Required'),
 			),
@@ -212,7 +212,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.homepage.title', 'Homepage'),
 			localize('kendrytePackageJsonEditor.homepage.desc', 'A link to your project home (eg. github page).'),
-			($section, property) => this.sectionCreator.createTextInput($section, property,
+			(property, title, $section) => this.sectionCreator.createTextInput($section, property,
 				PackageJsonValidate.Url, 'eg. http://xxxx',
 			),
 		);
@@ -222,10 +222,10 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.header.title', 'Headers directory'),
 			localize('kendrytePackageJsonEditor.header.desc', 'You can use #include from these folders in your code. One folder per line. Relative to this {0} file', CMAKE_CONFIG_FILE_NAME),
-			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+			(property, title, $section) => this.sectionCreator.createTextAreaArray($section, property,
 				PackageJsonValidate.Folders, 'relative/path/to/include/root',
+				FolderListFieldControl.descriptor(title),
 			),
-			FolderListFieldControl,
 		);
 
 		this.createSection(
@@ -233,11 +233,11 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.source.title', 'Source files'),
 			localize('kendrytePackageJsonEditor.source.desc', 'Source files to compile. One file/folder per line.'),
-			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+			(property, title, $section) => this.sectionCreator.createTextAreaArray($section, property,
 				[PackageJsonValidate.Required, PackageJsonValidate.Sources],
 				localize('kendrytePackageJsonEditor.source.placeholder', 'path/to/code.c - directly add a file.\npath/*.c - match all .c file in this folder.\npath/**.c - also recursive subfolders.'),
+				SourceFileListFieldControl.descriptor(title),
 			),
-			SourceFileListFieldControl,
 		);
 
 		this.createSection(
@@ -245,7 +245,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.c_flags.title', 'Arguments for gcc'),
 			localize('kendrytePackageJsonEditor.c_flags.desc', 'one argument per line'),
-			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+			(property, title, $section) => this.sectionCreator.createTextAreaArray($section, property,
 				PackageJsonValidate.ArgList, '',
 			),
 		);
@@ -255,7 +255,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.cpp_flags.title', 'Arguments for g++'),
 			localize('kendrytePackageJsonEditor.cpp_flags.desc', 'one argument per line'),
-			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+			(property, title, $section) => this.sectionCreator.createTextAreaArray($section, property,
 				PackageJsonValidate.ArgList, '',
 			),
 		);
@@ -265,7 +265,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.c_cpp_flags.title', 'Arguments for both gcc and g++'),
 			localize('kendrytePackageJsonEditor.c_cpp_flags.desc', 'one argument per line'),
-			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+			(property, title, $section) => this.sectionCreator.createTextAreaArray($section, property,
 				PackageJsonValidate.ArgList, 'eg. -Os',
 			),
 		);
@@ -275,7 +275,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.link_flags.title', 'Arguments for ld'),
 			localize('kendrytePackageJsonEditor.link_flags.desc', 'one argument per line'),
-			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+			(property, title, $section) => this.sectionCreator.createTextAreaArray($section, property,
 				PackageJsonValidate.ArgList, '',
 			),
 		);
@@ -285,10 +285,10 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.ld_file.title', 'LD file path'),
 			localize('kendrytePackageJsonEditor.ld_file.desc', 'Use another LD file'),
-			($section, property) => this.sectionCreator.createTextInput($section, property,
+			(property, title, $section) => this.sectionCreator.createTextInput($section, property,
 				PackageJsonValidate.File, '',
+				SingleFileFieldControl.descriptor(title),
 			),
-			SingleFileFieldControl,
 		);
 
 		this.createSection(
@@ -296,10 +296,10 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.entry.title', 'Entry file'),
 			localize('kendrytePackageJsonEditor.entry.desc', 'Commonly used in a demo project.'),
-			($section, property) => this.sectionCreator.createTextInput($section, property,
+			(property, title, $section) => this.sectionCreator.createTextInput($section, property,
 				PackageJsonValidate.File, 'eg. src/main.c',
+				SingleFileFieldControl.descriptor(title),
 			),
-			SingleFileFieldControl,
 		);
 
 		this.createSection(
@@ -307,7 +307,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.definitions.title', 'C/C++ Definitions'),
 			localize('kendrytePackageJsonEditor.definitions.desc', 'User configurable definitions, will create #define in compile time.'),
-			($section, property) => this.sectionCreator.createTextAreaMap($section, property,
+			(property, title, $section) => this.sectionCreator.createTextAreaMap($section, property,
 				PackageJsonValidate.Definitions, 'eg. SOME_VALUE1:str=hello world\nSOME_VALUE2:raw=123',
 			),
 		);
@@ -317,10 +317,10 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.include.title', 'Include root'),
 			localize('kendrytePackageJsonEditor.include.desc', 'User can #include your header from these folders. But recommended use only one folder, and no other source inside it.'),
-			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+			(property, title, $section) => this.sectionCreator.createTextAreaArray($section, property,
 				PackageJsonValidate.Folders, 'eg. include/',
+				FolderListFieldControl.descriptor(title),
 			),
-			FolderListFieldControl,
 		);
 
 		this.createSection(
@@ -328,11 +328,10 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.prebuilt.title', 'Prebuilt library file'),
 			localize('kendrytePackageJsonEditor.prebuilt.desc', 'If your library is not open source, assign the pre compiled .a file here.'),
-			($section, property) => this.sectionCreator.createTextInput($section, property,
-				[PackageJsonValidate.Required, PackageJsonValidate.File],
-				'eg. libXXX.a',
+			(property, title, $section) => this.sectionCreator.createTextInput($section, property,
+				[PackageJsonValidate.Required, PackageJsonValidate.File], 'eg. libXXX.a',
+				SingleFileFieldControl.descriptor(title),
 			),
-			SingleFileFieldControl,
 		);
 
 		this.createSection(
@@ -340,10 +339,10 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.exampleSource.title', 'Examples'),
 			localize('kendrytePackageJsonEditor.exampleSource.desc', 'You can add example in your library (example is a folder contains {0}, and it\'s project type is executable).', CMAKE_CONFIG_FILE_NAME),
-			($section, property) => this.sectionCreator.createTextAreaArray($section, property,
+			(property, title, $section) => this.sectionCreator.createTextAreaArray($section, property,
 				PackageJsonValidate.Sources, 'eg. test/',
+				SingleFolderFieldControl.descriptor(title),
 			),
-			SingleFolderFieldControl,
 		);
 
 		this.createSection(
@@ -351,7 +350,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.properties.title', 'CMake properties'),
 			localize('kendrytePackageJsonEditor.properties.desc', 'Please check CMake manual to get more information'),
-			($section, property) => this.sectionCreator.createTextAreaMap($section, property,
+			(property, title, $section) => this.sectionCreator.createTextAreaMap($section, property,
 				PackageJsonValidate.KeyValue, 'eg. PROPERTY_NAME1=some value\nPROPERTY_NAME2=some other value',
 			),
 		);
@@ -360,11 +359,21 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			'extraList',
 			container,
 			localize('kendrytePackageJsonEditor.extraList.title', 'Prepend raw cmake lists'),
-			localize('kendrytePackageJsonEditor.extraList.desc', 'This file\'s content will add into generated cmakelist, note that you cannot use compile target, because it did not created.'),
-			($section, property) => this.sectionCreator.createTextInput($section, property,
+			localize('kendrytePackageJsonEditor.extraList.desc', 'This file\'s content will add into generated cmakelist, you cannot use compile target here, because it did not created.'),
+			(property, title, $section) => this.sectionCreator.createTextInput($section, property,
 				PackageJsonValidate.File, localize('kendrytePackageJsonEditor.extraList.placeholder', 'Do not use this in most project.'),
+				SingleFileFieldControl.descriptor(title),
 			),
-			SingleFileFieldControl,
+		);
+		this.createSection(
+			'extraList2',
+			container,
+			localize('kendrytePackageJsonEditor.extraList.title', 'Prepend raw cmake lists'),
+			localize('kendrytePackageJsonEditor.extraList.desc2', 'This file\'s content will add into generated cmakelist, you can use compile target with ${PROJECT_NAME} variable.'),
+			(property, title, $section) => this.sectionCreator.createTextInput($section, property,
+				PackageJsonValidate.File, localize('kendrytePackageJsonEditor.extraList.placeholder', 'Do not use this in most project.'),
+				SingleFileFieldControl.descriptor(title),
+			),
 		);
 
 		this.createSection(
@@ -372,13 +381,32 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			container,
 			localize('kendrytePackageJsonEditor.dependency.title', 'Project dependencies'),
 			localize('kendrytePackageJsonEditor.dependency.desc', 'One package per line'),
-			($section, property) => this.sectionCreator.createTextAreaMap($section, property,
+			(property, title, $section) => this.sectionCreator.createTextAreaMap($section, property,
 				PackageJsonValidate.Dependency, 'eg. kendryte_sdk=1.2.3',
+				OpenManagerControl.descriptor(title),
 			),
-			OpenManagerControl,
 		);
 
-		this.json = append(container, $('code.json'));
+		this.createSection(
+			'localDependency',
+			container,
+			localize('kendrytePackageJsonEditor.dependency.title', 'Project dependencies'),
+			localize('kendrytePackageJsonEditor.dependency.desc', 'One package per line'),
+			(property, title, $section) => this.sectionCreator.createTextAreaArray($section, property,
+				PackageJsonValidate.Folders, 'eg. sub/project/path',
+				FolderListFieldControl.descriptor(title),
+			),
+		);
+
+		this.createSection(
+			'systemLibrary',
+			container,
+			localize('kendrytePackageJsonEditor.systemLibrary.title', 'System dependencies'),
+			localize('kendrytePackageJsonEditor.systemLibrary.desc', 'One module per line'),
+			(property, title, $section) => this.sectionCreator.createTextAreaArray($section, property,
+				PackageJsonValidate.ArgList, 'eg. m\ngcc',
+			),
+		);
 
 		this.scroll.scanDomNode();
 	}
@@ -388,8 +416,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 		parent: HTMLElement,
 		title: string,
 		desc: string,
-		input: ($section: HTMLDivElement, property: ICompileInfoPossibleKeys) => IUISectionWidget<T>,
-		controllerClass?: new(control: IUISection<T>, ...services: { _serviceBrand: any; }[]) => AbstractFieldControl<T>,
+		input: (property: ICompileInfoPossibleKeys, title: string, $section: HTMLDivElement) => IUISectionWidget<T>,
 	) {
 		const container: HTMLDivElement = append(parent, $('div.section'));
 
@@ -400,21 +427,13 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 		d.innerText = desc;
 
 		const section = append(container, $('div.right')) as HTMLDivElement;
-		const widget = input(section, property);
+		const widget = input(property, title, section);
 
 		const bundle: IUISection<T> = {
 			title,
 			widget,
-			sectionControl: append(section, $('div.control')),
 			section: container,
 		};
-
-		if (controllerClass) {
-			const controller = this._register(this.instantiationService.createInstance(controllerClass, bundle));
-			this._register(controller.onUpdate((value) => {
-				this.updateSimple(property, value);
-			}));
-		}
 
 		this.controls[property] = bundle as any;
 	}

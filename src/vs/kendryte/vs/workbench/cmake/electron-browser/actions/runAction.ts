@@ -15,8 +15,9 @@ import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { executableExtension } from 'vs/kendryte/vs/base/common/platformEnv';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
-import { getEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
+import { getLimitedEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
 import { ILogService, LogLevel } from 'vs/platform/log/common/log';
+import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 
 export class MaixCMakeRunAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_RUN;
@@ -30,6 +31,7 @@ export class MaixCMakeRunAction extends Action {
 		@ICommandService private commandService: ICommandService,
 		@ICMakeService private cMakeService: ICMakeService,
 		@INodePathService private nodePathService: INodePathService,
+		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@ILogService logService: ILogService,
 	) {
 		super(id, label);
@@ -52,7 +54,7 @@ export class MaixCMakeRunAction extends Action {
 		return this.commandService.executeCommand('kendryte-debug.runWithoutDebug', {
 			app,
 			gdb,
-			env: getEnvironment(this.nodePathService),
+			env: getLimitedEnvironment(this.nodePathService, this.configurationService).env,
 			port,
 			logLevel: this.logLevel,
 		});
