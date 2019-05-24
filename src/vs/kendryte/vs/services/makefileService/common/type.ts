@@ -21,12 +21,7 @@ export interface IProjectInfo<T = ICompileInfo> {
 	isRoot: boolean;
 	shouldHaveSourceCode: boolean;
 	isSimpleFolder: boolean;
-	directDependency: { [name: string]: string /*path*/ };
-}
-
-export interface IDependencyTree<T = ICompileInfo> {
-	project: IProjectInfo<T>;
-	children: IDependencyTree<ILibraryProject>[];
+	directDependency: IProjectInfo<ILibraryProject>[];
 }
 
 export interface IBeforeBuildEvent {

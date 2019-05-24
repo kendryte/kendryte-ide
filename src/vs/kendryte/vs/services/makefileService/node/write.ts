@@ -131,7 +131,6 @@ ${this.project.resolved.extraList2Content}
 ### [/section] Custom2
 ${this.debugModeValue()}
 ${this.setProperties()}
-${this.linkSystemBase()}
 ${this.linkSubProjects()}
 # [/section] Target
 
@@ -233,29 +232,32 @@ ${addSource.join('\n')}`;
 	}
 
 	private addSubProjects() {
-		if (!this.project.isRoot) {
-			return '';
+		const lines = ['cmake_policy(SET CMP0079 NEW)'];
+		if (this.project.isRoot) {
+			lines.push('## root project will include all dependency');
+			this.projectList.forEach(({ json, path, isSimpleFolder }) => {
+				if (json.name === this.project.json.name! || isSimpleFolder) {
+					return;
+				}
+				const rel = relativePath(this.project.path, path);
+				const dir = CMAKE_CWD + '/' + rel;
+				lines.push(`add_subdirectory(${JSON.stringify(dir)} ${JSON.stringify(json.name)})`);
+			});
 		}
 
-		const lines = ['cmake_policy(SET CMP0079 NEW)'];
-		this.projectList.forEach(({ json, path }) => {
-			if (json.name === this.project.json.name!) {
-				return;
+		if (this.project.directDependency.length) {
+			lines.push('## add simple folder dependency');
+			for (const { json, path, isSimpleFolder } of this.project.directDependency) {
+				if (!isSimpleFolder) {
+					continue;
+				}
+				const rel = relativePath(this.project.path, path);
+				const dir = CMAKE_CWD + '/' + rel;
+				lines.push(`add_subdirectory(${JSON.stringify(dir)} ${JSON.stringify(json.name)})`);
 			}
-			const rel = relativePath(this.project.path, path);
-			const dir = CMAKE_CWD + '/' + rel;
-			lines.push(`add_subdirectory(${JSON.stringify(dir)} ${JSON.stringify(json.name)})`);
-		});
+		}
 
 		return lines.join('\n');
-	}
-
-	private linkSystemBase() {
-		if (this.project.json.systemLibrary && this.project.json.systemLibrary.length) {
-			return `target_link_libraries($\{PROJECT_NAME} PUBLIC -Wl,--start-group ${this.project.json.systemLibrary.join(' ')} -Wl,--end-group)`;
-		} else {
-			return '';
-		}
 	}
 
 	private linkSubProjects() {
@@ -267,10 +269,17 @@ ${addSource.join('\n')}`;
 			if (isSimpleFolder || json.name === this.project.json.name) {
 				continue;
 			}
-			names.push(JSON.stringify(name));
+			names.push(JSON.stringify(json.name));
 		}
 
+		let system = '';
+		if (this.project.resolved.linkLibs.length) {
+			system = `target_link_libraries($\{PROJECT_NAME} PUBLIC -Wl,--start-group ${this.project.resolved.linkLibs.join(' ')} -Wl,--end-group)`;
+		} else {
+			system = '### no system library used (this almost error)';
+		}
 		return `## dependencies link
+${system}
 target_link_libraries(\${PROJECT_NAME} PUBLIC
 	-Wl,--start-group
 	${names.join('\n\t')}

@@ -1,4 +1,4 @@
-import { DefineValue, IDependencyTree, IProjectInfo } from 'vs/kendryte/vs/services/makefileService/common/type';
+import { DefineValue, IProjectInfo } from 'vs/kendryte/vs/services/makefileService/common/type';
 import { missingJsonField, missingOrInvalidProject } from 'vs/kendryte/vs/base/common/messages';
 import { CMakeProjectTypes, ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
@@ -15,6 +15,7 @@ import { PathAttachedError } from 'vs/kendryte/vs/platform/marker/common/errorWi
 import { exists } from 'vs/base/node/pfs';
 import { basename } from 'vs/base/common/path';
 import { DeepReadonlyArray } from 'vs/kendryte/vs/base/common/type/deepReadonly';
+import { arrayRemoveDuplicate } from 'vs/kendryte/vs/base/common/arrayUnique';
 
 const DefineType = /:(raw|str)$/i;
 
@@ -24,6 +25,7 @@ interface IResolvedData {
 	extraListContent: string;
 	extraList2Content: string;
 	sourceFiles: string[];
+	linkLibs: string[];
 }
 
 export interface IProjectInfoResolved extends IProjectInfo {
@@ -46,6 +48,7 @@ export class MakefileServiceResolve {
 
 	public async readProjectJsonList() {
 		await this._readProjectJsonList(this.pathToGenerate);
+		this.detectDependencyLoop();
 		return this.projectList;
 	}
 
@@ -67,7 +70,7 @@ export class MakefileServiceResolve {
 			isRoot: false,
 			shouldHaveSourceCode: true,
 			isSimpleFolder: true,
-			directDependency: {},
+			directDependency: [],
 		};
 
 		this.projectList.push(project);
@@ -94,6 +97,7 @@ export class MakefileServiceResolve {
 
 		const isWorkspaceProject = isRoot || this._projectNameMap.has(projectJson.name);
 
+		const directDependency: IProjectInfo<any>[] = [];
 		const project: IProjectInfo = {
 			json: projectJson,
 			path: projectPath,
@@ -101,7 +105,7 @@ export class MakefileServiceResolve {
 			isRoot,
 			shouldHaveSourceCode,
 			isSimpleFolder: false,
-			directDependency: {},
+			directDependency,
 		};
 
 		this.projectList.push(project);
@@ -130,9 +134,8 @@ export class MakefileServiceResolve {
 					depPath = resolvePath(topRootPath, CMAKE_LIBRARY_FOLDER_NAME, depProjectName);
 				}
 
-				project.directDependency[depProjectName] = depPath;
-
-				await this._readProjectJsonList(depPath).catch(handleErr);
+				const childProject = await this._readProjectJsonList(depPath).catch(handleErr);
+				directDependency.push(childProject);
 			}
 		} else {
 			this.logger.info('   No project dependency');
@@ -156,7 +159,7 @@ export class MakefileServiceResolve {
 					if (!subProject.json.name) {
 						throw new PathAttachedError(subProject.path, missingJsonField('name'));
 					}
-					project.directDependency[subProject.json.name] = absolutePath;
+					directDependency.push(subProject);
 					return subProject;
 				}, handleErr);
 			}
@@ -167,7 +170,7 @@ export class MakefileServiceResolve {
 	}
 
 	public async resolveDependencies(): Promise<DeepReadonlyArray<IProjectInfoResolved>> {
-		const projectTree = await this.createDependencyTree();
+		const projectTree = this.projectList[0];
 		await this.resolveProjects(projectTree);
 
 		this.logger.info('All defined constants:');
@@ -182,19 +185,19 @@ export class MakefileServiceResolve {
 		return this.definitionsRegistry.values();
 	}
 
-	private async resolveProjects({ project, children }: IDependencyTree) {
-		if (project.hasOwnProperty('resolved')) {
+	private async resolveProjects(parentProject: IProjectInfo) {
+		if (parentProject.hasOwnProperty('resolved')) {
 			return;
 		}
 
-		const currentDeps: IProjectInfoResolved[] = [];
-		for (const child of children) {
+		const children: IProjectInfoResolved[] = [];
+		for (const child of parentProject.directDependency) {
 			await this.resolveProjects(child);
-			currentDeps.push(child.project as IProjectInfoResolved);
+			children.push(child as IProjectInfoResolved);
 		}
 
-		const extended = Object.assign(project, {
-			resolved: await this.resolveTree(project, currentDeps),
+		const extended = Object.assign(parentProject, {
+			resolved: await this.resolveTree(parentProject, children),
 		});
 		this.finalProjectList.push(extended);
 	}
@@ -204,34 +207,42 @@ export class MakefileServiceResolve {
 		children: IProjectInfoResolved[],
 	) {
 		const libProject = project.json as ILibraryProject;
-		const ret = <IResolvedData>{
+		const ret: IResolvedData = {
 			includeFolders: [],
 			linkerScripts: [],
 			extraListContent: '',
 			extraList2Content: '',
-			definitions: [],
 			sourceFiles: [],
+			linkLibs: [],
 		};
 
 		if (libProject.header) {
-			ret.includeFolders.push(...libProject.header.map((path) => {
+			ret.includeFolders.unshift(...libProject.header.map((path) => {
 				return resolvePath(project.path, path);
 			}));
 		}
 		if (libProject.include) {
-			ret.includeFolders.push(...libProject.include.map((path) => {
+			ret.includeFolders.unshift(...libProject.include.map((path) => {
 				return resolvePath(project.path, path);
 			}));
 		}
 
 		if (libProject.ld_file) {
-			ret.linkerScripts.push(resolvePath(project.path, libProject.ld_file));
+			ret.linkerScripts.unshift(resolvePath(project.path, libProject.ld_file));
+		}
+
+		if (Array.isArray(libProject.systemLibrary) && libProject.systemLibrary.length) {
+			ret.linkLibs.unshift(...libProject.systemLibrary);
 		}
 
 		for (const dep of children) {
 			ret.includeFolders.push(...dep.resolved.includeFolders);
 			ret.linkerScripts.push(...dep.resolved.linkerScripts);
+			ret.linkLibs.push(...dep.resolved.linkLibs);
 		}
+		arrayRemoveDuplicate(ret.includeFolders);
+		arrayRemoveDuplicate(ret.linkerScripts);
+		arrayRemoveDuplicate(ret.linkLibs);
 
 		if (project.json.extraList) {
 			const extraListAbsolute = resolvePath(project.path, libProject.extraList);
@@ -301,6 +312,9 @@ export class MakefileServiceResolve {
 			return [];
 		});
 
+		allSourceFiles.forEach((f) => {
+			this.logger.debug(`   * ${f}`);
+		});
 		this.logger.info(`Matched source file count: ${allSourceFiles.length}.`);
 
 		if (allSourceFiles.length === 0) {
@@ -315,49 +329,14 @@ export class MakefileServiceResolve {
 		// console.log(item.matchingSourceFiles);
 	}
 
-	private createDependencyTree(): IDependencyTree {
-		const nameProjectMap = new Map<string, IProjectInfo>();
-		for (const project of this.projectList) {
-			if (nameProjectMap.has(project.json.name!)) {
-				throw new Error('duplicate project name: ' + project.json.name!);
-			}
-			nameProjectMap.set(project.json.name!, project);
+	private detectDependencyLoop(tree = this.projectList[0], stack: string[] = []) {
+		if (stack.includes(tree.json.name!)) {
+			throw new Error(localize('loopDetected', 'Dependency loop detected in: {0}', stack.concat(tree.json.name!).join(' -> ')));
 		}
-
-		const tree: IDependencyTree = {
-			project: this.projectList[0],
-			children: [],
-		};
-
-		inner(tree, [this.projectList[0]]);
-
-		return tree;
-
-		function preventLoop(stack: IProjectInfo[], name: string) {
-			if (stack.some(project => project.json.name === name)) {
-				const nameStack = stack.map((project) => {
-					return project.json.name;
-				});
-				const nameStr = nameStack.concat(name).join(' -> ');
-
-				throw new Error(localize('loopDetected', 'Loop detected in: {0}', nameStr));
-			}
+		stack.push(tree.json.name!);
+		for (const child of tree.directDependency) {
+			this.detectDependencyLoop(child, stack);
 		}
-
-		function inner(leaf: IDependencyTree, stack: IProjectInfo[]) {
-			for (const depName of Object.keys(leaf.project.directDependency)) {
-				preventLoop(stack, depName);
-
-				const depProject = nameProjectMap.get(depName)! as IProjectInfo<ILibraryProject>;
-
-				const tree: IDependencyTree<ILibraryProject> = {
-					project: depProject,
-					children: [],
-				};
-				leaf.children.push(tree);
-
-				inner(tree, [...stack, depProject]);
-			}
-		}
+		stack.pop();
 	}
 }
