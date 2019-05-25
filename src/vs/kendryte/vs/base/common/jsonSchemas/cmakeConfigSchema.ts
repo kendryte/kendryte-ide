@@ -54,6 +54,8 @@ export interface ILibraryProject extends ICommonProject {
 	include: string[];
 	exampleSource: string[];
 	prebuilt: string;
+	linkArgumentPrefix: string[];
+	linkArgumentSuffix: string[];
 }
 
 export interface IExecutableProject extends ICommonProject {
@@ -82,6 +84,14 @@ const libType: IJSONSchemaMap = {
 	exampleSource: {
 		...SchemaArray('Source file to compile, can use "*" to match file.', 'string'),
 		default: ['example/*.c', 'example/*.cpp'],
+	},
+	linkArgumentPrefix: {
+		type: 'string',
+		description: 'Prefix link argument',
+	},
+	linkArgumentSuffix: {
+		type: 'string',
+		description: 'Suffix link argument',
 	},
 };
 

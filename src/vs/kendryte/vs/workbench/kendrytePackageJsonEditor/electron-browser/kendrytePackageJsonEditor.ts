@@ -147,16 +147,29 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 		};
 		switch (value) {
 			case CMakeProjectTypes.library:
-				display(['source', 'c_flags', 'cpp_flags', 'c_cpp_flags', 'link_flags', 'ld_file', 'definitions', 'header', 'include', 'exampleSource'], true);
+				display([
+					'source',
+					'c_flags',
+					'cpp_flags',
+					'c_cpp_flags',
+					'link_flags',
+					'ld_file',
+					'definitions',
+					'header',
+					'include',
+					'exampleSource',
+					'linkArgumentPrefix',
+					'linkArgumentSuffix',
+				], true);
 				display(['entry', 'prebuilt'], false);
 				break;
 			case CMakeProjectTypes.prebuiltLibrary:
-				display(['include', 'exampleSource', 'prebuilt'], true);
+				display(['include', 'exampleSource', 'prebuilt', 'linkArgumentPrefix', 'linkArgumentSuffix'], true);
 				display(['source', 'header', 'c_flags', 'cpp_flags', 'c_cpp_flags', 'link_flags', 'ld_file', 'entry', 'definitions'], false);
 				break;
 			case CMakeProjectTypes.executable:
 				display(['source', 'header', 'c_flags', 'cpp_flags', 'c_cpp_flags', 'link_flags', 'ld_file', 'entry', 'definitions'], true);
-				display(['prebuilt', 'include', 'exampleSource'], false);
+				display(['prebuilt', 'include', 'exampleSource', 'linkArgumentPrefix', 'linkArgumentSuffix'], false);
 				break;
 		}
 	}
@@ -361,7 +374,7 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			localize('kendrytePackageJsonEditor.extraList.title', 'Prepend raw cmake lists'),
 			localize('kendrytePackageJsonEditor.extraList.desc', 'This file\'s content will add into generated cmakelist, you cannot use compile target here, because it did not created.'),
 			(property, title, $section) => this.sectionCreator.createTextInput($section, property,
-				PackageJsonValidate.File, localize('kendrytePackageJsonEditor.extraList.placeholder', 'Do not use this in most project.'),
+				PackageJsonValidate.File, localize('kendrytePackageJsonEditor.notuse-normal.placeholder', 'Do not use this in most project.'),
 				SingleFileFieldControl.descriptor(title),
 			),
 		);
@@ -371,8 +384,27 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			localize('kendrytePackageJsonEditor.extraList.title', 'Prepend raw cmake lists'),
 			localize('kendrytePackageJsonEditor.extraList.desc2', 'This file\'s content will add into generated cmakelist, you can use compile target with ${PROJECT_NAME} variable.'),
 			(property, title, $section) => this.sectionCreator.createTextInput($section, property,
-				PackageJsonValidate.File, localize('kendrytePackageJsonEditor.extraList.placeholder', 'Do not use this in most project.'),
+				PackageJsonValidate.File, localize('kendrytePackageJsonEditor.notuse-normal.placeholder', 'Do not use this in most project.'),
 				SingleFileFieldControl.descriptor(title),
+			),
+		);
+
+		this.createSection(
+			'linkArgumentPrefix',
+			container,
+			localize('kendrytePackageJsonEditor.linkArgumentPrefix.title', 'Link Prefix'),
+			localize('kendrytePackageJsonEditor.linkArgumentPrefix.desc', 'One argument per line'),
+			(property, title, $section) => this.sectionCreator.createTextAreaArray($section, property,
+				PackageJsonValidate.ArgList, localize('kendrytePackageJsonEditor.notuse-normal.placeholder', 'Do not use this in most project.'),
+			),
+		);
+		this.createSection(
+			'linkArgumentSuffix',
+			container,
+			localize('kendrytePackageJsonEditor.linkArgumentSuffix.title', 'Link Suffix'),
+			localize('kendrytePackageJsonEditor.linkArgumentSuffix.desc', 'One argument per line'),
+			(property, title, $section) => this.sectionCreator.createTextAreaArray($section, property,
+				PackageJsonValidate.ArgList, localize('kendrytePackageJsonEditor.notuse-normal.placeholder', 'Do not use this in most project.'),
 			),
 		);
 

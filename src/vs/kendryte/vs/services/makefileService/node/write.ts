@@ -1,4 +1,4 @@
-import { IProjectInfoResolved } from 'vs/kendryte/vs/services/makefileService/node/resolve';
+import { ILinkArguments, IProjectInfoResolved } from 'vs/kendryte/vs/services/makefileService/node/resolve';
 import { DeepReadonly, DeepReadonlyArray } from 'vs/kendryte/vs/base/common/type/deepReadonly';
 import { ILogService } from 'vs/platform/log/common/log';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
@@ -35,6 +35,7 @@ export class MakefileServiceWritter {
 		private readonly projectList: DeepReadonlyArray<IProjectInfoResolved>,
 		private readonly isDebugMode: boolean,
 		private readonly definitions: IterableIterator<DefineValue>,
+		private readonly linkArguments: ILinkArguments,
 		private readonly logger: ILogService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@INodePathService private readonly nodePathService: INodePathService,
@@ -98,10 +99,6 @@ ${this.project.isRoot ? this.rootInitSection : '# not need in sub project'}
 ${this.project.isRoot ? this.debugModeProperty() : ''}
 # [/section] Init
 
-# [section] C/C++ compiler flags
-${this.flags()}
-# [/section] C/C++ compiler flags
-
 # [section] Project
 ${this.readed.fix9985}
 message("======== PROJECT:\${PROJECT_NAME} ========")
@@ -131,8 +128,12 @@ ${this.project.resolved.extraList2Content}
 ### [/section] Custom2
 ${this.debugModeValue()}
 ${this.setProperties()}
-${this.linkSubProjects()}
 # [/section] Target
+
+# [section] C/C++ compiler flags
+${this.flags()}
+${this.linkSubProjects()}
+# [/section] C/C++ compiler flags
 
 # [section] Finish
 ${this.finishSection}
@@ -170,37 +171,40 @@ set_property(TARGET \${PROJECT_NAME} PROPERTY JOB_POOL_LINK single_debug)`;
 	}
 
 	private flags() {
+		const map = (...from: (ReadonlyArray<string> | undefined)[]) => {
+			const args: string[] = [''].concat(...from.map(a => a ? a.slice() : [])).filter(e => !!e);
+			const arr = normalizeArray<string>(args);
+			if (arr.length === 0) {
+				return '';
+			}
+
+			return arr.map(item => `  ${JSON.stringify(item)}`).join('\n');
+		};
+		const append = (str: string, varName: string) => {
+			if (str) {
+				content.push(`set(FLAGS_FOR_${varName}\n${str}\n)`);
+			}
+			return !!str;
+		};
+
 		const content: string[] = [];
-		const add_compile_flags_map = [
-			['c_flags', 'C'],
-			['cpp_flags', 'CXX'],
-			['c_cpp_flags', 'BOTH'],
-			['link_flags', 'LD'],
-		];
 		content.push('');
 		content.push('##### flags from config json #####');
-		for (const [from, to] of add_compile_flags_map) {
-			const arr = normalizeArray<string>(this.project.json[from]);
-			if (arr.length === 0) {
-				continue;
-			}
+		content.push('message("config flags for ${PROJECT_NAME}")');
 
-			content.push(`add_compile_flags(${to}`);
-			for (const item of arr) {
-				content.push(`  ${JSON.stringify(item)}`);
+		const editCFlags = append(map(this.project.json.c_flags, this.project.json.c_cpp_flags, ['-mcmodel=medany']), 'C');
+		const editCXXFlags = append(map(this.project.json.cpp_flags, this.project.json.c_cpp_flags, ['-mcmodel=medany']), 'CXX');
+		if (editCFlags || editCXXFlags) {
+			content.push(`target_compile_options(\${PROJECT_NAME} PRIVATE`);
+			if (editCFlags) {
+				content.push(`\t$<$<COMPILE_LANGUAGE:C>:\${FLAGS_FOR_C}>`);
 			}
-			content.push(`)`);
+			if (editCXXFlags) {
+				content.push(`\t$<$<COMPILE_LANGUAGE:CXX>:\${FLAGS_FOR_CXX}>`);
+			}
+			content.push(')');
 		}
-		content.push('##### internal flags #####');
-		content.push(this.readed.coreFlags);
 
-		if (this.project.resolved.linkerScripts.length) {
-			content.push(`add_compile_flags(LD`);
-			for (const file of this.resolveAll(this.project.resolved.linkerScripts)) {
-				content.push(`  -T ${JSON.stringify(CMAKE_CWD + file)}`);
-			}
-			content.push(`)`);
-		}
 		return content.join('\n');
 	}
 
@@ -261,47 +265,28 @@ ${addSource.join('\n')}`;
 	}
 
 	private linkSubProjects() {
-		const names: string[] = [];
-		const wrap = (type: string, deps: ReadonlyArray<string>) => {
-			if (deps.length === 0) {
-				return '### no deps';
-			}
-			return `target_link_libraries(\${PROJECT_NAME} ${type}
-	-Wl,--start-group
-	${deps.join('\n\t')}
-	-Wl,--end-group
-)`;
-		};
 		if (!this.project.isRoot) {
-			for (const item of this.project.directDependency) {
-				if (item.isSimpleFolder) {
-					names.push(item.json.name!);
-				}
-			}
-			return '# TODO: !is root';
-			/*
-			return `## directory dependencies link
-${wrap('PRIVATE', names)}`;
-*/
-		} else {
-			for (const { json, isSimpleFolder } of this.projectList) {
-				if (isSimpleFolder || json.name === this.project.json.name) {
-					continue;
-				}
-				names.push(JSON.stringify(json.name));
-			}
-
-			let system: string;
-			if (this.project.resolved.linkLibs.length) {
-				system = `### system library
-${wrap('PUBLIC', this.project.resolved.linkLibs)}`;
-			} else {
-				system = '### no system library used (this almost error)';
-			}
-			return `${system}
-## dependencies link
-${wrap('PUBLIC', names)}`;
+			return '';
 		}
+		const p1 = this.linkArguments.arguments.map(e => {
+			if (e.startsWith('#')) {
+				return e;
+			} else {
+				return JSON.stringify(e);
+			}
+		}).join('\n\t').trim();
+		const p2 = this.linkArguments.objects.map(e => {
+			return JSON.stringify(e);
+		}).join('\n\t').trim();
+
+		let ret = '';
+		if (p1) {
+			ret += `target_link_options(${this.project.json.name} PUBLIC\n\t${p1}\n)\n`;
+		}
+		if (p2) {
+			ret += `target_link_libraries(${this.project.json.name} PUBLIC -Wl,--start-group\n\t${p2}\n-Wl,--end-group)\n`;
+		}
+		return ret;
 	}
 
 	private createTarget() {

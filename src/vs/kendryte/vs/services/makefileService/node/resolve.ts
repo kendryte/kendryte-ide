@@ -1,7 +1,7 @@
 import { DefineValue, IProjectInfo } from 'vs/kendryte/vs/services/makefileService/common/type';
 import { missingJsonField, missingOrInvalidProject } from 'vs/kendryte/vs/base/common/messages';
 import { CMakeProjectTypes, ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
-import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
+import { relativePath, resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { CMAKE_LIBRARY_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { ExtendMap } from 'vs/kendryte/vs/base/common/extendMap';
 import { ignorePattern } from 'vs/kendryte/vs/platform/fileDialog/common/globalIgnore';
@@ -21,11 +21,14 @@ const DefineType = /:(raw|str)$/i;
 
 interface IResolvedData {
 	includeFolders: string[];
-	linkerScripts: string[];
 	extraListContent: string;
 	extraList2Content: string;
 	sourceFiles: string[];
-	linkLibs: string[];
+}
+
+export interface ILinkArguments {
+	arguments: string[];
+	objects: string[];
 }
 
 export interface IProjectInfoResolved extends IProjectInfo {
@@ -36,6 +39,8 @@ export class MakefileServiceResolve {
 	private readonly projectList: IProjectInfo[] = [];
 	private readonly finalProjectList: IProjectInfoResolved[] = [];
 	private readonly definitionsRegistry = new ExtendMap<string, DefineValue>();
+	private readonly linkArguments: string[] = ['-nostartfiles', '-Wl,--gc-sections'];
+	private readonly linkObjects: string[] = [];
 
 	constructor(
 		private readonly pathToGenerate: string,
@@ -185,6 +190,13 @@ export class MakefileServiceResolve {
 		return this.definitionsRegistry.values();
 	}
 
+	getLinkArguments(): ILinkArguments {
+		return {
+			arguments: this.linkArguments,
+			objects: this.linkObjects,
+		};
+	}
+
 	private async resolveProjects(parentProject: IProjectInfo) {
 		if (parentProject.hasOwnProperty('resolved')) {
 			return;
@@ -209,11 +221,9 @@ export class MakefileServiceResolve {
 		const libProject = project.json as ILibraryProject;
 		const ret: IResolvedData = {
 			includeFolders: [],
-			linkerScripts: [],
 			extraListContent: '',
 			extraList2Content: '',
 			sourceFiles: [],
-			linkLibs: [],
 		};
 
 		if (libProject.header) {
@@ -227,27 +237,31 @@ export class MakefileServiceResolve {
 			}));
 		}
 
+		this.linkArguments.unshift(`## -> ${libProject.name}`);
+		if (!project.isRoot) {
+			this.linkObjects.unshift(
+				...(libProject.linkArgumentPrefix || []),
+				libProject.name,
+				...(libProject.linkArgumentSuffix || []),
+			);
+		}
 		if (libProject.ld_file) {
-			ret.linkerScripts.unshift(resolvePath(project.path, libProject.ld_file));
-		}
-
-		if (!Array.isArray(libProject.systemLibrary)) {
-			libProject.systemLibrary = [];
-		}
-		if (project.isSimpleFolder) {
+			const abs = resolvePath(project.path, libProject.ld_file);
+			const rel = relativePath(this.pathToGenerate, abs);
+			this.linkArguments.unshift('-T', `\${CMAKE_CURRENT_LIST_DIR}/${rel}`);
 		}
 		if (Array.isArray(libProject.systemLibrary) && libProject.systemLibrary.length) {
-			ret.linkLibs.unshift(...libProject.systemLibrary);
+			this.linkObjects.unshift(...libProject.systemLibrary);
+		}
+		// TODO: localDependency
+		if (Array.isArray(libProject.link_flags) && libProject.link_flags.length) {
+			this.linkArguments.unshift(...libProject.link_flags);
 		}
 
 		for (const dep of children) {
 			ret.includeFolders.push(...dep.resolved.includeFolders);
-			ret.linkerScripts.push(...dep.resolved.linkerScripts);
-			ret.linkLibs.push(...dep.resolved.linkLibs);
 		}
 		arrayRemoveDuplicate(ret.includeFolders);
-		arrayRemoveDuplicate(ret.linkerScripts);
-		arrayRemoveDuplicate(ret.linkLibs);
 
 		if (project.json.extraList) {
 			const extraListAbsolute = resolvePath(project.path, libProject.extraList);

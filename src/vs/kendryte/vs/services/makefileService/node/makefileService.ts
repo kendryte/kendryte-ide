@@ -96,6 +96,7 @@ export class MakefileService implements IMakefileService {
 				resolvedProjectList,
 				this.isDebugMode,
 				treeResolver.getDefinitions(),
+				treeResolver.getLinkArguments(),
 				this.logger,
 			);
 			await listOutput.write();
