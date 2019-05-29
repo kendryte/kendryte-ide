@@ -1,4 +1,3 @@
-import { Severity } from 'vs/platform/notification/common/notification';
 import { IMarkerData, IMarkerService, MarkerSeverity } from 'vs/platform/markers/common/markers';
 import { TextProgressBar } from 'vs/kendryte/vs/base/common/textProgressBar';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
@@ -12,8 +11,9 @@ import { URI } from 'vs/base/common/uri';
 
 const regLdMissingReference = /^(.*?):(\d+): (undefined reference to .+)$/;
 const regIsLdPassingMessage = /riscv64-unknown-elf[/\\]bin[/\\]ld(?:\.exe)?/;
-const regGCCError = /^(.*?):(\d+):(\d+):\s+(\w*)(?:\serror|warning)?:\s+(.*)/;
+const regGCCError = /^(.*?):(\d+):(?:(\d+):)?\s+((?:fatal )?error|Error|warning|note):\s+(.*)/;
 const regCMakeProgress = /^\[\s*(\d+)%]/;
+const isDeclareInfo = /^declared here/;
 
 export class CMakeProcessList implements IDisposable {
 	constructor(
@@ -55,6 +55,7 @@ export abstract class CMakeProcessor implements IDisposable {
 export class CMakeBuildErrorProcessor extends CMakeProcessor {
 	private readonly errorMarkers = new ExtendMap<string/* abs path */, IMarkerData[]>();
 	private readonly currentProjectPath: string;
+	private lastError?: IMarkerData;
 
 	constructor(
 		@IMarkerService private readonly markerService: IMarkerService,
@@ -82,11 +83,7 @@ export class CMakeBuildErrorProcessor extends CMakeProcessor {
 	}
 
 	protected diagnostic(_severity: string, message: string, file: string, _line: string, _column: string) {
-		let severity = MarkerSeverity.fromSeverity(Severity.fromValue(_severity)) || MarkerSeverity.Info;
-		if (severity === MarkerSeverity.Hint) {
-			severity = MarkerSeverity.Info;
-		}
-
+		const severity = cmakeSeverityToMarker(_severity);
 		const line = parseInt(_line);
 		const column = parseInt(_column);
 
@@ -95,18 +92,33 @@ export class CMakeBuildErrorProcessor extends CMakeProcessor {
 			file = resolvePath(this.currentProjectPath, file);
 		}
 
+		if (this.lastError && isDeclareInfo.test(message)) {
+			this.lastError.relatedInformation!.push({
+				resource: URI.file(file),
+				message,
+				startLineNumber: line,
+				startColumn: column,
+				endLineNumber: line,
+				endColumn: column,
+			});
+			delete this.lastError;
+			return;
+		}
+
 		const list = this.errorMarkers.entry(file, () => {
 			return [];
 		});
 
-		list.push({
+		this.lastError = {
 			message,
 			severity,
 			startLineNumber: line,
 			startColumn: column,
 			endLineNumber: line,
 			endColumn: column,
-		});
+			relatedInformation: [],
+		};
+		list.push(this.lastError);
 	}
 
 	public finalize() {
@@ -116,6 +128,20 @@ export class CMakeBuildErrorProcessor extends CMakeProcessor {
 	}
 
 	public dispose() {
+	}
+}
+
+function cmakeSeverityToMarker(_severity: string): MarkerSeverity {
+	switch (_severity.toLowerCase()) {
+		case 'error':
+		case 'fatal error':
+			return MarkerSeverity.Error;
+		case 'warning':
+		case 'warn':
+		case 'note':
+			return MarkerSeverity.Warning;
+		default:
+			return MarkerSeverity.Info;
 	}
 }
 

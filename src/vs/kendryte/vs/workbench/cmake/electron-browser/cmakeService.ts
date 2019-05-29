@@ -42,7 +42,6 @@ import {
 import { CMakeCache } from 'vs/kendryte/vs/workbench/cmake/node/cmakeCache';
 import { LineData, LineProcess } from 'vs/base/node/processes';
 import { cpus } from 'os';
-import { CMAKE_TARGET_TYPE } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/config';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { DebugScript, getLimitedEnvironment } from 'vs/kendryte/vs/workbench/cmake/node/environmentVars';
@@ -80,8 +79,9 @@ export class CMakeService implements ICMakeService {
 	protected localDefine: string[];
 
 	protected alreadyConfigured: boolean;
-	protected selectedTarget: string;
-	protected selectedVariant: string;
+	protected selectedTarget?: string;
+	protected selectedVariant?: string;
+	protected currentProjectName?: string;
 
 	protected cmakeProcess: ChildProcess;
 	private cmakeEndPromise: Promise<any>;
@@ -535,6 +535,8 @@ export class CMakeService implements ICMakeService {
 		}
 		this._CMakeProjectExists = true;
 
+		this.currentProjectName = await this.kendryteWorkspaceService.getCurrentProjectName();
+
 		this.setTarget('');
 		this.setVariant('');
 
@@ -743,7 +745,7 @@ export class CMakeService implements ICMakeService {
 			delete this.lastProcess;
 		}
 
-		const outputFile = await this.getOutputFile() + '.bin';
+		const outputFile = await this.getOutputFile();
 		this.logger.info('File path:', outputFile);
 		const stat = await lstat(outputFile);
 		this.logger.info('File size:', stat.size);
@@ -798,9 +800,11 @@ export class CMakeService implements ICMakeService {
 		} catch (e) {
 		}
 
-		const selected = vids.indexOf(this.selectedVariant);
-		if (variants[selected]) {
-			variants[selected].current = true;
+		if (this.selectedVariant) {
+			const selected = vids.indexOf(this.selectedVariant);
+			if (variants[selected]) {
+				variants[selected].current = true;
+			}
 		}
 
 		variants.unshift({
@@ -854,23 +858,19 @@ export class CMakeService implements ICMakeService {
 			});
 		}
 
-		ret.push({
-			id: 'install',
-			label: '<install>',
-			description: 'Build the `install` meta target',
-		});
-
 		return ret;
 	}
 
 	private async getCurrentProject() {
 		const variant = await this.getCurrentVariant();
 		if (!variant) {
-			return null;
+			return;
 		}
-		for (const proj of variant.projects) {
-			if (this.selectedTarget === proj.name) {
-				return proj;
+
+		const target = this.selectedTarget || this.currentProjectName;
+		for (const project of variant.projects) {
+			if (target === project.name) {
+				return project;
 			}
 		}
 		// try find first project that has executable
@@ -886,9 +886,15 @@ export class CMakeService implements ICMakeService {
 		if (!proj) {
 			throw new Error(localize('errorNoOutputBinary', 'can not find an executable item'));
 		}
-		for (const item of proj.targets) {
-			if (item.type === CMAKE_TARGET_TYPE.EXECUTABLE) {
-				return item.artifacts[0];
+
+		const select = this.selectedTarget || this.currentProjectName;
+		for (const target of proj.targets) {
+			if (target.name === select) {
+				if (target.type === 'EXECUTABLE') {
+					return target.artifacts[0] + '.bin';
+				} else {
+					return target.artifacts[0];
+				}
 			}
 		}
 		throw new Error(localize('errorNoOutputBinary', 'can not find an executable item'));

@@ -53,7 +53,7 @@ export class MaixSerialUploadAction extends Action {
 		await this.cMakeService.ensureConfiguration();
 
 		this.logger.info('Program:');
-		const app = resolvePath(await this.cMakeService.getOutputFile()) + '.bin';
+		const app = resolvePath(await this.cMakeService.getOutputFile());
 		this.logger.info(`\t${app}`);
 
 		if (!await exists(app)) {
@@ -111,7 +111,7 @@ export class MaixSerialUploadAction extends Action {
 			(report) => {
 				const p = new SubProgress('', report);
 				return loader.run(p).finally(() => {
-				    p.dispose();
+					p.dispose();
 				});
 			},
 			() => loader.abort(new Error('user cancel')),

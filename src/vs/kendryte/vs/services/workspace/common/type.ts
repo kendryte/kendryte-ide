@@ -19,6 +19,7 @@ export interface IKendryteWorkspaceService {
 	getAllWorkspace(): ReadonlyArray<string>;
 
 	getCurrentFolderName(): string;
+	getCurrentProjectName(): Promise<string | undefined>;
 
 	/** Require current workspace exists, not the file */
 	requireCurrentWorkspaceFile(...s: string[]): string;

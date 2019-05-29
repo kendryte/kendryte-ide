@@ -153,6 +153,16 @@ class KendryteWorkspaceService implements IKendryteWorkspaceService {
 		}
 	}
 
+	async getCurrentProjectName() {
+		if (this._currentWorkspacePath) {
+			const json = await this.readProjectSetting(this._currentWorkspacePath);
+			if (json) {
+				return json.name;
+			}
+		}
+		return undefined;
+	}
+
 	getCurrentWorkspaceFile(...s: string[]) {
 		if (this._currentWorkspacePath) {
 			return resolvePath(this._currentWorkspacePath, ...s);

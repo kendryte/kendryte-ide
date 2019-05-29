@@ -238,7 +238,7 @@ export class MakefileServiceResolve {
 		}
 
 		this.linkArguments.unshift(`## -> ${libProject.name}`);
-		if (!project.isRoot) {
+		if (!project.isRoot && !project.isSimpleFolder) {
 			this.linkObjects.unshift(
 				...(libProject.linkArgumentPrefix || []),
 				libProject.name,

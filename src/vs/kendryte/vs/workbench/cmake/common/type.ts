@@ -27,8 +27,8 @@ export enum CMakeStatus {
 export const CONTEXT_CMAKE_STATUS = new RawContextKey<CMakeStatus>('cmakeProjectStatus', CMakeStatus.BUSY);
 
 export interface ICMakeSelection {
-	variant: string;
-	target: string;
+	variant?: string;
+	target?: string;
 }
 
 export interface CurrentItem extends IQuickPickItem {

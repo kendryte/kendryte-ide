@@ -64,6 +64,7 @@ export class MakefileServiceWritter {
 
 		this.rootInitSection = [
 			this.readed.macros,
+			this.readed.coreFlags,
 			this.readed.ideSettings,
 			this.readed.toolchain,
 		].join('\n');
@@ -96,7 +97,7 @@ set(PROJECT_NAME ${JSON.stringify(this.project.json.name)})
 
 # [section] Init
 ${this.project.isRoot ? this.rootInitSection : '# not need in sub project'}
-${this.project.isRoot ? this.debugModeProperty() : ''}
+${this.debugModeProperty()}
 # [/section] Init
 
 # [section] Project
@@ -110,17 +111,11 @@ ${this.includeDirs()}
 ## [section] Source
 ${this.sourceFiles()}
 ## [/section] Source
-
 # [/section] Project
-
-# [section] Dependency
-${this.addSubProjects()}
-# [/section] Dependency
 
 # [section] Custom
 ${this.project.resolved.extraListContent}
 # [/section] Custom
-
 # [section] Target
 ${this.createTarget()}
 ### [section] Custom2
@@ -129,6 +124,11 @@ ${this.project.resolved.extraList2Content}
 ${this.debugModeValue()}
 ${this.setProperties()}
 # [/section] Target
+
+# [section] Dependency
+${this.addSubProjects()}
+# [/section] Dependency
+
 
 # [section] C/C++ compiler flags
 ${this.flags()}
@@ -192,8 +192,8 @@ set_property(TARGET \${PROJECT_NAME} PROPERTY JOB_POOL_LINK single_debug)`;
 		content.push('##### flags from config json #####');
 		content.push('message("config flags for ${PROJECT_NAME}")');
 
-		const editCFlags = append(map(this.project.json.c_flags, this.project.json.c_cpp_flags, ['-mcmodel=medany']), 'C');
-		const editCXXFlags = append(map(this.project.json.cpp_flags, this.project.json.c_cpp_flags, ['-mcmodel=medany']), 'CXX');
+		const editCFlags = append(map(this.project.json.c_flags, this.project.json.c_cpp_flags), 'C');
+		const editCXXFlags = append(map(this.project.json.cpp_flags, this.project.json.c_cpp_flags), 'CXX');
 		if (editCFlags || editCXXFlags) {
 			content.push(`target_compile_options(\${PROJECT_NAME} PRIVATE`);
 			if (editCFlags) {
