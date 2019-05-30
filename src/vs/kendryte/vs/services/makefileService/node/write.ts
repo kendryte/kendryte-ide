@@ -92,7 +92,7 @@ ${CMAKE_LIST_GENERATED_WARNING}
 # [section] Head
 ${this.readed.reset}
 cmake_minimum_required(VERSION 3.0.0)
-set(PROJECT_NAME ${JSON.stringify(this.project.json.name)})
+set(PROJECT_NAME ${JSON.stringify(this.project.objectName)})
 # [/section] Head
 
 # [section] Init
@@ -239,25 +239,25 @@ ${addSource.join('\n')}`;
 		const lines = ['cmake_policy(SET CMP0079 NEW)'];
 		if (this.project.isRoot) {
 			lines.push('## root project will include all dependency');
-			this.projectList.forEach(({ json, path, isSimpleFolder }) => {
-				if (json.name === this.project.json.name! || isSimpleFolder) {
+			this.projectList.forEach(({ objectName, path, isSimpleFolder }) => {
+				if (objectName === this.project.objectName! || isSimpleFolder) {
 					return;
 				}
 				const rel = relativePath(this.project.path, path);
 				const dir = CMAKE_CWD + '/' + rel;
-				lines.push(`add_subdirectory(${JSON.stringify(dir)} ${JSON.stringify(json.name)})`);
+				lines.push(`add_subdirectory(${JSON.stringify(dir)} ${JSON.stringify(objectName)})`);
 			});
 		}
 
 		if (this.project.directDependency.length) {
 			lines.push('## add simple folder dependency');
-			for (const { json, path, isSimpleFolder } of this.project.directDependency) {
+			for (const { objectName, path, isSimpleFolder } of this.project.directDependency) {
 				if (!isSimpleFolder) {
 					continue;
 				}
 				const rel = relativePath(this.project.path, path);
 				const dir = CMAKE_CWD + '/' + rel;
-				lines.push(`add_subdirectory(${JSON.stringify(dir)} ${JSON.stringify(json.name)})`);
+				lines.push(`add_subdirectory(${JSON.stringify(dir)} ${JSON.stringify(objectName)})`);
 			}
 		}
 
@@ -281,10 +281,10 @@ ${addSource.join('\n')}`;
 
 		let ret = '';
 		if (p1) {
-			ret += `target_link_options(${this.project.json.name} PUBLIC\n\t${p1}\n)\n`;
+			ret += `target_link_options(${this.project.objectName} PUBLIC\n\t${p1}\n)\n`;
 		}
 		if (p2) {
-			ret += `target_link_libraries(${this.project.json.name} PUBLIC -Wl,--start-group\n\t${p2}\n-Wl,--end-group)\n`;
+			ret += `target_link_libraries(${this.project.objectName} PUBLIC -Wl,--start-group\n\t${p2}\n-Wl,--end-group)\n`;
 		}
 		return ret;
 	}
@@ -292,7 +292,7 @@ ${addSource.join('\n')}`;
 	private createTarget() {
 		const ret: string[] = [];
 		if (this.project.json.type === CMakeProjectTypes.library) {
-			ret.push(`## final create ${this.project.json.name} library`);
+			ret.push(`## final create ${this.project.objectName} library`);
 			if (this.project.isSimpleFolder) {
 				ret.push('### this is a dummy target.');
 			} else if (this.project.shouldHaveSourceCode) {
@@ -308,7 +308,7 @@ ${addSource.join('\n')}`;
 				ret.push(')');
 			}
 		} else {
-			ret.push(`## final create ${this.project.json.name} executable`);
+			ret.push(`## final create ${this.project.objectName} executable`);
 			ret.push('add_executable(${PROJECT_NAME} ${SOURCE_FILES})');
 			ret.push(`target_compile_definitions(\${PROJECT_NAME} PRIVATE "PROJECT_PATH=${CMAKE_CWD}")`);
 		}

@@ -69,6 +69,7 @@ export class MakefileServiceResolve {
 			type: CMakeProjectTypes.library,
 		};
 		const project: IProjectInfo = {
+			objectName: name,
 			json,
 			path: folderPath,
 			isWorkspaceProject: false,
@@ -104,6 +105,7 @@ export class MakefileServiceResolve {
 
 		const directDependency: IProjectInfo<any>[] = [];
 		const project: IProjectInfo = {
+			objectName: projectJson.name.replace(/\//, '_'),
 			json: projectJson,
 			path: projectPath,
 			isWorkspaceProject,
@@ -241,7 +243,7 @@ export class MakefileServiceResolve {
 		if (!project.isRoot && !project.isSimpleFolder) {
 			this.linkObjects.unshift(
 				...(libProject.linkArgumentPrefix || []),
-				libProject.name,
+				project.objectName,
 				...(libProject.linkArgumentSuffix || []),
 			);
 		}

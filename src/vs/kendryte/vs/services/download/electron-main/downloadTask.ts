@@ -12,6 +12,7 @@ import { ILogService, MultiplexLogService } from 'vs/platform/log/common/log';
 import { defaultConsoleLogger } from 'vs/kendryte/vs/platform/log/node/consoleLogger';
 import { wrapActionWithFileLock } from 'vs/kendryte/vs/base/node/fileLock';
 import { DeferredPromise } from 'vs/kendryte/vs/base/common/deferredPromise';
+import { disposableTimeout } from 'vs/base/common/async';
 import uuid = require('uuid');
 
 enum State {
@@ -23,7 +24,7 @@ enum State {
 	OK,
 }
 
-export function loadIdFromResumeFile(target: string, logger: ILogService): Promise<DownloadID | null> {
+export function loadIdFromResumeFile(url: string, target: string, logger: ILogService): Promise<DownloadID | null> {
 	const resumeFile = target + '.partDownloadInfo';
 	logger.info('check resume file at ' + resumeFile + '.');
 	return wrapActionWithFileLock(resumeFile, logger, async () => {
@@ -32,8 +33,11 @@ export function loadIdFromResumeFile(target: string, logger: ILogService): Promi
 			return null;
 		}
 		logger.info('  resume file exists.');
-		const partInfo = JSON.parse(await readFile(resumeFile, 'utf8'));
-		return createDownloadId(partInfo.id);
+		const partInfo: IDownloadTargetInfo = JSON.parse(await readFile(resumeFile, 'utf8'));
+		if (partInfo.url !== url) {
+			return null;
+		}
+		return createDownloadId(partInfo.id.toString());
 	});
 }
 
@@ -89,8 +93,18 @@ export class DownloadTask extends Disposable {
 
 		this._register(this._progressEvent);
 		this._register(this._onBeforeDispose);
+		this._register(disposableTimeout(this.timeout.bind(this), 1000 * 60 * 5));
 
 		this.downloadId = existsId || createDownloadId(uuid());
+	}
+
+	private timeout() {
+		if (this.state !== State.ERROR && this.state !== State.OK) {
+			this.logger.warn('Timeout downloading: %s', this.url);
+			this._handleError(new Error('timeout'));
+		}
+		this.logger.info('Download cache timeout: %s', this.downloadId, this.target);
+		this.dispose();
 	}
 
 	addLogTarget(logger: ILogService) {
@@ -401,7 +415,7 @@ export class DownloadTask extends Disposable {
 					return false;
 				}
 				try {
-					const partInfo = JSON.parse(await readFile(this.resumeFile, 'utf8'));
+					const partInfo: IDownloadTargetInfo = JSON.parse(await readFile(this.resumeFile, 'utf8'));
 					partInfo.total = parseInt(partInfo.total as any); // prevent NaN
 
 					this.logger.info('resume state by: ', partInfo);

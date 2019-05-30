@@ -64,7 +64,7 @@ export class NodeDownloadService implements INodeDownloadService {
 		logger.info('  From - ' + url);
 		logger.info('  To   - ' + target);
 
-		let id = await loadIdFromResumeFile(target, logger);
+		let id = await loadIdFromResumeFile(url, target, logger);
 
 		let task: DownloadTask;
 		if (id && this.hasTask(id)) {
@@ -135,7 +135,9 @@ export class NodeDownloadService implements INodeDownloadService {
 	}
 
 	public downloadTemp(url: string, start = true, logger?: ILogService): Promise<DownloadID> {
-		return this.download(url, osTempDir(`download/file${hash(url)}${doubleExtname(url)}`), start, logger);
+		const path = new URL(url);
+
+		return this.download(url, osTempDir(`download/file${hash(path.host + path.pathname)}${doubleExtname(path.pathname)}`), start, logger);
 	}
 }
 

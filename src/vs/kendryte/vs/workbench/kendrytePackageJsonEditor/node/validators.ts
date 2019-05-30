@@ -17,7 +17,7 @@ export function validateRequired(value: string): IMessage | null {
 }
 
 export function validateProjectName(value: string): IMessage | null {
-	if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+	if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]*(?:\/[a-zA-Z0-9_-]+)?$/.test(value)) {
 		return msg(localize('error.project-name.invalid', 'Invalid project name'));
 	}
 	return null;

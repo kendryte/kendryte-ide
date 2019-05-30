@@ -20,6 +20,7 @@ export function createDownloadId(id: string): DownloadID {
 }
 
 export interface IDownloadTargetInfo {
+	url: string;
 	id: DownloadID;
 	total: number;
 	current: number;
