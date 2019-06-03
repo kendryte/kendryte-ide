@@ -49,7 +49,7 @@ export class MaixCMakeRunAction extends Action {
 			throw new Error('OpenOCD service not able to start.');
 		}
 
-		const app = resolvePath(await this.cMakeService.getOutputFile());
+		const app = resolvePath(await this.cMakeService.getOutputFile()).replace(/\.bin$/, '');
 		const gdb = resolvePath(this.nodePathService.getToolchainBinPath(), 'riscv64-unknown-elf-gdb' + executableExtension);
 		return this.commandService.executeCommand('kendryte-debug.runWithoutDebug', {
 			app,

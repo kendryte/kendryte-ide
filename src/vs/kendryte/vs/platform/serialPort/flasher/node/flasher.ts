@@ -470,7 +470,7 @@ export class SerialLoader extends Disposable {
 	}
 
 	protected handleData(data: ISPResponse) {
-		console.log('[OUTPUT] op: %s, err: %s | %s', ISPOperation[data.op], ISPError[data.err], data.text);
+		// console.log('[OUTPUT] op: %s, err: %s | %s', ISPOperation[data.op], ISPError[data.err], data.text);
 		if (data.op === ISPOperation.ISP_DEBUG_INFO) {
 			this.logger.log('ISP OUTPUT:', data.text);
 			return;

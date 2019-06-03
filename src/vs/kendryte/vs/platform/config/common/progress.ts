@@ -111,7 +111,7 @@ export class SubProgress implements IDisposable {
 	}
 
 	progress(value: number) {
-		console.log('progress(%s)', value);
+		// console.log('progress(%s)', value);
 		if (this.parts[this.currentPart] < 0 && value !== 0) {
 			throw new RangeError('not in progress stage');
 		}

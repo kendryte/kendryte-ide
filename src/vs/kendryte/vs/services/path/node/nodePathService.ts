@@ -80,6 +80,7 @@ export class NodePathService implements INodePathService {
 			this.getToolchainBinPath(),
 			this.getPackagesPath('cmake/bin'),
 			this.getPackagesPath('jlink'),
+			this.getPackagesPath('clang-format/bin'),
 		];
 	}
 
