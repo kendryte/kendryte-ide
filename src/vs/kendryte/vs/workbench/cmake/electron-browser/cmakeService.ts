@@ -66,6 +66,7 @@ import { IMarkerService, MarkerSeverity } from 'vs/platform/markers/common/marke
 import { URI } from 'vs/base/common/uri';
 import { createSimpleErrorMarker, createSimpleMarker } from 'vs/kendryte/vs/platform/marker/common/simple';
 import { MapLike } from 'vs/kendryte/vs/base/common/extendMap';
+import { filterProjectName } from 'vs/kendryte/vs/base/common/filterProjectName';
 
 const regCMakeConfigureError = /CMake Error at (.+?):(\d+?) \((.+)\):/;
 const regCMakeUnknownError = /^CMake Error:/;
@@ -535,7 +536,8 @@ export class CMakeService implements ICMakeService {
 		}
 		this._CMakeProjectExists = true;
 
-		this.currentProjectName = await this.kendryteWorkspaceService.getCurrentProjectName();
+		const projectName = await this.kendryteWorkspaceService.getCurrentProjectName();
+		this.currentProjectName = projectName ? filterProjectName(projectName) : undefined;
 
 		this.setTarget('');
 		this.setVariant('');

@@ -25,6 +25,7 @@ import { INodeDownloadService } from 'vs/kendryte/vs/services/download/common/do
 import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { Emitter } from 'vs/base/common/event';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
+import { filterProjectName } from 'vs/kendryte/vs/base/common/filterProjectName';
 
 export class PackageRegistryService implements IPackageRegistryService {
 	_serviceBrand: any;
@@ -273,9 +274,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 			this.logger.error(error.message);
 		});
 
-		if (config.name) {
-			config.name = packageInfo.name || 'unknown-example';
-		}
+		config.name = packageInfo.name ? filterProjectName(packageInfo.name) : 'unknown-example';
 
 		let finalPath = resolvePath(targetPath, config.name);
 		let i = 0;
@@ -344,7 +343,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 		this.logger.info(`name:${config.name} version:${config.version}`);
 
 		const packagesRoot = this.kendryteWorkspaceService.requireCurrentWorkspaceFile(CMAKE_LIBRARY_FOLDER_NAME);
-		const saveDirName = config.name;
+		const saveDirName = filterProjectName(config.name);
 		const saveDir = resolvePath(packagesRoot, saveDirName);
 
 		this.logger.info(`  rimraf(${saveDir})`);

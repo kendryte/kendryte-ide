@@ -16,6 +16,7 @@ import { exists } from 'vs/base/node/pfs';
 import { basename } from 'vs/base/common/path';
 import { DeepReadonlyArray } from 'vs/kendryte/vs/base/common/type/deepReadonly';
 import { arrayRemoveDuplicate } from 'vs/kendryte/vs/base/common/arrayUnique';
+import { filterProjectName } from 'vs/kendryte/vs/base/common/filterProjectName';
 
 const DefineType = /:(raw|str)$/i;
 
@@ -138,7 +139,7 @@ export class MakefileServiceResolve {
 					}
 				} else {
 					const topRootPath = this.projectList[0].path;
-					depPath = resolvePath(topRootPath, CMAKE_LIBRARY_FOLDER_NAME, depProjectName);
+					depPath = resolvePath(topRootPath, CMAKE_LIBRARY_FOLDER_NAME, filterProjectName(depProjectName));
 				}
 
 				const childProject = await this._readProjectJsonList(depPath).catch(handleErr);

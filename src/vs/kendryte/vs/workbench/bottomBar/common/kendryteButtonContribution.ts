@@ -31,7 +31,6 @@ import 'vs/css!./buttonSize';
 import { ISerialPortService } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
-import { errorForeground } from 'vs/platform/theme/common/colorRegistry';
 import { ACTION_ID_SELECT_FOLDER, ACTION_LABEL_SELECT_FOLDER } from 'vs/kendryte/vs/services/workspace/common/actionId';
 import { CONTEXT_KENDRYTE_MULTIPLE_PROJECT } from 'vs/kendryte/vs/services/workspace/common/contextKey';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
@@ -197,12 +196,12 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 
 	private updateErrorButtonColor(errorButton: IPublicStatusButton) {
 		if (this.currentHasError) {
-			const color = this.themeService.getTheme().getColor(errorForeground);
-			if (color) {
-				errorButton.color = color.toString();
-			} else {
-				errorButton.color = '#f00';
-			}
+			// const color = this.themeService.getTheme().getColor(errorForeground);
+			// if (color) {
+			// 	errorButton.color = color.toString();
+			// } else {
+			// 	errorButton.color = '#f00';
+			// }
 		} else {
 			errorButton.color = undefined as any;
 		}
