@@ -209,18 +209,24 @@ set_property(TARGET \${PROJECT_NAME} PROPERTY JOB_POOL_LINK single_debug)`;
 	}
 
 	private includeDirs() {
-		const ideHeaders = `## from ide
+		let localHeaders = '### from project local\n';
+		if (this.project.json.header) {
+			localHeaders += `include_directories(
+  ${this.spaceArray(this.resolveAll(this.project.json.header))}
+)`;
+		}
+		const ideHeaders = `### from ide
 include_directories("${CMAKE_CWD}${PROJECT_CONFIG_FOLDER_NAME}")
-## from project
 `;
-
+		let sharedHeaders = '## from project public\n';
 		if (this.project.resolved.includeFolders.length) {
-			return ideHeaders + `include_directories(
+			sharedHeaders += `include_directories(
   ${this.spaceArray(this.resolveAll(this.project.resolved.includeFolders))}
 )`;
 		} else {
-			return ideHeaders + '## no headers';
+			sharedHeaders += '## no headers';
 		}
+		return localHeaders + ideHeaders + sharedHeaders;
 	}
 
 	private sourceFiles() {

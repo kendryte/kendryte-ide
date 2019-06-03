@@ -228,11 +228,6 @@ export class MakefileServiceResolve {
 			sourceFiles: [],
 		};
 
-		if (libProject.header) {
-			ret.includeFolders.unshift(...libProject.header.map((path) => {
-				return resolvePath(project.path, path);
-			}));
-		}
 		if (libProject.include) {
 			ret.includeFolders.unshift(...libProject.include.map((path) => {
 				return resolvePath(project.path, path);
