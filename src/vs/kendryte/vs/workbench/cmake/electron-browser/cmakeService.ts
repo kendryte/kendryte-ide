@@ -939,6 +939,7 @@ export class CMakeService implements ICMakeService {
 
 		const configPaths = this.configurationService.getValue<string[]>('C_Cpp.default.includePath') || [];
 
+		const to = this.kendryteWorkspaceService.requireCurrentWorkspaceFile('.vscode/compile_commands.backup.json');
 		content.configurations.unshift({
 			name: 'Default',
 			defines: [],
@@ -946,14 +947,13 @@ export class CMakeService implements ICMakeService {
 			cStandard: 'c11',
 			cppStandard: 'c++17',
 			intelliSenseMode: 'gcc-x64',
-			compileCommands: '${workspaceFolder}/.vscode/compile_commands.backup.json',
+			compileCommands: to,
 			includePath: [...configPaths],
 		});
 
 		const from = this.kendryteWorkspaceService.requireCurrentWorkspaceFile('build/compile_commands.json');
 
 		if (await exists(from)) {
-			const to = this.kendryteWorkspaceService.requireCurrentWorkspaceFile('.vscode/compile_commands.backup.json');
 			await this.nodeFileSystemService.writeFileIfChanged(to, await readFile(from));
 		}
 

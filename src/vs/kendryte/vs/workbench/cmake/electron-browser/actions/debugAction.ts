@@ -112,7 +112,8 @@ export class MaixCMakeDebugAction extends Action {
 			throw new Error('OpenOCD service not able to start.');
 		}
 
-		const file = await this.cmakeService.getOutputFile();
+		let file = await this.cmakeService.getOutputFile();
+		file = file.replace(/\.bin$/, '');
 		const myLaunch = this.instantiationService.createInstance(WorkspaceMaixLaunch, port, file);
 		const config = myLaunch.getConfiguration();
 

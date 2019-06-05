@@ -102,15 +102,18 @@ const baseSchemaProps: IJSONSchemaMap = {
 	},
 	name: {
 		type: 'string',
-		description: 'Name of this project, must not conflict with other library, eg: com.my-name.new_library',
-		pattern: '^[a-zA-Z0-9-_.]+$',
-		patternErrorMessage: 'Only allow to use: alphanumeric, -(hyphen), _(underscore), .(dot)',
+		description: 'Name of this project, must not conflict with other library, eg: my-name/new_library',
+		pattern: '^[a-zA-Z0-9][a-zA-Z0-9_-]*(?:/[a-zA-Z0-9_-]+)?$',
+		patternErrorMessage: 'Only allow to use: alphanumeric, -(hyphen), _(underscore), .(dot) and /(slash)',
 		default: '',
 	},
 	version: {
 		type: 'string',
 		description: 'Version',
 		default: '1.0.0',
+	},
+	homepage: {
+		type: 'string',
 	},
 	dependency: SchemaMap('A memo of dependencies, id => url_or_version', 'string'),
 	localDependency: SchemaArray('A list of local dependencies, one project each line.', 'string'),

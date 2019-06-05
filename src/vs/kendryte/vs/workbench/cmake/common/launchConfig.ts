@@ -33,7 +33,7 @@ export class WorkspaceMaixLaunch implements ILaunch {
 	}
 
 	public get uri(): URI {
-		return this.contextService.getWorkspace().folders[0].toResource('.vscode/klaunch.json');
+		return this.contextService.getWorkspace().folders[0].toResource('.vscode/launch.json');
 	}
 
 	public get name(): string {
