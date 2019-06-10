@@ -101,7 +101,7 @@ export class PackageBrowserEditor extends BaseEditor {
 			if (!isEmpty) {
 				navbar.push(CMakeProjectTypes.library, localize('library', 'Library'), visualStudioIconClass('library'), '');
 			}
-			navbar.push(CMakeProjectTypes.example, localize('example', 'Example'), visualStudioIconClass('example'), '');
+			navbar.push(CMakeProjectTypes.executable, localize('example', 'Example'), visualStudioIconClass('example'), '');
 		}
 
 		this._register(this.kendryteWorkspaceService.workspaceContextService.onDidChangeWorkbenchState((state) => {

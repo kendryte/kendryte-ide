@@ -17,6 +17,7 @@ import { FpioaModel } from 'vs/kendryte/vs/workbench/fpioaConfig/common/fpioaMod
 import { getChipPackaging } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingRegistry';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { wrapHeaderFile } from 'vs/kendryte/vs/base/common/cpp/wrapHeaderFile';
+import { CMakeProjectTypes } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 
 export class FpioaService implements IFpioaService {
 	public _serviceBrand: any;
@@ -36,9 +37,16 @@ export class FpioaService implements IFpioaService {
 
 	async runIfExists(event: IBeforeBuildEvent) {
 		const mainProject = event.projects[0];
+		if (!mainProject) {
+			return;
+		}
 
 		const allSections: string[] = [];
 		for (const project of event.projects.slice().reverse()) {
+			if (project.json.type === CMakeProjectTypes.library || project.json.type === CMakeProjectTypes.folder) {
+				this.logger.info('[FPIOA Editor] NOT enabled for %s.', project.json.name);
+				continue;
+			}
 			const configFile = resolvePath(project.path, PROJECT_CONFIG_FOLDER_NAME, FPIOA_FILE_NAME);
 			if (await exists(configFile)) {
 				const model = await this.createModel(URI.file(configFile));

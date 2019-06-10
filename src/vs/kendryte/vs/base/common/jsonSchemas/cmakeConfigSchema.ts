@@ -6,6 +6,7 @@ import {
 	CMAKE_LIBRARY_FOLDER_NAME as CMAKE_LIBRARY_FOLDER_NAME_NEW,
 } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { DONT_MODIFY_MARKER } from 'vs/kendryte/vs/base/common/messages';
+import { DeepReadonly } from 'vs/kendryte/vs/base/common/type/deepReadonly';
 
 /** @deprecated */
 export const CMAKE_CONFIG_FILE_NAME = CMAKE_CONFIG_FILE_NAME_NEW;
@@ -17,10 +18,17 @@ export const CMAKE_LIST_GENERATED_WARNING_OLD = '# [NEVER REMOVE THIS LINE] WARN
 export const cmakeSchemaId = 'vscode://schemas/CMakeLists';
 const cmakeSchemaIdExe = cmakeSchemaId + '/exe';
 const cmakeSchemaIdLib = cmakeSchemaId + '/lib';
+const cmakeSchemaIdDefinition = cmakeSchemaId + '/def';
 
-export type ICompileInfo = ILibraryProject | IExecutableProject;
-export type ICompileInfoPossible = ILibraryProject & IExecutableProject;
+export type ICompileInfo = ILibraryProject | IExecutableProject | IDefineProject | ICompileFolder;
+export type ICompileInfoReadonly = DeepReadonly<ICompileInfo>;
+export type ICompileInfoPossible = ILibraryProject & IExecutableProject & IDefineProject & ICompileFolder;
 export type ICompileInfoPossibleKeys = keyof ICompileInfoPossible;
+
+export interface ICompileFolder {
+	name: string;
+	type: CMakeProjectTypes.folder;
+}
 
 export interface ICommonProject {
 	name: string;
@@ -45,14 +53,19 @@ export interface ICommonProject {
 export enum CMakeProjectTypes {
 	executable = 'executable',
 	library = 'library',
-	example = 'example', // virtual type
 	prebuiltLibrary = 'prebuiltLibrary', // virtual type
+	folder = 'folder',
+	define = 'define',
+}
+
+export interface IDefineProject extends Pick<ICommonProject, 'name' | 'version' | 'homepage' | 'definitions'> {
+	type: CMakeProjectTypes.define;
+	include: string[];
 }
 
 export interface ILibraryProject extends ICommonProject {
 	type: CMakeProjectTypes.library;
 	include: string[];
-	exampleSource: string[];
 	prebuilt: string;
 	linkArgumentPrefix: string[];
 	linkArgumentSuffix: string[];
@@ -62,6 +75,14 @@ export interface IExecutableProject extends ICommonProject {
 	type: CMakeProjectTypes.executable;
 	entry: string;
 }
+
+const defineType: IJSONSchemaMap = {
+	type: {
+		type: 'string',
+		enum: [CMakeProjectTypes.define],
+		default: CMakeProjectTypes.define,
+	},
+};
 
 const exeType: IJSONSchemaMap = {
 	type: {
@@ -80,10 +101,6 @@ const libType: IJSONSchemaMap = {
 	include: {
 		...SchemaArray('List of include dir path, will expose to user, relative to current json file.', 'string'),
 		default: ['include'],
-	},
-	exampleSource: {
-		...SchemaArray('Source file to compile, can use "*" to match file.', 'string'),
-		default: ['example/*.c', 'example/*.cpp'],
 	},
 	linkArgumentPrefix: {
 		type: 'string',
@@ -181,6 +198,18 @@ const librarySchema: IJSONSchema = {
 	},
 };
 
+const cmakeDefineSchema: IJSONSchema = {
+	id: cmakeSchemaIdDefinition,
+	required: ['type'],
+	additionalProperties: false,
+	properties: {
+		...(() => {
+			const { name, version, homepage, definitions } = baseSchemaProps;
+			return { name, version, homepage, definitions };
+		})(),
+		...defineType,
+	},
+};
 const cmakeSchema: IJSONSchema = {
 	id: cmakeSchemaId,
 	allowComments: true,
@@ -209,4 +238,5 @@ export function registerCMakeSchemas(register: (id: string, schema: IJSONSchema)
 	register(cmakeSchemaId, cmakeSchema);
 	register(cmakeSchemaIdExe, executableSchema);
 	register(cmakeSchemaIdLib, librarySchema);
+	register(cmakeSchemaIdDefinition, cmakeDefineSchema);
 }

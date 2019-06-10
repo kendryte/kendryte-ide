@@ -14,9 +14,9 @@ export interface DefineValue {
 	source: string;
 }
 
-export interface IProjectInfo<T = ICompileInfo> {
+export interface IProjectInfo<T extends ICompileInfo = ICompileInfo> {
 	objectName: string;
-	json: Partial<T>;
+	json: T;
 	path: string;
 	isWorkspaceProject: boolean;
 	isRoot: boolean;

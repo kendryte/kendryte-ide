@@ -26,6 +26,7 @@ import { ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { Emitter } from 'vs/base/common/event';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 import { filterProjectName } from 'vs/kendryte/vs/base/common/filterProjectName';
+import { packageJsonObject, packageJsonString } from 'vs/kendryte/vs/base/common/cmakeTypeHelper';
 
 export class PackageRegistryService implements IPackageRegistryService {
 	_serviceBrand: any;
@@ -102,7 +103,6 @@ export class PackageRegistryService implements IPackageRegistryService {
 			case CMakeProjectTypes.library:
 				return PACKAGE_LIST_LIBRARY;
 			case CMakeProjectTypes.executable:
-			case CMakeProjectTypes.example:
 				return PACKAGE_LIST_EXAMPLE;
 			default:
 				throw new TypeError('unknown type of registry: ' + type);
@@ -214,17 +214,18 @@ export class PackageRegistryService implements IPackageRegistryService {
 		if (!pkgInfo) {
 			return; // not a project
 		}
-		if (!pkgInfo.dependency) {
+		const dependency = packageJsonObject(pkgInfo, 'dependency');
+		if (!dependency) {
 			await this.openPackageFile(workspacePath);
 			throw new Error('invalid dependency defined in ' + CMAKE_CONFIG_FILE_NAME + '.');
 		}
 
-		const keys = Object.keys(pkgInfo.dependency);
+		const keys = Object.keys(dependency);
 		let i = 1;
 		for (const item of keys) {
 			handle.updateMessage(`installing dependencies: (${i++} of ${keys.length}) ${item}`);
 
-			const version = pkgInfo.dependency[item];
+			const version = dependency[item];
 			if (/^https?:\/\//.test(version)) {
 				await this.downloadFromAbsUrl(version, item, 'Unknown');
 			} else {
@@ -335,12 +336,13 @@ export class PackageRegistryService implements IPackageRegistryService {
 			this.logger.warn('package do not have name. set default to ' + config.name);
 			await this.nodeFileSystemService.editJsonFile(jsonFile, 'name', config.name);
 		}
-		if (!config.version) {
-			config.version = defaultVersion || dumpDate.date(new Date, '.');
-			this.logger.warn('package do not have version. set default to ' + config.version);
-			await this.nodeFileSystemService.editJsonFile(jsonFile, 'version', config.version);
+		let version = packageJsonString(config, 'version');
+		if (!version) {
+			version = defaultVersion || dumpDate.date(new Date, '.');
+			this.logger.warn('package do not have version. set default to ' + version);
+			await this.nodeFileSystemService.editJsonFile(jsonFile, 'version', version);
 		}
-		this.logger.info(`name:${config.name} version:${config.version}`);
+		this.logger.info(`name:${config.name} version:${version}`);
 
 		const packagesRoot = this.kendryteWorkspaceService.requireCurrentWorkspaceFile(CMAKE_LIBRARY_FOLDER_NAME);
 		const saveDirName = filterProjectName(config.name);

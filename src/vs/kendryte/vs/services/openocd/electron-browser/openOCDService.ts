@@ -100,18 +100,30 @@ export class OpenOCDService implements IOpenOCDService {
 		this.logger.info('stop openocd server.');
 		if (this.child) {
 			const child = this.child;
-			delete this.child;
 			if (restart) {
 				child.removeAllListeners('error');
 				child.removeAllListeners('exit');
 			}
+			this.debugService.stopSession(undefined).catch();
+			if (this.okPromise) {
+				this.okPromise.error(new Error(`OpenOCD stopped by user`)).catch();
+			}
 
 			const p = new Promise((resolve, reject) => {
-				child.on('exit', resolve);
+				child.on('exit', () => resolve(true));
 			});
 			child.kill('SIGINT');
-			await p;
-			this.logger.info('stopped.');
+			const stopStatus = await Promise.race([
+				p,
+				timeout(3000).then(() => false),
+			]);
+			if (stopStatus === true) {
+				this.logger.info('stopped.');
+				delete this.child;
+			} else {
+				this.logger.warn('openocd not stop after 3s, kill now.');
+				await this.kill();
+			}
 		} else {
 			this.logger.warn('server not start.');
 		}

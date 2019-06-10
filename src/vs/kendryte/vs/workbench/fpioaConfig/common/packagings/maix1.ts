@@ -3,8 +3,8 @@ import { registryChipPackaging } from 'vs/kendryte/vs/workbench/fpioaConfig/comm
 import { IChipPackagingDefinition, IFuncDefinition } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingTypes';
 
 const graph = `
-	!  1  2  3  4  5  6  7  8  9  10 11
-	!*---------------------------------
+	!  1  2  3  4  5  6  7  8  9  10 11 12
+	!*------------------------------------
 	A| 19 20 22 24 26 28 30 32 34 36 38
 	B| 17 18 23 25 27 29 31 33 35 37 39
 	C| 15 16 21 -- -- -- -- -- 40 42 41
@@ -16,10 +16,11 @@ const graph = `
 	J| 03 04 02 -- -- -- -- -- -- -- --
 	K| 01 -- -- -- -- -- -- -- -- -- --
 	L| 00 -- -- -- -- -- -- -- -- -- --
+	M| 00 -- -- -- -- -- -- -- -- -- --
 `;
 
 const Maix1BGAPackageDefine: IChipPackagingDefinition = {
-	name: 'Kendryte',
+	name: 'Kendryte K210',
 	geometry: BGA_IO_GEOMETRY(graph),
 	generator: {
 		funcNamePrefix: 'FUNC_',

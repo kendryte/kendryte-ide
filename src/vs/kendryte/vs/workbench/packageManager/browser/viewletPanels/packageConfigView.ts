@@ -19,6 +19,7 @@ import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { Emitter } from 'vs/base/common/event';
 import { isUndefinedOrNull } from 'vs/base/common/types';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
+import { packageJsonObject } from 'vs/kendryte/vs/base/common/cmakeTypeHelper';
 
 const templateId = 'local-package-tree';
 
@@ -176,7 +177,7 @@ export class PackageConfigView extends ViewletPanel {
 		const packages = await this.packageRegistryService.listLocal(root);
 		const localObject: any = {};
 
-		const defines = Object.assign(localObject, ...packages.map(e => e.definitions), json.definitions);
+		const defines = Object.assign(localObject, ...packages.map(e => e.definitions), packageJsonObject(json, 'definitions'));
 
 		const kv = Object.entries(defines).map(([k, v]) => {
 			return <IConfigSection>{

@@ -10,6 +10,7 @@ import { CMAKE_LIST_GENERATED_WARNING, CMakeProjectTypes } from 'vs/kendryte/vs/
 import { DefineValue } from 'vs/kendryte/vs/services/makefileService/common/type';
 import { PathAttachedError } from 'vs/kendryte/vs/platform/marker/common/errorWithPath';
 import { missingJsonField } from 'vs/kendryte/vs/base/common/messages';
+import { packageJsonArray, packageJsonObject } from 'vs/kendryte/vs/base/common/cmakeTypeHelper';
 
 const CMAKE_CWD = '${CMAKE_CURRENT_LIST_DIR}/';
 
@@ -192,8 +193,12 @@ set_property(TARGET \${PROJECT_NAME} PROPERTY JOB_POOL_LINK single_debug)`;
 		content.push('##### flags from config json #####');
 		content.push('message("config flags for ${PROJECT_NAME}")');
 
-		const editCFlags = append(map(this.project.json.c_flags, this.project.json.c_cpp_flags), 'C');
-		const editCXXFlags = append(map(this.project.json.cpp_flags, this.project.json.c_cpp_flags), 'CXX');
+		const c_flags = packageJsonArray(this.project.json, 'c_flags');
+		const cpp_flags = packageJsonArray(this.project.json, 'cpp_flags');
+		const c_cpp_flags = packageJsonArray(this.project.json, 'c_cpp_flags');
+
+		const editCFlags = append(map(c_flags, c_cpp_flags), 'C');
+		const editCXXFlags = append(map(cpp_flags, c_cpp_flags), 'CXX');
 		if (editCFlags || editCXXFlags) {
 			content.push(`target_compile_options(\${PROJECT_NAME} PRIVATE`);
 			if (editCFlags) {
@@ -210,9 +215,10 @@ set_property(TARGET \${PROJECT_NAME} PROPERTY JOB_POOL_LINK single_debug)`;
 
 	private includeDirs() {
 		let localHeaders = '### from project local\n';
-		if (this.project.json.header) {
+		const header = packageJsonArray(this.project.json, 'header');
+		if (header) {
 			localHeaders += `include_directories(
-  ${this.spaceArray(this.resolveAll(this.project.json.header))}
+  ${this.spaceArray(this.resolveAll(header))}
 )`;
 		}
 		const ideHeaders = `### from ide
@@ -282,15 +288,19 @@ ${addSource.join('\n')}`;
 			}
 		}).join('\n\t').trim();
 		const p2 = this.linkArguments.objects.map(e => {
-			return JSON.stringify(e);
+			if (e.startsWith('#')) {
+				return e;
+			} else {
+				return JSON.stringify(e);
+			}
 		}).join('\n\t').trim();
 
 		let ret = '';
 		if (p1) {
-			ret += `target_link_options(${this.project.objectName} PUBLIC\n\t${p1}\n)\n`;
+			ret += `target_link_options(\${PROJECT_NAME} PUBLIC\n\t${p1}\n)\n`;
 		}
 		if (p2) {
-			ret += `target_link_libraries(${this.project.objectName} PUBLIC -Wl,--start-group\n\t${p2}\n-Wl,--end-group)\n`;
+			ret += `target_link_libraries(\${PROJECT_NAME} PUBLIC -Wl,--start-group\n\t${p2}\n-Wl,--end-group)\n`;
 		}
 		return ret;
 	}
@@ -323,9 +333,10 @@ ${addSource.join('\n')}`;
 
 	private setProperties() {
 		const content = [];
-		if (this.project.json.properties) {
+		const properties = packageJsonObject<string>(this.project.json, 'properties');
+		if (properties && Object.keys(properties).length) {
 			content.push('## set properties');
-			for (const [key, value] of Object.entries(this.project.json.properties)) {
+			for (const [key, value] of Object.entries(properties)) {
 				content.push(`set_target_properties($\{PROJECT_NAME} PROPERTIES ${key} ${JSON.stringify(value)})`);
 			}
 		} else {

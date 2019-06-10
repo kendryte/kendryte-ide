@@ -15,7 +15,6 @@ import { SourceFileListFieldControl } from 'vs/kendryte/vs/workbench/kendrytePac
 import { PackageJsonValidate } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/node/validators.class';
 import { SingleFileFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/singleFile';
 import { FolderListFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/folderList';
-import { SingleFolderFieldControl } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/electron-browser/fields/singleFolder';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { AbstractJsonEditor } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditor';
@@ -50,12 +49,9 @@ interface IControlList extends Record<ICompileInfoPossibleKeys, IUISection<any>>
 	dependency: IUISection<string[]>;
 	localDependency: IUISection<string[]>;
 	systemLibrary: IUISection<string[]>;
-
-	// library
 	include: IUISection<string[]>;
-	exampleSource: IUISection<string[]>;
-
-	// executable
+	linkArgumentPrefix: IUISection<string[]>;
+	linkArgumentSuffix: IUISection<string[]>;
 }
 
 interface IEditorState extends IInputState {
@@ -118,6 +114,8 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 				this.controls.type.widget.set(CMakeProjectTypes.library);
 				this.onTypeChange(CMakeProjectTypes.library);
 			}
+		} else if (model.data.type === CMakeProjectTypes.define) {
+			this.onTypeChange(CMakeProjectTypes.define);
 		} else {
 			this.controls.type.widget.set(CMakeProjectTypes.executable);
 			this.onTypeChange(CMakeProjectTypes.executable);
@@ -134,14 +132,16 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 
 	private onTypeChange(value: CMakeProjectTypes): void {
 		console.log('onTypeChange: ', value);
-		const display = (sections: (keyof IControlList)[], show: boolean) => {
-			for (const secName of sections) {
+		const alwaysShow = ['type', 'name', 'version', 'homepage'];
+		const display = (sections: (keyof IControlList)[]) => {
+			for (const [secName, secControl] of Object.entries(this.controls)) {
 				// console.log('display: ', sections, show);
-				this.controls[secName].section.style.display = show ? 'flex' : 'none';
-				const set = this.controls[secName].widget.set as Function;
-				if (!show) {
-					set('');
-					this.updateSimple(secName, undefined);
+				if (sections.includes(secName as ICompileInfoPossibleKeys) || alwaysShow.includes(secName)) {
+					secControl.section.style.display = 'flex';
+				} else {
+					secControl.section.style.display = 'none';
+					this.controls[secName].widget.set('');
+					this.updateSimple(secName as ICompileInfoPossibleKeys, undefined);
 				}
 			}
 		};
@@ -157,19 +157,51 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 					'definitions',
 					'header',
 					'include',
-					'exampleSource',
 					'linkArgumentPrefix',
 					'linkArgumentSuffix',
-				], true);
-				display(['entry', 'prebuilt'], false);
+					'dependency',
+					'extraList',
+					'extraList2',
+					'localDependency',
+					'systemLibrary',
+					'properties',
+				]);
+				break;
+			case CMakeProjectTypes.define:
+				display(['include', 'definitions', 'dependency']);
 				break;
 			case CMakeProjectTypes.prebuiltLibrary:
-				display(['include', 'exampleSource', 'prebuilt', 'linkArgumentPrefix', 'linkArgumentSuffix'], true);
-				display(['source', 'header', 'c_flags', 'cpp_flags', 'c_cpp_flags', 'link_flags', 'ld_file', 'entry', 'definitions'], false);
+				display([
+					'include',
+					'prebuilt',
+					'linkArgumentPrefix',
+					'linkArgumentSuffix',
+					'dependency',
+					'extraList',
+					'extraList2',
+					'localDependency',
+					'systemLibrary',
+					'properties',
+				]);
 				break;
 			case CMakeProjectTypes.executable:
-				display(['source', 'header', 'c_flags', 'cpp_flags', 'c_cpp_flags', 'link_flags', 'ld_file', 'entry', 'definitions'], true);
-				display(['prebuilt', 'include', 'exampleSource', 'linkArgumentPrefix', 'linkArgumentSuffix'], false);
+				display([
+					'source',
+					'header',
+					'c_flags',
+					'cpp_flags',
+					'c_cpp_flags',
+					'link_flags',
+					'ld_file',
+					'entry',
+					'definitions',
+					'dependency',
+					'extraList',
+					'extraList2',
+					'localDependency',
+					'systemLibrary',
+					'properties',
+				]);
 				break;
 		}
 	}
@@ -242,6 +274,17 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 		);
 
 		this.createSection(
+			'include',
+			container,
+			localize('kendrytePackageJsonEditor.include.title', 'Include root'),
+			localize('kendrytePackageJsonEditor.include.desc', 'User can #include your header from these folders. But recommended use only one folder, and no other source inside it.'),
+			(property, title, $section) => this.sectionCreator.createTextAreaArray($section, property,
+				PackageJsonValidate.Folders, 'eg. include/',
+				FolderListFieldControl.descriptor(title),
+			),
+		);
+
+		this.createSection(
 			'source',
 			container,
 			localize('kendrytePackageJsonEditor.source.title', 'Source files'),
@@ -305,34 +348,12 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 		);
 
 		this.createSection(
-			'entry',
-			container,
-			localize('kendrytePackageJsonEditor.entry.title', 'Entry file'),
-			localize('kendrytePackageJsonEditor.entry.desc', 'Commonly used in a demo project.'),
-			(property, title, $section) => this.sectionCreator.createTextInput($section, property,
-				PackageJsonValidate.File, 'eg. src/main.c',
-				SingleFileFieldControl.descriptor(title),
-			),
-		);
-
-		this.createSection(
 			'definitions',
 			container,
 			localize('kendrytePackageJsonEditor.definitions.title', 'C/C++ Definitions'),
 			localize('kendrytePackageJsonEditor.definitions.desc', 'User configurable definitions, will create #define in compile time.'),
 			(property, title, $section) => this.sectionCreator.createTextAreaMap($section, property,
 				PackageJsonValidate.Definitions, 'eg. SOME_VALUE1:str=hello world\nSOME_VALUE2:raw=123',
-			),
-		);
-
-		this.createSection(
-			'include',
-			container,
-			localize('kendrytePackageJsonEditor.include.title', 'Include root'),
-			localize('kendrytePackageJsonEditor.include.desc', 'User can #include your header from these folders. But recommended use only one folder, and no other source inside it.'),
-			(property, title, $section) => this.sectionCreator.createTextAreaArray($section, property,
-				PackageJsonValidate.Folders, 'eg. include/',
-				FolderListFieldControl.descriptor(title),
 			),
 		);
 
@@ -344,17 +365,6 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			(property, title, $section) => this.sectionCreator.createTextInput($section, property,
 				[PackageJsonValidate.Required, PackageJsonValidate.File], 'eg. libXXX.a',
 				SingleFileFieldControl.descriptor(title),
-			),
-		);
-
-		this.createSection(
-			'exampleSource',
-			container,
-			localize('kendrytePackageJsonEditor.exampleSource.title', 'Examples'),
-			localize('kendrytePackageJsonEditor.exampleSource.desc', 'You can add example in your library (example is a folder contains {0}, and it\'s project type is executable).', CMAKE_CONFIG_FILE_NAME),
-			(property, title, $section) => this.sectionCreator.createTextAreaArray($section, property,
-				PackageJsonValidate.Sources, 'eg. test/',
-				SingleFolderFieldControl.descriptor(title),
 			),
 		);
 

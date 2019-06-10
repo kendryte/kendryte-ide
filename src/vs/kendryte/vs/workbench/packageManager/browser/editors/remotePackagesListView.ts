@@ -209,7 +209,7 @@ class ListRenderer implements IPagedRenderer<IRemotePackageInfo, ITemplateData> 
 	}
 
 	private doInstall(currentElement: MExt & IRemotePackageInfo, selectedVersion: string) {
-		if (currentElement.type === CMakeProjectTypes.example || currentElement.type === CMakeProjectTypes.executable) {
+		if (currentElement.type === CMakeProjectTypes.executable) {
 			return this.fileDialogService.showOpenDialog({
 				title: 'Select download location',
 				canSelectFiles: false,

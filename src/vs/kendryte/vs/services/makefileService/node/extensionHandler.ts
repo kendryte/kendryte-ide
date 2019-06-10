@@ -3,6 +3,7 @@ import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { HOOK_ENTRY_FILE_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { ILogService } from 'vs/platform/log/common/log';
+import { ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 
 interface IProjectTempData {
 	constructList: {
@@ -60,10 +61,11 @@ ${callFunctions}
 			return PROJECT_CONFIG_FOLDER_NAME + '/' + file;
 		});
 
-		if (!project.json.source) {
-			project.json.source = [];
+		const json: ILibraryProject = project.json as unknown as ILibraryProject;
+		if (!json.source) {
+			json.source = [];
 		}
-		project.json.source.push(...addedFiles);
+		json.source.push(...addedFiles);
 	}
 
 	public async commit() {

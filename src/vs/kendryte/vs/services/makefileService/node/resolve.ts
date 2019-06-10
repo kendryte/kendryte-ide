@@ -1,6 +1,6 @@
 import { DefineValue, IProjectInfo } from 'vs/kendryte/vs/services/makefileService/common/type';
 import { missingJsonField, missingOrInvalidProject } from 'vs/kendryte/vs/base/common/messages';
-import { CMakeProjectTypes, ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { CMakeProjectTypes, ICompileFolder, ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { relativePath, resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { CMAKE_LIBRARY_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { ExtendMap } from 'vs/kendryte/vs/base/common/extendMap';
@@ -17,6 +17,7 @@ import { basename } from 'vs/base/common/path';
 import { DeepReadonlyArray } from 'vs/kendryte/vs/base/common/type/deepReadonly';
 import { arrayRemoveDuplicate } from 'vs/kendryte/vs/base/common/arrayUnique';
 import { filterProjectName } from 'vs/kendryte/vs/base/common/filterProjectName';
+import { packageJsonArray, packageJsonIsNormal, packageJsonObject } from 'vs/kendryte/vs/base/common/cmakeTypeHelper';
 
 const DefineType = /:(raw|str)$/i;
 
@@ -55,6 +56,7 @@ export class MakefileServiceResolve {
 	public async readProjectJsonList() {
 		await this._readProjectJsonList(this.pathToGenerate);
 		this.detectDependencyLoop();
+		this.detectConflictProject();
 		return this.projectList;
 	}
 
@@ -65,9 +67,9 @@ export class MakefileServiceResolve {
 			return loaded;
 		}
 
-		const json: Partial<ILibraryProject> = {
+		const json: ICompileFolder = {
 			name,
-			type: CMakeProjectTypes.library,
+			type: CMakeProjectTypes.folder,
 		};
 		const project: IProjectInfo = {
 			objectName: name,
@@ -98,9 +100,17 @@ export class MakefileServiceResolve {
 			throw new Error(missingOrInvalidProject(projectPath));
 		}
 
+		if (projectJson.type === CMakeProjectTypes.define) {
+			Object.assign(projectJson, {
+				source: ['src/*.c', 'src/*.cpp'],
+				header: ['src'].concat(projectJson.include || []),
+			});
+		}
+
 		const isRoot = this.projectList.length === 0;
 		const shouldHaveSourceCode = (!projectJson.type) || (projectJson.type === CMakeProjectTypes.executable) ||
-		                             (projectJson.type === CMakeProjectTypes.library && !projectJson.prebuilt);
+		                             (projectJson.type === CMakeProjectTypes.library && !projectJson.prebuilt) ||
+		                             (projectJson.type === CMakeProjectTypes.define);
 
 		const isWorkspaceProject = isRoot || this._projectNameMap.has(projectJson.name);
 
@@ -128,8 +138,9 @@ export class MakefileServiceResolve {
 		};
 
 		this.logger.info('Dependency:');
-		if (projectJson.dependency && Object.keys(projectJson.dependency).length > 0) {
-			for (const depProjectName of Object.keys(projectJson.dependency)) {
+		const dependency = packageJsonObject<string>(projectJson, 'dependency');
+		if (dependency && Object.keys(dependency).length > 0) {
+			for (const depProjectName of Object.keys(dependency)) {
 				const workspaceOverride = this._projectNameMap.get(depProjectName);
 				let depPath = '';
 				if (workspaceOverride) {
@@ -149,8 +160,9 @@ export class MakefileServiceResolve {
 			this.logger.info('   No project dependency');
 		}
 
-		if (projectJson.localDependency && projectJson.localDependency.length > 0) {
-			for (const relPath of projectJson.localDependency) {
+		const localDependency = packageJsonArray<string>(projectJson, 'localDependency');
+		if (localDependency && localDependency.length) {
+			for (const relPath of localDependency) {
 				const absolutePath = resolvePath(projectPath, relPath);
 
 				let p: Promise<IProjectInfo>;
@@ -235,13 +247,15 @@ export class MakefileServiceResolve {
 			}));
 		}
 
-		this.linkArguments.unshift(`## -> ${libProject.name}`);
+		this.linkObjects.unshift(`## -> ${libProject.name}: ${project.objectName}`);
 		if (!project.isRoot && !project.isSimpleFolder) {
-			this.linkObjects.unshift(
+			this.linkObjects.splice(1, 0,
 				...(libProject.linkArgumentPrefix || []),
 				project.objectName,
 				...(libProject.linkArgumentSuffix || []),
 			);
+		} else {
+			this.linkObjects.splice(1, 0, `##\tnot link component`);
 		}
 		if (libProject.ld_file) {
 			const abs = resolvePath(project.path, libProject.ld_file);
@@ -261,13 +275,15 @@ export class MakefileServiceResolve {
 		}
 		arrayRemoveDuplicate(ret.includeFolders);
 
-		if (project.json.extraList) {
-			const extraListAbsolute = resolvePath(project.path, libProject.extraList);
-			ret.extraListContent = await this.nodeFileSystemService.readFile(extraListAbsolute);
-		}
-		if (project.json.extraList2) {
-			const extraListAbsolute = resolvePath(project.path, libProject.extraList2);
-			ret.extraList2Content = await this.nodeFileSystemService.readFile(extraListAbsolute);
+		if (packageJsonIsNormal(project.json)) {
+			if (project.json.extraList) {
+				const extraListAbsolute = resolvePath(project.path, libProject.extraList);
+				ret.extraListContent = await this.nodeFileSystemService.readFile(extraListAbsolute);
+			}
+			if (project.json.extraList2) {
+				const extraListAbsolute = resolvePath(project.path, libProject.extraList2);
+				ret.extraList2Content = await this.nodeFileSystemService.readFile(extraListAbsolute);
+			}
 		}
 
 		/// source file part below
@@ -355,5 +371,21 @@ export class MakefileServiceResolve {
 			this.detectDependencyLoop(child, stack);
 		}
 		stack.pop();
+	}
+
+	private detectConflictProject() {
+		let defineProject: string | undefined;
+		for (const project of this.projectList.slice(1)) {
+			if (project.json.type === CMakeProjectTypes.executable) {
+				throw new Error(localize('conflictExecutableProject', 'Cannot depend on an executable project'));
+			}
+			if (project.json.type === CMakeProjectTypes.define) {
+				if (defineProject) {
+					throw new Error(localize('conflictMultipleDefine', 'Cannot depend on multiple definition project: {0} and {1}', defineProject, project.json.name));
+				} else {
+					defineProject = project.json.name;
+				}
+			}
+		}
 	}
 }
