@@ -65,10 +65,10 @@ export class FpioaModel implements IEditorModel {
 	private async _load(): Promise<this> {
 		// console.log('---------------- load', options);
 		if (await exists(this.uri.fsPath)) {
-			const { json } = await this.nodeFileSystemService.readJsonFile(this.uri.fsPath);
+			let { json } = await this.nodeFileSystemService.readJsonFile(this.uri.fsPath);
 
 			if (!json) {
-				return this;
+				json = {};
 			}
 
 			this.content = json;

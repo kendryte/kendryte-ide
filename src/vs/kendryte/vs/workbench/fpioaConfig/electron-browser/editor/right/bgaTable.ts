@@ -91,7 +91,7 @@ export class BGATableRender extends AbstractTableRender<CellRender> {
 
 		if (typeof ioNum === 'number') {
 			cell = new CellRender($td, { x, y });
-			cell.title = 'IO_' + ioNum.toString();
+			cell.title = ioNum.toString();
 		} else {
 			addClass($td, 'ignored');
 		}
