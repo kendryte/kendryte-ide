@@ -1,7 +1,7 @@
 import { deepClone } from 'vs/base/common/objects';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { BaseAny } from 'vs/kendryte/vs/workbench/fpioaConfig/common/baseAny';
-import { IChipPackagingCalculated, IChipPackagingDefinition, IFunc, IFuncPin, IPin, IPinRange, pickKeys } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingTypes';
+import { FunctionLabelMap, IChipPackagingCalculated, IChipPackagingDefinition, IPin, IPinRange } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingTypes';
 import { normalizePin } from 'vs/kendryte/vs/workbench/fpioaConfig/common/builder';
 
 const FirstPin: IPin = 1;
@@ -11,14 +11,14 @@ export enum Extensions {
 }
 
 export interface IChipPackagingRegistry {
-	addPackaging(packaging: IChipPackagingDefinition): void;
+	addPackaging(packaging: IChipPackagingDefinition<FunctionLabelMap>): void;
 
 	getByName(name: string): IChipPackagingCalculated | undefined;
 
 	getList(): IChipPackagingCalculated[];
 }
 
-export function registryChipPackaging(packaging: IChipPackagingDefinition) {
+export function registryChipPackaging(packaging: IChipPackagingDefinition<FunctionLabelMap>) {
 	Registry.as<IChipPackagingRegistry>(Extensions.ChipPackaging).addPackaging(packaging);
 }
 
@@ -36,7 +36,7 @@ export function getChipPackaging(name?: string) {
 const registry = new class implements IChipPackagingRegistry {
 	private map = new Map<string, IChipPackagingCalculated>();
 
-	addPackaging(packaging: IChipPackagingDefinition) {
+	addPackaging(packaging: IChipPackagingDefinition<FunctionLabelMap>) {
 		const copy = deepClone(packaging);
 
 		const base = BaseAny.fromRevert(copy.geometry.missingRows);
@@ -51,28 +51,8 @@ const registry = new class implements IChipPackagingRegistry {
 			pinCount -= pinCountWithin(base, item);
 		}
 
-		const wrappedUsableFunctions = copy.usableFunctions.map((fun): IFunc => {
-			const wrappedIOs = fun.ios.map((pin): IFuncPin => {
-				const newPin: IFuncPin = {} as any;
-				for (const key of pickKeys) {
-					newPin[key] = pin[key];
-				}
-				if (pin.overwriteParentId) {
-					newPin.funcIdFull = `${pin.overwriteParentId}${newPin.funcId.toUpperCase()}`;
-				} else {
-					newPin.funcIdFull = `${fun.funcBaseId.toUpperCase()}_${pin.funcId.toUpperCase()}`;
-				}
-				return newPin;
-			});
-			return {
-				...fun,
-				ios: wrappedIOs,
-			};
-		});
-
 		const obj: IChipPackagingCalculated = {
 			...copy,
-			usableFunctions: wrappedUsableFunctions,
 			pinCount,
 			ROW: base,
 		};

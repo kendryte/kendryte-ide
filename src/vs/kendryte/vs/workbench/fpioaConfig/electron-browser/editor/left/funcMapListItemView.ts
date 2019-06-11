@@ -1,34 +1,34 @@
-import { IListRenderer } from 'vs/base/browser/ui/list/list';
-import { IListFuncMapEntry, TEMPLATE_ID } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/left/ids';
+import { IListFuncMapElement, TEMPLATE_ID } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/left/ids';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
-import { SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
-import { dispose, IDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { Emitter, Event } from 'vs/base/common/event';
 import { $, addClass, append } from 'vs/base/browser/dom';
 import { IOPinPlacement } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingTypes';
-import { attachSelectBoxStyler } from 'vs/platform/theme/common/styler';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { PinFuncSetEvent } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
 import { selectBoxNames } from 'vs/kendryte/vs/base/browser/ui/selectBox';
+import { ITreeNode, ITreeRenderer } from 'vs/base/browser/ui/tree/tree';
+import { attachEditableSelectBoxStyler } from 'vs/kendryte/vs/base/browser/ui/editableSelect';
+import { ISelectOptionItem, SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
+import { localize } from 'vs/nls';
 
 export interface IFuncMapTemplate {
 	input: SelectBox;
-	toDispose: IDisposable[];
 	$id: HTMLDivElement;
-	$desc: HTMLDivElement;
+	$parent: HTMLElement;
+	toDispose: IDisposable[];
 }
 
-export class FuncMapListItemRender implements IListRenderer<IListFuncMapEntry, IFuncMapTemplate> {
-	private readonly _onSetPin = new Emitter<PinFuncSetEvent>();
+export  type IPinIOMap = { [id: string]: string };
+
+export class FuncMapListItemRender extends Disposable implements ITreeRenderer<IListFuncMapElement, void, IFuncMapTemplate> {
+	private readonly _onSetPin = this._register(new Emitter<PinFuncSetEvent>());
 	readonly onSetPin: Event<PinFuncSetEvent> = this._onSetPin.event;
 
-	private readonly _firePinMapChange = new Emitter<IOPinPlacement>();
-	readonly notifyPinMapChange = this._firePinMapChange.fire.bind(this._firePinMapChange);
-
-	protected pinToIO: { [id: string]: string }; // A4 => IO_7
-	protected ioToPin: { [id: string]: string };
-	private cacheMap: IOPinPlacement;
-	private changeEvent: IDisposable;
+	private readonly _onPinMapChange = this._register(new Emitter<void>());
+	private _pin2Io: IPinIOMap;
+	private _io2Pin: IPinIOMap;
+	private _selectOptions: ISelectOptionItem[];
 	// to cache
 
 	// IO_2 => B6
@@ -37,22 +37,24 @@ export class FuncMapListItemRender implements IListRenderer<IListFuncMapEntry, I
 		@IContextViewService protected contextViewService: IContextViewService,
 		@IThemeService protected themeService: IThemeService,
 	) {
-		this.changeEvent = this._firePinMapChange.event((ioplace: IOPinPlacement) => {
-			if (this.cacheMap === ioplace) {
-				return;
-			}
-			const map = this.cacheMap = ioplace;
+		super();
+	}
 
-			this.pinToIO = {};
-			this.ioToPin = {};
+	notifyPinMapChange(ioToPin: IPinIOMap) {
+		const unsetSelect: ISelectOptionItem = {
+			text: '--',
+			description: localize('useDefault', 'Use default'),
+		};
+		this._selectOptions = [unsetSelect];
 
-			Object.keys(map).forEach((key) => {
-				const value = `IO_${map[key]}`;
+		this._pin2Io = {};
+		this._io2Pin = ioToPin;
+		for (const [io, pin] of Object.entries(ioToPin)) {
+			this._selectOptions.push(selectBoxNames(io));
+			this._pin2Io[pin] = io;
+		}
 
-				this.pinToIO[key] = value;
-				this.ioToPin[value] = key;
-			});
-		});
+		this._onPinMapChange.fire();
 	}
 
 	setPinMap(ioPinMap: IOPinPlacement) {
@@ -65,82 +67,62 @@ export class FuncMapListItemRender implements IListRenderer<IListFuncMapEntry, I
 	renderTemplate(parent: HTMLElement): IFuncMapTemplate {
 		addClass(parent, 'funcMapListItem');
 
-		const $header = append(parent, $('div.header')) as HTMLDivElement;
-		const $id = append($header, $('div.id')) as HTMLDivElement;
-		const $input = append($header, $('div.select')) as HTMLDivElement;
-		const $desc = append(parent, $('div.desc')) as HTMLDivElement;
+		const $id = append(parent, $('div.id')) as HTMLDivElement;
+		const $input = append(parent, $('div.select')) as HTMLDivElement;
 
-		const input = new SelectBox(['--'].concat(Object.keys(this.ioToPin)).map(selectBoxNames), 0, this.contextViewService);
+		const input = new SelectBox(this._selectOptions, 0, this.contextViewService);
+		const styler = attachEditableSelectBoxStyler(input, this.themeService);
 		input.render($input);
-		const styler = attachSelectBoxStyler(input, this.themeService);
 
-		const setOptions = this._firePinMapChange.event((ioplace: IOPinPlacement) => {
-			input.setOptions(['--'].concat(Object.keys(this.ioToPin)).map(selectBoxNames));
+		const setEvent = this._onPinMapChange.event(() => {
+			input.setOptions(this._selectOptions);
 		});
 
 		return {
 			$id,
-			$desc,
+			$parent: parent,
 			input,
-			toDispose: [styler, setOptions],
+			toDispose: [input, styler, setEvent],
 		};
 	}
 
-	renderElement(entry: IListFuncMapEntry, index: number, template: IFuncMapTemplate): void {
-		if (!this.pinToIO) {
-			console.log('not ready yet.');
-			debugger;
-			return;
-		}
-
-		if (entry.selectEvent) {
+	renderElement({ element }: ITreeNode<IListFuncMapElement>, index: number, template: IFuncMapTemplate): void {
+		if (element.selectEvent) {
 			debugger;
 		}
 
-		let select = 0;
-		if (entry.currentPin !== undefined) {
-			// console.log('func[%s] -> pin[%s:%s]', entry.fullId, entry.currentPin, this.pinToIO[entry.currentPin]);
-			const io = this.pinToIO[entry.currentPin];
-			select = Object.keys(this.ioToPin).indexOf(io) + 1; // padding for --
+		if (element.currentPin !== undefined) {
+			template.input.select(this._selectOptions.findIndex(item => item.text === this._pin2Io[element.currentPin]));
 		} else {
-			// console.log('func[%s] -> nil', entry.fullId);
+			template.input.select(0);
 		}
-		template.input.select(select);
 
-		entry.selectEvent = template.input.onDidSelect(({ index, selected }) => {
-			if (this.ioToPin) {
-				if (index !== 0 && !this.ioToPin[selected]) {
-					console.log('invalid select.');
-					template.input.select(0);
-					return;
-				}
-				console.log('pin function select: pin[%s:%s] func[%s]', this.ioToPin[selected], selected, entry.fullId);
-				this._onSetPin.fire({
-					pin: index === 0 ? undefined : this.ioToPin[selected],
-					func: entry.fullId,
-					triggerBy: 'func',
-				});
-			} else {
-				console.log('empty select.');
+		element.selectEvent = template.input.onDidSelect(({ selected: io, index }) => {
+			const isUnset = index === 0;
+			if (!this._selectOptions) {
+				template.input.select(0);
+				console.log('invalid state: empty select.');
 				debugger;
 			}
+			console.log('pin function select: pin[%s:%s] func[%s]', this._io2Pin[io], io, element.id);
+			this._onSetPin.fire({
+				pin: isUnset ? undefined : this._io2Pin[io],
+				func: element.id,
+				triggerBy: 'func',
+			});
 		});
 
-		template.$id.innerText = entry.id;
-		template.$desc.innerText = entry.description;
+		template.$id.innerText = element.id;
+		template.$parent.title = element.description;
 	}
 
-	public disposeElement(entry: IListFuncMapEntry, index: number, templateData: IFuncMapTemplate): void {
-		dispose(entry.selectEvent);
-		delete entry.selectEvent;
+	public disposeElement({ element }: ITreeNode<IListFuncMapElement>, index: number, templateData: IFuncMapTemplate): void {
+		dispose(element.selectEvent);
+		delete element.selectEvent;
 		templateData.input.select(0);
 	}
 
 	disposeTemplate(template: IFuncMapTemplate): void {
-		dispose(template.input, ...template.toDispose);
-	}
-
-	dispose() {
-		this.changeEvent.dispose();
+		dispose(template.toDispose);
 	}
 }

@@ -15,25 +15,6 @@ export const PIN_SPECIAL: PIN_SPECIAL = -3;
 export type PIN_IO = number;
 export type PinId = PIN_IO | PIN_NC | PIN_POWER;
 
-/**
- * 功能定义，一开始就会被转换成 IFunc，没有别的作用
- */
-export interface IFuncDefinition {
-	funcBaseId: string;
-	ios: IFuncPinDefinition[];
-	description?: string;
-}
-
-/**
- * 功能引脚定义，一开始就会被转换成 IFuncPin，没有别的作用
- */
-export interface IFuncPinDefinition {
-	funcId: string;
-	funcNumber: number;
-	overwriteParentId?: string;
-	description?: string;
-}
-
 export interface IPin2D {
 	x: number;
 	y: string | number;
@@ -55,6 +36,10 @@ export interface IOPinPlacement { // { A1: IO1, B2: IO2 ... }
 	[pinLocation: string]: /* pinIO: */number | undefined;
 }
 
+export interface NotePinPlacement { // { A1: VCC, B2: VDD ... }
+	[pinLocation: string]: /* name: */string;
+}
+
 export interface IOPinPlacementRevert {
 	[pinIO: number]: /* pinLocation: */string | undefined;
 }
@@ -69,6 +54,7 @@ export interface IChipGeometry {
 	emptyRange?: IPinRange[];
 	missingRows: string; // I S O X Y
 	IOPinPlacement: IOPinPlacement;
+	NotePinPlacement: NotePinPlacement;
 }
 
 export interface IChipGeneratorConfig {
@@ -80,33 +66,48 @@ export interface IChipGeneratorConfig {
 export type pickKeys = 'funcId' | 'funcNumber' | 'description';
 export const pickKeys: pickKeys[] = ['funcId', 'funcNumber', 'description'];
 
+export interface IFuncPinDefinition {
+	funcId: string;
+	funcNumber: number;
+	overwriteParentId?: string;
+	description?: string;
+}
+
 export interface IFuncPin extends Pick<IFuncPinDefinition, pickKeys> {
 	funcIdFull: string; // == parent.funcBaseId.toUpperCase() + '_' + this.funcId.toUpperCase()
 	funcIdGen: string; // == parent.funcBaseId.toUpperCase() + '_' + this.funcId.toUpperCase()
 }
 
-/**
- * 功能定义
- */
-export interface IFunc extends IFuncDefinition {
-	ios: IFuncPin[];
+export interface IChipInterface<T extends FunctionLabelMap> {
+	id: string;
+	title: string;
+	functions: Partial<Record<keyof T, string>>;
+}
+
+export interface IChipInterfaceClass<T extends FunctionLabelMap> {
+	id: string;
+	title: string;
+	devices: (IChipInterface<T> | IChipInterfaceClass<T>)[];
+}
+
+export interface FunctionLabelMap {
+	[funcConstDefine: string]: /* comment (function title)*/ string;
 }
 
 /**
  * 功能引脚定义
  */
-export interface IChipPackagingDefinition {
+export interface IChipPackagingDefinition<T extends FunctionLabelMap> {
 	name: string;
 	geometry: IChipGeometry;
-	usableFunctions: IFuncDefinition[];
 	generator: IChipGeneratorConfig; // TODO
+	interfaceList: (IChipInterface<T> | IChipInterfaceClass<T>)[];
 }
 
 /**
  * 实际起作用的芯片定义
  */
-export interface IChipPackagingCalculated extends IChipPackagingDefinition {
+export interface IChipPackagingCalculated extends IChipPackagingDefinition<FunctionLabelMap> {
 	pinCount: number;
 	ROW: BaseAny;
-	usableFunctions: IFunc[];
 }

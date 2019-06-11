@@ -1,9 +1,6 @@
 import { IFpioaService } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
 import { URI } from 'vs/base/common/uri';
-import { IEditorOptions } from 'vs/platform/editor/common/editor';
-import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { IEditor } from 'vs/workbench/common/editor';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IBeforeBuildEvent, IMakefileService } from 'vs/kendryte/vs/services/makefileService/common/type';
@@ -12,12 +9,13 @@ import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { FPIOA_FILE_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
-import { FpioaEditorInput } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaEditorInput';
 import { FpioaModel } from 'vs/kendryte/vs/workbench/fpioaConfig/common/fpioaModel';
 import { getChipPackaging } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingRegistry';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { wrapHeaderFile } from 'vs/kendryte/vs/base/common/cpp/wrapHeaderFile';
 import { CMakeProjectTypes } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { ICustomJsonEditorService } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
+import { IFPIOAMapData } from 'vs/kendryte/vs/base/common/jsonSchemas/deviceManagerSchema';
 
 export class FpioaService implements IFpioaService {
 	public _serviceBrand: any;
@@ -27,9 +25,10 @@ export class FpioaService implements IFpioaService {
 	constructor(
 		@IMakefileService makefileService: IMakefileService,
 		@IChannelLogService channelLogService: IChannelLogService,
-		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@IEditorService private readonly editorService: IEditorService,
+		@IInstantiationService instantiationService: IInstantiationService,
+		@IEditorService editorService: IEditorService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
+		@ICustomJsonEditorService private readonly customJsonEditorService: ICustomJsonEditorService,
 	) {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 		makefileService.onPrepareBuild((event) => event.waitUntil(this.runIfExists(event)));
@@ -49,7 +48,10 @@ export class FpioaService implements IFpioaService {
 			}
 			const configFile = resolvePath(project.path, PROJECT_CONFIG_FOLDER_NAME, FPIOA_FILE_NAME);
 			if (await exists(configFile)) {
-				const model = await this.createModel(URI.file(configFile));
+				const model = this.customJsonEditorService.createJsonModel<IFPIOAMapData, FpioaModel>(URI.file(configFile), FpioaModel);
+				if (!model) {
+					throw new Error('Cannot create model for file: ' + configFile);
+				}
 				const sections = this.generate(model);
 				if (sections.length !== 0) {
 					allSections.push(...sections);
@@ -81,17 +83,6 @@ export class FpioaService implements IFpioaService {
 				resolvePath(mainProject.path, PROJECT_CONFIG_FOLDER_NAME, 'fpioa-config.c'),
 			);
 		}
-	}
-
-	async openEditor(resource: URI, options?: IEditorOptions, group?: IEditorGroup): Promise<IEditor | null> {
-		const input = this.instantiationService.createInstance(FpioaEditorInput, resource);
-		return this.editorService.openEditor(input, options, group);
-	}
-
-	async createModel(resource: URI) {
-		const model = this.instantiationService.createInstance(FpioaModel, resource);
-		await model.load();
-		return model;
 	}
 
 	private generate(model: FpioaModel): string[] {

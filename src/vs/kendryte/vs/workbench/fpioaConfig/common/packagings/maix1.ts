@@ -1,6 +1,9 @@
-import { BGA_IO_GEOMETRY, PinBuilder } from 'vs/kendryte/vs/workbench/fpioaConfig/common/builder';
 import { registryChipPackaging } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingRegistry';
-import { IChipPackagingDefinition, IFuncDefinition } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingTypes';
+import { IChipPackagingDefinition } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingTypes';
+import { DefaultChipName } from 'vs/kendryte/vs/base/common/jsonSchemas/deviceManagerSchema';
+import { Maix1 } from './maix1.functions';
+import { localize } from 'vs/nls';
+import { BGA_IO_GEOMETRY } from 'vs/kendryte/vs/workbench/fpioaConfig/common/bga';
 
 const graph = `
 	!  1  2  3  4  5  6  7  8  9  10 11 12
@@ -19,147 +22,71 @@ const graph = `
 	M| -- -- -- -- -- -- -- -- -- -- -- --
 `;
 
-const Maix1BGAPackageDefine: IChipPackagingDefinition = {
-	name: 'Kendryte K210',
+const Maix1BGAPackageDefine: IChipPackagingDefinition<typeof Maix1.FunctionList> = {
+	name: DefaultChipName,
 	geometry: BGA_IO_GEOMETRY(graph),
 	generator: {
 		funcNamePrefix: 'FUNC_',
 		setterFuncName: 'fpioa_set_function',
 		libraryName: 'fpioa',
 	},
-	usableFunctions: [
+	interfaceList: [
 		{
-			funcBaseId: 'jtag', description: 'JTAG Test',
-			ios: [
-				{ funcId: 'tclk', funcNumber: 0, description: 'Clock' },
-				{ funcId: 'TDI', funcNumber: 1, description: 'Data In' },
-				{ funcId: 'TMS', funcNumber: 2, description: 'Mode Select' },
-				{ funcId: 'TDO', funcNumber: 3, description: 'Data Out' },
-			],
-		},
-		PinBuilder.spi(0, 4),
-		PinBuilder.uart('hs', 'High speed', 18),
-		{
-			funcBaseId: 'clk', description: 'Clock',
-			ios: [
-				{ funcId: 'in1', funcNumber: 20, description: 'Input 1' },
-				{ funcId: 'in2', funcNumber: 21, description: 'Input 2' },
-				{ funcId: 'spi1', funcNumber: 22, description: 'SPI1' },
-				{ funcId: 'i2c1', funcNumber: 23, description: 'I2C1' },
-				{ funcId: 'spi2', funcNumber: 202, description: 'SPI2' },
-				{ funcId: 'i2c2', funcNumber: 203, description: 'I2C2' },
+			id: 'spi', title: localize('spi', 'SPI'), devices: [
+				{ id: 'spi0', title: localize('spi0', 'SPI 0'), functions: Maix1.SPI0 },
+				{ id: 'spi1', title: localize('spi1', 'SPI 1'), functions: Maix1.SPI1 },
+				{ id: 'spiSlave', title: localize('spiSlave', 'SPI slave'), functions: Maix1.SPISLAVE },
 			],
 		},
 		{
-			funcBaseId: 'gpio', description: 'GPIO',
-			ios: [
-				...PinBuilder.gpio(32, 24, 'hs', 'High speed'),
-				...PinBuilder.gpio(8, 56, '', 'Pin'),
-			],
-		},
-		PinBuilder.spi(1, 70),
-		PinBuilder.i2s(0, 87, 4, 4),
-		PinBuilder.i2s(1, 98, 4, 4),
-		PinBuilder.i2s(2, 109, 4, 4),
-		{
-			funcBaseId: 'resv', description: 'Reserved',
-			ios: [
-				...PinBuilder.dataPin(6, 120, '', 'function'),
-			],
-		},
-		PinBuilder.i2c(0, 126),
-		PinBuilder.i2c(1, 128),
-		PinBuilder.i2c(2, 130),
-		CMOS(132),
-		{
-			funcBaseId: 'sccb', description: 'SCCB',
-			ios: [
-				{ funcId: 'sclk', funcNumber: 146, description: 'Serial Clock' },
-				{ funcId: 'sda', funcNumber: 147, description: 'Serial Data' },
-			],
-		},
-		uartWithControl(1, 64, 148),
-		uartWithControl(2, 66, 162),
-		uartWithControl(3, 66, 176),
-		{
-			funcBaseId: 'sccb', description: 'SCCB',
-			ios: [
-				{ funcId: 'sclk', funcNumber: 146, description: 'Serial Clock' },
-				{ funcId: 'sda', funcNumber: 147, description: 'Serial Data' },
-			],
-		},
-		timer(0, 190),
-		timer(1, 194),
-		timer(2, 198),
-		{
-			funcBaseId: 'jam', description: 'JamLink',
-			ios: [
-				{ funcId: 'co', funcNumber: 204, description: 'Control Output' },
-				...PinBuilder.dataPin(8, 205, 'do', 'Data Output'),
-				...PinBuilder.dataPin(4, 213, 'di', 'Data Input'),
-				{ funcId: 'di4', funcNumber: 219, description: 'Control Input 4' },
-				{ funcId: 'di5', funcNumber: 220, description: 'Control Input 5' },
-				{ funcId: 'di6', funcNumber: 221, description: 'Control Input 6' },
-				{ funcId: 'di7', funcNumber: 223, description: 'Control Input 7' },
-			],
-		},
-		PinBuilder.i2c('2axi', 217),
-		{
-			funcBaseId: 'constant', description: 'Constant',
-			ios: [
-				{ funcId: '', funcNumber: 222, description: 'function' },
+			id: 'gpio', title: localize('gpio', 'GPIO'), devices: [
+				{ id: 'gpio', title: localize('gpio', 'GPIO'), functions: Maix1.GPIO },
+				{ id: 'highspeedGpio', title: localize('highspeedGpio', 'High speed GPIO'), functions: Maix1.GPIOHS },
 			],
 		},
 		{
-			funcBaseId: 'debug', description: 'Debug',
-			ios: [
-				...PinBuilder.dataPin(32, 224, '', 'function'),
+			id: 'uart', title: localize('uart', 'UART'), devices: [
+				{ id: 'uart1', title: localize('uart1', 'UART'), functions: Maix1.UART1 },
+				{ id: 'uart2', title: localize('uart2', 'UART'), functions: Maix1.UART2 },
+				{ id: 'uart3', title: localize('uart3', 'UART'), functions: Maix1.UART3 },
+				{ id: 'highspeedUart', title: localize('highspeedUart', 'High speed UART'), functions: Maix1.UARTHS },
+			],
+		},
+		{
+			id: 'i2s', title: localize('i2s', 'I2S'), devices: [
+				{ id: 'i2s0', title: localize('i2s0', 'I2S 0'), functions: Maix1.I2S0 },
+				{ id: 'i2s1', title: localize('i2s1', 'I2S 1'), functions: Maix1.I2S1 },
+				{ id: 'i2s2', title: localize('i2s2', 'I2S 2'), functions: Maix1.I2S2 },
+			],
+		},
+		{
+			id: 'i2c', title: localize('i2c', 'I2C'), devices: [
+				{ id: 'i2c0', title: localize('i2c0', 'I2C 0'), functions: Maix1.I2C0 },
+				{ id: 'i2c1', title: localize('i2c1', 'I2C 1'), functions: Maix1.I2C1 },
+				{ id: 'i2c2', title: localize('i2c2', 'I2C 2'), functions: Maix1.I2C2 },
+			],
+		},
+		{
+			id: 'camera', title: localize('camera', 'Camera interface'), devices: [
+				{ id: 'dvp', title: localize('dvp', 'DVP'), functions: Maix1.DVP },
+				{ id: 'sccb', title: localize('sccb', 'SCCB'), functions: Maix1.SCCB },
+			],
+		},
+		{
+			id: 'timer', title: localize('timer', 'Timer output'), devices: [
+				{ id: 'timer0', title: localize('timer0', 'Timer 0'), functions: Maix1.TMR0 },
+				{ id: 'timer1', title: localize('timer1', 'Timer 1'), functions: Maix1.TMR1 },
+				{ id: 'timer2', title: localize('timer2', 'Timer 2'), functions: Maix1.TMR2 },
+			],
+		},
+		{
+			id: 'others', title: localize('others', 'Others'), devices: [
+				{ id: 'jtag', title: localize('jtag', 'JTag'), functions: Maix1.JTAG },
+				{ id: 'misc', title: localize('misc', 'Misc'), functions: Maix1.MISC },
+				{ id: 'timer', title: localize('timer', 'PLL Output'), functions: Maix1.PLL },
 			],
 		},
 	],
 };
-
-function CMOS(base: number): IFuncDefinition {
-	return {
-		funcBaseId: 'cmos', description: 'DVP',
-		ios: [
-			{ funcId: 'xclk', funcNumber: base, description: 'System Clock' },
-			{ funcId: 'rst', funcNumber: base + 1, description: 'System Reset' },
-			{ funcId: 'pwnd', funcNumber: base + 2, description: 'Power Down Mode' },
-			{ funcId: 'vsync', funcNumber: base + 3, description: 'Vertical Sync' },
-			{ funcId: 'href', funcNumber: base + 4, description: 'Horizontal Reference output' },
-			{ funcId: 'pclk', funcNumber: base + 5, description: 'Pixel Clock' },
-			...PinBuilder.dataPin(8, base + 6, 'd', 'Data Bit'),
-		],
-	};
-}
-
-function uartWithControl(id: number, uartBase: number, controlBase: number): IFuncDefinition {
-	const uart = PinBuilder.uart(id.toString(), id.toString(), uartBase);
-
-	uart.ios.push({ funcId: 'cts', funcNumber: controlBase++, description: 'Clear To Send' });
-	uart.ios.push({ funcId: 'dsr', funcNumber: controlBase++, description: 'Data Set Ready' });
-	uart.ios.push({ funcId: 'dcd', funcNumber: controlBase++, description: 'Data Carrier Detect' });
-	uart.ios.push({ funcId: 'ri', funcNumber: controlBase++, description: 'Ring Indicator' });
-	uart.ios.push({ funcId: 'sir_in', funcNumber: controlBase++, description: 'Serial Infrared Input' });
-	uart.ios.push({ funcId: 'dtr', funcNumber: controlBase++, description: 'Data Terminal Ready' });
-	uart.ios.push({ funcId: 'rts', funcNumber: controlBase++, description: 'Request To Send' });
-	uart.ios.push({ funcId: 'out2', funcNumber: controlBase++, description: 'User-designated Output 2' });
-	uart.ios.push({ funcId: 'out1', funcNumber: controlBase++, description: 'User-designated Output 1' });
-	uart.ios.push({ funcId: 'sir_out', funcNumber: controlBase++, description: 'Serial Infrared Output' });
-	uart.ios.push({ funcId: 'baud', funcNumber: controlBase++, description: 'Transmit Clock Output' });
-	uart.ios.push({ funcId: 're', funcNumber: controlBase++, description: 'Receiver Output Enable' });
-	uart.ios.push({ funcId: 'de', funcNumber: controlBase++, description: 'Driver Output Enable' });
-	uart.ios.push({ funcId: 'rs485_en', funcNumber: controlBase++, description: 'RS485 Enable' });
-
-	return uart;
-}
-
-function timer(id: number, base: number): IFuncDefinition {
-	return {
-		funcBaseId: `timer${id}`, description: `TIMER${id}`,
-		ios: PinBuilder.dataPin(4, base, 'TOGGLE', 'Toggle Output', 1),
-	};
-}
 
 registryChipPackaging(Maix1BGAPackageDefine);

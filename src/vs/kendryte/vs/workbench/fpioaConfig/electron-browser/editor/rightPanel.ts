@@ -1,7 +1,6 @@
 import { IView } from 'vs/base/browser/ui/splitview/splitview';
-import { Disposable, dispose, IDisposable } from 'vs/base/common/lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
 import { Emitter, Event } from 'vs/base/common/event';
-import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { $, addClasses, append } from 'vs/base/browser/dom';
 import { attachStyler, IThemable } from 'vs/platform/theme/common/styler';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
@@ -9,12 +8,10 @@ import { editorWidgetBackground, editorWidgetBorder } from 'vs/platform/theme/co
 import { getChipPackaging } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingRegistry';
 import { chipRenderFactory } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/right/factory';
 import { AbstractTableRender } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/right/abstract';
-import { ContextMenuData, IFuncPinMap, PinFuncSetEvent } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
-import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
+import { PinFuncSetEvent } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
 import { IMenuService } from 'vs/platform/actions/common/actions';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
-import { Separator } from 'vs/base/browser/ui/actionbar/actionbar';
-import { ContextSubMenuSelector } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/contextMenu';
+import { IFPIOAFuncPinMap } from 'vs/kendryte/vs/base/common/jsonSchemas/deviceManagerSchema';
 
 export class FpioaRightPanel extends Disposable implements IView, IThemable {
 	element: HTMLElement;
@@ -28,16 +25,12 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 	readonly onSetPinFunc: Event<PinFuncSetEvent> = this._onSetPinFunc.event;
 
 	private table: AbstractTableRender<any>;
-	private $table: HTMLElement;
-	private contextEvent: IDisposable;
-	private funcSetActions: ContextSubMenuSelector;
+	private readonly $table: HTMLElement;
 
 	constructor(
-		@IInstantiationService protected instantiationService: IInstantiationService,
-		@IContextMenuService protected contextMenuService: IContextMenuService,
-		@IThemeService protected themeService: IThemeService,
 		@IMenuService menuService: IMenuService,
 		@IContextKeyService contextKeyService: IContextKeyService,
+		@IThemeService private readonly themeService: IThemeService,
 	) {
 		super();
 		this.element = $('div');
@@ -59,12 +52,12 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 	public layout(): void {
 		if (this.table) {
 			const { clientWidth: width, clientHeight: height } = this.element;
-			const min = Math.min(width, height);
+			const min = Math.min(width - 20, height);
 			this.table.layout(min);
 		}
 	}
 
-	fillTable(currentFuncMap: IFuncPinMap) {
+	fillTable(currentFuncMap: Readonly<IFPIOAFuncPinMap>) {
 		this.table.setFuncMap(currentFuncMap);
 	}
 
@@ -90,17 +83,6 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 			return;
 		}
 		this.table = chipRenderFactory(chip, this.themeService);
-		this.funcSetActions = this.instantiationService.createInstance(ContextSubMenuSelector, chipName);
-
-		this.contextEvent = this.table.onContextMenu((data: ContextMenuData) => {
-			this.funcSetActions.select(data.currentFunctionId);
-
-			this.contextMenuService.showContextMenu({
-				getAnchor: () => data.pointer,
-				getActions: () => [this.funcSetActions, new Separator],
-				getActionsContext: () => [data, this._onSetPinFunc.fire.bind(this._onSetPinFunc)],
-			});
-		});
 
 		this.$table.innerHTML = '';
 		this.table.render(this.$table);
@@ -110,9 +92,7 @@ export class FpioaRightPanel extends Disposable implements IView, IThemable {
 
 	private disposeTable() {
 		if (this.table) {
-			dispose(this.contextEvent, this.table);
 			delete this.table;
-			delete this.funcSetActions;
 		}
 	}
 

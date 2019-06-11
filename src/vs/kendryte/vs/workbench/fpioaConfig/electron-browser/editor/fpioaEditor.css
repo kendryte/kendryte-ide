@@ -1,7 +1,4 @@
-.fpioa-editor {
-
-}
-
+.fpioa-editor .split-view-view,
 .fpioa-editor .full-height-panel {
 	height: 100%;
 }
@@ -14,7 +11,7 @@
 
 .fpioa-editor .chip-select > h3 {
 	padding: 0;
-	margin: 0 0 6px 0;
+	margin: 8px 0;
 	line-height: 1em;
 }
 
@@ -38,64 +35,57 @@
 
 .fpioa-editor .leftPanel .funcMapListItem {
 	box-sizing: border-box;
-	padding: 5px 10px;
-}
-
-.fpioa-editor .leftPanel .funcMapListItem > .header {
+	padding: 0 20px 0 0;
 	display: flex;
 	flex-direction: row;
-	margin-bottom: 4px;
 }
 
-.fpioa-editor .leftPanel .funcMapListItem > .header > .id {
+.fpioa-editor .leftPanel .funcMapListItem > .id {
+	flex-grow: 1;
 	font-weight: bold;
 	font-size: 12px;
 	min-width: 18%;
 }
 
-.fpioa-editor .leftPanel .funcMapListItem > .header > .select {
-	flex-grow: 1;
+.fpioa-editor .leftPanel .funcMapListItem > .select {
+	min-width: 5em;
+	line-height: 1.3em;
+	flex-direction: column;
+	justify-content: center;
+	display: flex;
 }
 
-.fpioa-editor .leftPanel .funcMapListItem > .desc {
-	font-size: 12px;
-	line-height: 13px;
+.fpioa-editor .leftPanel .funcMapListItem > .select input.input {
+	height: 1.3em;
 }
 
 .fpioa-editor .rightPanel {
 	display: flex;
-	flex-direction: row;
+	flex-direction: column;
 	justify-content: center;
 }
 
+.fpioa-editor .rightPanel .table {
+	padding: 0 10px;
+	text-align: center;
+}
+
 .fpioa-editor .rightPanel table {
-	text-align: left;
 	border: none;
 	border-spacing: 0;
 	margin: 0;
 	padding: 0;
 	border-collapse: collapse;
+	width: 100%;
 }
 
 .fpioa-editor .rightPanel td {
 	overflow: hidden;
-	vertical-align: top;
+	vertical-align: middle;
+	text-align: center;
 	border-spacing: 0;
 	border: none;
-}
-
-.fpioa-editor .rightPanel td > h3 {
-	margin: 3px;
-	text-align: left;
-}
-
-.fpioa-editor .rightPanel td > .functions {
-	padding: 3px;
-}
-
-.fpioa-editor .rightPanel td > .functions > div {
-	display: inline-block;
-	border-radius: 5px;
+	word-break: break-all;
 }
 
 .fpioa-editor .rightPanel th.left,
@@ -131,4 +121,7 @@
 
 .fpioa-editor .rightPanel td.row-odd {
 	background: rgba(0, 0, 0, 0.10);
+}
+
+.fpioa-editor .rightPanel td .label {
 }

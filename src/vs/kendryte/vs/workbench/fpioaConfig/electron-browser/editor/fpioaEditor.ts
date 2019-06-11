@@ -1,56 +1,63 @@
 import 'vs/css!vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/fpioaEditor';
-import { BaseEditor } from 'vs/workbench/browser/parts/editor/baseEditor';
 import { addClass, Dimension } from 'vs/base/browser/dom';
 import { FpioaEditorInput } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaEditorInput';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { EditorOptions } from 'vs/workbench/common/editor';
 import { FpioaModel } from 'vs/kendryte/vs/workbench/fpioaConfig/common/fpioaModel';
 import { Orientation } from 'vs/base/browser/ui/sash/sash';
 import { FpioaLeftPanel } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/leftPanel';
 import { FpioaRightPanel } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/rightPanel';
 import { SplitView } from 'vs/base/browser/ui/splitview/splitview';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { dispose, IDisposable } from 'vs/base/common/lifecycle';
-import { ICommandService } from 'vs/platform/commands/common/commands';
-import { SAVE_FILE_COMMAND_ID } from 'vs/workbench/contrib/files/browser/fileCommands';
-import { CancellationToken } from 'vs/base/common/cancellation';
-import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
+import { IEditorGroup, IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IStorageService } from 'vs/platform/storage/common/storage';
+import { AbstractJsonEditor } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditor';
+import { IFpioaInputState } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
+import { EditorId } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/type';
+import { ITextResourceConfigurationService } from 'vs/editor/common/services/resourceConfiguration';
+import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
+import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
+import { IWindowService } from 'vs/platform/windows/common/windows';
+import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
+import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
+import { IFPIOAMapData } from 'vs/kendryte/vs/base/common/jsonSchemas/deviceManagerSchema';
 
-export class FpioaEditor extends BaseEditor {
-	public static readonly ID: string = 'workbench.editor.fpioaEditor';
+export class FpioaEditor extends AbstractJsonEditor<IFPIOAMapData, IFpioaInputState> {
 	input: FpioaEditorInput;
 
 	private splitViewMain: SplitView;
 	private leftPan: FpioaLeftPanel;
 	private rightPan: FpioaRightPanel;
 
-	private inputDispose: IDisposable[] = [];
-
 	constructor(
+		id: EditorId,
 		@ITelemetryService telemetryService: ITelemetryService,
-		@IThemeService themeService: IThemeService,
-		@INotificationService private notifyService: INotificationService,
-		@IInstantiationService private instantiationService: IInstantiationService,
-		@ICommandService commandService: ICommandService,
 		@IStorageService storageService: IStorageService,
+		@ITextResourceConfigurationService configurationService: ITextResourceConfigurationService,
+		@IThemeService themeService: IThemeService,
+		@ITextFileService textFileService: ITextFileService,
+		@IEditorService editorService: IEditorService,
+		@IEditorGroupsService editorGroupService: IEditorGroupsService,
+		@IWindowService windowService: IWindowService,
+		@IContextKeyService contextKeyService: IContextKeyService,
+		@INotificationService notificationService: INotificationService,
+		@ICustomJsonEditorService customJsonEditorService: ICustomJsonEditorService,
+		@IInstantiationService instantiationService: IInstantiationService,
+		@INotificationService private readonly notifyService: INotificationService,
 	) {
-		super(FpioaEditor.ID, telemetryService, themeService, storageService);
-
-		this._register(commandService.onWillExecuteCommand(({ commandId }) => this.saveCommandHandler(commandId)));
+		super(id, telemetryService, instantiationService, storageService, configurationService, themeService, textFileService, editorService, editorGroupService, windowService, contextKeyService, notificationService, customJsonEditorService);
 	}
 
-	protected createEditor(parent: HTMLElement): void {
+	protected _createEditor(parent: HTMLElement): void {
 		addClass(parent, 'fpioa-editor');
 
 		const leftPan = this.leftPan = this._register(this.instantiationService.createInstance(FpioaLeftPanel));
 		const rightPan = this.rightPan = this._register(this.instantiationService.createInstance(FpioaRightPanel));
 
 		const splitViewMain = this.splitViewMain = this._register(new SplitView(parent, { orientation: Orientation.HORIZONTAL }));
-		splitViewMain.addView(leftPan, 300);
-		splitViewMain.addView(rightPan, 300);
+		splitViewMain.addView(leftPan, 600);
+		splitViewMain.addView(rightPan, 200);
 
 		this._register(leftPan.onChipChange((newChip) => {
 			if (newChip) {
@@ -71,35 +78,38 @@ export class FpioaEditor extends BaseEditor {
 		}));
 	}
 
-	public async setInput(input: FpioaEditorInput, options: EditorOptions, token: CancellationToken): Promise<void> {
-		if (this.inputDispose.length) {
-			dispose(this.inputDispose);
-			this.inputDispose.length = 0;
+	protected async updateModel(model?: IJsonEditorModel<IFPIOAMapData>) {
+		if (model) {
+			this._registerInput(this.input.onDidChange((needRefresh) => this._syncModel(needRefresh)));
+			this._syncModel(true);
 		}
-
-		super.setInput(input, options, token);
-
-		this.inputDispose.push(this.input.onDidChange(() => this.updateModel()));
-
-		await input.resolve();
-
-		this.updateModel();
 	}
 
-	public layout(dimension: Dimension): void {
+	public _layout(dimension: Dimension): void {
 		if (this.splitViewMain) {
 			this.splitViewMain.layout(dimension.width);
+			this.rightPan.element.style.height = dimension.height + 'px';
+			this.leftPan.element.style.height = dimension.height + 'px';
 		}
 	}
 
-	private updateModel() {
+	protected wakeup(state: Partial<IFpioaInputState>): void {
+		return;
+	}
+
+	protected sleep(): Partial<IFpioaInputState> {
+		return {};
+	}
+
+	private _syncModel(needRefresh: boolean) {
 		const model: FpioaModel = this.input.model;
 		this.applyChip(model.currentChip);
 		if (model.isChipSelected) {
 			console.log('fill GUI with function map:', model.currentFuncMap);
-			this.leftPan.updateList(model.currentFuncMap);
+			this.leftPan.updateList(model.currentFuncMap, needRefresh);
 			this.rightPan.fillTable(model.currentFuncMap);
 		}
+		this.layout();
 	}
 
 	private applyChip(chipName: string | undefined) {
@@ -109,12 +119,5 @@ export class FpioaEditor extends BaseEditor {
 
 	protected setEditorVisible(visible: boolean, group: IEditorGroup): void {
 		super.setEditorVisible(visible, group);
-	}
-
-	private saveCommandHandler(commandId: string) {
-		if (commandId === SAVE_FILE_COMMAND_ID && this.isVisible()) {
-			console.log('save when saveMe');
-			this.input.save().then(undefined, err => this.notifyService.error(err));
-		}
 	}
 }

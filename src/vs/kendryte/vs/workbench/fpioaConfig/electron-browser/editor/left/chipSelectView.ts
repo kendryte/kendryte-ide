@@ -1,5 +1,4 @@
-import { IListRenderer } from 'vs/base/browser/ui/list/list';
-import { IListChipSelectEntry, TEMPLATE_ID } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/left/ids';
+import { IListChipSelectElement, TEMPLATE_ID } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/left/ids';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { ISelectData, ISelectOptionItem, SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
@@ -11,6 +10,7 @@ import { addClass } from 'vs/base/browser/dom';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { localize } from 'vs/nls';
 import { selectBoxFindIndex, selectBoxNames, selectBoxSplitter } from 'vs/kendryte/vs/base/browser/ui/selectBox';
+import { ITreeNode, ITreeRenderer } from 'vs/base/browser/ui/tree/tree';
 
 export interface IChipSelectTemplate {
 	parent: HTMLElement;
@@ -18,7 +18,7 @@ export interface IChipSelectTemplate {
 	toDispose: IDisposable[];
 }
 
-export class ChipSelectRenderer implements IListRenderer<IListChipSelectEntry, IChipSelectTemplate> {
+export class ChipSelectRenderer implements ITreeRenderer<IListChipSelectElement, void, IChipSelectTemplate> {
 	private readonly names: ISelectOptionItem[];
 
 	private readonly _onDidChange = new Emitter<string | undefined>();
@@ -58,8 +58,8 @@ export class ChipSelectRenderer implements IListRenderer<IListChipSelectEntry, I
 		};
 	}
 
-	renderElement(element: IListChipSelectEntry, index: number, template: IChipSelectTemplate): void {
-		this.lastSelect = selectBoxFindIndex(this.names, element.selected);
+	renderElement(element: ITreeNode<IListChipSelectElement>, index: number, template: IChipSelectTemplate, dynamicHeightProbing?: boolean | undefined): void {
+		this.lastSelect = selectBoxFindIndex(this.names, element.element.selected);
 		if (this.lastSelect === -1) {
 			this.lastSelect = 0;
 		}
@@ -68,8 +68,7 @@ export class ChipSelectRenderer implements IListRenderer<IListChipSelectEntry, I
 		this.firing = false;
 	}
 
-	public disposeElement(element: IListChipSelectEntry, index: number, templateData: any): void {
-		// noop?
+	public disposeElement(element: ITreeNode<IListChipSelectElement>, index: number, templateData: any): void {
 	}
 
 	disposeTemplate(template: IChipSelectTemplate): void {

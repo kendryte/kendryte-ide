@@ -30,6 +30,12 @@
 		}
 	}
 	
+	> .select {
+		select {
+			border: none;
+		}
+	}
+	
 	&.has-select {
 		> .select {
 			position: absolute;

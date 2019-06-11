@@ -1,8 +1,7 @@
 import { $, addClass, addDisposableListener, append } from 'vs/base/browser/dom';
-import { CountBadge } from 'vs/base/browser/ui/countBadge/countBadge';
 import { Color } from 'vs/base/common/color';
 import { IPin2DNumber } from 'vs/kendryte/vs/workbench/fpioaConfig/common/packagingTypes';
-import { ColorMap, ContextMenuData, ID_NO_FUNCTION } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
+import { ColorMap, ContextMenuData } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { Emitter } from 'vs/base/common/event';
 import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
@@ -14,11 +13,11 @@ export interface ICellStyle extends ColorMap {
 }
 
 export class CellRender extends Disposable {
-	private $h3: HTMLElement;
-	private $fnContainer: HTMLElement;
-	private functionBadge: CountBadge;
-	private _funcId: string | null = ID_NO_FUNCTION;
-	private _pinName: string;
+	private $label: HTMLElement;
+
+	private _pinLocation: string;
+	private _ioName?: string;
+	private _funcLabel?: string;
 
 	private readonly _onContextMenu = new Emitter<ContextMenuData>();
 	public readonly onContextMenu = this._onContextMenu.event;
@@ -28,79 +27,53 @@ export class CellRender extends Disposable {
 		$cell.setAttribute('x', pin.x.toString());
 		$cell.setAttribute('y', pin.y.toString());
 		addClass($cell, 'IO');
-		this.$h3 = append($cell, $('h3'));
-		this.$fnContainer = append($cell, $('div.functions'));
+		this.$label = append($cell, $('div.label'));
 
 		this._register(addDisposableListener(this.$cell, 'contextmenu', (event: MouseEvent) => {
 
 			const mouseEvent = new StandardMouseEvent(event);
 
 			this._onContextMenu.fire({
-				pinName: this.pinName,
+				pinName: this._pinLocation,
 				pointer: { x: mouseEvent.posx, y: mouseEvent.posy },
-				currentFunctionId: this._funcId,
 			});
 		}));
 	}
 
-	get pinName() {
-		return this._pinName;
+	style(color: ColorMap) {
+		// is this needed?
 	}
 
-	assignPinName(v: string) {
-		if (this._pinName) {
-			throw new TypeError('re-assign pin name');
-		}
-		this._pinName = v;
+	getPinLocation() {
+		return this._pinLocation;
 	}
 
-	set title(value: string) {
-		this.$h3.innerText = value;
+	getIoName() {
+		return this._ioName;
 	}
 
-	get title() {
-		return this.$h3.innerText;
+	setPinInformation(location: string, ioName: string | number | undefined) {
+		this._pinLocation = location;
+		this._ioName = '' + ioName;
+		this._updateDisplay();
 	}
 
-	assignFunctionId(funcId: string | null) {
-		if (!funcId) {
-			funcId = ID_NO_FUNCTION;
-		}
-		if (this._funcId === funcId) {
-			return;
-		}
-		this._funcId = funcId;
-		this.$fnContainer.title = funcId ? funcId : '';
-		if (funcId) {
-			if (this.functionBadge) {
-				this.functionBadge.setCountFormat(funcId);
-			} else {
-				this.functionBadge = new CountBadge(this.$fnContainer, { countFormat: funcId });
-			}
-		} else {
-			this.clean();
-		}
+	getFunction() {
+		return this._funcLabel;
 	}
 
-	get functionId() {
-		return this._funcId;
+	setFunction(label?: string) {
+		this._funcLabel = label;
+		this._updateDisplay();
 	}
 
-	style(colors: ICellStyle) {
-		if (this.functionBadge) {
-			this.functionBadge.style({
-				badgeBackground: colors.funcBackground,
-				badgeForeground: colors.funcForeground,
-				badgeBorder: colors.funcBorder,
-			});
-		}
-	}
-
-	clean() {
-		this._funcId = ID_NO_FUNCTION;
-		if (this.functionBadge) {
-			this.$fnContainer.innerHTML = '';
-			delete this.functionBadge;
+	private _updateDisplay() {
+		if (this._funcLabel) {
+			this.$label.innerText = this._funcLabel;
+			this.$cell.title = `${this._funcLabel}\nIO: ${this._ioName} (${this._pinLocation})`;
+		} else if (this._ioName) {
+			this.$label.innerText = this._ioName;
+			this.$cell.title = `${this._ioName}\n${this._pinLocation}`;
 		}
 	}
 }

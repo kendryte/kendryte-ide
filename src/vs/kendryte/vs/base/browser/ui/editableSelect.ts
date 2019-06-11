@@ -3,7 +3,7 @@ import { Widget } from 'vs/base/browser/ui/widget';
 import { ISelectOptionItem, SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
 import { InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
-import { $, addDisposableListener, append } from 'vs/base/browser/dom';
+import { $, addDisposableListener, append, trackFocus } from 'vs/base/browser/dom';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { Emitter, Event } from 'vs/base/common/event';
 import { attachStyler, IInputBoxStyleOverrides, ISelectBoxStyleOverrides, IThemable } from 'vs/platform/theme/common/styler';
@@ -98,6 +98,7 @@ export class EditableSelectBox extends Widget implements IThemable {
 	private readonly fireOnDidChange: (event: string) => void;
 	public readonly onDidChange: Event<string>;
 	private firing: FireProtect = new FireProtect;
+	private needFireChange: boolean = false;
 	private styleCache: { [p: string]: Color };
 
 	constructor(
@@ -110,11 +111,15 @@ export class EditableSelectBox extends Widget implements IThemable {
 		this.$input = append(this.$container, $('.input'));
 		this.$select = append(this.$container, $('.select'));
 
-		this._register(addDisposableListener(parentElement, 'focus', () => {
-			parentElement.classList.add('synthetic-focus');
+		const focusTracker = this._register(trackFocus(this.$container));
+		this._register(focusTracker.onDidFocus(() => {
+			this.$container.classList.add('synthetic-focus');
 		}));
-		this._register(addDisposableListener(parentElement, 'blur', () => {
-			parentElement.classList.remove('synthetic-focus');
+		this._register(focusTracker.onDidBlur(() => {
+			this.$container.classList.remove('synthetic-focus');
+			if (this.needFireChange) {
+				this.fireOnDidChange(this._value);
+			}
 		}));
 
 		this.input = new InputBox(this.$input, this.contextViewService);
@@ -139,8 +144,9 @@ export class EditableSelectBox extends Widget implements IThemable {
 						if (this.select) {
 							this.selectValue();
 						}
-						this.fireOnDidChange(data);
+						// this.fireOnDidChange(data);
 					});
+					this.needFireChange = true;
 				});
 			}
 			this.input.setEnabled(true);
@@ -253,6 +259,12 @@ export class EditableSelectBox extends Widget implements IThemable {
 
 	set value(v: string) {
 		if (this._value === v) {
+			if (v !== undefined && this.input.value !== v) {
+				this.firing.run(() => {
+					console.log('~~~~~~set value');
+					this.input.value = v;
+				});
+			}
 			return;
 		}
 		this._value = v;
@@ -261,6 +273,7 @@ export class EditableSelectBox extends Widget implements IThemable {
 				this.selectValue();
 			}
 			if (v !== undefined) {
+				console.log('~~~~~~set value');
 				this.input.value = v;
 			}
 		});

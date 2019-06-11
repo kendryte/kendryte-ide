@@ -5,8 +5,9 @@ import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { attachStyler, IColorMapping } from 'vs/platform/theme/common/styler';
 import { stringifyPin } from 'vs/kendryte/vs/workbench/fpioaConfig/common/builder';
 import { CellRender } from 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/editor/right/cell';
-import { ColorMap, ContextMenuData, IFuncPinMap, IPinFuncMap } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
+import { ColorMap, ContextMenuData } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
 import { Emitter } from 'vs/base/common/event';
+import { IFPIOAFuncPinMap } from 'vs/kendryte/vs/base/common/jsonSchemas/deviceManagerSchema';
 
 export interface ChipTableCreator {
 	new(chip: IChipPackagingCalculated): AbstractTableRender<any>;
@@ -53,15 +54,17 @@ export abstract class AbstractTableRender<T extends CellRender> extends Disposab
 		this.$table.style.width = size + 'px';
 	}
 
-	setFuncMap(currentFuncMap: IFuncPinMap) {
-		const pinFuncMap: IPinFuncMap = {};
+	setFuncMap(currentFuncMap: Readonly<IFPIOAFuncPinMap>) {
+		const pinFuncMap: IFPIOAFuncPinMap = {};
 		Object.keys(currentFuncMap).forEach((funId) => {
 			const pin = currentFuncMap[funId];
 			pinFuncMap[pin] = funId;
 		});
 		this._cellList.forEach((cell) => {
-			if (pinFuncMap[cell.pinName] !== cell.functionId) {
-				cell.assignFunctionId(pinFuncMap[cell.pinName]);
+			if (pinFuncMap[cell.getPinLocation()]) {
+				cell.setFunction(pinFuncMap[cell.getPinLocation()]);
+			} else {
+				cell.setFunction(pinFuncMap[cell.getPinLocation()]);
 			}
 		});
 	}
@@ -75,7 +78,9 @@ export abstract class AbstractTableRender<T extends CellRender> extends Disposab
 		const itr: Iterator<T> = this.createTableTemplate();
 		for (let v = itr.next(); !v.done; v = itr.next()) {
 			const cell = v.value;
-			cell.assignPinName(stringifyPin(this.chip.ROW, cell.pin));
+
+			const loc = stringifyPin(this.chip.ROW, cell.pin);
+			cell.setPinInformation(loc, this.chip.geometry.IOPinPlacement[loc]);
 
 			this._cellList.set(cell.pin, cell);
 			this._register(cell.onContextMenu((event) => this._onContextMenu.fire(event)));

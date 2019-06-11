@@ -111,7 +111,7 @@ export class SimpleJsonEditorModel<JsonType> extends Disposable implements IJson
 		const [json, warnings] = parseExtendedJson(jsonText);
 		this.markerService.changeOne(this.editorId, this.resource, createSimpleJsonWarningMarkers(warnings));
 
-		this.jsonData = json;
+		this.jsonData = json || {};
 	}
 
 	private changeEventDelay: number;
