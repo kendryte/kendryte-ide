@@ -216,9 +216,9 @@ set_property(TARGET \${PROJECT_NAME} PROPERTY JOB_POOL_LINK single_debug)`;
 	private includeDirs() {
 		let localHeaders = '### from project local\n';
 		const header = packageJsonArray(this.project.json, 'header');
-		if (header) {
+		if (header && header.length) {
 			localHeaders += `include_directories(
-  ${this.spaceArray(this.resolveAll(header))}
+  ${this.spaceArray(header)}
 )`;
 		}
 		const ideHeaders = `### from ide

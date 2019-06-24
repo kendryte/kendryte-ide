@@ -114,6 +114,10 @@ export class MakefileServiceResolve {
 
 		const isWorkspaceProject = isRoot || this._projectNameMap.has(projectJson.name);
 
+		if (!projectJson.name) {
+			throw new Error('Project name is not set');
+		}
+
 		const directDependency: IProjectInfo<any>[] = [];
 		const project: IProjectInfo = {
 			objectName: projectJson.name.replace(/\//, '_'),
@@ -316,7 +320,7 @@ export class MakefileServiceResolve {
 			}
 		}
 
-		ret.sourceFiles = await this.matchSourceCode(project.path, libProject.source);
+		ret.sourceFiles = await this.matchSourceCode(project.path, libProject.source || []);
 
 		return ret;
 	}

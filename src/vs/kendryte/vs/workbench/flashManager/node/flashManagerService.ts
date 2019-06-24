@@ -57,7 +57,7 @@ export class FlashManagerService implements IFlashManagerService {
 
 				await this.runGenerateMemoryMap(model, memory);
 			} else {
-				this.logger.info('[Flash Manager] NOT enabled for %s.', project.json.name);
+				this.logger.info('[Flash Manager] NOT enabled for %s. (config file is %s)', project.json.name, configFile);
 			}
 		}
 	}

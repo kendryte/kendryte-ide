@@ -37,6 +37,7 @@ export class FpioaService implements IFpioaService {
 	async runIfExists(event: IBeforeBuildEvent) {
 		const mainProject = event.projects[0];
 		if (!mainProject) {
+			// this.logger.info('[FPIOA Editor] No main project.');
 			return;
 		}
 
@@ -52,6 +53,7 @@ export class FpioaService implements IFpioaService {
 				if (!model) {
 					throw new Error('Cannot create model for file: ' + configFile);
 				}
+				await model.load();
 				const sections = this.generate(model);
 				if (sections.length !== 0) {
 					allSections.push(...sections);

@@ -17,10 +17,12 @@ import { IEnvironmentService } from 'vs/platform/environment/common/environment'
 import { IRelaunchService } from 'vs/kendryte/vs/platform/vscode/common/relaunchService';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { Extensions as WorkbenchExtensions, IWorkbenchContribution, IWorkbenchContributionsRegistry } from 'vs/workbench/common/contributions';
+import { IFpioaService } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
 
 class KendryteContribution implements IWorkbenchContribution {
 	constructor(
 		@IEnvironmentService environmentService: IEnvironmentService,
+		@IFpioaService fpioaService: IFpioaService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@ILogService private readonly logService: ILogService,
 		@ILifecycleService private readonly lifecycleService: ILifecycleService,

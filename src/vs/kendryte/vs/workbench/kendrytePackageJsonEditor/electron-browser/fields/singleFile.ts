@@ -10,7 +10,9 @@ export class SingleFileFieldControl extends AbstractFieldControl<string> {
 		);
 		this._register(addButton.onDidClick(async () => {
 			const ret = await this.selectFileSystem('file', SelectType.SelectSingle);
-			this.mergeArray(ret);
+			if (ret[0]) {
+				this.updateSimple(ret[0]);
+			}
 		}));
 	}
 }

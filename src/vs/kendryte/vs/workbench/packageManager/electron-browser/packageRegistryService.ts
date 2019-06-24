@@ -310,7 +310,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 				'name': 'unamed_project',
 				'version': '0.0.1',
 				'type': 'executable',
-				'source': ['please set your .c files here', 'see https://github.com/kendryte/kendryte-ide/wiki/URL002'],
+				'source': ['src/main.c'],
 			}, null, 4));
 		}
 		await this.nodeFileSystemService.editJsonFile(currentConfigFile, ['dependency', saveDirName], version || downloadUrl);
