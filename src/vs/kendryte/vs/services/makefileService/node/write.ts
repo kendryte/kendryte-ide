@@ -320,7 +320,7 @@ ${addSource.join('\n')}`;
 				if (!this.project.json.prebuilt) {
 					throw new PathAttachedError(resolvePath(this.project.path, CMAKE_CONFIG_FILE_NAME), missingJsonField('prebuilt'));
 				}
-				ret.push('    ' + CMAKE_CWD + this.localResolve(this.project.json.prebuilt));
+				ret.push('  ' + this.spaceArray([this.project.json.prebuilt]));
 				ret.push(')');
 			}
 		} else {
