@@ -1,4 +1,22 @@
 //// included by "vs/workbench/workbench.main.ts"
+console.warn('start of workbench');
+window.addEventListener('error', (e) => {
+	console.error('window.error', e);
+	debugger;
+});
+process.on('rejectionHandled', (e) => {
+	console.error('rejectionHandled', e);
+	debugger;
+});
+process.on('unhandledRejection', (e) => {
+	console.error('unhandledRejection', e);
+	debugger;
+});
+process.on('uncaughtException', (e) => {
+	console.error('uncaughtException', e);
+	debugger;
+});
+
 // json editors base
 import 'vs/kendryte/vs/workbench/jsonGUIEditor/service/electron-browser/contribution';
 import 'vs/kendryte/vs/workbench/jsonGUIEditor/common/contribution';
@@ -30,9 +48,6 @@ import 'vs/kendryte/vs/services/download/node/nodeRequestService'; // network re
 import 'vs/kendryte/vs/services/download/electron-browser/nodeDownloadService'; // download
 import 'vs/kendryte/vs/services/download/electron-browser/downloadWithProgressService'; // download
 import 'vs/kendryte/vs/platform/vscode/electron-browser/relaunchRenderService';
-// Settings Page Patcher
-// import 'vs/kendryte/vs/workbench/patchSettings2/browser/settingsTreePathcer';
-// import 'vs/kendryte/vs/workbench/patchSettings2/browser/registerTypes';
 // IO Config
 import 'vs/kendryte/vs/workbench/fpioaConfig/electron-browser/fpioaContribution';
 import 'vs/kendryte/vs/workbench/fpioaConfig/common/packagings/includeAllContribution';
@@ -70,8 +85,9 @@ import 'vs/kendryte/vs/platform/sudo/electron-browser/register';
 // updater
 import 'vs/kendryte/vs/code/electron-browser/updater/register';
 // bootstrap
-import 'vs/kendryte/vs/workbench/bootstrap/common/kendryteBootstrap';
+import 'vs/kendryte/vs/workbench/bootstrap/electron-browser/kendryteBootstrap';
 // open actions
 import 'vs/kendryte/vs/platform/open/electron-browser/register';
 // file dialog
 import 'vs/kendryte/vs/platform/fileDialog/common/configContribution';
+

@@ -22,6 +22,7 @@ export class MyStatusBarItem implements IStatusButtonData, IStatusButtonMethod {
 	@get_set() public command: string;
 	@get_set() public tooltip: string;
 	@get_set() public color: string | ThemeColor;
+	@get_set() public backgroundColor: string | ThemeColor;
 	@get_set() public arguments: any[];
 	@get_set() public showBeak: boolean;
 	@get_set() public align: StatusbarAlignment;
@@ -98,6 +99,7 @@ export class MyStatusBarItem implements IStatusButtonData, IStatusButtonMethod {
 				command: this.command,
 				tooltip: this.tooltip,
 				color: this.color,
+				backgroundColor: this.backgroundColor,
 				showBeak: this.showBeak,
 				arguments: this.arguments,
 			}, this.id, this.name, this.align, this.position);
@@ -126,6 +128,7 @@ export class MyStatusBarItem implements IStatusButtonData, IStatusButtonMethod {
 		data.command = this.command;
 		data.tooltip = this.tooltip;
 		data.color = this.color;
+		data.backgroundColor = this.backgroundColor;
 		data.arguments = this.arguments;
 		data.showBeak = this.showBeak;
 		data.align = this.align;
@@ -151,6 +154,9 @@ export class MyStatusBarItem implements IStatusButtonData, IStatusButtonMethod {
 		}
 		if (data.color) {
 			this.color = data.color;
+		}
+		if (data.backgroundColor) {
+			this.backgroundColor = data.backgroundColor;
 		}
 		if (data.arguments) {
 			this.arguments = data.arguments;

@@ -15,6 +15,7 @@ export interface IStatusButtonData {
 	command: string;
 	tooltip: string;
 	color: string | ThemeColor;
+	backgroundColor: string | ThemeColor;
 	arguments: any[];
 	showBeak: boolean;
 	align: StatusbarAlignment;
@@ -42,7 +43,7 @@ export type IPartMyStatusBarItem = Pick<IPublicStatusButton, 'text' | 'command' 
 export interface IKendryteStatusControllerService {
 	_serviceBrand: any;
 
-	createInstance(id: MyStatusBarItemNames, bigPosition: number): IPublicStatusButton;
+	createInstance(id: MyStatusBarItemNames, bigPosition?: number): IPublicStatusButton;
 	showMessage(buttonId: string): IPartMyStatusBarItem;
 	resolveMessage(buttonId: string): void;
 }

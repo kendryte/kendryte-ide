@@ -10,7 +10,6 @@ import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/com
 import { IKendryteServerService } from 'vs/kendryte/vs/services/ipc/electron-main/ipcType';
 import { URI } from 'vs/base/common/uri';
 import { IMainChannelLogService } from 'vs/kendryte/vs/services/channelLogger/electron-main/service';
-import { processErrorStack } from 'vs/kendryte/vs/base/electron-main/errorStack';
 import { memoize } from 'vs/base/common/decorators';
 import { IPC_ID_IS_ME_FIRST, IPC_ID_STOP_LOG_EVENT } from 'vs/kendryte/vs/base/common/ipcIds';
 import { isUndefinedOrNull } from 'vs/base/common/types';
@@ -33,14 +32,14 @@ class KendryteIPCMainService implements IKendryteMainIpcChannel {
 		});
 	}
 
-	public call<T>(context: string, command: string, arg?: any, cancellationToken?: CancellationToken): Promise<T> {
+	public async call<T>(context: string, command: string, arg?: any, cancellationToken?: CancellationToken): Promise<T> {
 		this.logger.info(`[IPC] command ${command} from ${context}`);
 		// arg = this.instantiationService.invokeFunction(parseArgs, arg || []);
 		switch (command) {
 			case IPC_ID_STOP_LOG_EVENT:
-				return this.mainChannelLogService._handleStopLogEvent(arg[0], arg[1]) as any;
+				return await this.mainChannelLogService._handleStopLogEvent(arg[0], arg[1]) as any;
 			case IPC_ID_IS_ME_FIRST:
-				return this.isFirstWindow(arg[0]) as any;
+				return await this.isFirstWindow(arg[0]) as any;
 		}
 		throw new Error(`No command "${command}" found`);
 	}
@@ -83,25 +82,17 @@ class RemoteServiceRunner implements IKendryteServiceRunnerChannel {
 	}
 
 	public async call<T>(context: string, command: string, arg?: any): Promise<T> {
-		try {
-			arg = normalize(arg);
-			arg = this.instantiationService.invokeFunction(parseArgs, arg || []);
+		arg = normalize(arg);
+		arg = this.instantiationService.invokeFunction(parseArgs, arg || []);
 
-			const [id, method] = command.split(':');
-			this.logService.info(`Service IPC Call: ${context} -> ${id}.${method}(${arg.map((v: any) => '' + v).join(', ')});`);
+		const [id, method] = command.split(':');
+		this.logService.info(`Service IPC Call: ${context} -> ${id}.${method}(${arg.map((v: any) => '' + v).join(', ')});`);
 
-			return await this._call(id, method, arg);
-		} catch (e) {
-			this.logService.error('Service IPC Call Error:\n' + processErrorStack(e));
-			debugger;
-			return Promise.reject(e);
-		}
-	}
-
-	private _call(id: string, method: string, arg?: any): Promise<any> {
-		return this.instantiationService.invokeFunction((access: ServicesAccessor) => {
-			const service: any = access.get(createDecorator(id));
-			return service[method](...arg);
+		return Promise.resolve().then(() => {
+			return this.instantiationService.invokeFunction((access: ServicesAccessor) => {
+				const service: any = access.get(createDecorator(id));
+				return service[method](...arg);
+			});
 		});
 	}
 

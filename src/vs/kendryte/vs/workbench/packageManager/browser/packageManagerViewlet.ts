@@ -14,6 +14,7 @@ import { IAddedViewDescriptorRef } from 'vs/workbench/browser/parts/views/views'
 import { IEditorProgressService } from 'vs/platform/progress/common/progress';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IWorkbenchLayoutService } from 'vs/workbench/services/layout/browser/layoutService';
+import 'vs/css!vs/kendryte/vs/workbench/packageManager/browser/media/package-manager';
 
 export class PackageManagerViewlet extends ViewContainerViewlet implements IPackageManagerViewlet {
 	private primaryActions: Action[];

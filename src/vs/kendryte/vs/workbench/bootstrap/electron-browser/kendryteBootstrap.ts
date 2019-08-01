@@ -12,12 +12,12 @@ import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { isMacintosh, isWindows } from 'vs/base/common/platform';
 import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
-import * as electron from 'electron';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IRelaunchService } from 'vs/kendryte/vs/platform/vscode/common/relaunchService';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { Extensions as WorkbenchExtensions, IWorkbenchContribution, IWorkbenchContributionsRegistry } from 'vs/workbench/common/contributions';
 import { IFpioaService } from 'vs/kendryte/vs/workbench/fpioaConfig/common/types';
+import { ipcRenderer } from 'electron';
 
 class KendryteContribution implements IWorkbenchContribution {
 	constructor(
@@ -34,11 +34,8 @@ class KendryteContribution implements IWorkbenchContribution {
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IRelaunchService private readonly relaunchService: IRelaunchService,
 	) {
-		if (!environmentService.isBuilt) {
-			((electron as any).remote as Electron.Remote).getCurrentWebContents().openDevTools({ mode: 'detach' });
-		}
-
 		if (!process.env['VSCODE_PORTABLE']) { // for safe
+			debugger;
 			throw new Error('----- ERROR -----\n bootstrap.js is not ok. VSCODE_PORTABLE not set.\n----- ERROR -----');
 		}
 
@@ -104,6 +101,9 @@ class KendryteContribution implements IWorkbenchContribution {
 		this.logService.info('{update} active cmake');
 		this.activateCmake();
 		this.logService.info('{update} active complete');
+
+		console.log('workbench load complete');
+		ipcRenderer.send('kendryte-health-window-ready');
 	}
 
 	run() {

@@ -1,4 +1,3 @@
-import 'vs/css!vs/kendryte/vs/workbench/packageManager/browser/media/package-manager';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { Extensions as ViewletExtensions, ViewletDescriptor, ViewletRegistry } from 'vs/workbench/browser/viewlet';
 import { IPackageRegistryService, PACKAGE_MANAGER_TITLE, PACKAGE_MANAGER_VIEWLET_ID as VIEWLET_ID } from 'vs/kendryte/vs/workbench/packageManager/common/type';

@@ -7,13 +7,13 @@ import * as path from 'vs/base/common/path';
 import * as objects from 'vs/base/common/objects';
 import * as nls from 'vs/nls';
 import { URI } from 'vs/base/common/uri';
-import { screen, BrowserWindow, systemPreferences, app, TouchBar, nativeImage, Rectangle, Display } from 'electron';
+import { app, BrowserWindow, Display, nativeImage, Rectangle, screen, systemPreferences, TouchBar } from 'electron';
 import { IEnvironmentService, ParsedArgs } from 'vs/platform/environment/common/environment';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { parseArgs } from 'vs/platform/environment/node/argv';
 import product from 'vs/platform/product/node/product';
-import { IWindowSettings, MenuBarVisibility, IWindowConfiguration, ReadyState, getTitleBarStyle } from 'vs/platform/windows/common/windows';
+import { getTitleBarStyle, IWindowConfiguration, IWindowSettings, MenuBarVisibility, ReadyState } from 'vs/platform/windows/common/windows';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { isLinux, isMacintosh, isWindows } from 'vs/base/common/platform';
 import { ICodeWindow, IWindowState, WindowMode } from 'vs/platform/windows/electron-main/windows';
@@ -27,6 +27,7 @@ import { endsWith } from 'vs/base/common/strings';
 import { RunOnceScheduler } from 'vs/base/common/async';
 import { IFileService } from 'vs/platform/files/common/files';
 import pkg from 'vs/platform/product/node/package';
+import { __kendryte_check_window_health } from 'vs/kendryte/vs/code/electron-main/checkHealth';
 
 const RUN_TEXTMATE_IN_WORKER = false;
 
@@ -172,7 +173,7 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 
 		// Create the browser window.
 		this._win = new BrowserWindow(options);
-		// this._win.webContents.openDevTools({mode:'detach'});
+		__kendryte_check_window_health(this._win, this.environmentService);
 		this._id = this._win.id;
 
 		if (isMacintosh && useCustomTitleStyle) {
@@ -518,8 +519,6 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 				if (this._win && !this._win.isVisible() && !this._win.isMinimized()) {
 					this._win.show();
 					this._win.focus();
-					this._win.webContents.openDevTools();
-				} else if (this._win && !this.environmentService.isBuilt) {
 					this._win.webContents.openDevTools();
 				}
 			}, 10000);

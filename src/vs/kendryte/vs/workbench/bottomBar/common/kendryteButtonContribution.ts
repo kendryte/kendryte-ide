@@ -30,7 +30,7 @@ import { ACTION_ID_SERIAL_MONITOR_TOGGLE, ACTION_LABEL_SERIAL_MONITOR_TOGGLE } f
 import 'vs/css!./buttonSize';
 import { ISerialPortService } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { Disposable } from 'vs/base/common/lifecycle';
-import { IThemeService } from 'vs/platform/theme/common/themeService';
+import { IThemeService, themeColorFromId } from 'vs/platform/theme/common/themeService';
 import { ACTION_ID_SELECT_FOLDER, ACTION_LABEL_SELECT_FOLDER } from 'vs/kendryte/vs/services/workspace/common/actionId';
 import { CONTEXT_KENDRYTE_MULTIPLE_PROJECT } from 'vs/kendryte/vs/services/workspace/common/contextKey';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
@@ -40,6 +40,7 @@ import { ACTION_ID_MAIX_CMAKE_HELLO_WORLD } from 'vs/kendryte/vs/workbench/cmake
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
 import { escapeRegExpCharacters } from 'vs/base/common/strings';
 import { MyStatusBarItemNames } from 'vs/kendryte/vs/workbench/bottomBar/common/myStatusBarItemId';
+import { STATUS_BAR_HOST_NAME_BACKGROUND, STATUS_BAR_HOST_NAME_FOREGROUND } from 'vs/workbench/common/theme';
 
 class KendryteButtonContribution extends Disposable implements IWorkbenchContribution {
 	private currentHasError: boolean = false;
@@ -60,6 +61,8 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 	private createSerialButtons() {
 		const plugButton = this.statusControl.createInstance(MyStatusBarItemNames.SERIAL_LABEL, StatusBarLeftLocation.SERIAL);
 		plugButton.text = '$(plug)';
+		plugButton.backgroundColor = themeColorFromId(STATUS_BAR_HOST_NAME_BACKGROUND);
+		plugButton.color = themeColorFromId(STATUS_BAR_HOST_NAME_FOREGROUND);
 
 		const openSerialTerminalButton = this.statusControl.createInstance(MyStatusBarItemNames.SERIAL_MONITOR, StatusBarLeftLocation.SERIAL);
 		openSerialTerminalButton.text = '$(terminal)';
@@ -104,6 +107,8 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 		const cmakeButton = this.statusControl.createInstance(MyStatusBarItemNames.CMAKE_LABEL, StatusBarLeftLocation.CMAKE);
 		cmakeButton.text = '$(book)';
 		cmakeButton.tooltip = localize('cmake', 'CMake');
+		cmakeButton.backgroundColor = themeColorFromId(STATUS_BAR_HOST_NAME_BACKGROUND);
+		cmakeButton.color = themeColorFromId(STATUS_BAR_HOST_NAME_FOREGROUND);
 		// cmakeButton.command = ACTION_ID_MAIX_CMAKE_CONFIGURE;
 
 		const okButton = this.statusControl.createInstance(MyStatusBarItemNames.CMAKE_CHECK_SUCCESS, StatusBarLeftLocation.CMAKE);

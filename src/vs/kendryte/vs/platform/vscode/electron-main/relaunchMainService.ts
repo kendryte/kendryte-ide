@@ -61,7 +61,7 @@ class MainProcessRelaunchService implements IRelaunchMainService {
 		if (!isUpdater) {
 			this.logService.warn('MainProcessRelaunchService: Not start from updater');
 			const commonError = new Error('Not started from updater.');
-			this.conStable.error(commonError);
+			this.conStable.complete();
 			return Promise.reject(commonError);
 		}
 		this.logService.info('MainProcessRelaunchService: Start from updater');
@@ -170,25 +170,29 @@ class MainProcessRelaunchService implements IRelaunchMainService {
 		}
 	}
 
-	private _send(type: string, data: any, token = this.nextToken()): Promise<void> {
+	private async _send(type: string, data: any, token = this.nextToken()): Promise<void> {
 		this.logService.info('[Update IPC Client] send:', { type, data, token });
-		this.socket.write(JSON.stringify({ type, data, token }) + '\n');
-		return new Promise((resolve, reject) => {
+
+		await new Promise((resolve, reject) => {
+			this.socket.write(JSON.stringify({ type, data, token }) + '\n', (e: Error) => {
+				if (e) {
+					reject(e);
+				} else {
+					resolve();
+				}
+			});
+		});
+		await new Promise((resolve, reject) => {
 			this.waitResponse.set(token, { resolve, reject });
 		});
 	}
 
-	private send(type: string, data: any, token = this.nextToken()): Promise<any> {
+	private async send(type: string, data: any, token = this.nextToken()): Promise<any> {
 		if (isUpdater) {
 			if (!this.conStable.completed) {
-				return this.conStable.p.then(() => {
-					return this._send(type, data, token);
-				});
+				await this.conStable.p;
 			}
-
-			return this._send(type, data, token);
-		} else {
-			return this.connect();
+			await this._send(type, data, token);
 		}
 	}
 }

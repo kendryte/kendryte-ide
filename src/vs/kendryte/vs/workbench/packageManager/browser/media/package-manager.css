@@ -1,13 +1,13 @@
-.monaco-workbench > .activitybar > .content .monaco-action-bar .action-label.packageManager {
+.monaco-workbench .activitybar > .content .monaco-action-bar .action-label.packageManager {
 	-webkit-mask: url('pacakge-manager.svg') no-repeat 50% 50%;
 	-webkit-mask-size: 21px;
 }
 
-.monaco-workbench > .part.sidebar .title-actions .open-markplace-icon {
+.monaco-workbench .part.sidebar .title-actions .open-markplace-icon {
 	background-image: url('open-market.svg');
 }
 
-.vs-dark > .monaco-workbench > .part.sidebar .title-actions .open-markplace-icon {
+.vs-dark > .monaco-workbench .part.sidebar .title-actions .open-markplace-icon {
 	background-image: url('open-market-dark.svg');
 }
 
