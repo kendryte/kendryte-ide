@@ -5,6 +5,7 @@ import { Emitter } from 'vs/base/common/event';
 import { EditorId, IJsonEditorInput } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/type';
 import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 import { IEditorModel } from 'vs/platform/editor/common/editor';
+import { objectEntries } from 'vs/kendryte/vs/base/common/type/objectKeys';
 
 export interface IInputState {
 	// marker
@@ -138,11 +139,11 @@ export abstract class AbstractJsonEditorInput<JsonType, State extends IInputStat
 	}
 
 	public setState(data: Partial<State>): void {
-		let changedKeys = [];
-		for (const [key, value] of Object.entries(data)) {
+		let changedKeys: string[] = [];
+		for (const [key, value] of objectEntries(data)) {
 			if (this._state[key] !== value) {
-				changedKeys.push(key);
-				this._state[key] = value;
+				changedKeys.push(key as string);
+				this._state[key] = value!;
 			}
 		}
 		if (changedKeys.length) {

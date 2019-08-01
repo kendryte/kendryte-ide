@@ -1,11 +1,10 @@
 import { IStatusbarService, StatusbarAlignment } from 'vs/platform/statusbar/common/statusbar';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import { ThemeColor } from 'vs/platform/theme/common/themeService';
-import { IStatusButtonData, IStatusButtonMethod } from 'vs/kendryte/vs/workbench/bottomBar/common/type';
+import { ISleepData, IStatusButtonData, IStatusButtonMethod } from 'vs/kendryte/vs/workbench/bottomBar/common/type';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
 import { Emitter } from 'vs/base/common/event';
-
-const properties = ['text', 'command', 'tooltip', 'color', 'arguments', 'showBeak', 'align', 'position', 'contextKe'];
+import { getNameOfButton, MyStatusBarItemNames } from 'vs/kendryte/vs/workbench/bottomBar/common/myStatusBarItemId';
 
 export interface IContextKeyObject {
 	expr: ContextKeyExpr;
@@ -13,6 +12,8 @@ export interface IContextKeyObject {
 }
 
 export class MyStatusBarItem implements IStatusButtonData, IStatusButtonMethod {
+	public readonly name: string;
+
 	private _entry?: IDisposable;
 	private _visibleState: boolean = false;
 	private _isDisposed = false;
@@ -31,16 +32,22 @@ export class MyStatusBarItem implements IStatusButtonData, IStatusButtonMethod {
 	public readonly onDispose = this._beforeDispose.event;
 
 	constructor(
+		public readonly id: MyStatusBarItemNames,
 		private readonly statusbarService: IStatusbarService,
 	) {
+		this.name = getNameOfButton(id);
 	}
 
 	get contextKeyList() {
 		return this._contextKey ? this._contextKey.list : null;
 	}
 
+	get contextKeyExpr(): ContextKeyExpr | null {
+		return this._contextKey ? this._contextKey.expr : null;
+	}
+
 	getContextKey(): IContextKeyObject | null {
-		return this._contextKey ? this._contextKey : null;
+		return this._contextKey;
 	}
 
 	setContextKey(v: ContextKeyExpr | null) {
@@ -93,7 +100,7 @@ export class MyStatusBarItem implements IStatusButtonData, IStatusButtonMethod {
 				color: this.color,
 				showBeak: this.showBeak,
 				arguments: this.arguments,
-			}, this.align, this.position);
+			}, this.id, this.name, this.align, this.position);
 		} else if (this._entry) {
 			this._entry.dispose();
 			delete this._entry;
@@ -113,21 +120,55 @@ export class MyStatusBarItem implements IStatusButtonData, IStatusButtonMethod {
 		this._isDisposed = true;
 	}
 
-	public sleep() {
-		const data: IStatusButtonData = {} as any;
-		for (const property of properties) {
-			data[property] = this[property];
-		}
+	public sleep(): ISleepData {
+		const data: ISleepData = {};
+		data.text = this.text;
+		data.command = this.command;
+		data.tooltip = this.tooltip;
+		data.color = this.color;
+		data.arguments = this.arguments;
+		data.showBeak = this.showBeak;
+		data.align = this.align;
+		data.position = this.position;
+		const contextKey = this.contextKeyExpr;
+		data.contextKey = contextKey ? contextKey.serialize() : '';
 		return data;
 	}
 
-	public wakeup(data: IStatusButtonData) {
+	public wakeup(data: ISleepData) {
 		if (!data) {
 			return;
 		}
 		const lastStatus = this.setVisible(false);
-		for (const property of properties) {
-			this[property] = data[property];
+		if (data.text) {
+			this.text = data.text;
+		}
+		if (data.command) {
+			this.command = data.command;
+		}
+		if (data.tooltip) {
+			this.tooltip = data.tooltip;
+		}
+		if (data.color) {
+			this.color = data.color;
+		}
+		if (data.arguments) {
+			this.arguments = data.arguments;
+		}
+		if (data.showBeak) {
+			this.showBeak = data.showBeak;
+		}
+		if (data.align) {
+			this.align = data.align;
+		}
+		if (data.position) {
+			this.position = data.position;
+		}
+		if (data.contextKey) {
+			const contextKey = ContextKeyExpr.deserialize(data.contextKey);
+			if (contextKey) {
+				this.setContextKey(contextKey);
+			}
 		}
 		this.setVisible(lastStatus);
 	}

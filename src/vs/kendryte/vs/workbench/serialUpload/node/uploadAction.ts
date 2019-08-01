@@ -3,7 +3,7 @@ import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE, ICMakeService } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { exists, lstat } from 'vs/base/node/pfs';
-import { IProgressService2, ProgressLocation } from 'vs/platform/progress/common/progress';
+import { IProgressService, ProgressLocation } from 'vs/platform/progress/common/progress';
 import { SubProgress } from 'vs/kendryte/vs/platform/config/common/progress';
 import { ISerialPortService, SerialPortCloseReason } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
@@ -34,7 +34,7 @@ export class MaixSerialUploadAction extends Action {
 		@ISerialPortService private serialPortService: ISerialPortService,
 		@INodePathService private nodePathService: INodePathService,
 		@ICMakeService private cMakeService: ICMakeService,
-		@IProgressService2 private progressService: IProgressService2,
+		@IProgressService private progressService: IProgressService,
 		@IChannelLogService private channelLogService: IChannelLogService,
 		@IConfigurationService private configurationService: IConfigurationService,
 		@IEnvironmentService private environmentService: IEnvironmentService,

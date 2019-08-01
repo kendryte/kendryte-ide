@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { IEnvironmentService, ParsedArgs, IDebugParams, IExtensionHostDebugParams, BACKUPS } from 'vs/platform/environment/common/environment';
+import { BACKUPS, IDebugParams, IEnvironmentService, IExtensionHostDebugParams, ParsedArgs } from 'vs/platform/environment/common/environment';
 import * as crypto from 'crypto';
 import * as paths from 'vs/base/node/paths';
 import * as os from 'os';
@@ -13,7 +13,7 @@ import { memoize } from 'vs/base/common/decorators';
 import pkg from 'vs/platform/product/node/package';
 import product from 'vs/platform/product/node/product';
 import { toLocalISOString } from 'vs/base/common/date';
-import { isWindows, isLinux } from 'vs/base/common/platform';
+import { isLinux, isWindows } from 'vs/base/common/platform';
 import { getPathFromAmdModule } from 'vs/base/common/amd';
 import { URI } from 'vs/base/common/uri';
 
@@ -23,13 +23,24 @@ export const xdgRuntimeDir = process.env['XDG_RUNTIME_DIR'];
 
 function getNixIPCHandle(userDataPath: string, type: string): string {
 	const vscodePortable = process.env['VSCODE_PORTABLE'];
+	let fileName = `${pkg.version}-${type}.sock`;
+	const osTempPath = os.tmpdir();
 
-	if (xdgRuntimeDir && !vscodePortable) {
-		const scope = crypto.createHash('md5').update(userDataPath).digest('hex').substr(0, 8);
-		return path.join(xdgRuntimeDir, `vscode-${scope}-${pkg.version}-${type}.sock`);
+	if (vscodePortable && vscodePortable.length + fileName.length < 104) {
+		return path.join(vscodePortable, fileName);
 	}
 
-	return path.join(userDataPath, `${pkg.version}-${type}.sock`);
+	const scope = crypto.createHash('md5').update(userDataPath).digest('hex').substr(0, 8);
+	fileName = `kide-${scope}-${fileName}`;
+	if (xdgRuntimeDir && xdgRuntimeDir.length + fileName.length < 104) {
+		return path.join(xdgRuntimeDir, fileName);
+	}
+
+	if (osTempPath && osTempPath.length + fileName.length < 104) {
+		return path.join(osTempPath, fileName);
+	}
+
+	return isLinux ? `/tmp/${fileName}` : `/private/tmp/${fileName}`;
 }
 
 function getWin32IPCHandle(userDataPath: string, type: string): string {

@@ -1,7 +1,7 @@
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { IHTTPConfiguration } from 'vs/platform/request/node/request';
+import { IHTTPConfiguration } from 'vs/platform/request/common/request';
 import * as Octokit from '@octokit/rest';
-import { getProxyAgent } from 'vs/base/node/proxy';
+import { getProxyAgent } from 'vs/platform/request/node/proxy';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';

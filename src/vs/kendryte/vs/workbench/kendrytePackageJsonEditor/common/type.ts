@@ -1,6 +1,7 @@
 export interface IUISectionWidget<T, TG = any> {
 	get(): TG;
 	set(val: T): void;
+	clear(): void;
 }
 
 export interface IUISection<T> {

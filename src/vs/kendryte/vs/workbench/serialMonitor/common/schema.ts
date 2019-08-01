@@ -3,25 +3,28 @@ import { localize } from 'vs/nls';
 import { IJSONSchemaMapOf } from 'vs/kendryte/vs/base/common/jsonSchemaHelper/type';
 import { ILocalOptions } from 'vs/kendryte/vs/workbench/serialMonitor/common/localSettings';
 import { standardBaudRate, standardDataBits, standardParity, standardStopBits } from 'vs/kendryte/vs/services/serialPort/common/standard';
+import { objectKeys } from 'vs/kendryte/vs/base/common/type/objectKeys';
 
 export type ILimitedOpenOptions = Pick<OpenOptions, 'baudRate' | 'dataBits' | 'stopBits' | 'parity'>;
 export type ISerialMonitorSettings = ILimitedOpenOptions & ILocalOptions;
 
 export function allSerialPortDefaults(): ISerialMonitorSettings {
 	const ret: any = {};
-	Object.keys(localOptionsScheme).forEach((key) => {
+	objectKeys(localOptionsScheme).forEach((key) => {
 		ret[key] = localOptionsScheme[key].default;
 	});
 	return ret;
 }
 
 export function typedValues<T extends Partial<ISerialMonitorSettings>>(settings: T): T {
-	Object.entries(settings).forEach(([key, value]) => {
-		const def = localOptionsScheme[key];
-		if (def.type === 'number') {
-			settings[key] = parseFloat(settings[key] as any);
-		} else if (def.type === 'number') {
-			settings[key] = !!(settings[key] as any);
+	objectKeys(settings).forEach((key) => {
+		const def = (localOptionsScheme as any)[key];
+		if (def) {
+			if (def.type === 'number') {
+				settings[key] = parseFloat(settings[key] as any) as any;
+			} else if (def.type === 'number') {
+				settings[key] = !!(settings[key] as any) as any;
+			}
 		}
 	});
 	return settings;

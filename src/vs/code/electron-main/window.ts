@@ -519,6 +519,8 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 					this._win.show();
 					this._win.focus();
 					this._win.webContents.openDevTools();
+				} else if (this._win && !this.environmentService.isBuilt) {
+					this._win.webContents.openDevTools();
 				}
 			}, 10000);
 		}

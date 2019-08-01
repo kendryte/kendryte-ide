@@ -10,7 +10,7 @@ import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { lstat } from 'vs/base/node/pfs';
 import { CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { IProgressService2, ProgressLocation } from 'vs/platform/progress/common/progress';
+import { IProgressService, ProgressLocation } from 'vs/platform/progress/common/progress';
 import { SubProgress } from 'vs/kendryte/vs/platform/config/common/progress';
 import { parseMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
 import { createReadStream } from 'fs';
@@ -44,7 +44,7 @@ export class FlashAllAction extends Action {
 		@INodePathService private readonly nodePathService: INodePathService,
 		@IFlashManagerService private readonly flashManagerService: IFlashManagerService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
-		@IProgressService2 private readonly progressService: IProgressService2,
+		@IProgressService private readonly progressService: IProgressService,
 		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 	) {
 		super(id, label);

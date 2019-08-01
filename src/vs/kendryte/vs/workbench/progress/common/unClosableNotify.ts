@@ -10,7 +10,11 @@ import {
 import { Event } from 'vs/base/common/event';
 import { IDisposable } from 'vs/base/common/lifecycle';
 
-export function unClosableNotify(notificationService: INotificationService, init: INotification): { revoke: () => void } & IDisposable & INotificationHandle {
+export interface INotificationRevoke {
+	revoke(): void;
+}
+
+export function unClosableNotify(notificationService: INotificationService, init: INotification): INotificationRevoke & IDisposable & INotificationHandle {
 	let handle: INotificationHandle;
 	let progress: INotificationProgress;
 

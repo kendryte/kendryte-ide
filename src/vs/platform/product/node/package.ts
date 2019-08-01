@@ -9,6 +9,7 @@ import { getPathFromAmdModule } from 'vs/base/common/amd';
 export interface IPackageConfiguration {
 	name: string;
 	version: string;
+	patchVersion: string;
 }
 
 const rootPath = path.dirname(getPathFromAmdModule(require, ''));

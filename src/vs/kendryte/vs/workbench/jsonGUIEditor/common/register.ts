@@ -72,7 +72,7 @@ class CustomJsonRegistryImpl implements ICustomJsonRegistry {
 		const editorId: EditorId = { id, title };
 		Registry.as<IEditorRegistry>(EditorExtensions.Editors).registerEditor(
 			new JsonEditorDescriptor(editorCtor, editorId),
-			new SyncDescriptor(inputCtor, [editorId]),
+			[new SyncDescriptor(inputCtor, [editorId])],
 		);
 
 		this.editorInputMap.set(id, createSyncDescriptor(inputCtor, editorId));

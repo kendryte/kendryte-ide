@@ -1,5 +1,5 @@
 import { IKendryteMainIpcChannel, IKendryteMainIpcChannelClient, IKendryteServiceRunnerChannel } from 'vs/kendryte/vs/services/ipc/browser/ipc';
-import { IKendryteClientService, symbolIpcObj } from 'vs/kendryte/vs/services/ipc/common/ipcType';
+import { IKendryteClientService, IPCServiceCaller, symbolIpcObj } from 'vs/kendryte/vs/services/ipc/common/ipcType';
 import { ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 import { Event } from 'vs/base/common/event';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
@@ -15,7 +15,7 @@ const symbolMethod = Symbol('ipc-method-mark');
 const symbolEventMethod = Symbol('ipc-event-method-mark');
 const symbolEvent = Symbol('ipc-event-mark');
 
-class KendryteIPCWorkbenchService implements IKendryteClientService {
+class KendryteIPCWorkbenchService implements IKendryteClientService, IPCServiceCaller {
 	_serviceBrand: any;
 	private readonly mapper = new Map<string, any>();
 
@@ -27,8 +27,8 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 	) {
 	}
 
-	public initService<T>(serviceObj: T, iinterface: ServiceIdentifier<T>): void {
-		if (!serviceObj[symbolIpcObj]) {
+	public initService<T extends { _serviceBrand: any }>(serviceObj: T, iinterface: ServiceIdentifier<T>): void {
+		if (!serviceObj.hasOwnProperty(symbolIpcObj)) {
 			Object.defineProperty(serviceObj, symbolIpcObj, {
 				configurable: false,
 				enumerable: true,
@@ -48,7 +48,6 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 	}
 
 	markEvents<T>(service: ServiceIdentifier<T>, events: (keyof T)[]) {
-
 		if (!service.hasOwnProperty(symbolEvent)) {
 			Object.defineProperty(service, symbolEvent, {
 				value: [],
@@ -57,7 +56,7 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 				writable: false,
 			});
 		}
-		service[symbolEvent].push(...events);
+		(service as any)[symbolEvent].push(...events);
 	}
 
 	markMethod<T>(service: ServiceIdentifier<T>, methods: (keyof T)[]) {
@@ -70,7 +69,7 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 				writable: false,
 			});
 		}
-		service[symbolMethod].push(...methods);
+		(service as any)[symbolMethod].push(...methods);
 	}
 
 	markEventMethod<T>(service: ServiceIdentifier<T>, methods: (keyof T)[]) {
@@ -83,13 +82,18 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 				writable: false,
 			});
 		}
-		service[symbolEventMethod].push(...methods);
+		(service as any)[symbolEventMethod].push(...methods);
 	}
 
 	public as<T>(service: ServiceIdentifier<T>): T {
 		const id = service.toString();
 		if (!this.mapper.has(id)) {
-			const channel = this._create(id, service[symbolMethod] || [], service[symbolEvent] || [], service[symbolEventMethod] || []);
+			const channel = this._create(
+				id,
+				(service as any)[symbolMethod] || [],
+				(service as any)[symbolEvent] || [],
+				(service as any)[symbolEventMethod] || [],
+			);
 			this.mapper.set(id, channel);
 		}
 		return this.mapper.get(id);
@@ -125,13 +129,13 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 		return proxy;
 	}
 
-	private _callService(id: string, method: string, args: any[]): Promise<any> {
+	_callService(id: string, method: string, args: any[]): Promise<any> {
 		this.logService.info(`callService(${id}, ${method},`, args, ');');
 
 		return this.runnerChannel.call(`${id}:${method}`, this.serializeArg(args));
 	}
 
-	private _listenService(id: string, method: string, args?: any[]): Event<any> {
+	_listenService(id: string, method: string, args?: any[]): Event<any> {
 		if (args) {
 			this.logService.info(`listenService(${id}, ${method},`, args, ');');
 			return this.runnerChannel.listen(`${id}:${method}`, this.serializeArg(args));
@@ -157,7 +161,7 @@ class KendryteIPCWorkbenchService implements IKendryteClientService {
 
 	private readonly loggers = new WeakMap<ChannelLogger, boolean>();
 
-	private _listenLogger(logger: ChannelLogger) {
+	_listenLogger(logger: ChannelLogger) {
 		if (this.loggers.has(logger)) {
 			return;
 		}

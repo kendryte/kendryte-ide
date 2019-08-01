@@ -2,6 +2,7 @@ import { ISerialMonitorSettings } from 'vs/kendryte/vs/workbench/serialMonitor/c
 import { nullOpenOptions, OpenOptions } from 'vs/kendryte/vs/services/serialPort/common/libraryType';
 import { ILocalOptions, nullMonitorOptions, SerialOpenMode } from 'vs/kendryte/vs/workbench/serialMonitor/common/localSettings';
 import { SerialPortBaseBinding, SerialPortItem } from 'vs/kendryte/vs/services/serialPort/common/type';
+import { objectKeys } from 'vs/kendryte/vs/base/common/type/objectKeys';
 
 export class SerialMonitorData {
 	private _paused: boolean = false;
@@ -95,8 +96,8 @@ export class SerialMonitorData {
 	}
 }
 
-function filterNulls<T>(obj: T): T {
-	for (const k of Object.keys(obj)) {
+function filterNulls<T extends object>(obj: T): T {
+	for (const k of objectKeys(obj)) {
 		if (obj[k] === undefined || obj[k] === null) {
 			delete obj[k];
 		}

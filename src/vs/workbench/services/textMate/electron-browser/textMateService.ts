@@ -129,6 +129,7 @@ export class TextMateWorkerHost {
 
 	async setTokens(_resource: UriComponents, versionId: number, tokens: Uint8Array): Promise<void> {
 		const resource = URI.revive(_resource);
+		// @ts-ignore
 		this.textMateService.setTokens(resource, versionId, tokens);
 	}
 }

@@ -1,11 +1,12 @@
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { IServerChannel } from 'vs/base/parts/ipc/common/ipc';
+import { IPCServiceAttachedData } from 'vs/kendryte/vs/services/ipc/common/ipcType';
 
 export interface IKendryteRelaunchChannel extends IServerChannel {
 	_serviceBrand: any;
 }
 
-export interface IRelaunchService {
+export interface IRelaunchService extends IPCServiceAttachedData {
 	_serviceBrand: any;
 
 	/** @deprecated use lifecycleService */

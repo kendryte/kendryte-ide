@@ -1,5 +1,6 @@
 import { exists, readFile } from 'vs/base/node/pfs';
 import { CMAKE_VAE_TYPE } from 'vs/kendryte/vs/workbench/cmake/common/cmakeProtocol/message';
+import { MapLike } from 'vs/kendryte/vs/base/common/extendMap';
 
 const falseValue = /^(FALSE|OFF|0|NOTFOUND|NO|N|IGNORE|.*-NOTFOUND)$/;
 
@@ -129,7 +130,7 @@ export class CMakeCache {
 					// We skip the ADVANCED property variables. They're a little odd.
 				} else {
 					const key = name;
-					const type = CMAKE_VAE_TYPE[typename];
+					const type: CMAKE_VAE_TYPE | null = (CMAKE_VAE_TYPE as unknown as MapLike<string>)[typename] as any;
 					const docs = docs_acc.trim();
 					docs_acc = '';
 					if (!type) {

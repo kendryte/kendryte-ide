@@ -2,7 +2,7 @@ import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { DownloadID, INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
 import { INotificationHandle, INotificationService, Severity } from 'vs/platform/notification/common/notification';
-import { unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
+import { INotificationRevoke, unClosableNotify } from 'vs/kendryte/vs/workbench/progress/common/unClosableNotify';
 import { showDownloadSpeed } from 'vs/kendryte/vs/base/common/speedShow';
 import { ILogService } from 'vs/platform/log/common/log';
 
@@ -26,7 +26,7 @@ class DownloadWithProgressService implements IDownloadWithProgressService {
 	}
 
 	private async handle(title: string, cb: () => Thenable<DownloadID>, onDidCancel?: () => void): Promise<string> {
-		let handle: INotificationHandle;
+		let handle: INotificationHandle & Partial<INotificationRevoke>;
 
 		if (onDidCancel) {
 			handle = this.notificationService.notify({
@@ -50,8 +50,8 @@ class DownloadWithProgressService implements IDownloadWithProgressService {
 			handle.progress.done();
 			handle.updateSeverity(Severity.Error);
 			handle.updateMessage(`download ${title} Error: ${e.message}`);
-			if (handle['revoke']) {
-				handle['revoke']();
+			if (handle.revoke) {
+				handle.revoke();
 			}
 			throw e;
 		};
@@ -76,8 +76,8 @@ class DownloadWithProgressService implements IDownloadWithProgressService {
 		});
 
 		return await this.nodeDownloadService.waitResultFile(downloadId).then((r) => {
-			if (handle['revoke']) {
-				handle['revoke']();
+			if (handle.revoke) {
+				handle.revoke();
 			}
 			handle.close();
 			return r;

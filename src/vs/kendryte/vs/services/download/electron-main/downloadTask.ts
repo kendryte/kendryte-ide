@@ -4,15 +4,15 @@ import { Disposable, IDisposable, toDisposable } from 'vs/base/common/lifecycle'
 import { createDownloadId, DownloadID, IDownloadTargetInfo } from 'vs/kendryte/vs/services/download/common/download';
 import { exists, fileExists, mkdirp, readFile, truncate, unlink, writeFile } from 'vs/base/node/pfs';
 import { dirname } from 'vs/base/common/path';
-import { IRequestService } from 'vs/platform/request/node/request';
+import { IHeaders, IRequestContext, IRequestService } from 'vs/platform/request/common/request';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { createWriteStream, WriteStream } from 'fs';
-import { IRequestContext } from 'vs/base/node/request';
 import { ILogService, MultiplexLogService } from 'vs/platform/log/common/log';
 import { defaultConsoleLogger } from 'vs/kendryte/vs/platform/log/node/consoleLogger';
 import { wrapActionWithFileLock } from 'vs/kendryte/vs/base/node/fileLock';
 import { DeferredPromise } from 'vs/kendryte/vs/base/common/deferredPromise';
 import { disposableTimeout } from 'vs/base/common/async';
+import { VSBuffer } from 'vs/base/common/buffer';
 import uuid = require('uuid');
 
 enum State {
@@ -124,7 +124,7 @@ export class DownloadTask extends Disposable {
 			if (disposables) {
 				disposables.push(result);
 			}
-			this.toDispose.push(result);
+			this._register(result);
 			return result;
 		};
 	}
@@ -244,7 +244,7 @@ export class DownloadTask extends Disposable {
 	private async _lockedStart() {
 		const partInfo = this.partInfo;
 
-		const requestHeaders = partInfo.total ? {
+		const requestHeaders: IHeaders = partInfo.total ? {
 			'range': `bytes=${partInfo.current}-${partInfo.total}`,
 			'if-range': partInfo.check,
 		} : {};
@@ -291,21 +291,44 @@ export class DownloadTask extends Disposable {
 			throw new Error(`HTTP: ${res.res.statusCode} HEAD ${this.url}`);
 		}
 
-		let sizeCount = 0;
-		this.fd.once('close', () => {
-			this.logger.info('fd has close (%s bytes write out)', sizeCount);
-			delete this.fd;
-		});
-
-		this.logger.info('start piping (start at %s)', partInfo.current);
-		res.stream.pipe(this.fd);
-
-		res.stream.on('data', (buff: Buffer) => {
-			sizeCount += buff.length;
-			partInfo.current += buff.length;
-		});
-
 		await new Promise((resolve, reject) => {
+			let sizeCount = 0;
+
+			this.fd.once('close', () => {
+				this.logger.info('fd has close (%s bytes write out)', sizeCount);
+				delete this.fd;
+			});
+
+			this.logger.info('start piping (start at %s)', partInfo.current);
+
+			const onError = (e: Error) => {
+				this.logger.error('download stream piping failed:', e);
+				this.fd.close();
+				res.stream.destroy();
+				reject(e);
+			};
+
+			res.stream.on('data', (buff: VSBuffer) => {
+				sizeCount += buff.byteLength;
+				partInfo.current += buff.byteLength;
+				res.stream.pause();
+				this.fd.write(buff.buffer, (e) => {
+					if (e) {
+						onError(e);
+					} else {
+						res.stream.resume();
+					}
+				});
+			});
+			res.stream.on('end', () => {
+				this.fd.end(() => {
+					resolve();
+				});
+			});
+			res.stream.on('error', (err: Error) => {
+				onError(err);
+			});
+
 			this.fd.once('close', resolve);
 		});
 	}

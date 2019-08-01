@@ -1,5 +1,5 @@
 import { IUISectionWidget } from 'vs/kendryte/vs/workbench/kendrytePackageJsonEditor/common/type';
-import { CMakeProjectTypes, ICompileInfoPossible, ICompileInfoPossibleKeys } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
+import { CMakeProjectTypes, ICompileInfoPossibleKeys } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
 import { MapLike } from 'vs/kendryte/vs/base/common/extendMap';
 import { Disposable } from 'vs/base/common/lifecycle';
@@ -104,6 +104,12 @@ export class SectionFactory extends Disposable {
 				input.select(values.indexOf(value));
 				setting = false;
 			},
+			clear() {
+				setting = true;
+				console.log('Type SelectBox: clear');
+				input.select(0);
+				setting = false;
+			},
 		};
 	}
 
@@ -132,7 +138,7 @@ export class SectionFactory extends Disposable {
 		property: T,
 		validation: PackageJsonValidatorType,
 		placeholder: string,
-		controllerClass?: IFieldControllerClassBinding<string[] | string, ICompileInfoPossible[T]>,
+		controllerClass?: IFieldControllerClassBinding<string[] | string, string>,
 	): IUISectionWidget<string, string> {
 		const input = this._createTextBox(parent, validation, placeholder, false);
 		let setting = false;
@@ -149,9 +155,15 @@ export class SectionFactory extends Disposable {
 				input.value = v || '';
 				setting = false;
 			},
+			clear() {
+				setting = true;
+				input.value = '';
+				setting = false;
+			},
 		};
 		this.createFieldControl(ret, property, parent, controllerClass);
 		return ret;
+
 	}
 
 	public createTextAreaMap<T extends ICompileInfoPossibleKeys>(
@@ -159,7 +171,7 @@ export class SectionFactory extends Disposable {
 		property: T,
 		validation: PackageJsonValidatorType,
 		placeholder: string,
-		controllerClass?: IFieldControllerClassBinding<string[] | string, ICompileInfoPossible[T]>,
+		controllerClass?: IFieldControllerClassBinding<string[] | string, MapLike<string>>,
 	): IUISectionWidget<string | string[], MapLike<string>> {
 		const input = this._createTextBox(parent, validation, placeholder, true);
 		let setting = false;
@@ -190,6 +202,11 @@ export class SectionFactory extends Disposable {
 				}
 				setting = false;
 			},
+			clear() {
+				setting = true;
+				input.value = '';
+				setting = false;
+			},
 		};
 		this._register(input.onDidChange((data: string) => {
 			if (setting) {
@@ -206,7 +223,7 @@ export class SectionFactory extends Disposable {
 		property: T,
 		validation: PackageJsonValidatorType,
 		placeholder: string,
-		controllerClass?: IFieldControllerClassBinding<string[] | string, ICompileInfoPossible[T]>,
+		controllerClass?: IFieldControllerClassBinding<string[] | string, string[]>,
 	): IUISectionWidget<string[] | string, string[]> {
 		const input = this._createTextBox(parent, validation, placeholder, true);
 		let setting = false;
@@ -219,6 +236,11 @@ export class SectionFactory extends Disposable {
 				} else {
 					input.value = '';
 				}
+				setting = false;
+			},
+			clear() {
+				setting = true;
+				input.value = '';
 				setting = false;
 			},
 		};

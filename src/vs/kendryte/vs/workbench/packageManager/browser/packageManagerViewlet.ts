@@ -11,7 +11,7 @@ import { Action } from 'vs/base/common/actions';
 import { OpenPackagesMarketPlaceAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/openPackagesMarketPlaceAction';
 import { ViewletPanel } from 'vs/workbench/browser/parts/views/panelViewlet';
 import { IAddedViewDescriptorRef } from 'vs/workbench/browser/parts/views/views';
-import { IProgressService } from 'vs/platform/progress/common/progress';
+import { IEditorProgressService } from 'vs/platform/progress/common/progress';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IWorkbenchLayoutService } from 'vs/workbench/services/layout/browser/layoutService';
 
@@ -28,7 +28,7 @@ export class PackageManagerViewlet extends ViewContainerViewlet implements IPack
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IExtensionService extensionService: IExtensionService,
 		@IWorkspaceContextService contextService: IWorkspaceContextService,
-		@IProgressService private progressService: IProgressService,
+		@IEditorProgressService private progressService: IEditorProgressService,
 	) {
 		super(VIEWLET_ID, `${VIEWLET_ID}.state`, true, configurationService, layoutService, telemetryService, storageService, instantiationService, themeService, contextMenuService, extensionService, contextService);
 	}

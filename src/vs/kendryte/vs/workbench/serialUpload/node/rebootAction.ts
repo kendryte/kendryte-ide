@@ -1,6 +1,6 @@
 import { Action } from 'vs/base/common/actions';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { IProgressService2, ProgressLocation } from 'vs/platform/progress/common/progress';
+import { IProgressService, ProgressLocation } from 'vs/platform/progress/common/progress';
 import { ISerialPortService } from 'vs/kendryte/vs/services/serialPort/common/type';
 import {
 	ACTION_ID_MAIX_SERIAL_BOOT,
@@ -24,7 +24,7 @@ abstract class MaixSerialRebootActionBase extends Action {
 		id: string, label: string,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@ISerialPortService private serialPortService: ISerialPortService,
-		@IProgressService2 private progressService: IProgressService2,
+		@IProgressService private progressService: IProgressService,
 		@IChannelLogService channelLogService: IChannelLogService,
 		@IConfigurationService private configurationService: IConfigurationService,
 		@IEnvironmentService private environmentService: IEnvironmentService,

@@ -21,6 +21,7 @@ import { DisplayPackageDetailAction } from 'vs/kendryte/vs/workbench/packageMana
 import { ILogService } from 'vs/platform/log/common/log';
 import { DeleteDependencyAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/deleteDependencyAction';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
+import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 
 const templateId = 'local-package-list';
 
@@ -171,13 +172,14 @@ export class LocalPackagesListView extends ViewletPanel {
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IKendryteWorkspaceService kendryteWorkspaceService: IKendryteWorkspaceService,
+		@IContextKeyService contextKeyService: IContextKeyService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IPackageRegistryService private readonly packageRegistryService: IPackageRegistryService,
 	) {
-		super({ ...(options as IViewletPanelOptions), ariaHeaderLabel: options.title }, keybindingService, contextMenuService, configurationService);
+		super({ ...(options as IViewletPanelOptions), ariaHeaderLabel: options.title }, keybindingService, contextMenuService, configurationService, contextKeyService);
 
-		this.disposables.push(this.packageRegistryService.onLocalPackageChange(e => this.show()));
-		this.disposables.push(kendryteWorkspaceService.onCurrentWorkingDirectoryChange(e => this.show()));
+		this._register(this.packageRegistryService.onLocalPackageChange(e => this.show()));
+		this._register(kendryteWorkspaceService.onCurrentWorkingDirectoryChange(e => this.show()));
 	}
 
 	protected renderBody(container: HTMLElement): void {
@@ -189,7 +191,7 @@ export class LocalPackagesListView extends ViewletPanel {
 			ariaLabel: localize('packages', 'Packages'),
 			multipleSelectionSupport: false,
 		}) as WorkbenchPagedList<ILibraryProject>;
-		this.disposables.push(this.list);
+		this._register(this.list);
 	}
 
 	protected layoutBody(size: number): void {

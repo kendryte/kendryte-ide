@@ -8,7 +8,7 @@ import Store = require('electron-store');
 class StorageMainService extends Disposable implements IStorageService {
 	_serviceBrand: any;
 
-	private readonly _store = new Store();
+	private readonly _storeObject = new Store();
 
 	private readonly _onDidChangeStorage = new Emitter<IWorkspaceStorageChangeEvent>();
 	public readonly onDidChangeStorage = this._onDidChangeStorage.event;
@@ -21,12 +21,12 @@ class StorageMainService extends Disposable implements IStorageService {
 
 	public get(key: string, scope: StorageScope, fallbackValue: string): string;
 	public get(key: string, scope: StorageScope, fallbackValue?: string): string | undefined {
-		return this._store.get(key) || fallbackValue;
+		return this._storeObject.get(key) || fallbackValue;
 	}
 
 	public getBoolean(key: string, scope: StorageScope, fallbackValue: boolean): boolean;
 	public getBoolean(key: string, scope: StorageScope, fallbackValue?: boolean): boolean | undefined {
-		return this._store.has(key) ? !!this._store.get(key) : fallbackValue;
+		return this._storeObject.has(key) ? !!this._storeObject.get(key) : fallbackValue;
 	}
 
 	public store(key: string, value: any, scope: StorageScope): void {
@@ -34,17 +34,21 @@ class StorageMainService extends Disposable implements IStorageService {
 			return this.remove(key);
 		}
 		const valueStr = String(value);
-		this._store.set(key, valueStr);
+		this._storeObject.set(key, valueStr);
 	}
 
 	public remove(key: string): void {
-		this._store.delete(key);
+		this._storeObject.delete(key);
 	}
 
 	public getNumber(key: string, scope: StorageScope, fallbackValue: number): number;
 	public getNumber(key: string, scope: StorageScope, fallbackValue?: number): number | undefined;
 	public getNumber(key: string, scope: StorageScope, fallbackValue?: number): number | undefined {
-		return this._store.has(key) ? parseFloat(this._store.get(key)) : fallbackValue;
+		return this._storeObject.has(key) ? parseFloat(this._storeObject.get(key)) : fallbackValue;
+	}
+
+	async logStorage(): Promise<void> {
+		console.log('This is the main store: %s', JSON.stringify(this._storeObject.store, null, '\t'));
 	}
 }
 

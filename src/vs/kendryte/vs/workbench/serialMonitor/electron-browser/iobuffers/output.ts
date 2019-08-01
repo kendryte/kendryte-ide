@@ -1,5 +1,5 @@
 import { ILocalOptions } from 'vs/kendryte/vs/workbench/serialMonitor/common/localSettings';
-import { Terminal as XTermTerminal } from 'vscode-xterm';
+import { Terminal as XTermTerminal } from 'xterm';
 import { Writable } from 'stream';
 import { createEncoder } from 'vs/kendryte/vs/workbench/serialMonitor/electron-browser/iobuffers/streamEncoder';
 import { EscapeStringClearScreen } from 'vs/kendryte/vs/base/node/terminalConst';

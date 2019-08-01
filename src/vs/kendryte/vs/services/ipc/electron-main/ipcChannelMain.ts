@@ -100,7 +100,7 @@ class RemoteServiceRunner implements IKendryteServiceRunnerChannel {
 
 	private _call(id: string, method: string, arg?: any): Promise<any> {
 		return this.instantiationService.invokeFunction((access: ServicesAccessor) => {
-			const service = access.get(createDecorator(id));
+			const service: any = access.get(createDecorator(id));
 			return service[method](...arg);
 		});
 	}
@@ -122,7 +122,7 @@ class RemoteServiceRunner implements IKendryteServiceRunnerChannel {
 
 	private _listen(id: string, method: string, arg: any[]): Event<any> {
 		return this.instantiationService.invokeFunction((access: ServicesAccessor) => {
-			const service = access.get(createDecorator(id));
+			const service: any = access.get(createDecorator(id));
 			this.logService.info(`Service IPC Listen: ${id}.${method}(${arg.map((e) => inspect(e)).join(', ')});`);
 			return service[method](...arg);
 		});

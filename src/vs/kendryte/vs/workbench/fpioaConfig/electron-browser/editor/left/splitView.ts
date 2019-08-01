@@ -14,7 +14,7 @@ export class SplitRenderer implements ITreeRenderer<IListSplitElement, void, any
 		return append(parent, $('hr.split'));
 	}
 
-	renderElement(element: ITreeNode<IListSplitElement>, index: number, templateData: void, dynamicHeightProbing?: boolean | undefined): void {
+	renderElement(element: ITreeNode<IListSplitElement>, index: number, templateData: void, height: number | undefined): void {
 	}
 
 	disposeTemplate(templateData: void): void {

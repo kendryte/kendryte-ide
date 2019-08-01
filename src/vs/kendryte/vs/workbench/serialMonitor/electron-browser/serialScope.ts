@@ -27,7 +27,7 @@ export class SerialScope extends Disposable implements ISerialPrivateReplService
 	public readonly typeInputStream = new UserTypeInputStream;
 
 	constructor(
-		replInputDom: HTMLElement,
+		private readonly replInputDom: HTMLElement,
 		@IInstantiationService private readonly __instantiationService: IInstantiationService,
 		@IContextKeyService private contextKeyService: IContextKeyService,
 		@IModelService modelService: IModelService,
@@ -93,5 +93,9 @@ export class SerialScope extends Disposable implements ISerialPrivateReplService
 	public clearRepl(): void {
 		this.logService.debug('clearRepl');
 		this.model.setValue('');
+	}
+
+	public focusRepl(): void {
+		this.replInputDom.focus();
 	}
 }

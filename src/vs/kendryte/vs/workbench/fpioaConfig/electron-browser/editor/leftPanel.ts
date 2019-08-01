@@ -24,7 +24,6 @@ import { PinFuncSetEvent } from 'vs/kendryte/vs/workbench/fpioaConfig/common/typ
 import { SimpleIdProvider } from 'vs/kendryte/vs/base/common/simpleIdProvider';
 import { IFPIOAFuncPinMap } from 'vs/kendryte/vs/base/common/jsonSchemas/deviceManagerSchema';
 import { IListEntry } from 'vs/workbench/services/preferences/common/keybindingsEditorModel';
-import { ITreeRenderer } from 'vs/base/browser/ui/tree/tree';
 import { isDeviceInterfaceClass } from 'vs/kendryte/vs/workbench/fpioaConfig/common/builder';
 
 export class FpioaLeftPanel extends Disposable implements IView {
@@ -76,7 +75,7 @@ export class FpioaLeftPanel extends Disposable implements IView {
 			WorkbenchObjectTree,
 			this.element,
 			new LeftPanelItemDelegate(),
-			<ITreeRenderer<any, {}, any>[]>[
+			[
 				chipSelectRender,
 				this.funcMapListItemRender,
 				new SplitRenderer,
@@ -88,7 +87,7 @@ export class FpioaLeftPanel extends Disposable implements IView {
 				keyboardSupport: false,
 				mouseSupport: false,
 			},
-		)) as WorkbenchObjectTree<IListEntry, void>;
+		));
 
 		this.setCurrentChip(undefined);
 

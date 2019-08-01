@@ -58,7 +58,7 @@ export class ChipSelectRenderer implements ITreeRenderer<IListChipSelectElement,
 		};
 	}
 
-	renderElement(element: ITreeNode<IListChipSelectElement>, index: number, template: IChipSelectTemplate, dynamicHeightProbing?: boolean | undefined): void {
+	renderElement(element: ITreeNode<IListChipSelectElement>, index: number, template: IChipSelectTemplate, height: number | undefined): void {
 		this.lastSelect = selectBoxFindIndex(this.names, element.element.selected);
 		if (this.lastSelect === -1) {
 			this.lastSelect = 0;
@@ -72,7 +72,7 @@ export class ChipSelectRenderer implements ITreeRenderer<IListChipSelectElement,
 	}
 
 	disposeTemplate(template: IChipSelectTemplate): void {
-		dispose(template.input, ...template.toDispose);
+		dispose([template.input, ...template.toDispose]);
 	}
 
 	private handleChange(input: SelectBox, selected: ISelectData) {

@@ -46,6 +46,8 @@ Icon=${installPath}/ico/favicon.png
 	}
 
 	fs.chmod(appPath, '0777', (e) => {
-		console.warn('create shortcut, chmod to 777: ', e.message);
+		if (e) {
+			console.warn('create shortcut, chmod to 777: ', e.message);
+		}
 	});
 }

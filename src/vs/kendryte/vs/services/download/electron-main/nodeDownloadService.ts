@@ -1,5 +1,5 @@
 import { INatureProgressStatus } from 'vs/kendryte/vs/platform/config/common/progress';
-import { IRequestService } from 'vs/platform/request/node/request';
+import { IRequestService } from 'vs/platform/request/common/request';
 import { Event } from 'vs/base/common/event';
 import { DownloadID, IDownloadTargetInfo, INodeDownloadService } from 'vs/kendryte/vs/services/download/common/download';
 import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';

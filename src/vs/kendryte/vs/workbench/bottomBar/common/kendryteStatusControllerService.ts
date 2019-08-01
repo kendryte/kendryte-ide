@@ -6,6 +6,7 @@ import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { DisposableSet } from 'vs/kendryte/vs/base/common/lifecycle/disposableSet';
 import { StackArray } from 'vs/kendryte/vs/base/common/lifecycle/stackArray';
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
+import { MyStatusBarItemNames } from 'vs/kendryte/vs/workbench/bottomBar/common/myStatusBarItemId';
 
 interface DisposeStatusBarItem extends MyStatusBarItem {
 	__originalDispose: Function;
@@ -52,8 +53,8 @@ export class KendryteStatusControllerService implements IDisposable, IKendryteSt
 		});
 	}
 
-	createInstance(bigPos?: number): MyStatusBarItem {
-		const button = new MyStatusBarItem(this.statusbarService) as DisposeStatusBarItem;
+	createInstance(id: MyStatusBarItemNames, bigPos?: number): MyStatusBarItem {
+		const button = new MyStatusBarItem(id, this.statusbarService) as DisposeStatusBarItem;
 		button.align = StatusbarAlignment.LEFT;
 
 		if (bigPos) {
@@ -86,7 +87,7 @@ export class KendryteStatusControllerService implements IDisposable, IKendryteSt
 			(this.messageButtonMap.get(this.messageIdStack.top()) as MyStatusBarItem).hide();
 		}
 
-		const button = this.createInstance();
+		const button = this.createInstance(MyStatusBarItemNames.ALERT_MESSAGE);
 		button.align = StatusbarAlignment.LEFT;
 		button.position = StatusBarLeftLocation.MESSAGE;
 

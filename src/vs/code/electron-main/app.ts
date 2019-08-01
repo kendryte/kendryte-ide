@@ -378,8 +378,7 @@ export class CodeApplication extends Disposable {
 		});
 
 		// Services
-		const appInstantiationService = await this.createServices(machineId, trueMachineId, sharedProcess, sharedProcessClient);
-		_kendryte_main_hookInstantiationService(services, electronIpcServer, appInstantiationService);
+		const appInstantiationService = await this.createServices(machineId, trueMachineId, sharedProcess, sharedProcessClient, electronIpcServer);
 
 		// Create driver
 		if (this.environmentService.driverHandle) {
@@ -430,7 +429,7 @@ export class CodeApplication extends Disposable {
 		return { machineId, trueMachineId };
 	}
 
-	private async createServices(machineId: string, trueMachineId: string | undefined, sharedProcess: SharedProcess, sharedProcessClient: Promise<Client<string>>): Promise<IInstantiationService> {
+	private async createServices(machineId: string, trueMachineId: string | undefined, sharedProcess: SharedProcess, sharedProcessClient: Promise<Client<string>>, electronIpcServer: ElectronIPCServer): Promise<IInstantiationService> {
 		const services = new ServiceCollection();
 
 		// Files
@@ -495,7 +494,10 @@ export class CodeApplication extends Disposable {
 		// Init services that require it
 		await backupMainService.initialize();
 
-		return this.instantiationService.createChild(services);
+		const appInstantiationService = this.instantiationService.createChild(services);
+
+		_kendryte_main_hookInstantiationService(services, electronIpcServer, appInstantiationService);
+		return appInstantiationService;
 	}
 
 	private stopTracingEventually(windows: ICodeWindow[]): void {

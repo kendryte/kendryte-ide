@@ -27,6 +27,7 @@ import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editor
 import { IWindowService } from 'vs/platform/windows/common/windows';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IInputState } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditorInput';
+import { objectEntries, objectKeys } from 'vs/kendryte/vs/base/common/type/objectKeys';
 
 interface IControlList extends Record<ICompileInfoPossibleKeys, IUISection<any>> {
 	name: IUISection<string>;
@@ -121,12 +122,12 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 			this.onTypeChange(CMakeProjectTypes.executable);
 		}
 
-		for (const secName of Object.keys(this.controls)) {
+		for (const secName of objectKeys(this.controls)) {
 			if (secName === 'type') {
 				continue;
 			}
 			const set = this.controls[secName].widget.set as Function;
-			set(model.data[secName]);
+			set((model.data as any)[secName]);
 		}
 	}
 
@@ -134,13 +135,13 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 		console.log('onTypeChange: ', value);
 		const alwaysShow = ['type', 'name', 'version', 'homepage'];
 		const display = (sections: (keyof IControlList)[]) => {
-			for (const [secName, secControl] of Object.entries(this.controls)) {
+			for (const [secName, secControl] of objectEntries(this.controls)) {
 				// console.log('display: ', sections, show);
 				if (sections.includes(secName as ICompileInfoPossibleKeys) || alwaysShow.includes(secName)) {
 					secControl.section.style.display = 'flex';
 				} else {
 					secControl.section.style.display = 'none';
-					this.controls[secName].widget.set('');
+					this.controls[secName].widget.clear();
 					this.updateSimple(secName as ICompileInfoPossibleKeys, undefined);
 				}
 			}

@@ -20,6 +20,7 @@ import { Emitter } from 'vs/base/common/event';
 import { isUndefinedOrNull } from 'vs/base/common/types';
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 import { packageJsonObject } from 'vs/kendryte/vs/base/common/cmakeTypeHelper';
+import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 
 const templateId = 'local-package-tree';
 
@@ -121,15 +122,16 @@ export class PackageConfigView extends ViewletPanel {
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IConfigurationService configurationService: IConfigurationService,
+		@IContextKeyService contextKeyService: IContextKeyService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IPackageRegistryService private readonly packageRegistryService: IPackageRegistryService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
 		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 	) {
-		super({ ...(options as IViewletPanelOptions), ariaHeaderLabel: options.title }, keybindingService, contextMenuService, configurationService);
+		super({ ...(options as IViewletPanelOptions), ariaHeaderLabel: options.title }, keybindingService, contextMenuService, configurationService, contextKeyService);
 
-		this.disposables.push(this.packageRegistryService.onLocalPackageChange(e => this.show()));
-		this.disposables.push(this.kendryteWorkspaceService.onCurrentWorkingDirectoryChange(e => this.show()));
+		this._register(this.packageRegistryService.onLocalPackageChange(e => this.show()));
+		this._register(this.kendryteWorkspaceService.onCurrentWorkingDirectoryChange(e => this.show()));
 	}
 
 	protected renderBody(container: HTMLElement): void {
@@ -137,13 +139,13 @@ export class PackageConfigView extends ViewletPanel {
 
 		const delegate = new Delegate();
 		const renderer = this.instantiationService.createInstance(Renderer);
-		this.disposables.push(renderer.onValueDidChange(item => this.writeChange(item)));
+		this._register(renderer.onValueDidChange(item => this.writeChange(item)));
 
 		this.list = this.instantiationService.createInstance(WorkbenchList, this.packageList, delegate, [renderer], {
 			ariaLabel: localize('dependency tree', 'Dependency Tree'),
 			multipleSelectionSupport: false,
 		}) as WorkbenchList<IConfigSection>;
-		this.disposables.push(this.list);
+		this._register(this.list);
 	}
 
 	protected layoutBody(size: number): void {

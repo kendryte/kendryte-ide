@@ -1,9 +1,8 @@
 import { dispose, IDisposable } from 'vs/base/common/lifecycle';
-import { Terminal as XTermTerminal } from 'vscode-xterm';
+import { Terminal as XTermTerminal } from 'xterm';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IConfigurationChangeEvent, IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import * as nls from 'vs/nls';
 import { addDisposableListener, Dimension } from 'vs/base/browser/dom';
 import { Emitter, Event } from 'vs/base/common/event';
 import { isMacintosh } from 'vs/base/common/platform';
@@ -34,6 +33,7 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
 import { OutputWindowFind } from 'vs/kendryte/vs/workbench/serialMonitor/electron-browser/outputWindowFind';
+import { SearchAddon } from 'xterm-addon-search';
 
 interface IContextMenuCache {
 	actions: (IAction | ContextSubMenu)[];
@@ -45,6 +45,7 @@ export class OutputXTerminal extends TerminalInstance {
 	protected _isLifecycleDisposed: boolean;
 
 	private terminal: XTermTerminal;
+	private terminalSearch: SearchAddon | undefined;
 	private elementWrapper: HTMLDivElement;
 	private parentDisposables: IDisposable[];
 
@@ -64,8 +65,7 @@ export class OutputXTerminal extends TerminalInstance {
 	private readonly _onXTermInputData: Emitter<string>;
 	public readonly onXTermInputData: Event<string>;
 
-	private readonly notificationService: INotificationService;
-	private readonly clipboardService: IClipboardService;
+	protected readonly clipboardService: IClipboardService; // TODO: delete this
 	private readonly configurationService: IConfigurationService;
 	private readonly instantiationService: IInstantiationService;
 	private readonly contextMenuService: IContextMenuService;
@@ -122,7 +122,6 @@ export class OutputXTerminal extends TerminalInstance {
 		this._onXTermInputData = new Emitter<string>();
 		this.onXTermInputData = this._onXTermInputData.event;
 
-		this.notificationService = notificationService;
 		this.clipboardService = clipboardService;
 		this.configurationService = configurationService;
 		this.instantiationService = instantiationService;
@@ -165,6 +164,7 @@ export class OutputXTerminal extends TerminalInstance {
 	async __createXterm(): Promise<void> {
 		await super._createXterm();
 		this.terminal = (this as any)._xterm;
+		this.terminalSearch = (this as any)._xtermSearch;
 
 		this._register(this.onRendererInput((data: string) => this.handleInput(data)));
 
@@ -199,14 +199,6 @@ export class OutputXTerminal extends TerminalInstance {
 			this.parentDisposables.push(addDisposableListener(this.myConfigHelper.panelContainer, 'mouseup', (event: MouseEvent) => this.handleMouseUp(event)));
 			this.parentDisposables.push(addDisposableListener(this.myConfigHelper.panelContainer, 'contextmenu', (event: MouseEvent) => this.handleContextMenu(event)));
 		});
-	}
-
-	public copySelection(): void {
-		if (this.terminal.hasSelection()) {
-			this.clipboardService.writeText(this.terminal.getSelection());
-		} else {
-			this.notificationService.warn(nls.localize('terminal.integrated.copySelection.noSelection', 'The terminal has no selection to copy'));
-		}
 	}
 
 	public layout(dimension: Dimension = this.dimension): void {
@@ -281,9 +273,10 @@ export class OutputXTerminal extends TerminalInstance {
 		}
 	}
 
-	paste() {
-		this.terminal.focus();
-		document.execCommand('paste');
+	async paste(): Promise<void> {
+		// this.terminal.focus();
+		// this.terminal._core._coreService.triggerDataEvent(await this.clipboardService.readText(), true);
+		return super.paste();
 	}
 
 	private handleContextMenu(event: MouseEvent) {
@@ -399,7 +392,7 @@ export class OutputXTerminal extends TerminalInstance {
 
 	private createWidget() {
 		if (!this._findWidget && this.elementWrapper) {
-			this._findWidget = this.instantiationService.createInstance(OutputWindowFind, this.elementWrapper, this.terminal);
+			this._findWidget = this.instantiationService.createInstance(OutputWindowFind, this.elementWrapper, this.terminal, this.terminalSearch);
 		}
 		return this._findWidget;
 	}

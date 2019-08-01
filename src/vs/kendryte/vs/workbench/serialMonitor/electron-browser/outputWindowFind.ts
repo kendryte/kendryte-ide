@@ -3,16 +3,18 @@ import { SimpleFindWidget } from 'vs/editor/contrib/find/simpleFindWidget';
 import { FindReplaceState } from 'vs/editor/contrib/find/findState';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
-import { Terminal as XTermTerminal } from 'vscode-xterm';
+import { Terminal as XTermTerminal } from 'xterm';
 import { CONTEXT_SERIAL_PORT_FIND_WIDGET_FOCUSED, CONTEXT_SERIAL_PORT_FIND_WIDGET_INPUT_FOCUSED } from 'vs/kendryte/vs/workbench/serialMonitor/common/actionId';
 import { ITheme, IThemeService } from 'vs/platform/theme/common/themeService';
+import { SearchAddon } from 'xterm-addon-search';
 
 const FIND_FOCUS_CLASS = 'find-focused';
 
 export class OutputWindowFind extends SimpleFindWidget {
 	private readonly container: HTMLElement;
 	public readonly findState: FindReplaceState;
-	private terminal: XTermTerminal;
+	private readonly terminal: XTermTerminal;
+	private readonly terminalSearch: SearchAddon;
 
 	private readonly _findInputFocused: IContextKey<boolean>;
 	private readonly _findWidgetFocused: IContextKey<boolean>;
@@ -21,6 +23,7 @@ export class OutputWindowFind extends SimpleFindWidget {
 	constructor(
 		container: HTMLElement,
 		terminal: XTermTerminal,
+		terminalSearch: SearchAddon,
 		@IContextViewService contextViewService: IContextViewService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IInstantiationService instantiationService: IInstantiationService,
@@ -33,6 +36,7 @@ export class OutputWindowFind extends SimpleFindWidget {
 		this.findState = findState;
 		this.container = container;
 		this.terminal = terminal;
+		this.terminalSearch = terminalSearch;
 		this.themeService = themeService;
 
 		this._findInputFocused = CONTEXT_SERIAL_PORT_FIND_WIDGET_INPUT_FOCUSED.bindTo(contextKeyService);
@@ -49,15 +53,17 @@ export class OutputWindowFind extends SimpleFindWidget {
 		this._updateTheme();
 	}
 
-	onInputChanged(): void {
+	onInputChanged(): boolean {
 		// Ignore input changes for now
+		this.terminalSearch.findPrevious(this.inputValue, { regex: this._getRegexValue(), wholeWord: this._getWholeWordValue(), caseSensitive: this._getCaseSensitiveValue() });
+		return false;
 	}
 
 	find(previous: boolean): void {
 		if (previous) {
-			this.terminal.findPrevious(this.inputValue, { regex: this._getRegexValue(), wholeWord: this._getWholeWordValue(), caseSensitive: this._getCaseSensitiveValue() });
+			this.terminalSearch.findPrevious(this.inputValue, { regex: this._getRegexValue(), wholeWord: this._getWholeWordValue(), caseSensitive: this._getCaseSensitiveValue() });
 		} else {
-			this.terminal.findNext(this.inputValue, { regex: this._getRegexValue(), wholeWord: this._getWholeWordValue(), caseSensitive: this._getCaseSensitiveValue() });
+			this.terminalSearch.findNext(this.inputValue, { regex: this._getRegexValue(), wholeWord: this._getWholeWordValue(), caseSensitive: this._getCaseSensitiveValue() });
 		}
 	}
 

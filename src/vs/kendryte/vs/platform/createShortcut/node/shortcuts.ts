@@ -1,6 +1,6 @@
 import { create as createWindowsAsync, IShortcutOptions, IShortcutValue, query as queryWindowsAsync } from 'windows-shortcuts';
 import { isWindows } from 'vs/base/common/platform';
-import { lstat, mkdirp, readlink, rimraf, symlink } from 'vs/base/node/pfs';
+import { lstat, mkdirp, rimraf, symlink } from 'vs/base/node/pfs';
 import * as fs from 'fs';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { dirname, posix } from 'path';
@@ -8,6 +8,7 @@ import { promisify } from 'util';
 
 const queryWindows = promisify<string, IShortcutValue>(queryWindowsAsync);
 const createWindows = promisify<string, IShortcutOptions>(createWindowsAsync);
+const readlink = promisify<string, string>(fs.readlink);
 
 export async function createUserLink(linkFile: string, existsFile: string, windowsOptions?: Partial<IShortcutOptions>) {
 	linkFile = lnk(linkFile);
@@ -61,17 +62,20 @@ export function isUserLinkSame(link: IUserLinkStat, value: string, windowsOption
 	}
 	if (isWindows) {
 		windowsOptions = windowsOptions ? { ...windowsOptions, target: value } : { target: value };
+		if (typeof link.value === 'string') {
+			return link.value === windowsOptions.target;
+		} else {
+			for (const key of Object.keys(link.value) as (keyof IShortcutValue)[]) {
+				if (key === 'expanded') {
+					continue;
+				}
 
-		for (const key of Object.keys(link.value)) {
-			if (key === 'expanded') {
-				continue;
+				if (windowsOptions.hasOwnProperty(key) && link.value[key] === windowsOptions[key]) {
+					continue;
+				}
+
+				return false;
 			}
-
-			if (windowsOptions.hasOwnProperty(key) && link.value[key] === windowsOptions[key]) {
-				continue;
-			}
-
-			return false;
 		}
 
 		return true;

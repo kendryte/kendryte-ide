@@ -6,7 +6,7 @@ import { IStorageService } from 'vs/platform/storage/common/storage';
 import { EditorOptions } from 'vs/workbench/common/editor';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IPackageLocalRemoteInfo, PackageDetailCompletionInput } from 'vs/kendryte/vs/workbench/packageManager/common/editors/packageDetailInput';
-import { WebviewElement } from 'vs/workbench/contrib/webview/electron-browser/webviewElement';
+import { IWebviewService, WebviewElement } from 'vs/workbench/contrib/webview/common/webview';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { localize } from 'vs/nls';
 import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
@@ -14,10 +14,9 @@ import { Event } from 'vs/base/common/event';
 import { isPromiseCanceledError } from 'vs/base/common/errors';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { visualStudioIconClass } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
-import { dispose, IDisposable } from 'vs/base/common/lifecycle';
+import { DisposableStore, dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { InstallSingleDependencyAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/installDependencyAction';
-import { IRequestService } from 'vs/platform/request/node/request';
-import { asText } from 'vs/base/node/request';
+import { asText, IRequestService } from 'vs/platform/request/common/request';
 import * as marked from 'vs/base/common/marked/marked';
 import { ShowCurrentReleaseNotesAction } from 'vs/workbench/contrib/update/electron-browser/update';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
@@ -43,9 +42,12 @@ export class PackageDetailEditor extends BaseEditor {
 	private dimension: Dimension;
 	private content: HTMLDivElement;
 
+	private readonly _dispose: DisposableStore;
+
 	constructor(
 		@ITelemetryService telemetryService: ITelemetryService,
 		@IStorageService storageService: IStorageService,
+		@IWebviewService private readonly webviewService: IWebviewService,
 		@IThemeService private readonly _themeService: IThemeService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@INotificationService private readonly notificationService: INotificationService,
@@ -53,7 +55,7 @@ export class PackageDetailEditor extends BaseEditor {
 		@IOpenerService private readonly openerService: IOpenerService,
 	) {
 		super(PackageDetailEditor.ID, telemetryService, _themeService, storageService);
-
+		this._dispose = this._register(new DisposableStore());
 		this.renderBody = this.renderBody.bind(this);
 	}
 
@@ -79,7 +81,7 @@ export class PackageDetailEditor extends BaseEditor {
 		Event.chain(this.actionsBar.onDidRun)
 			.map(({ error }) => error)
 			.filter(error => !!error)
-			.on(this.onError, this, this._toDispose);
+			.on(this.onError, this, this._dispose);
 
 		append(root, $('hr'));
 
@@ -101,8 +103,8 @@ export class PackageDetailEditor extends BaseEditor {
 			this.webviewElementEvent.dispose();
 			this.webviewElement.dispose();
 		}
-		this.webviewElement = this.instantiationService.createInstance(
-			WebviewElement,
+		this.webviewElement = this.webviewService.createWebview(
+			'package-detail',
 			{
 				allowSvgs: true,
 			},
@@ -119,7 +121,7 @@ export class PackageDetailEditor extends BaseEditor {
 			if (['http', 'https', 'mailto'].indexOf(link.scheme) >= 0 || (link.scheme === 'command' && link.path === ShowCurrentReleaseNotesAction.ID)) {
 				this.openerService.open(link);
 			}
-		})
+		});
 		this.webviewElement.mountTo(this.content);
 
 		this.actionsBar.clear();
@@ -235,6 +237,6 @@ export class PackageDetailEditor extends BaseEditor {
 			</body>
 		</html>`;
 		console.log(html);
-		this.webviewElement.contents = html;
+		this.webviewElement.html = html;
 	}
 }

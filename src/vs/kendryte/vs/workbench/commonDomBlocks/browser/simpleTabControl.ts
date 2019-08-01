@@ -109,7 +109,7 @@ export class SimpleTabControl extends Themable {
 		// const borderRightColor = (index === this.group.count - 1) ? (this.getColor(TAB_BORDER) || this.getColor(contrastBorder)) : null;
 		tab.style.borderLeft = borderLeftColor ? `1px solid ${borderLeftColor}` : null;
 		// tab.style.borderRight = borderRightColor ? `1px solid ${borderRightColor}` : null;
-		tab.style.outlineColor = this.getColor(activeContrastBorder);
+		tab.style.outlineColor = this.getColor(activeContrastBorder) || '';
 
 		tab.style.lineHeight = this.tabOptions.height + 'px';
 		tab.style.paddingRight = tab.style.paddingLeft = (this.tabOptions.padding / 2) + 'px';

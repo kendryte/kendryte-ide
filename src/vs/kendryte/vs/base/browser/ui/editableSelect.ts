@@ -44,7 +44,12 @@ const defaultColor: IEditableSelectBoxStyleOverrides = {} as any;
 	'listHoverBackground',
 	'listHoverForeground',
 	'activeContrastBorder',
-].forEach(name => defaultColor[name] = ColorRegistry[name]);
+].forEach((name) => {
+	defaultColor[name] = (ColorRegistry as any)[name];
+	if (!defaultColor[name]) {
+		throw new Error(`Color name ${name} removed.`);
+	}
+});
 defaultColor.inputBorder = ColorRegistry.selectBorder;
 
 export function attachEditableSelectBoxStyler(widget: IThemable, themeService: IThemeService, style?: IEditableSelectBoxStyleOverrides): IDisposable {

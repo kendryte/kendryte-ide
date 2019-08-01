@@ -95,7 +95,7 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSection, ITempla
 	) {
 	}
 
-	public renderElement(element: IFlashSection, index: number, templateData: ITemplateData, dynamicHeightProbing?: boolean): void {
+	public renderElement(element: IFlashSection, index: number, templateData: ITemplateData, height: number | undefined): void {
 		// console.log('render item ', index);
 		templateData.elementDispose = dispose(templateData.elementDispose);
 
@@ -135,7 +135,7 @@ export class FlashSectionRender implements IPagedRenderer<IFlashSection, ITempla
 		}));
 	}
 
-	public disposeElement(element: IFlashSection, index: number, templateData: ITemplateData, dynamicHeightProbing?: boolean): void {
+	public disposeElement(element: IFlashSection, index: number, templateData: ITemplateData, height: number | undefined): void {
 		templateData.elementDispose = dispose(templateData.elementDispose);
 	}
 

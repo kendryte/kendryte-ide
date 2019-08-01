@@ -6,6 +6,7 @@ import { MemoryAllocationCalculator, parseMemoryAddress, stringifyMemoryAddress 
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { SimpleJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/node/simpleJsonEditorModel';
 import { DeepReadonly } from 'vs/kendryte/vs/base/common/type/deepReadonly';
+import { objectKeys } from 'vs/kendryte/vs/base/common/type/objectKeys';
 
 interface ISection {
 	varName: string;
@@ -81,7 +82,7 @@ export class FlashManagerEditorModel extends SimpleJsonEditorModel<IFlashManager
 			debugger;
 			return '';
 		}
-		for (const key of Object.keys(update)) {
+		for (const key of objectKeys(update)) {
 			if (this.update(['downloadSections', index, key], update[key], true)) {
 				someUpdated += key + ',';
 			}
@@ -90,10 +91,10 @@ export class FlashManagerEditorModel extends SimpleJsonEditorModel<IFlashManager
 	}
 
 	public swap(index1: number, index2: number) {
-		const item1 = Object.assign({}, this.jsonData!.downloadSections[index1]);
-		const item2 = Object.assign({}, this.jsonData!.downloadSections[index2]);
+		const item1: IFlashSection = Object.assign({}, this.jsonData!.downloadSections[index1]);
+		const item2: IFlashSection = Object.assign({}, this.jsonData!.downloadSections[index2]);
 
-		const allKeys = Object.keys(item1).concat(Object.keys(item2));
+		const allKeys: (keyof IFlashSection)[] = objectKeys({ ...item1, ...item2 });
 		for (const key of allKeys) {
 			if (item2[key] === item1[key]) {
 				continue;

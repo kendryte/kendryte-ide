@@ -1,7 +1,7 @@
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { assign } from 'vs/base/common/objects';
-import { getProxyAgent } from 'vs/base/node/proxy';
-import { IHTTPConfiguration } from 'vs/platform/request/node/request';
+import { getProxyAgent } from 'vs/platform/request/node/proxy';
+import { IHTTPConfiguration } from 'vs/platform/request/common/request';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import request = require('request');

@@ -78,8 +78,8 @@ export function registerActionWithKey(category: string, Action: IActionToRegiste
 		command: {
 			id: Action.ID,
 			title: `${category}: ${Action.LABEL_SHORT || Action.LABEL}`,
-			when: keybindingContext,
-			group: category,
+			precondition: keybindingContext,
+			category: category,
 		},
 	});
 }

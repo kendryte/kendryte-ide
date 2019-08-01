@@ -1,7 +1,8 @@
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
-import { EnablementState, IExtensionEnablementService, IExtensionGalleryService, IExtensionManagementService } from 'vs/platform/extensionManagement/common/extensionManagement';
+import { IExtensionGalleryService, IExtensionManagementService } from 'vs/platform/extensionManagement/common/extensionManagement';
+import { EnablementState, IExtensionEnablementService } from 'vs/workbench/services/extensionManagement/common/extensionManagement';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { IProgress, IProgressService2, IProgressStep, ProgressLocation } from 'vs/platform/progress/common/progress';
+import { IProgress, IProgressService, IProgressStep, ProgressLocation } from 'vs/platform/progress/common/progress';
 import { CancellationToken } from 'vs/base/common/cancellation';
 
 // TODO: need change to action
@@ -10,7 +11,7 @@ export function MaixBuildSystemPrepare(access: ServicesAccessor): Promise<boolea
 	const extensionGalleryService: IExtensionGalleryService = access.get(IExtensionGalleryService);
 	const extensionEnablementService: IExtensionEnablementService = access.get(IExtensionEnablementService);
 	const notificationService: INotificationService = access.get(INotificationService);
-	const progressService: IProgressService2 = access.get(IProgressService2);
+	const progressService: IProgressService = access.get(IProgressService);
 
 	return installExtension(
 		'twxs.cmake',
@@ -48,7 +49,7 @@ export function MaixBuildSystemPrepare(access: ServicesAccessor): Promise<boolea
 					console.log('extension is already install and enabled: %s', item.identifier.id);
 				} else {
 					console.log('set extension enabled: %s', item.identifier.id);
-					const enableSuccess = await extensionEnablementService.setEnablement([item], EnablementState.Enabled);
+					const enableSuccess = await extensionEnablementService.setEnablement([item], EnablementState.EnabledGlobally);
 					if (enableSuccess) {
 						changed.push(item.identifier.id);
 					} else {

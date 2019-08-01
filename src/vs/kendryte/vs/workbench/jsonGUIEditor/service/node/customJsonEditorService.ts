@@ -21,7 +21,6 @@ class CustomJsonEditorService implements ICustomJsonEditorService {
 
 	private readonly jsonEditorFocusContext: IContextKey<boolean>;
 	private readonly jsonEditorFocusIdContext: IContextKey<string>;
-
 	constructor(
 		@IInstantiationService private instantiationService: IInstantiationService,
 		@INodeFileSystemService protected readonly nodeFileSystemService: INodeFileSystemService,
