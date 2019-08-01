@@ -701,8 +701,6 @@ export class CodeApplication extends Disposable {
 	private handleRemoteAuthorities(): void {
 		const connectionPool: Map<string, ActiveConnection> = new Map<string, ActiveConnection>();
 
-		const isBuilt = this.environmentService.isBuilt;
-
 		class ActiveConnection {
 			private readonly _authority: string;
 			private readonly _connection: Promise<ManagementPersistentConnection>;
@@ -712,7 +710,6 @@ export class CodeApplication extends Disposable {
 				this._authority = authority;
 
 				const options: IConnectionOptions = {
-					isBuilt,
 					commit: product.commit,
 					socketFactory: nodeSocketFactory,
 					addressProvider: {
