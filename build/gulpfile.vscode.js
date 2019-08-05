@@ -64,6 +64,7 @@ const vscodeResources = [
 	'out-build/bootstrap-window.js',
 	'out-build/paths.js',
 	'out-build/vs/**/*.{svg,png,html}',
+	'out-build/vs/kendryte/vs/**/*.{svg,html}',
 	'!out-build/vs/code/browser/**/*.html',
 	'out-build/vs/base/common/performance.js',
 	'out-build/vs/base/node/languagePacks.js',
