@@ -112,4 +112,5 @@ lzma-native/deps/**
 lzma-native/binding.gyp
 lzma-native/*.sh
 lzma-native/*.md*
-!lzma-native/binding-*/*
+!lzma-native/**/*.dll
+!lzma-native/**/*.node
