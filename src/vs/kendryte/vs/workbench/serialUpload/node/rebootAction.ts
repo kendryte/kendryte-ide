@@ -8,12 +8,11 @@ import {
 	ACTION_LABEL_MAIX_SERIAL_BOOT,
 	ACTION_LABEL_MAIX_SERIAL_BOOT_ISP,
 } from 'vs/kendryte/vs/base/common/menu/serialPort';
-import { CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { SerialLoader } from 'vs/kendryte/vs/platform/serialPort/flasher/node/flasher';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
+import { CHIP_BAUDRATE } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
 
 abstract class MaixSerialRebootActionBase extends Action {
 	private readonly logger: IChannelLogger;
@@ -26,7 +25,6 @@ abstract class MaixSerialRebootActionBase extends Action {
 		@ISerialPortService private serialPortService: ISerialPortService,
 		@IProgressService private progressService: IProgressService,
 		@IChannelLogService channelLogService: IChannelLogService,
-		@IConfigurationService private configurationService: IConfigurationService,
 		@IEnvironmentService private environmentService: IEnvironmentService,
 	) {
 		super(id, label);
@@ -49,13 +47,12 @@ abstract class MaixSerialRebootActionBase extends Action {
 			return;
 		}
 
-		const br = parseInt(this.configurationService.getValue(CONFIG_KEY_FLASH_SERIAL_BAUDRATE)) || 115200;
 		this.logger.info(`Opening serial port ${sel}`);
 		const port = await this.serialPortService.openPort(sel, {
 			dataBits: 8,
 			parity: 'none',
 			stopBits: 1,
-			baudRate: br,
+			baudRate: CHIP_BAUDRATE,
 		}, false);
 		this.logger.info('\t - OK.');
 

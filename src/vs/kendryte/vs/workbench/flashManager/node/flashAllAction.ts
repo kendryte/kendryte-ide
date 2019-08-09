@@ -97,7 +97,7 @@ export class FlashAllAction extends Action {
 		this.logger.info(`\t${bootLoaderSize} bytes`);
 
 		const br = parseInt(this.configurationService.getValue(CONFIG_KEY_FLASH_SERIAL_BAUDRATE)) || CHIP_BAUDRATE;
-		this.logger.info('Will use baudrate while flash: ' + br);
+		this.logger.info('Will use baudrate while flash: ' + br + ' (init port with ' + CHIP_BAUDRATE + ')');
 
 		this.logger.info('==================================');
 

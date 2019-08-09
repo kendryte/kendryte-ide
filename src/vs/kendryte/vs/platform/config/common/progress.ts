@@ -96,7 +96,7 @@ export class SubProgress implements IDisposable {
 	}
 
 	next() {
-		console.log('--- next');
+		// console.log('--- next');
 		this.currentPart++;
 		if (this.currentPart === this.parts.length) {
 			throw new RangeError('pop part out of range');
@@ -106,7 +106,7 @@ export class SubProgress implements IDisposable {
 			nextSize = 0;
 		}
 		this.currentTotalPercentage += nextSize / this.total;
-		console.log('    ', nextSize, this.currentTotalPercentage);
+		// console.log('    ', nextSize, this.currentTotalPercentage);
 		this.infinite();
 	}
 
