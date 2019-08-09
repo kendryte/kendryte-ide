@@ -32,8 +32,8 @@ export function typedValues<T extends Partial<ISerialMonitorSettings>>(settings:
 
 export const localOptionsScheme: IJSONSchemaMapOf<ISerialMonitorSettings> = {
 	baudRate: {
-		title: localize('hexLineFeed.title', 'Baud Rate'),
-		description: localize('hexLineFeed.desc', 'Serial port baud rate'),
+		title: localize('baudrate.title', 'Baud Rate'),
+		description: localize('baudrate.desc', 'Serial port baud rate'),
 		type: 'number',
 		enum: standardBaudRate,
 		default: 115200,
