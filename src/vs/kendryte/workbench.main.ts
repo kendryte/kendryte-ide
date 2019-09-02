@@ -1,21 +1,4 @@
 //// included by "vs/workbench/workbench.main.ts"
-console.warn('start of workbench');
-window.addEventListener('error', (e) => {
-	console.error('window.error', e);
-	debugger;
-});
-process.on('rejectionHandled', (e) => {
-	console.error('rejectionHandled', e);
-	debugger;
-});
-process.on('unhandledRejection', (e) => {
-	console.error('unhandledRejection', e);
-	debugger;
-});
-process.on('uncaughtException', (e) => {
-	console.error('uncaughtException', e);
-	debugger;
-});
 
 // json editors base
 import 'vs/kendryte/vs/workbench/jsonGUIEditor/service/electron-browser/contribution';

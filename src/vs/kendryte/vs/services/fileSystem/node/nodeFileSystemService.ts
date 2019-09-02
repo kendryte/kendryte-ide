@@ -18,6 +18,7 @@ import { ITextModel } from 'vs/editor/common/model';
 import { Edit } from 'vs/base/common/jsonFormatter';
 import { EditOperation } from 'vs/editor/common/core/editOperation';
 import { isMacintosh, isWindows } from 'vs/base/common/platform';
+import { localize } from 'vs/nls';
 
 class NodeFileSystemService implements INodeFileSystemService {
 	_serviceBrand: any;
@@ -188,6 +189,9 @@ class NodeFileSystemService implements INodeFileSystemService {
 			value = undefined;
 		}
 		const edit = setProperty(model.getValue(), Array.isArray(key) ? key : [key], value, { tabSize, insertSpaces, eol });
+		if (edit.length === 0) {
+			throw new Error(localize('invalidModifyError', 'Modify to file "{0}" is invalid.', file));
+		}
 		const changed = this.applyEditToBuffer(edit[0], model);
 		if (changed) {
 			await this.textFileService.save(model.uri);

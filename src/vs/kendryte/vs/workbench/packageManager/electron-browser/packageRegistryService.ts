@@ -299,7 +299,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 
 		const downloadUrl = this.findUrl(packageInfo, version);
 
-		const saveDirName = await this.downloadFromAbsUrl(downloadUrl, packageInfo.name, version);
+		await this.downloadFromAbsUrl(downloadUrl, packageInfo.name, version);
 
 		const currentConfigFile = this.kendryteWorkspaceService.getProjectSetting(
 			this.kendryteWorkspaceService.requireCurrentWorkspace(),
@@ -313,7 +313,7 @@ export class PackageRegistryService implements IPackageRegistryService {
 				'source': ['src/main.c'],
 			}, null, 4));
 		}
-		await this.nodeFileSystemService.editJsonFile(currentConfigFile, ['dependency', saveDirName], version || downloadUrl);
+		await this.nodeFileSystemService.editJsonFile(currentConfigFile, ['dependency', packageInfo.name], version || downloadUrl);
 
 		this._onLocalPackageChange.fire();
 	}

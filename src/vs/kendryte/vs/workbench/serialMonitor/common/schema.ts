@@ -58,7 +58,7 @@ export const localOptionsScheme: IJSONSchemaMapOf<ISerialMonitorSettings> = {
 	parity: {
 		title: localize('parity.title', 'Parity'),
 		description: localize('parity.desc', 'Serial port parity'),
-		type: 'number',
+		type: 'string',
 		enum: standardParity,
 		default: 'none',
 		$comment: 'undefined',

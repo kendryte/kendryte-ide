@@ -5,7 +5,7 @@ export const standardDataBits = [
 	8, 7, 6, 5,
 ];
 export const standardParity = [
-	'none', 'even', 'mark', 'odd', 'space',
+	'none', 'even', 'odd', 'mark', 'space',
 ];
 export const standardStopBits = [
 	1, 2,
