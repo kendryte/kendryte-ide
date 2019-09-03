@@ -84,6 +84,7 @@ export function registerActionWithKey(category: string, Action: IActionToRegiste
 	});
 }
 
+// must dispose returned action!
 export function createActionInstance<T extends Action>(instantiationService: IInstantiationService, actionId: string): T {
 	const ActionDesc = DescRegistry[actionId];
 	if (!ActionDesc) {
@@ -91,4 +92,11 @@ export function createActionInstance<T extends Action>(instantiationService: IIn
 	}
 
 	return instantiationService.createInstance(ActionDesc.syncDescriptor) as any;
+}
+
+export function createRunDisposeAction(instantiationService: IInstantiationService, actionId: string, args: any[] = []): any {
+	const action = createActionInstance(instantiationService, actionId);
+	return action.run(...args).finally(() => {
+		action.dispose();
+	});
 }

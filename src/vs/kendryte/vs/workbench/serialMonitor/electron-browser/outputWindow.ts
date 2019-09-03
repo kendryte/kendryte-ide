@@ -23,7 +23,6 @@ import { TerminalConfigHelper } from 'vs/workbench/contrib/terminal/browser/term
 import { TerminalInstance } from 'vs/workbench/contrib/terminal/browser/terminalInstance';
 import { linuxDistro } from 'vs/workbench/contrib/terminal/node/terminal';
 import { ExtendMap } from 'vs/kendryte/vs/base/common/extendMap';
-import { SerialPortBaseBinding } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { ILocalOptions } from 'vs/kendryte/vs/workbench/serialMonitor/common/localSettings';
 import { CONTEXT_IN_SERIAL_PORT_OUTPUT, CONTEXT_SERIAL_PORT_HAS_SELECT } from 'vs/kendryte/vs/workbench/serialMonitor/common/actionId';
 import { ITerminalInstanceService } from 'vs/workbench/contrib/terminal/browser/terminal';
@@ -34,6 +33,7 @@ import { IStorageService } from 'vs/platform/storage/common/storage';
 import { IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
 import { OutputWindowFind } from 'vs/kendryte/vs/workbench/serialMonitor/electron-browser/outputWindowFind';
 import { SearchAddon } from 'xterm-addon-search';
+import { ISerialPortInstance } from 'vs/kendryte/vs/services/serialPort/common/type';
 
 interface IContextMenuCache {
 	actions: (IAction | ContextSubMenu)[];
@@ -210,7 +210,7 @@ export class OutputXTerminal extends TerminalInstance {
 		}
 	}
 
-	handleSerialIncoming(instance: SerialPortBaseBinding | undefined) {
+	handleSerialIncoming(instance: ISerialPortInstance | undefined) {
 		if (instance) {
 			this.currentInstance = instance;
 		} else {
@@ -233,7 +233,7 @@ export class OutputXTerminal extends TerminalInstance {
 		this.last = buff;
 	}
 
-	destroyScrollback(instance: SerialPortBaseBinding) {
+	destroyScrollback(instance: ISerialPortInstance) {
 		if (!this.scrollbackList.has(instance)) {
 			return;
 		}

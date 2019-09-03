@@ -21,7 +21,7 @@ import { renderOcticons } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 import { vscodeIcon } from 'vs/kendryte/vs/platform/vsicons/browser/vsIconRender';
 import { listErrorForeground } from 'vs/platform/theme/common/colorRegistry';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { createActionInstance } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
+import { createRunDisposeAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 import { InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
 import { humanSize } from 'vs/kendryte/vs/base/common/speedShow';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
@@ -224,7 +224,7 @@ export class FlashManagerEditor extends AbstractJsonEditor<IFlashManagerConfigJs
 			return;
 		}
 
-		return createActionInstance(this.instantiationService, commandId).run(this._input.getResource().fsPath).catch((err) => {
+		return createRunDisposeAction(this.instantiationService, commandId, [this._input.getResource().fsPath]).catch((err: Error) => {
 			this.notificationService.error(err.message);
 		});
 	}

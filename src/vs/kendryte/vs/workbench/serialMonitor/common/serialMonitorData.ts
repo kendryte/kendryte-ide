@@ -1,7 +1,7 @@
 import { ISerialMonitorSettings } from 'vs/kendryte/vs/workbench/serialMonitor/common/schema';
 import { nullOpenOptions, OpenOptions } from 'vs/kendryte/vs/services/serialPort/common/libraryType';
 import { ILocalOptions, nullMonitorOptions, SerialOpenMode } from 'vs/kendryte/vs/workbench/serialMonitor/common/localSettings';
-import { SerialPortBaseBinding, SerialPortItem } from 'vs/kendryte/vs/services/serialPort/common/type';
+import { ISerialPortInstance, SerialPortItem } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { objectKeys } from 'vs/kendryte/vs/base/common/type/objectKeys';
 
 export class SerialMonitorData {
@@ -13,7 +13,7 @@ export class SerialMonitorData {
 	public readonly port: SerialPortItem;
 
 	private _selectedMark: boolean = false;
-	private _instance: SerialPortBaseBinding;
+	private _instance: ISerialPortInstance;
 
 	constructor(
 		public readonly id: string,
@@ -56,7 +56,7 @@ export class SerialMonitorData {
 
 	public get hasOpen() {return !!this._instance;}
 
-	public setInstance(port: SerialPortBaseBinding | null) {
+	public setInstance(port: ISerialPortInstance | null) {
 		if (port) {
 			this._instance = port;
 		} else {
@@ -66,7 +66,7 @@ export class SerialMonitorData {
 		}
 	}
 
-	public getInstance(): SerialPortBaseBinding {
+	public getInstance(): ISerialPortInstance {
 		if (this._instance) {
 			return this._instance;
 		} else {

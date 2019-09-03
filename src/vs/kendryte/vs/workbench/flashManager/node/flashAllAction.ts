@@ -4,13 +4,13 @@ import { FlashTargetType, SerialLoader } from 'vs/kendryte/vs/platform/serialPor
 import { ISerialPortService } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common/type';
-import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE } from 'vs/kendryte/vs/workbench/cmake/common/type';
+import { KFLASH_CHANNEL, KFLASH_CHANNEL_TITLE } from 'vs/kendryte/vs/base/common/messages';
 import { CHIP_BAUDRATE } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { lstat } from 'vs/base/node/pfs';
 import { CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { IProgressService, ProgressLocation } from 'vs/platform/progress/common/progress';
+import { IProgress, IProgressService, IProgressStep, ProgressLocation } from 'vs/platform/progress/common/progress';
 import { SubProgress } from 'vs/kendryte/vs/platform/config/common/progress';
 import { parseMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
 import { createReadStream } from 'fs';
@@ -18,6 +18,7 @@ import { IFlashManagerService } from 'vs/kendryte/vs/workbench/flashManager/comm
 import { IKendryteWorkspaceService } from 'vs/kendryte/vs/services/workspace/common/type';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
 
 interface IMySection {
 	name: string;
@@ -48,11 +49,11 @@ export class FlashAllAction extends Action {
 		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 	) {
 		super(id, label);
-		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
+		this.logger = channelLogService.createChannel(KFLASH_CHANNEL_TITLE, KFLASH_CHANNEL);
 		this.bootLoader = this.nodePathService.getPackagesPath('isp/bootloader.bin'); // todo
 	}
 
-	async run(path: string | any) {
+	async real_run(path: string | any, report: IProgress<IProgressStep>, token: CancellationToken) {
 		let rootPath = '';
 		if (typeof path === 'string') {
 			rootPath = path;
@@ -83,12 +84,13 @@ export class FlashAllAction extends Action {
 		}
 
 		this.logger.info(`Opening serial port ${sel}`);
-		const port = await this.serialPortService.openPort(sel, {
+		const port = await this.serialPortService.getPortManager(sel).openPort({
 			dataBits: 8,
 			parity: 'none',
 			stopBits: 1,
 			baudRate: CHIP_BAUDRATE,
 		}, true);
+		this._register(port);
 		this.logger.info(' - OK');
 
 		this.logger.info('BootLoader:');
@@ -106,37 +108,42 @@ export class FlashAllAction extends Action {
 			this.serialPortService,
 			port,
 			this.logger,
+			token,
 			!this.environmentService.isBuilt,
 		);
+		this._register(loader);
 
 		loader.setBaudRate(br);
 		loader.setBootLoader(this.bootLoader);
 		loader.setFlashTarget(FlashTargetType.InChip);
 
-		const p = this.progressService.withProgress(
+		return this.flashProgress(loader, sections, bootLoaderSize, new SubProgress('loading...', report));
+	}
+
+	async run(path: string | any): Promise<void> {
+		const cancel = new CancellationTokenSource();
+		await this.progressService.withProgress(
 			{
 				location: ProgressLocation.Notification,
 				title: `Flash program`,
 				total: 100,
 				cancellable: true,
+				source: 'kflash.js',
 			},
 			(report) => {
-				return this.flashProgress(loader, sections, bootLoaderSize, new SubProgress('loading...', report));
+				return this.real_run(path, report, cancel.token);
 			},
-			() => loader.abort(new Error('user cancel')),
-		);
-
-		await p.then(() => {
+			() => {
+				cancel.cancel();
+			},
+		).then(() => {
 			this.logger.info('==================================');
 			this.logger.info('Data successfully flashed to the board.');
-			loader.dispose();
 		}, (e) => {
 			this.logger.error('==================================');
 			this.logger.error('Flash failed with error: ' + e.message);
-			loader.dispose();
 			this.channelLogService.show(this.logger.id);
 		});
-
 	}
 
 	async flashProgress(flasher: SerialLoader, sections: IMySection[], bootLoaderSize: number, report: SubProgress) {

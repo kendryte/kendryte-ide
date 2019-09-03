@@ -14,18 +14,26 @@ export interface SerialPortItem { // copy out from serial port package
 	vendorId?: undefined;
 }
 
-export enum SerialPortCloseReason {
-	Unknown,
-	Exclusive,
-	MainShutdown,
-	FlashComplete,
-	UserAction,
+export interface ISerialPortInstance extends NodeJS.ReadWriteStream {
+	onLogicalClose: Event<void>;
+	onLogicalOpen: Event<void>;
+	onDispose: Event<void>;
+
+	flush(): Promise<void>;
+	flowControl(value: SetOptions): Promise<void>;
+	setBaudrate(newBr: number): Promise<void>;
+	setOptions(newOpts: OpenOptions): Promise<void>;
+	dispose(): void;
 }
 
-export interface SerialPortBaseBinding extends NodeJS.ReadWriteStream {
-	__serial_port: never; // prevent type merge
-	beforeClose: Event<SerialPortCloseReason>;
+export interface ISerialPortManager {
+	readonly deviceName: string;
+
+	closePort(stream: ISerialPortInstance): Promise<void>;
+	openPort(options: OpenOptions, exclusive?: boolean): Promise<ISerialPortInstance>;
 }
+
+export type ISerialRebootSequence = SetOptions[];
 
 export interface ISerialPortService extends EnumProviderService<SerialPortItem> {
 	_serviceBrand: any;
@@ -33,13 +41,9 @@ export interface ISerialPortService extends EnumProviderService<SerialPortItem> 
 	onDefaultDeviceChanged: Event<void>;
 
 	refreshDevices(): void;
-	openPort(serialDevice: string, opts?: Partial<OpenOptions>, exclusive?: boolean): Promise<SerialPortBaseBinding>;
-	updatePortBaudRate(serialDevice: string | SerialPortBaseBinding, newBaudRate: number): void;
-	closePort(serialDevice: string | SerialPortBaseBinding, reason: SerialPortCloseReason): Promise<void>;
-	sendReboot(serialDevice: string | SerialPortBaseBinding, cancel?: CancellationToken): Promise<void>;
-	sendRebootISPKD233(serialDevice: string | SerialPortBaseBinding, cancel?: CancellationToken): Promise<void>;
-	sendRebootISPDan(serialDevice: string | SerialPortBaseBinding, cancel?: CancellationToken): Promise<void>;
-	sendFlowControl(port: string | SerialPortBaseBinding, cancel?: CancellationToken, ...controlSeq: SetOptions[]): Promise<void>;
+	getPortManager(serialDevice: string): ISerialPortManager;
+	destroyPortManager(serialDevice: string | ISerialPortManager): Promise<void>;
+	sendFlowControl(port: string | ISerialPortManager | ISerialPortInstance, controlSeq: ISerialRebootSequence, cancel?: CancellationToken): Promise<void>;
 	quickOpenDevice(): Promise<string | undefined>;
 	readonly lastSelect: string;
 }

@@ -4,7 +4,7 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { localize } from 'vs/nls';
 import { IListRenderer, IListVirtualDelegate } from 'vs/base/browser/ui/list/list';
-import { ISerialPortService, SerialPortBaseBinding, SerialPortCloseReason, SerialPortItem } from 'vs/kendryte/vs/services/serialPort/common/type';
+import { ISerialPortInstance, ISerialPortService, SerialPortItem } from 'vs/kendryte/vs/services/serialPort/common/type';
 import 'vs/css!vs/kendryte/vs/workbench/serialMonitor/browser/media/panel';
 import { OcticonLabel } from 'vs/base/browser/ui/octiconLabel/octiconLabel';
 import { addDisposableListener } from 'vs/base/browser/dom';
@@ -19,7 +19,7 @@ export class SerialDeviceList extends Disposable {
 	private readonly _onClick = new Emitter<SerialMonitorData>();
 	readonly onClick = this._onClick.event;
 
-	private readonly _onClose = new Emitter<SerialPortBaseBinding>();
+	private readonly _onClose = new Emitter<ISerialPortInstance>();
 	readonly onClose = this._onClose.event;
 
 	protected readonly list: WorkbenchList<SerialMonitorData>;
@@ -160,8 +160,10 @@ export class SerialDeviceList extends Disposable {
 		this.list.splice(0, this.list.length, this.listDataArray);
 	}
 
-	public closePort(id: string, reason: SerialPortCloseReason) {
-		return this.serialPortService.closePort(id, reason);
+	public closePort(id: string) {
+		const portData = this.listData.getReq(id);
+		return this.serialPortService.getPortManager(portData.id)
+			.closePort(portData.getInstance());
 	}
 
 	public async openPort(id: string, config: ISerialMonitorSettings) {
@@ -170,10 +172,11 @@ export class SerialDeviceList extends Disposable {
 
 		portData.loadOptions(config);
 
-		const port = await this.serialPortService.openPort(portData.id, portData.getPortConfig(), true);
+		const port = await this.serialPortService.getPortManager(portData.id)
+			.openPort(portData.getPortConfig(), false);
 		portData.setInstance(port);
 
-		port.beforeClose(() => {
+		port.onDispose(() => {
 			portData.setInstance(null);
 			this._onClose.fire(port);
 		});

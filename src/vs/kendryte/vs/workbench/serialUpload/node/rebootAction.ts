@@ -1,6 +1,6 @@
 import { Action } from 'vs/base/common/actions';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { IProgressService, ProgressLocation } from 'vs/platform/progress/common/progress';
+import { IProgress, IProgressService, IProgressStep, ProgressLocation } from 'vs/platform/progress/common/progress';
 import { ISerialPortService } from 'vs/kendryte/vs/services/serialPort/common/type';
 import {
 	ACTION_ID_MAIX_SERIAL_BOOT,
@@ -13,10 +13,10 @@ import { IChannelLogger, IChannelLogService } from 'vs/kendryte/vs/services/chan
 import { CMAKE_CHANNEL, CMAKE_CHANNEL_TITLE } from 'vs/kendryte/vs/workbench/cmake/common/type';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { CHIP_BAUDRATE } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
+import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
 
 abstract class MaixSerialRebootActionBase extends Action {
 	private readonly logger: IChannelLogger;
-	private loader: SerialLoader;
 	protected abstract readonly target: string;
 
 	constructor(
@@ -31,15 +31,7 @@ abstract class MaixSerialRebootActionBase extends Action {
 		this.logger = channelLogService.createChannel(CMAKE_CHANNEL_TITLE, CMAKE_CHANNEL);
 	}
 
-	public dispose() {
-		super.dispose();
-		if (this.loader) {
-			this.loader.abort(new Error('success rebooted'));
-			this.loader.dispose();
-		}
-	}
-
-	async run(): Promise<void> {
+	async real_run(report: IProgress<IProgressStep>, token: CancellationToken): Promise<void> {
 		this.logger.clear();
 		await this.serialPortService.refreshDevices();
 		const sel = this.serialPortService.lastSelect || await this.serialPortService.quickOpenDevice();
@@ -48,45 +40,60 @@ abstract class MaixSerialRebootActionBase extends Action {
 		}
 
 		this.logger.info(`Opening serial port ${sel}`);
-		const port = await this.serialPortService.openPort(sel, {
+		const port = await this.serialPortService.getPortManager(sel).openPort({
 			dataBits: 8,
 			parity: 'none',
 			stopBits: 1,
 			baudRate: CHIP_BAUDRATE,
 		}, false);
+		this._register(port);
 		this.logger.info('\t - OK.');
 
 		this.logger.info('==================================');
 
-		const loader = this.loader = new SerialLoader(
+		const loader = new SerialLoader(
 			this.instantiationService,
 			this.serialPortService,
 			port,
 			this.logger,
+			token,
 			!this.environmentService.isBuilt,
 		);
-		loader.abortedPromise.catch((e) => {
-			console.log('flasher aborted: %s', e ? e.message || e : e);
-		});
+		this._register(loader);
 
+		this.logger.info(`Reboot to ${this.target}`);
+		if (this.target === 'isp') {
+			await loader.rebootISPMode();
+		} else {
+			await loader.rebootNormalMode();
+		}
+
+		this.logger.info(`Done.`);
+	}
+
+	async run(): Promise<void> {
+		const cancel = new CancellationTokenSource();
 		await this.progressService.withProgress(
 			{
 				location: ProgressLocation.Notification,
-				title: `Rebooting`,
+				title: `Flash program`,
 				total: 100,
 				cancellable: true,
+				source: 'kflash.js',
 			},
-			async (report) => {
-				this.logger.info(`Reboot to ${this.target}`);
-				if (this.target === 'isp') {
-					await loader.rebootISPMode();
-				} else {
-					await loader.rebootNormalMode();
-				}
+			(report) => {
+				return this.real_run(report, cancel.token);
 			},
-			() => loader.abort(new Error('user cancel')),
-		);
-		this.logger.info(`Done.`);
+			() => {
+				cancel.cancel();
+			},
+		).then(() => {
+			this.logger.info('==================================');
+			this.logger.info('Data successfully flashed to the board.');
+		}, (e) => {
+			this.logger.error('==================================');
+			this.logger.error('Flash failed with error: ' + e.message);
+		});
 	}
 }
 

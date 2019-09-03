@@ -17,7 +17,7 @@ export function disposableStream<T extends Writable | Readable>(stream: T): T & 
 		dispose() {
 			if (!closed) {
 				stream.removeListener('close', handleClose);
-				stream.destroy(new Error('disposed'));
+				stream.destroy();
 			}
 		},
 	});

@@ -17,8 +17,8 @@ export class MaixCMakeBuildAction extends Action {
 
 	constructor(
 		id = MaixCMakeBuildAction.ID, label = MaixCMakeBuildAction.LABEL,
+		@IOutputService outputService: IOutputService,
 		@ICMakeService private readonly cmakeService: ICMakeService,
-		@IOutputService private readonly outputService: IOutputService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@ITextFileService private readonly textFileService: ITextFileService,
 		@IPanelService private readonly panelService: IPanelService,
@@ -36,7 +36,7 @@ export class MaixCMakeBuildAction extends Action {
 			successMessage = false;
 			failMessage = false;
 		}
-		await this.outputService.showChannel(CMAKE_CHANNEL, true);
+		// await this.outputService.showChannel(CMAKE_CHANNEL, true);
 		return this._run().then(() => {
 			if (successMessage) {
 				this.notificationService.info(localize('buildSuccess', 'Build complete.'));

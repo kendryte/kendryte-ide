@@ -5,7 +5,7 @@ import { Disposable } from 'vs/base/common/lifecycle';
 import { ISPError, ISPOperation, ISPRequest, ISPResponse } from 'vs/kendryte/vs/platform/serialPort/flasher/node/bufferConsts';
 import { createReadStream, ReadStream } from 'fs';
 import { GarbageData, StreamChain } from 'vs/kendryte/vs/platform/serialPort/flasher/node/streamChain';
-import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
+import { CancellationToken } from 'vs/base/common/cancellation';
 import { Event } from 'vs/base/common/event';
 import { addDisposableEventEmitterListener } from 'vs/kendryte/vs/base/node/disposableEvents';
 import { TimeoutBuffer } from 'vs/kendryte/vs/platform/serialPort/flasher/node/timoutBuffer';
@@ -16,7 +16,7 @@ import { timeout } from 'vs/base/common/async';
 import { eachChunkPadding } from 'vs/kendryte/vs/platform/serialPort/flasher/node/chunkBuffer';
 import { createCipheriv, createHash } from 'crypto';
 import { drainStream } from 'vs/kendryte/vs/base/common/drainStream';
-import { ISerialPortService, SerialPortBaseBinding } from 'vs/kendryte/vs/services/serialPort/common/type';
+import { ISerialPortInstance, ISerialPortService } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { throwNull } from 'vs/kendryte/vs/base/common/assertNotNull';
 import { CHIP_BAUDRATE, PROGRAM_BASE } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
@@ -32,6 +32,7 @@ import { streamToBuffer } from 'vs/kendryte/vs/base/node/collectingStream';
 import { canceled } from 'vs/base/common/errors';
 import { packISPWritePackage } from 'vs/kendryte/vs/platform/serialPort/flasher/node/ispFlashPackage';
 import { DeferredPromise } from 'vs/kendryte/vs/base/common/deferredPromise';
+import { boardRebootSequence, boardRebootSequenceISP233, boardRebootSequenceISPOther } from 'vs/kendryte/vs/services/serialPort/common/rebootSequence';
 
 export enum FlashTargetType {
 	OnBoard = 0,
@@ -45,7 +46,6 @@ interface IFlashProgress {
 export class SerialLoader extends Disposable {
 	protected readonly streamChain: StreamChain<ISPRequest, ISPResponse>;
 	protected readonly timeout: TimeoutBuffer;
-	protected readonly cancel: CancellationTokenSource;
 	protected readonly token: CancellationToken;
 
 	private _application: string | undefined;
@@ -54,7 +54,7 @@ export class SerialLoader extends Disposable {
 	private _encryptionKey: Buffer | undefined;
 	private _targetType: FlashTargetType;
 
-	protected aborted: Error;
+	private readonly aborted: DeferredPromise<never>;
 	public readonly abortedPromise: Promise<never>;
 
 	protected applicationStreamSize: number;
@@ -69,11 +69,13 @@ export class SerialLoader extends Disposable {
 	constructor(
 		protected readonly instantiationService: IInstantiationService, // DEBUG USE
 		private readonly serialPortService: ISerialPortService,
-		private readonly device: SerialPortBaseBinding,
+		private readonly device: ISerialPortInstance,
 		protected readonly logger: IChannelLogger,
+		cancelToken: CancellationToken,
 		developmentMode: boolean,
 	) {
 		super();
+		this.token = cancelToken;
 
 		this.timeout = this._register(new TimeoutBuffer(5));
 
@@ -98,26 +100,23 @@ export class SerialLoader extends Disposable {
 			this.timeout.disable();
 		}
 
-		this.cancel = new CancellationTokenSource();
 		this._register(this.streamChain);
-		this._register(this.cancel);
-		this.token = this.cancel.token;
+		this._register(this.token.onCancellationRequested(() => {
+			this.abort(new Error(localize('cancel', 'Cancel')));
+		}));
 
 		this._register(
 			addDisposableEventEmitterListener(device, 'close', () => this.handleError(new Error('Broken pipe'))),
 		);
 
-		this.abortedPromise = new Promise<never>((resolve, reject) => {
-			this._register(this.cancel.token.onCancellationRequested(() => {
-				reject(this.aborted);
-			}));
-			this._register({
-				dispose() {
-					setTimeout(() => {
-						resolve(void 0); // to prevent dead promise in any way, but this is very not OK.
-					}, 100);
-				},
-			});
+		this.aborted = new DeferredPromise<never>();
+		this.abortedPromise = this.aborted.p;
+		this._register({
+			dispose: () => {
+				setTimeout(() => {
+					this.aborted.error(new Error('disposed')); // to prevent dead promise in any way, but this is very not OK.
+				}, 100);
+			},
 		});
 
 		this._register(this.streamChain.onGarbage(garbage => this.logGarbage(garbage)));
@@ -319,14 +318,10 @@ export class SerialLoader extends Disposable {
 
 		this.logger.info(' - Change connection baudrate (to: ' + br + ')...');
 		this.send(ISPOperation.ISP_CHANGE_BAUD_RATE, buff);
+		await this.device.flush();
 		await timeout(800);
-		await this.serialPortService.updatePortBaudRate(this.device, br);
+		await this.device.setBaudrate(br);
 		await timeout(200);
-
-		// this.streamChain.restartPipe();
-
-		// this.logger.info(' - wait for ISP_CHANGE_BAUD_RATE (0x%s)...', ISPOperation.ISP_CHANGE_BAUD_RATE.toString(16));
-		// await this.expect(ISPOperation.ISP_CHANGE_BAUD_RATE);
 
 		await this.flashBootGreeting();
 
@@ -372,14 +367,14 @@ export class SerialLoader extends Disposable {
 	}
 
 	rebootNormalMode() {
-		return this.serialPortService.sendReboot(this.device);
+		return this.serialPortService.sendFlowControl(this.device, boardRebootSequence, this.token);
 	}
 
 	async rebootISPMode() {
 		this.logger.info('Greeting');
 		try {
 			this.logger.info('try reboot as KD233');
-			await this.serialPortService.sendRebootISPKD233(this.device);
+			await this.serialPortService.sendFlowControl(this.device, boardRebootSequenceISP233, this.token);
 			this.send(ISPOperation.ISP_NOP, Buffer.alloc(3));
 			await this.setTimeout('greeting kd233 board', 1000, this.expect(ISPOperation.ISP_NOP));
 			this.logger.info(' - Hello.');
@@ -389,7 +384,7 @@ export class SerialLoader extends Disposable {
 		}
 		try {
 			this.logger.info('try reboot as other board');
-			await this.serialPortService.sendRebootISPDan(this.device);
+			await this.serialPortService.sendFlowControl(this.device, boardRebootSequenceISPOther, this.token);
 			this.send(ISPOperation.ISP_NOP, Buffer.alloc(3));
 			await this.setTimeout('greeting other board', 1000, this.expect(ISPOperation.ISP_NOP));
 			this.logger.info(' - Hello.');
@@ -532,14 +527,9 @@ export class SerialLoader extends Disposable {
 		this.abort(error);
 	}
 
-	public abort(error: Error) {
+	private abort(error: Error) {
 		this.logger.info('abort operation with %s', error.message);
-		if (this.aborted) {
-			return;
-		}
-		this.aborted = error || new Error('Unknown Error');
-		this.cancel.cancel();
-		this.streamChain.dispose();
+		this.aborted.error(error || new Error('Unknown Error'));
 	}
 
 	protected async getSize(stream: ReadStream) {
@@ -561,7 +551,7 @@ export class SerialLoader extends Disposable {
 		content: Buffer,
 		progressFunc: (progress: IFlashProgress) => void,
 	) {
-		const cancel = this.cancel.token;
+		const cancel = this.token;
 		const chunkSize = operation === ISPOperation.ISP_MEMORY_WRITE ? DATA_LEN_WRITE_MEMORTY : DATA_LEN_WRITE_FLASH;
 		const flashTarget = operation === ISPOperation.ISP_MEMORY_WRITE ? 'memory' : 'flash';
 		let bytesWritten = 0, chunkWritten = 0;

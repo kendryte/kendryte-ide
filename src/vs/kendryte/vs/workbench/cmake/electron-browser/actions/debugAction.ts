@@ -23,8 +23,8 @@ import {
 } from 'vs/kendryte/vs/base/common/menu/cmake';
 import { IOpenOCDService } from 'vs/kendryte/vs/services/openocd/common/openOCDService';
 import { LaunchVisitor, WorkspaceMaixLaunch } from 'vs/kendryte/vs/workbench/cmake/common/launchConfig';
-import { createActionInstance } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
+import { createRunDisposeAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 
 export class MaixCMakeDebugAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_CMAKE_DEBUG;
@@ -155,7 +155,7 @@ export class MaixCMakeBuildDebugAction extends Action {
 	}
 
 	async run() {
-		await createActionInstance(this.instantiationService, ACTION_ID_MAIX_CMAKE_BUILD).run(false);
-		await createActionInstance(this.instantiationService, ACTION_ID_MAIX_CMAKE_DEBUG).run();
+		await createRunDisposeAction(this.instantiationService, ACTION_ID_MAIX_CMAKE_BUILD, [false]);
+		await createRunDisposeAction(this.instantiationService, ACTION_ID_MAIX_CMAKE_DEBUG);
 	}
 }

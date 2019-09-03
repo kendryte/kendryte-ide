@@ -2,7 +2,6 @@ import { Extensions as PanelExtensions, Panel, PanelDescriptor, PanelRegistry } 
 import { $, append, Dimension, getTotalHeight, getTotalWidth, hide, show } from 'vs/base/browser/dom';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { SerialPortBaseBinding, SerialPortCloseReason } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { attachButtonStyler, IButtonStyleOverrides } from 'vs/platform/theme/common/styler';
 import { Button } from 'vs/base/browser/ui/button/button';
@@ -37,6 +36,7 @@ import { SerialMonitorSettings } from 'vs/kendryte/vs/workbench/serialMonitor/br
 import { SerialMonitorUIConfig } from 'vs/kendryte/vs/workbench/serialMonitor/browser/SerialMonitorUIConfig';
 import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
+import { ISerialPortInstance } from 'vs/kendryte/vs/services/serialPort/common/type';
 
 class SerialMonitorPanel extends Panel {
 	private actions: IAction[];
@@ -150,7 +150,7 @@ class SerialMonitorPanel extends Panel {
 		this.stop = this.createButton(
 			$centerHead,
 			'　$(primitive-square)　',
-			() => this._doSerialClose(SerialPortCloseReason.UserAction),
+			() => this._doSerialClose(),
 			localize('serial-port.close', 'Close port'),
 		);
 
@@ -384,51 +384,9 @@ class SerialMonitorPanel extends Panel {
 	}
 
 	private async _realOpenPort(id: string) {
-		const port = await this.list.openPort(id, this.monitorConfig.settings);
+		await this.list.openPort(id, this.monitorConfig.settings);
 		this.logService.info('[serialPort] port open success');
-
-		port.beforeClose((reason) => {
-			this.logService.info('[serialPort] port will close because: ' + SerialPortCloseReason[reason]);
-			if (reason === SerialPortCloseReason.Exclusive) {
-				this.logService.info('[serialPort] will auto re-open.');
-				setTimeout(() => {
-					this.reOpenWhenAvailable(id).catch((e) => {
-						this.logService.warn('[serialPort] Not able auto open serial port monitor');
-						if (e) {
-							this.logService.error(e);
-						} else {
-							this.logService.warn('[serialPort] do not know why, commonly not an error');
-						}
-					});
-				}, 1000);
-			}
-		});
-
 		this.render();
-	}
-
-	private async reOpenWhenAvailable(id: string) {
-		const port = await this.list.openPort(id, this.monitorConfig.settings);
-		this.logService.error('[serialPort] reOpenWhenAvailable: waiting...');
-		await new Promise((resolve, reject) => {
-			const to = setTimeout(() => {
-				this.logService.error('[serialPort] auto re-connect timeout.');
-				reject();
-			}, 20000);
-			port.beforeClose((reason) => {
-				this.logService.info('[serialPort] !! port close: ' + SerialPortCloseReason[reason]);
-				clearTimeout(to);
-				if (reason === SerialPortCloseReason.FlashComplete) {
-					this.logService.info('[serialPort] try re-connect');
-					setImmediate(resolve);
-				} else {
-					this.logService.info('[serialPort] reason not FlashComplete, ignore.');
-					reject();
-				}
-			});
-		});
-
-		await this._realOpenPort(id);
 	}
 
 	private _doSerialPause() {
@@ -444,16 +402,16 @@ class SerialMonitorPanel extends Panel {
 		this._updatePaused(item.paused);
 	}
 
-	private _destroyOnClose(instance: SerialPortBaseBinding) {
+	private _destroyOnClose(instance: ISerialPortInstance) {
 		this.context.lineInputStream.unpipe(instance);
 		this.xterm.destroyScrollback(instance);
 	}
 
-	private async _doSerialClose(reason: SerialPortCloseReason) {
+	private async _doSerialClose() {
 		const item = this.list.currentSelect;
 
 		if (item.hasOpen) {
-			await this.list.closePort(item.id, reason);
+			await this.list.closePort(item.id);
 			this.render();
 		} else {
 			setImmediate(() => {

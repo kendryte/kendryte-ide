@@ -7,7 +7,7 @@ import {
 	ACTION_LABEL_MAIX_CMAKE_RUN,
 } from 'vs/kendryte/vs/base/common/menu/cmake';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { createActionInstance } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
+import { createRunDisposeAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/registerAction';
 import { IOpenOCDService } from 'vs/kendryte/vs/services/openocd/common/openOCDService';
 import { IDebugService } from 'vs/workbench/contrib/debug/common/debug';
 import { ICommandService } from 'vs/platform/commands/common/commands';
@@ -81,7 +81,7 @@ export class MaixCMakeBuildRunAction extends Action {
 	}
 
 	async _run() {
-		await createActionInstance(this.instantiationService, ACTION_ID_MAIX_CMAKE_BUILD).run(false);
-		await createActionInstance(this.instantiationService, ACTION_ID_MAIX_CMAKE_RUN).run();
+		await createRunDisposeAction(this.instantiationService, ACTION_ID_MAIX_CMAKE_BUILD, [false]);
+		await createRunDisposeAction(this.instantiationService, ACTION_ID_MAIX_CMAKE_RUN);
 	}
 }
