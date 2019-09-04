@@ -52,3 +52,28 @@ export function* eachChunkPadding(buff: Buffer, size: number) {
 		}
 	}
 }
+
+export interface IBufferChunk {
+	chunk: Buffer;
+	position: number;
+	index: number;
+}
+
+export function* eachChunkPaddingWithSize(buff: Buffer, size: number): IterableIterator<IBufferChunk> {
+	let index = 0;
+	for (let curr = 0; curr < buff.length; curr += size) {
+		let view: Buffer = buff.slice(curr, curr + size);
+		if (view.length < size) {
+			view = Buffer.concat([view, Buffer.alloc(size - view.length, 0)]);
+		}
+
+		yield {
+			chunk: view,
+			position: curr,
+			index,
+		};
+
+		index++;
+	}
+}
+

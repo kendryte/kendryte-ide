@@ -121,13 +121,15 @@ class SerialPortService implements ISerialPortService {
 			});
 		}
 
-		for (const state of controlSeq) {
+		for (const [index, state] of controlSeq.entries()) {
 			if (cancel && cancel.isCancellationRequested) {
 				return;
 			}
-			this.logService.debug('set port state:', state);
+			if (index > 0) {
+				await timeout(10, cancel || CancellationToken.None);
+			}
+			this.logService.debug('set port state:', JSON.stringify(state));
 			await mgr.$port.flowControl(state);
-			await timeout(10, cancel || CancellationToken.None);
 		}
 	}
 

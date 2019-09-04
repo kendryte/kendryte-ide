@@ -26,6 +26,7 @@ export class SerialPortManager implements ISerialPortManager {
 	private exclusiveLock: boolean = false;
 	private readonly openRequestQueue: { options: OpenOptions; exclusive: boolean; dfd: DeferredPromise<SerialPortInstance> }[] = [];
 	private readonly referenceStack: { options: OpenOptions; instance: SerialPortInstance; }[] = [];
+	private connecting: DeferredPromise<void>;
 
 	constructor(
 		public readonly deviceName: string,
@@ -56,17 +57,19 @@ export class SerialPortManager implements ISerialPortManager {
 		const dfd = new DeferredPromise<SerialPortInstance>();
 		this.openRequestQueue.push({ options, exclusive, dfd });
 		if (!this.exclusiveLock) {
-			this.logger.info('[serial port] not exclusive locked by others, open port now!');
+			this.logger.debug('[serial port] not exclusive locked by others, open port now!');
 			this.openNext();
+		} else {
+			this.logger.debug('[serial port] exclusive locked by others, wait in queue (size=' + this.openRequestQueue.length + ')');
 		}
 		return dfd.p;
 	}
 
 	private openNext() {
 		if (this.openRequestQueue.length === 0) {
-			this.logger.info('[serial port]   no open port request in queue.');
+			this.logger.debug('[serial port]   no open port request in queue.');
 			if (this.referenceStack.length) {
-				this.logger.info('[serial port]  - resume previous open port.');
+				this.logger.debug('[serial port]  - resume previous open port.');
 				this.resumePrev();
 			} else {
 				this.logger.warn('[serial port]  !! no one require this manager, self destroy');
@@ -83,10 +86,10 @@ export class SerialPortManager implements ISerialPortManager {
 		const prev = this.referenceStack[0];
 
 		this.referenceStack.unshift({ instance: stream, options });
-		this.logger.info('[serial port] current instance on manager [%s]: %s', this.deviceName, this.referenceStack);
+		this.logger.debug('[serial port] current instance on manager [%s]: %s', this.deviceName, this.referenceStack);
 
 		stream.onDispose(() => {
-			this.logger.info('[serial port] serial port instance disposing.');
+			this.logger.debug('[serial port] serial port instance disposing.');
 			const index = this.referenceStack.findIndex(({ instance }) => instance === stream);
 			if (index < 0) {
 				debugger;
@@ -101,7 +104,7 @@ export class SerialPortManager implements ISerialPortManager {
 		this.exclusiveLock = exclusive;
 
 		stream.onUpdateRequest(async (opts) => {
-			this.logger.info('[serial port] serial port instance updating.');
+			this.logger.debug('[serial port] serial port instance updating.');
 			const index = this.referenceStack.findIndex(({ instance }) => instance === stream);
 			if (index < 0) {
 				debugger;
@@ -137,7 +140,7 @@ export class SerialPortManager implements ISerialPortManager {
 	}
 
 	protected flushAll(): Promise<void> {
-		this.logger.info('do flush.');
+		this.logger.debug('do flush.');
 		return Promise.all([
 			this._handlePromise('flush buffer', (cb) => this.port!.flush(cb)),
 			this._handlePromise('drain buffer', (cb) => this.port!.drain(cb)),
@@ -147,6 +150,7 @@ export class SerialPortManager implements ISerialPortManager {
 
 	private async connectOrUpdateSerialPort(options: OpenOptions) {
 		this.logger.info('[serial port] open port ' + this.deviceName + ':' + JSON.stringify(options));
+
 		if (this.port) {
 			const port = this.port;
 
@@ -154,60 +158,83 @@ export class SerialPortManager implements ISerialPortManager {
 			const { baudRate: oldBr, ...oldOther } = this.deviceOptions;
 			if (equals(newOther, oldOther)) {
 				if (newBr === oldBr) {
-					this.logger.info('[serial port]   nothing changed, using old.');
+					this.logger.debug('[serial port]   nothing changed, using old.');
 				} else {
-					this.logger.info('[serial port]   only baudrate changed, updating.');
+					this.logger.debug('[serial port]   only baudrate changed, updating.');
 					this.deviceOptions.baudRate = newBr;
 					await this.flushAll();
 					await this._handlePromise('change baudrate', (cb) => port.update({ baudRate: newBr }, cb));
 				}
 			} else {
-				this.logger.info('[serial port]   options has changed, will disconnect and reconnect.');
+				this.logger.debug('[serial port]   options has changed, will disconnect and reconnect.');
 				await this.realDisconnect();
 				await this.realConnect(options);
 			}
 		} else {
-			this.logger.info('[serial port]   new connection.');
+			this.logger.debug('[serial port]   new connection.');
 			await this.realConnect(options);
 		}
 		return this.port!;
 	}
 
 	private async realConnect(deviceOptions: OpenOptions) {
-		this.deviceOptions = assign({}, deviceOptions);
-		const _deviceOptions = assign({}, deviceOptions, noneEditableOptions);
-		const port = this.port = new SerialPort(this.deviceName, _deviceOptions);
+		if (this.connecting) {
+			await this.connecting.p;
+		}
+		this.connecting = new DeferredPromise();
 
-		port.on('close', () => {
-			this.logger.info('[serial port] ' + this.deviceName + ' is end!');
-			this.asyncDispose().catch((e) => {
-				this.logger.error('Cannot close port: %s', e);
+		try {
+			this.deviceOptions = assign({}, deviceOptions);
+			const _deviceOptions = assign({}, deviceOptions, noneEditableOptions);
+			const port = this.port = new SerialPort(this.deviceName, _deviceOptions);
+
+			port.on('close', () => {
+				this.logger.info('[serial port] ' + this.deviceName + ' is end!');
+				if (!this.isClosing) {
+					this.asyncDispose().catch((e) => {
+						this.logger.error('Cannot close port: %s', e);
+					});
+				}
 			});
-		});
 
-		port.on('error', (e: Error) => {
-			this.logger.error('[serial port] ' + this.deviceName + ' is error!', e);
-		});
+			port.on('error', (e: Error) => {
+				this.logger.error('[serial port] ' + this.deviceName + ' is error!', e);
+			});
 
-		await this._handlePromise(`open device {${this.deviceName}}`, (cb) => port.open(cb));
-		await this._handlePromise('get current settings', (cb) => port.get(cb));
-		await this._handlePromise('reset settings', (cb) => {
-			port.set({
-				brk: false,
-				cts: false,
-				dsr: false,
-				dtr: false,
-				rts: false,
-			}, cb);
-		});
+			await this._handlePromise(`open device {${this.deviceName}}`, (cb) => port.open(cb));
+			await this._handlePromise('get current settings', (cb) => port.get(cb));
+			await this._handlePromise('reset settings', (cb) => {
+				port.set({
+					brk: false,
+					cts: false,
+					dsr: false,
+					dtr: false,
+					rts: false,
+				}, cb);
+			});
 
-		await this._handlePromise('get new settings', (cb) => port.get(cb)); // to ensure it works
+			await this._handlePromise('get new settings', (cb) => port.get(cb)); // to ensure it works
+			this.logger.info('[serial port] connect success.');
+		} catch (e) {
+			this.connecting.error(e);
+			delete this.connecting;
+			delete this.port;
+			throw e;
+		}
+		const dfd = this.connecting;
+		delete this.connecting;
+		dfd.complete();
 	}
+
+	private isClosing = false;
 
 	private async realDisconnect() {
 		if (!this.port) {
+			this.logger.debug('[serial port] realDisconnect: not open.');
 			return;
 		}
+		this.isClosing = true;
+		this.logger.debug('[serial port] realDisconnect: closing...');
 		const port = this.port;
 		await this.flushAll();
 		delete this.port;

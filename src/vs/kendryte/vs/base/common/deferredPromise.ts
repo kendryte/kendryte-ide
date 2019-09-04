@@ -1,4 +1,5 @@
-import { canceled } from 'vs/base/common/errors';
+import { canceled, disposed } from 'vs/base/common/errors';
+import { IDisposable } from 'vs/base/common/lifecycle';
 
 export type ValueCallback<T = any> = (value: T | Thenable<T>) => void;
 export type ProgressCallback<T = any> = (value: T) => void;
@@ -7,7 +8,7 @@ export interface IProgressHolder<T, PT> {
 	progress(fn: ProgressCallback<PT>): Promise<T> & IProgressHolder<T, PT>;
 }
 
-export class DeferredPromise<T, PT = any> {
+export class DeferredPromise<T, PT = any> implements IDisposable {
 	public p: Promise<T> & IProgressHolder<T, PT>;
 	private completeCallback: ValueCallback<T>;
 	private errorCallback: (err: any) => void;
@@ -27,6 +28,22 @@ export class DeferredPromise<T, PT = any> {
 		this.p.finally(() => {
 			delete this.cbList;
 		});
+	}
+
+	public dispose(): void {
+		if (this.completed) {
+			return;
+		}
+
+		setTimeout(() => {
+			if (!this.completed) {
+				this.error(disposed(this.getDebugInstanceName()));
+			}
+		}, 0);
+	}
+
+	protected getDebugInstanceName() {
+		return this.constructor.name;
 	}
 
 	notify(progress: PT): this {

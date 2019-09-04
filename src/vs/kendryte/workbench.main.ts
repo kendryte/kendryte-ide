@@ -73,4 +73,6 @@ import 'vs/kendryte/vs/workbench/bootstrap/electron-browser/kendryteBootstrap';
 import 'vs/kendryte/vs/platform/open/electron-browser/register';
 // file dialog
 import 'vs/kendryte/vs/platform/fileDialog/common/configContribution';
-
+// super flash
+import 'vs/kendryte/vs/services/makefileService/superFlash/node/configContribution'
+import 'vs/kendryte/vs/services/makefileService/superFlash/node/superFlashHookContribution'

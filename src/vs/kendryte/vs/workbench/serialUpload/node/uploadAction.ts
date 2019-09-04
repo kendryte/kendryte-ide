@@ -45,6 +45,11 @@ export class MaixSerialUploadAction extends Action {
 		this.logger = channelLogService.createChannel(KFLASH_CHANNEL_TITLE, KFLASH_CHANNEL);
 	}
 
+	public dispose(): void {
+		super.dispose();
+		this.logger.debug('disposed');
+	}
+
 	async run(): Promise<void> {
 		const cancel = new CancellationTokenSource();
 		await this.progressService.withProgress(
@@ -66,7 +71,7 @@ export class MaixSerialUploadAction extends Action {
 			this.logger.info('Program successfully flashed to the board.');
 		}, (e) => {
 			this.logger.error('==================================');
-			this.logger.error('Flash failed with error: ' + e.message);
+			this.logger.error('Flash failed with error: ' + e.message + '\n\n');
 			this.channelLogService.show(this.logger.id).catch();
 		});
 	}

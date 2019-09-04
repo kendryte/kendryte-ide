@@ -14,8 +14,6 @@ import { SubProgress } from 'vs/kendryte/vs/platform/config/common/progress';
 import { lstat } from 'vs/base/node/pfs';
 import { timeout } from 'vs/base/common/async';
 import { eachChunkPadding } from 'vs/kendryte/vs/platform/serialPort/flasher/node/chunkBuffer';
-import { createCipheriv, createHash } from 'crypto';
-import { drainStream } from 'vs/kendryte/vs/base/common/drainStream';
 import { ISerialPortInstance, ISerialPortService } from 'vs/kendryte/vs/services/serialPort/common/type';
 import { IChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { throwNull } from 'vs/kendryte/vs/base/common/assertNotNull';
@@ -26,13 +24,15 @@ import { SpeedMeter } from 'vs/kendryte/vs/base/common/speedShow';
 import { DATA_LEN_WRITE_FLASH, DATA_LEN_WRITE_MEMORTY } from 'vs/kendryte/vs/platform/open/common/chipConst';
 import { HexDumpLoggerStream } from 'vs/kendryte/vs/base/node/loggerStream';
 import { stringifyMemoryAddress } from 'vs/kendryte/vs/platform/serialPort/flasher/common/memoryAllocationCalculator';
-import { FourBytesReverser } from 'vs/kendryte/vs/platform/serialPort/flasher/node/fourBytesReverser';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { streamToBuffer } from 'vs/kendryte/vs/base/node/collectingStream';
 import { canceled } from 'vs/base/common/errors';
 import { packISPWritePackage } from 'vs/kendryte/vs/platform/serialPort/flasher/node/ispFlashPackage';
 import { DeferredPromise } from 'vs/kendryte/vs/base/common/deferredPromise';
-import { boardRebootSequence, boardRebootSequenceISP233, boardRebootSequenceISPOther } from 'vs/kendryte/vs/services/serialPort/common/rebootSequence';
+import { boardRebootSequence, BOOT_BOARD_TYPE } from 'vs/kendryte/vs/services/serialPort/common/rebootSequence';
+import { flashDataBufferPack } from 'vs/kendryte/vs/platform/serialPort/flashCommon/node/dataBufferPack';
+import { flashProgramBufferPack } from 'vs/kendryte/vs/platform/serialPort/flashCommon/node/programBufferPack';
+import { tryRebootDevBoard } from 'vs/kendryte/vs/platform/serialPort/flashCommon/node/tryReboot';
 
 export enum FlashTargetType {
 	OnBoard = 0,
@@ -55,7 +55,7 @@ export class SerialLoader extends Disposable {
 	private _targetType: FlashTargetType;
 
 	private readonly aborted: DeferredPromise<never>;
-	public readonly abortedPromise: Promise<never>;
+	private readonly abortedPromise: Promise<never>;
 
 	protected applicationStreamSize: number;
 	protected bootLoaderStreamSize: number;
@@ -70,7 +70,7 @@ export class SerialLoader extends Disposable {
 		protected readonly instantiationService: IInstantiationService, // DEBUG USE
 		private readonly serialPortService: ISerialPortService,
 		private readonly device: ISerialPortInstance,
-		protected readonly logger: IChannelLogger,
+		private readonly logger: IChannelLogger,
 		cancelToken: CancellationToken,
 		developmentMode: boolean,
 	) {
@@ -109,15 +109,8 @@ export class SerialLoader extends Disposable {
 			addDisposableEventEmitterListener(device, 'close', () => this.handleError(new Error('Broken pipe'))),
 		);
 
-		this.aborted = new DeferredPromise<never>();
+		this.aborted = this._register(new DeferredPromise<never>());
 		this.abortedPromise = this.aborted.p;
-		this._register({
-			dispose: () => {
-				setTimeout(() => {
-					this.aborted.error(new Error('disposed')); // to prevent dead promise in any way, but this is very not OK.
-				}, 100);
-			},
-		});
 
 		this._register(this.streamChain.onGarbage(garbage => this.logGarbage(garbage)));
 		this._register(this.streamChain.onError(err => this.handleError(err)));
@@ -179,35 +172,7 @@ export class SerialLoader extends Disposable {
 	}
 
 	protected async writeFlashProgramChunks(content: ReadStream, baseAddress: number, length: number, report?: SubProgress, encryption = false) {
-		const shaSize = 32;
-		const headerIsEncryptSize = 1;
-		const headerDataLenSize = 4;
-
-		const AES_MAX_LARGER_SIZE = 16;
-
-		let contentBuffer: Buffer;
-		const headerSize = headerIsEncryptSize + headerDataLenSize; // isEncrypt(1bit) + appLen(4bit) + appCode
-		if (this._encryptionKey && encryption) {
-			const aesType = `aes-${this._encryptionKey.length}-cbc`;
-			const encrypt = createCipheriv(aesType, this._encryptionKey, Buffer.allocUnsafe(16));
-			contentBuffer = await drainStream(content.pipe(encrypt), length + AES_MAX_LARGER_SIZE, headerSize, shaSize);
-		} else {
-			contentBuffer = await drainStream(content, length, headerSize, shaSize);
-		}
-
-		// dataStartAt = headerSize
-		const dataEndAt = contentBuffer.length - shaSize;
-		const dataSize = contentBuffer.length - shaSize - headerSize;
-
-		if (this._encryptionKey && encryption) {
-			contentBuffer.writeUInt8(1, 0);
-		} else {
-			contentBuffer.writeUInt8(0, 0);
-		}
-		contentBuffer.writeUInt32LE(dataSize, 1);
-
-		createHash('sha256').update(contentBuffer.slice(0, dataEndAt)).digest()
-			.copy(contentBuffer, contentBuffer.length - shaSize);
+		const contentBuffer = await flashProgramBufferPack(content, length, encryption ? this._encryptionKey : undefined);
 
 		const speed = new SpeedMeter();
 		speed.start();
@@ -340,10 +305,7 @@ export class SerialLoader extends Disposable {
 		const speed = new SpeedMeter();
 		speed.start();
 
-		const source = reverse4Bytes ?
-			stream.pipe(new FourBytesReverser()) :
-			stream;
-		const sourceBuffer = await streamToBuffer(source, true);
+		const sourceBuffer = await flashDataBufferPack(stream, reverse4Bytes);
 
 		const p = this.packISPWritePackage(
 			ISPOperation.ISP_FLASH_WRITE,
@@ -371,27 +333,13 @@ export class SerialLoader extends Disposable {
 	}
 
 	async rebootISPMode() {
-		this.logger.info('Greeting');
-		try {
-			this.logger.info('try reboot as KD233');
-			await this.serialPortService.sendFlowControl(this.device, boardRebootSequenceISP233, this.token);
+		const ok = await tryRebootDevBoard(this.device, BOOT_BOARD_TYPE.NORMAL, this.token, this.serialPortService, this.logger, async () => {
 			this.send(ISPOperation.ISP_NOP, Buffer.alloc(3));
 			await this.setTimeout('greeting kd233 board', 1000, this.expect(ISPOperation.ISP_NOP));
-			this.logger.info(' - Hello.');
-			return;
-		} catch (e) {
-			this.logger.info('Failed to boot as KD233: %s', e.message);
-		}
-		try {
-			this.logger.info('try reboot as other board');
-			await this.serialPortService.sendFlowControl(this.device, boardRebootSequenceISPOther, this.token);
-			this.send(ISPOperation.ISP_NOP, Buffer.alloc(3));
-			await this.setTimeout('greeting other board', 1000, this.expect(ISPOperation.ISP_NOP));
-			this.logger.info(' - Hello.');
-			return;
-		} catch (e) {
-			this.logger.info('Failed to boot as other board: %s', e.message);
-			throw e;
+		});
+
+		if (!ok) {
+			throw new Error(localize('cannotGreet', 'Cannot communicate with the board. Please ensure jumper state.'));
 		}
 	}
 

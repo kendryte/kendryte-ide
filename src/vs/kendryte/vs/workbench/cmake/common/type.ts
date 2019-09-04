@@ -42,6 +42,10 @@ export interface ICMakeStatus {
 	error?: CMakeError | Error;
 }
 
+export interface ICMakeBuildResult {
+	warnings: number;
+}
+
 export interface ICMakeService {
 	_serviceBrand: any;
 
@@ -52,7 +56,7 @@ export interface ICMakeService {
 	cleanupMake(): Promise<void>;
 	getOutputFile(): Promise<string>;
 	configure(): Promise<void>;
-	build(): Promise<void>;
+	build(): Promise<ICMakeBuildResult>;
 	ensureConfiguration(): Promise<any>;
 	shutdown(force?: boolean): Promise<void>;
 

@@ -1,6 +1,6 @@
 import { IBeforeBuildEvent, IProjectInfo } from 'vs/kendryte/vs/services/makefileService/common/type';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
-import { HOOK_ENTRY_FILE_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
+import { GIT_IGNORE_FILE, HOOK_ENTRY_FILE_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { ILogService } from 'vs/platform/log/common/log';
 import { ILibraryProject } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
@@ -9,8 +9,10 @@ interface IProjectTempData {
 	constructList: {
 		header: string;
 		functionName: string;
+		critical: boolean;
 	}[];
 	extraSourceFiles: string[];
+	ignoreFiles: string[];
 }
 
 export class BeforeBuildEventResult {
@@ -25,6 +27,7 @@ export class BeforeBuildEventResult {
 			this.tempMap.set(project, {
 				constructList: [],
 				extraSourceFiles: [],
+				ignoreFiles: [],
 			});
 		}
 	}
@@ -68,6 +71,14 @@ ${callFunctions}
 			json.source = [];
 		}
 		json.source.push(...addedFiles);
+
+		const ignoreFile = resolvePath(project.path, PROJECT_CONFIG_FOLDER_NAME, GIT_IGNORE_FILE);
+		const ignoreData = tempData.ignoreFiles.join('\n');
+		if (ignoreData.length) {
+			await this.nodeFileSystemService.writeFileIfChanged(ignoreFile, ignoreData);
+		} else {
+			await this.nodeFileSystemService.deleteFileIfExists(ignoreFile);
+		}
 	}
 
 	public async commit() {
@@ -88,23 +99,40 @@ export class BeforeBuildEvent implements IBeforeBuildEvent {
 
 	}
 
-	registerGlobalConstructor(functionName: string, header: string): void {
-		return this.registerConstructor(this.projects[0], functionName, header);
+	registerGlobalConstructor(functionName: string, header: string, critical = false): void {
+		return this.registerConstructor(this.projects[0], functionName, header, critical);
 	}
 
 	registerGlobalExtraSource(sourceFiles: string[]): void {
 		return this.registerExtraSource(this.projects[0], sourceFiles);
 	}
 
-	registerConstructor(project: IProjectInfo, functionName: string, header: string) {
-		this.tempMap.get(project)!.constructList.push({
-			functionName,
-			header,
-		});
+	registerGlobalIgnore(ignoreLines: string[]) {
+		this.registerIgnore(this.projects[0], ignoreLines);
+	}
+
+	registerConstructor(project: IProjectInfo, functionName: string, header: string, critical = false) {
+		if (critical) {
+			this.tempMap.get(project)!.constructList.unshift({
+				functionName,
+				header,
+				critical,
+			});
+		} else {
+			this.tempMap.get(project)!.constructList.push({
+				functionName,
+				header,
+				critical,
+			});
+		}
 	}
 
 	registerExtraSource(project: IProjectInfo, sourceFiles: string[]) {
 		this.tempMap.get(project)!.extraSourceFiles.push(...sourceFiles);
+	}
+
+	registerIgnore(project: IProjectInfo, ignoreLines: string[]) {
+		this.tempMap.get(project)!.ignoreFiles.push(...ignoreLines);
 	}
 
 	waitUntil(thenable: Promise<void>) {

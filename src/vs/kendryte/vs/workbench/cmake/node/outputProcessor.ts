@@ -56,6 +56,7 @@ export class CMakeBuildErrorProcessor extends CMakeProcessor {
 	private readonly errorMarkers = new ExtendMap<string/* abs path */, IMarkerData[]>();
 	private readonly currentProjectPath: string;
 	private lastError?: IMarkerData;
+	private warningCount: number = 0;
 
 	constructor(
 		@IMarkerService private readonly markerService: IMarkerService,
@@ -119,6 +120,10 @@ export class CMakeBuildErrorProcessor extends CMakeProcessor {
 			relatedInformation: [],
 		};
 		list.push(this.lastError);
+
+		if (severity === MarkerSeverity.Warning) {
+			this.warningCount++;
+		}
 	}
 
 	public finalize() {
@@ -128,6 +133,10 @@ export class CMakeBuildErrorProcessor extends CMakeProcessor {
 	}
 
 	public dispose() {
+	}
+
+	public getWarningCount() {
+		return this.warningCount;
 	}
 }
 

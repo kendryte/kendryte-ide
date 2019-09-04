@@ -28,11 +28,14 @@ export interface IProjectInfo<T extends ICompileInfo = ICompileInfo> {
 export interface IBeforeBuildEvent {
 	readonly projects: DeepReadonlyArray<IProjectInfo>;
 	waitUntil(thenable: Promise<void>): void;
-	registerGlobalConstructor(functionName: string, header: string): void;
+	registerGlobalConstructor(functionName: string, header: string, critical?: boolean): void;
 	registerGlobalExtraSource(sourceFiles: string[]): void;
 
 	registerConstructor(project: IProjectInfo, functionName: string, header: string): void;
 	registerExtraSource(project: IProjectInfo, sourceFiles: string[]): void;
+
+	registerGlobalIgnore(ignoreLines: string[]): void;
+	registerIgnore(project: IProjectInfo, ignoreLines: string[]): void;
 }
 
 export type ICompileInfoWithFile = ICompileInfo & { fsPath: string };

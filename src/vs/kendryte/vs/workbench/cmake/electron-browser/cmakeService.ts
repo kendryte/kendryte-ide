@@ -7,6 +7,7 @@ import {
 	CMakeStatus,
 	CONTEXT_CMAKE_STATUS,
 	CurrentItem,
+	ICMakeBuildResult,
 	ICMakeSelection,
 	ICMakeService,
 	ICMakeStatus,
@@ -668,8 +669,9 @@ export class CMakeService implements ICMakeService {
 	public build() {
 		this.markerService.changeAll(CMAKE_ERROR_MARKER, []);
 		this._onCMakeStatusChange.fire({ status: CMakeStatus.BUSY });
-		return this._build().then(() => {
+		return this._build().then((res) => {
 			this._onCMakeStatusChange.fire({ status: CMakeStatus.IDLE });
+			return res;
 		}, (e) => {
 			this.markerService.changeOne(CMAKE_ERROR_MARKER, CMAKE_CHANNEL_URI, [
 				createSimpleErrorMarker(localize('buildErrorSee', 'Can not build project, see log for more information')),
@@ -680,6 +682,7 @@ export class CMakeService implements ICMakeService {
 	}
 
 	private async _build() {
+		const buildResult: ICMakeBuildResult = {} as any;
 		await this.ensureConfiguration();
 
 		this.logger.info('Run cmake build:');
@@ -705,9 +708,10 @@ export class CMakeService implements ICMakeService {
 		if (this.lastProcess) {
 			this.lastProcess.dispose();
 		}
+		const errorProcessor = this.instantiationService.createInstance(CMakeBuildErrorProcessor);
 		const processors = this.lastProcess = new CMakeProcessList([
 			new CMakeBuildProgressProcessor(this.kendryteStatusControllerService),
-			this.instantiationService.createInstance(CMakeBuildErrorProcessor),
+			errorProcessor,
 		]);
 
 		const exe = {
@@ -734,6 +738,8 @@ export class CMakeService implements ICMakeService {
 
 		processors.finalize();
 
+		buildResult.warnings = errorProcessor.getWarningCount();
+
 		this.logger.info('');
 		if (ret.error) {
 			this.logger.info('Build Error:', ret.error);
@@ -755,6 +761,8 @@ export class CMakeService implements ICMakeService {
 		if (stat.size < 10) {
 			throw new Error('Artifact too small');
 		}
+
+		return buildResult;
 	}
 
 	async ensureConfiguration(): Promise<ICMakeProtocolCodeModel> {
