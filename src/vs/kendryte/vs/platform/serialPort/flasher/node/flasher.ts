@@ -531,8 +531,10 @@ export class SerialLoader extends Disposable {
 				});
 				if (error) {
 					if (--retry) {
+						this.logger.warn('retry block...');
 						continue;
 					} else {
+						this.logger.error('error after 3 retry!');
 						throw error;
 					}
 				}
@@ -540,7 +542,7 @@ export class SerialLoader extends Disposable {
 				chunkWritten++;
 				bytesWritten += chunk.length;
 
-				this.logger.trace('chunk [%s/%s] size [%s/%s]', chunkWritten, totalChunk, bytesWritten, content.length);
+				this.logger.info('chunk [%s/%s] size [%s/%s]', chunkWritten, totalChunk, bytesWritten, content.length);
 
 				progressFunc({ written: bytesWritten });
 				break;

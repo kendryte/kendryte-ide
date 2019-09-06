@@ -266,7 +266,7 @@ export class EditableSelectBox extends Widget implements IThemable {
 		if (this._value === v) {
 			if (v !== undefined && this.input.value !== v) {
 				this.firing.run(() => {
-					console.log('~~~~~~set value');
+					// console.log('~~~~~~set value');
 					this.input.value = v;
 				});
 			}
@@ -278,7 +278,7 @@ export class EditableSelectBox extends Widget implements IThemable {
 				this.selectValue();
 			}
 			if (v !== undefined) {
-				console.log('~~~~~~set value');
+				// console.log('~~~~~~set value');
 				this.input.value = v;
 			}
 		});

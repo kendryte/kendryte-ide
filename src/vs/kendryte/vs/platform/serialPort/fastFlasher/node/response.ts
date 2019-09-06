@@ -13,7 +13,6 @@ export interface ResponseHello {
 export interface ResponseWriteOk {
 	type: typeof ResponseType['WriteOk'];
 	hash: string;
-	chunk: number;
 	address: number;
 }
 

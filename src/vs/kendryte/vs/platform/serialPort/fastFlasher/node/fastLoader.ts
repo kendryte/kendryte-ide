@@ -21,6 +21,7 @@ import { SimpleWorkerPool } from 'vs/kendryte/vs/base/common/workerPool';
 import { canceled, disposed } from 'vs/base/common/errors';
 import { createHash } from 'crypto';
 import { tryRebootDevBoard } from 'vs/kendryte/vs/platform/serialPort/flashCommon/node/tryReboot';
+import { localize } from 'vs/nls';
 
 export class FastLoader extends Disposable {
 	private waitHello: DeferredPromise<string>;
@@ -84,9 +85,9 @@ export class FastLoader extends Disposable {
 					delete this.waitHello;
 				}
 			} else if (responseIsWriteOk(json)) {
-				const item = this.waitWriteOk.get(json.chunk);
+				const item = this.waitWriteOk.get(json.address);
 				if (item) {
-					this.waitWriteOk.delete(json.chunk);
+					this.waitWriteOk.delete(json.address);
 					item.complete(json);
 				} else {
 					this.logger.error('Not write this chunk: ' + data);
@@ -144,7 +145,7 @@ export class FastLoader extends Disposable {
 		speed.start();
 
 		const sourceBuffer = await flashDataBufferPack(stream, reverse4Bytes);
-		const pool = new SimpleWorkerPool<IBufferChunk>(16, (base, job, cancel) => {
+		const pool = new SimpleWorkerPool<IBufferChunk>(2, (base, job, cancel) => {
 			return this.doWriteChunk(job.index, job.chunk, base + job.position, cancel);
 		});
 		await pool.run(baseAddress, eachChunkPaddingWithSize(sourceBuffer, DATA_LEN_WRITE_FLASH), this.cancelToken);
@@ -155,32 +156,24 @@ export class FastLoader extends Disposable {
 		writeHeader.writeUInt32LE(address, 0);
 		const data = Buffer.concat([writeHeader, chunk]);
 
-		for (let retry = 0; retry < 3; retry++) {
-			this.logger.info(`send chunk ${index} at ${address} (${data.length} bytes).`);
+		for (let retry = 0; retry < 1; retry++) {
+			this.logger.info(`send chunk ${index} at 0x${address.toString(16)} (${data.length} bytes).`);
 			const dfd = new DeferredPromise<ResponseWriteOk>();
-			this.waitWriteOk.set(index, dfd);
+			this.waitWriteOk.set(address, dfd);
 			this.device.write(data);
 
-			const x = setInterval(() => { //DD
-				this.device.write(data);
-			}, 2000);
-
-			this._register({ //DD
-				dispose(): void {
-					clearInterval(x);
-				},
-			});
-
 			const response = await dfd.p;
-			this.logger.info(`write of chunk ${response.chunk} at ${response.address} response: ${response.hash}`);
+			this.logger.info(`write complete of chunk ${index} at 0x${response.address.toString(16)}.`);
 
-			clearInterval(x); //DD
-
-			if (response.hash !== sha256(chunk)) { // really ok
-				this.logger.warn(`Hash mismatch of chunk ${index}, want ${sha256(chunk)}`);
-				continue;
+			if (response.hash === sha256(chunk)) {
+				return;
 			}
+
+			this.logger.warn(`Hash mismatch of chunk ${index}\nresp:\t${response.hash}\nwant:\t${sha256(chunk)}`);
+			continue;
 		}
+
+		throw new Error(localize('errorFlashRetry', 'Flash failed (after 3 tries).'));
 	}
 }
 

@@ -12,6 +12,7 @@ import { PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
+import { rimraf } from 'vs/base/node/pfs';
 
 export interface ISuperFlashService {
 	_serviceBrand: any;
@@ -56,7 +57,7 @@ class SuperFlashService implements ISuperFlashService {
 			event.waitUntil((async () => {
 				await this.nodeFileSystemService.deleteFileIfExists(header);
 				await this.nodeFileSystemService.deleteFileIfExists(code);
-				await this.nodeFileSystemService.deleteFileIfExists(driver);
+				await rimraf(driver);
 			})());
 			this.ccLog.info('[Super Flash] Disabled.');
 			return;

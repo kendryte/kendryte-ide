@@ -108,7 +108,7 @@ export class MakefileService implements IMakefileService {
 			return shouldHaveSourceCode;
 		});
 
-		const result = new BeforeBuildEventResult(sourceProjects, this.nodeFileSystemService, this.logger);
+		const result = new BeforeBuildEventResult(sourceProjects, this.nodeFileSystemService, this.logger, this.configurationService);
 		await this._onPrepareBuild.fireAsync((thenables) => {
 			return new BeforeBuildEvent(sourceProjects, result, thenables);
 		});

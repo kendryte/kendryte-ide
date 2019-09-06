@@ -4,12 +4,14 @@ import { localize } from 'vs/nls';
 
 const windowTimeouts = new Map<number, NodeJS.Timeout>();
 
-ipcMain.once('kendryte-health-window-ready', (event: IpcMessageEvent) => {
+ipcMain.on('kendryte-health-window-ready', (event: IpcMessageEvent) => {
 	const tmr = windowTimeouts.get(event.sender.id);
 	if (tmr) {
 		console.log('window [%s] check ok.', event.sender.id);
 		clearTimeout(tmr);
 		windowTimeouts.delete(event.sender.id);
+	} else {
+		console.log('window [%s] invalid sender.', event.sender.id);
 	}
 });
 

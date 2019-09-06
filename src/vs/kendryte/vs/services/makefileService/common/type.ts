@@ -7,6 +7,8 @@ import { localize } from 'vs/nls';
 export const ACTION_ID_CREATE_MAKEFILE = 'workbench.action.kendryte.create.makefile';
 export const ACTION_LABEL_CREATE_MAKEFILE = localize('createMakefile', 'Create CMakeLists.txt');
 
+export const CONFIG_KEY_INSERT_PRINT_HOOK = 'insert.code.printf.enabled';
+
 export interface DefineValue {
 	id: string;
 	config: string;
