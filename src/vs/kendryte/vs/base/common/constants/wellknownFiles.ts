@@ -1,4 +1,5 @@
 export const PROJECT_CONFIG_FOLDER_NAME = 'config';
+export const PROJECT_CONFI_HEADER_FOLDER_NAME = 'config/includes';
 export const PROJECT_BUILD_FOLDER_NAME = 'build'; // not well used
 
 export const CMAKE_CONFIG_FILE_NAME = 'kendryte-package.json';

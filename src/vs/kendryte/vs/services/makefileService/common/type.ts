@@ -11,7 +11,7 @@ export const CONFIG_KEY_INSERT_PRINT_HOOK = 'insert.code.printf.enabled';
 
 export interface DefineValue {
 	id: string;
-	config: string;
+	config: string; // raw / str
 	value: string;
 	source: string;
 }

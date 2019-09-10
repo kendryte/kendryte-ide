@@ -205,6 +205,15 @@ export class MakefileServiceResolve {
 		return this.finalProjectList;
 	}
 
+	pushDefinitions(id: string, value: string) {
+		return this.definitionsRegistry.set(id, {
+			id,
+			config: id,
+			value,
+			source: '__internal',
+		});
+	}
+
 	getDefinitions() {
 		return this.definitionsRegistry.values();
 	}

@@ -23,6 +23,10 @@ import { createRunDisposeAction } from 'vs/kendryte/vs/workbench/actionRegistry/
 import { CHIP_BAUDRATE } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
+import { CONFIG_KEY_SUPER_FLASH_ENABLE } from 'vs/kendryte/vs/services/makefileService/superFlash/common/type';
+import { FastLoader } from 'vs/kendryte/vs/platform/serialPort/fastFlasher/node/fastLoader';
+import { createReadStream } from 'fs';
+import { disposableStream } from 'vs/kendryte/vs/base/node/disposableStream';
 
 export class MaixSerialUploadAction extends Action {
 	public static readonly ID = ACTION_ID_MAIX_SERIAL_UPLOAD;
@@ -64,6 +68,7 @@ export class MaixSerialUploadAction extends Action {
 				return this.real_run(report, cancel.token);
 			},
 			() => {
+				debugger;
 				cancel.cancel();
 			},
 		).then(() => {
@@ -96,6 +101,14 @@ export class MaixSerialUploadAction extends Action {
 		}
 
 		this.logger.info(`\t${(await lstat(app)).size} bytes`);
+
+		const br = parseInt(this.configurationService.getValue(CONFIG_KEY_FLASH_SERIAL_BAUDRATE)) || CHIP_BAUDRATE;
+		if (this.configurationService.getValue<boolean>(CONFIG_KEY_SUPER_FLASH_ENABLE)) {
+			const ok = await this.tryFastLoader(app, sel, br, report, token);
+			if (ok) {
+				return;
+			}
+		}
 
 		report.report({
 			message: 'connecting serial port: ' + sel,
@@ -134,7 +147,6 @@ export class MaixSerialUploadAction extends Action {
 		);
 		this._register(loader);
 
-		const br = parseInt(this.configurationService.getValue(CONFIG_KEY_FLASH_SERIAL_BAUDRATE)) || CHIP_BAUDRATE;
 		loader.setBaudRate(br);
 		loader.setProgram(app);
 		loader.setBootLoader(bootLoader);
@@ -145,6 +157,62 @@ export class MaixSerialUploadAction extends Action {
 			ps.dispose();
 		});
 	}
+
+	private async tryFastLoader(appPath: string, serialPort: string, br: number, report: IProgress<IProgressStep>, token: CancellationToken) {
+		this.logger.info(`Try fast flash, Opening serial port ${serialPort}:`);
+		const port = this._register(await this.serialPortService.getPortManager(serialPort).openPort({
+			dataBits: 8,
+			parity: 'even',
+			stopBits: 2,
+			baudRate: br,
+		}, true));
+		this.logger.info(' - OK');
+
+		const loader = new FastLoader(
+			this.instantiationService,
+			this.serialPortService,
+			port,
+			this.logger,
+			token,
+			!this.environmentService.isBuilt,
+		);
+		this._register(loader);
+
+		const ps = new SubProgress('', report);
+		return this.fastFlashProgress(loader, appPath, ps).finally(() => {
+			port.dispose();
+			ps.dispose();
+		});
+	}
+
+	async fastFlashProgress(flasher: FastLoader, filepath: string, report: SubProgress) {
+		const appLength = (await lstat(filepath)).size;
+		report.splitWith([
+			0, // greeting
+			appLength,
+		]);
+
+		report.message('greeting...');
+		const ok: boolean = await flasher.rebootISPMode();
+		if (!ok) {
+			return false;
+		}
+
+		const appReadStream = this._register(disposableStream(createReadStream(filepath)));
+
+		report.message(`flashing program to 0...`);
+
+		return flasher.flashProgram(
+			appReadStream,
+			appLength,
+			report,
+		).then(() => {
+			return true;
+		}, () => {
+			return false;
+		});
+	}
+
 }
 
 export class MaixSerialBuildUploadAction extends Action {

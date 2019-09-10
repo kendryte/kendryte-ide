@@ -57,10 +57,12 @@ export interface IBufferChunk {
 	chunk: Buffer;
 	position: number;
 	index: number;
+	count: number;
 }
 
 export function* eachChunkPaddingWithSize(buff: Buffer, size: number): IterableIterator<IBufferChunk> {
 	let index = 0;
+	const count = Math.ceil(buff.length / size);
 	for (let curr = 0; curr < buff.length; curr += size) {
 		let view: Buffer = buff.slice(curr, curr + size);
 		if (view.length < size) {
@@ -71,6 +73,7 @@ export function* eachChunkPaddingWithSize(buff: Buffer, size: number): IterableI
 			chunk: view,
 			position: curr,
 			index,
+			count,
 		};
 
 		index++;

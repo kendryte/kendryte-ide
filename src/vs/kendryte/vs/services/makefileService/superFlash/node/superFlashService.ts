@@ -8,11 +8,12 @@ import { IChannelLogService } from 'vs/kendryte/vs/services/channelLogger/common
 import { ILogService } from 'vs/platform/log/common/log';
 import { CONFIG_KEY_FLASH_SERIAL_BAUDRATE } from 'vs/kendryte/vs/base/common/configKeys';
 import { CHIP_BAUDRATE } from 'vs/kendryte/vs/platform/serialPort/flasher/common/chipDefine';
-import { PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
+import { PROJECT_CONFI_HEADER_FOLDER_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/common/type';
 import { rimraf } from 'vs/base/node/pfs';
+import { dirname } from 'vs/base/common/path';
 
 export interface ISuperFlashService {
 	_serviceBrand: any;
@@ -40,7 +41,7 @@ class SuperFlashService implements ISuperFlashService {
 	async handlePrecompileEvent(event: IBeforeBuildEvent): Promise<void> {
 		const mainProject = event.projects[0];
 
-		const header = resolvePath(mainProject.path, PROJECT_CONFIG_FOLDER_NAME, SUPER_FLASH_HEADER_FILE);
+		const header = resolvePath(mainProject.path, PROJECT_CONFI_HEADER_FOLDER_NAME, SUPER_FLASH_HEADER_FILE);
 		const code = resolvePath(mainProject.path, PROJECT_CONFIG_FOLDER_NAME, SUPER_FLASH_CODE_FILE);
 		const driver = resolvePath(mainProject.path, PROJECT_CONFIG_FOLDER_NAME, 'drivers');
 
@@ -78,6 +79,11 @@ class SuperFlashService implements ISuperFlashService {
 		await this.nodeFileSystemService.writeFileIfChanged(
 			codeFile,
 			codeContent,
+		);
+
+		await this.nodeFileSystemService.copyWithin(
+			this.nodePathService.getPackagesPath('isp/includes'),
+			dirname(headerFile),
 		);
 
 		await this.nodeFileSystemService.copyWithin(

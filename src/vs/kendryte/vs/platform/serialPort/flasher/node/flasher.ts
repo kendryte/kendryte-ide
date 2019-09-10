@@ -33,6 +33,7 @@ import { boardRebootSequence, BOOT_BOARD_TYPE } from 'vs/kendryte/vs/services/se
 import { flashDataBufferPack } from 'vs/kendryte/vs/platform/serialPort/flashCommon/node/dataBufferPack';
 import { flashProgramBufferPack } from 'vs/kendryte/vs/platform/serialPort/flashCommon/node/programBufferPack';
 import { tryRebootDevBoard } from 'vs/kendryte/vs/platform/serialPort/flashCommon/node/tryReboot';
+import { sha256 } from 'vs/kendryte/vs/base/node/hash';
 
 export enum FlashTargetType {
 	OnBoard = 0,
@@ -542,7 +543,7 @@ export class SerialLoader extends Disposable {
 				chunkWritten++;
 				bytesWritten += chunk.length;
 
-				this.logger.info('chunk [%s/%s] size [%s/%s]', chunkWritten, totalChunk, bytesWritten, content.length);
+				this.logger.info('chunk [%s/%s] size [%s/%s] %s', chunkWritten, totalChunk, bytesWritten, content.length, sha256(chunk));
 
 				progressFunc({ written: bytesWritten });
 				break;

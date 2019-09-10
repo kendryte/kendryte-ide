@@ -124,9 +124,8 @@ export class FlashAllAction extends Action {
 			);
 			if (success) {
 				return;
-			} else {
-				throw new Error('xxxx');
 			}
+			port.dispose();
 		}
 
 		this.logger.info(`Fast flash failed, fallback to normal isp, re-opening serial port ${sel}:`);
@@ -205,14 +204,19 @@ export class FlashAllAction extends Action {
 			this.logger.log('> ' + item.name + ':');
 			report.message(`flashing ${item.name} to ${item.startHex}...`);
 
-			await Promise.race<any>([
-				abortedPromise, flasher.flashData(
-					createReadStream(item.filepath),
-					item.start,
-					item.swapBytes,
-					report,
-				),
-			]);
+			try {
+				await Promise.race<any>([
+					abortedPromise, flasher.flashData(
+						createReadStream(item.filepath),
+						item.start,
+						item.swapBytes,
+						report,
+					),
+				]);
+			} catch (e) {
+				this.logger.warn('flash failed, will fallback: ', e.message);
+				return false;
+			}
 		}
 
 		return true;

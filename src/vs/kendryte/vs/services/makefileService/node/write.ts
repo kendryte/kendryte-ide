@@ -5,7 +5,7 @@ import { INodeFileSystemService } from 'vs/kendryte/vs/services/fileSystem/commo
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { relativePath, resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { normalizeArray } from 'vs/kendryte/vs/base/common/normalizeArray';
-import { CMAKE_CONFIG_FILE_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
+import { CMAKE_CONFIG_FILE_NAME, PROJECT_CONFI_HEADER_FOLDER_NAME, PROJECT_CONFIG_FOLDER_NAME } from 'vs/kendryte/vs/base/common/constants/wellknownFiles';
 import { CMAKE_LIST_GENERATED_WARNING, CMakeProjectTypes } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { DefineValue } from 'vs/kendryte/vs/services/makefileService/common/type';
 import { PathAttachedError } from 'vs/kendryte/vs/platform/marker/common/errorWithPath';
@@ -223,6 +223,7 @@ set_property(TARGET \${PROJECT_NAME} PROPERTY JOB_POOL_LINK single_debug)`;
 		}
 		const ideHeaders = `### from ide
 include_directories("${CMAKE_CWD}${PROJECT_CONFIG_FOLDER_NAME}")
+include_directories("${CMAKE_CWD}${PROJECT_CONFI_HEADER_FOLDER_NAME}")
 `;
 		let sharedHeaders = '## from project public\n';
 		if (this.project.resolved.includeFolders.length) {

@@ -20,6 +20,10 @@ import { MapLike } from 'vs/kendryte/vs/base/common/extendMap';
 
 const MARKER_ID = 'makefile';
 
+function createCapIdentifier(param: string) {
+	return 'INSTALLED_' + param.replace(/[^a-zA-Z0-9_$]+/g, '_').replace(/^_+/, '').toUpperCase();
+}
+
 export class MakefileService implements IMakefileService {
 	public _serviceBrand: any;
 
@@ -87,6 +91,7 @@ export class MakefileService implements IMakefileService {
 		const depMapper: MapLike<string> = {};
 		for (const item of resolvedProjectList) {
 			depMapper[item.json.name!] = item.path;
+			treeResolver.pushDefinitions(createCapIdentifier(item.json.name!), '1');
 		}
 
 		for (const project of resolvedProjectList) {

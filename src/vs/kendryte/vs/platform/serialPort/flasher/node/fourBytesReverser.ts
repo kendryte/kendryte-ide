@@ -1,4 +1,5 @@
 import { Transform } from 'stream';
+import { setImmediate } from 'vs/base/common/platform';
 
 export class FourBytesReverser extends Transform {
 	private readonly buffer: Buffer;
@@ -32,5 +33,8 @@ export class FourBytesReverser extends Transform {
 			this.push(this.buffer.swap32());
 		}
 		callback();
+		setImmediate(() => {
+			this.destroy();
+		});
 	}
 }

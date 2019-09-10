@@ -16,12 +16,16 @@ import { DATA_LEN_WRITE_FLASH } from 'vs/kendryte/vs/platform/open/common/chipCo
 import { eachChunkPaddingWithSize, IBufferChunk } from 'vs/kendryte/vs/platform/serialPort/flasher/node/chunkBuffer';
 import { msleep, timeout } from 'vs/kendryte/vs/base/common/timeout';
 import { ResponseHello, responseIsHello, responseIsWriteOk, ResponseWriteOk } from 'vs/kendryte/vs/platform/serialPort/fastFlasher/node/response';
-import { flashDataBufferPack } from 'vs/kendryte/vs/platform/serialPort/flashCommon/node/dataBufferPack';
 import { SimpleWorkerPool } from 'vs/kendryte/vs/base/common/workerPool';
 import { canceled, disposed } from 'vs/base/common/errors';
-import { createHash } from 'crypto';
 import { tryRebootDevBoard } from 'vs/kendryte/vs/platform/serialPort/flashCommon/node/tryReboot';
 import { localize } from 'vs/nls';
+import { Event } from 'vs/base/common/event';
+import { flashDataBufferPackFastLoader } from 'vs/kendryte/vs/platform/serialPort/flashCommon/node/dataBufferPack';
+import { SerialReduceStream } from 'vs/kendryte/vs/platform/serialPort/fastFlasher/node/serialReduceStream';
+import { flashProgramBufferPack } from 'vs/kendryte/vs/platform/serialPort/flashCommon/node/programBufferPack';
+import { sha256 } from 'vs/kendryte/vs/base/node/hash';
+import toPromise = Event.toPromise;
 
 export class FastLoader extends Disposable {
 	private waitHello: DeferredPromise<string>;
@@ -39,28 +43,31 @@ export class FastLoader extends Disposable {
 	) {
 		super();
 
-		const input = split2(/\n/);
+		const inputReduce = new SerialReduceStream(3);
+		const inputSplit = inputReduce.pipe(split2(/\n/));
 
 		this._register(
 			addDisposableEventEmitterListener(device, 'close', () => this.handleError(new Error('Broken pipe'))),
 		);
 
 		this._register(
-			addDisposableEventEmitterListener(input, 'data', (data: Buffer, charset: string) => this.handleData(data.toString(charset))),
+			addDisposableEventEmitterListener(inputSplit, 'data', (data: Buffer, charset: string) => this.handleData(data.toString(charset))),
 		);
 
 		this.aborted = this._register(new DeferredPromise<never>());
 		this._register(cancelToken.onCancellationRequested(() => {
+			this.logger.info('cancelToken.onCancellationRequested trigger.');
 			this.aborted.error(canceled());
 		}));
 
-		device.pipe(input);
+		device.pipe(inputReduce);
 		device.resume();
 
 		this._register({
 			dispose: () => {
-				device.unpipe(input);
-				input.destroy();
+				device.unpipe(inputReduce);
+				inputReduce.destroy();
+				inputSplit.destroy();
 				if (this.waitHello) {
 					this.waitHello.error(disposed(this.constructor.name));
 					delete this.waitHello;
@@ -134,49 +141,80 @@ export class FastLoader extends Disposable {
 		return true;
 	}
 
-	private async getSize(stream: ReadStream) {
-		return (await lstat(stream.path as string)).size;
+	private async getSize(stream: ReadStream | Buffer) {
+		if (stream instanceof Buffer) {
+			return stream.byteLength;
+		} else {
+			return (await lstat(stream.path as string)).size;
+		}
+	}
+
+	async flashProgram(stream: NodeJS.ReadableStream, length: number, report: SubProgress) {
+		// const reverse = stream.pipe(new FourBytesReverser());
+		const contentBuffer = await flashProgramBufferPack(stream, length, undefined);
+
+		this.logger.info(`Downloading program to flash: size=${length}`);
+		const speed = new SpeedMeter();
+		speed.start();
+
+		const pool = new SimpleWorkerPool<IBufferChunk>(2, (base, job, cancel) => {
+			return this.doWriteChunk(job.index, job.count, job.chunk, base + job.position, speed, report, cancel);
+		});
+		await pool.run(0, eachChunkPaddingWithSize(contentBuffer, DATA_LEN_WRITE_FLASH), this.cancelToken);
 	}
 
 	async flashData(stream: ReadStream, baseAddress: number, reverse4Bytes: boolean, report: SubProgress) {
 		const length = await this.getSize(stream);
-		this.logger.info(`Downloading data to flash: size=${length} address=${stringifyMemoryAddress(baseAddress)}`);
+		this.logger.info(`Downloading data to flash: size=${length}, address=${stringifyMemoryAddress(baseAddress)}, reverse4Bytes=${reverse4Bytes}`);
 		const speed = new SpeedMeter();
 		speed.start();
 
-		const sourceBuffer = await flashDataBufferPack(stream, reverse4Bytes);
+		const sourceBuffer = await flashDataBufferPackFastLoader(stream, reverse4Bytes);
 		const pool = new SimpleWorkerPool<IBufferChunk>(2, (base, job, cancel) => {
-			return this.doWriteChunk(job.index, job.chunk, base + job.position, cancel);
+			return this.doWriteChunk(job.index, job.count, job.chunk, base + job.position, speed, report, cancel);
 		});
 		await pool.run(baseAddress, eachChunkPaddingWithSize(sourceBuffer, DATA_LEN_WRITE_FLASH), this.cancelToken);
 	}
 
-	private async doWriteChunk(index: number, chunk: Buffer, address: number, cancel: CancellationToken) {
+	private maxAddress = 0;
+
+	private async doWriteChunk(index: number, count: number, chunk: Buffer, address: number, speed: SpeedMeter, report: SubProgress, cancel: CancellationToken) {
 		const writeHeader = Buffer.allocUnsafe(4);
 		writeHeader.writeUInt32LE(address, 0);
 		const data = Buffer.concat([writeHeader, chunk]);
 
-		for (let retry = 0; retry < 1; retry++) {
-			this.logger.info(`send chunk ${index} at 0x${address.toString(16)} (${data.length} bytes).`);
-			const dfd = new DeferredPromise<ResponseWriteOk>();
-			this.waitWriteOk.set(address, dfd);
-			this.device.write(data);
-
-			const response = await dfd.p;
-			this.logger.info(`write complete of chunk ${index} at 0x${response.address.toString(16)}.`);
-
-			if (response.hash === sha256(chunk)) {
+		for (let retry = 0; retry < 3; retry++) {
+			if (cancel.isCancellationRequested) {
 				return;
 			}
 
-			this.logger.warn(`Hash mismatch of chunk ${index}\nresp:\t${response.hash}\nwant:\t${sha256(chunk)}`);
-			continue;
+			try {
+				this.logger.info(`${retry ? `[retry:${retry}] ` : ''}send chunk ${index} (of ${count}) at ${address}(0x${address.toString(16)}) ${data.length} bytes.`);
+				const dfd = new DeferredPromise<ResponseWriteOk>();
+				this.waitWriteOk.set(address, dfd);
+				this.device.write(data);
+
+				const to = timeout(2000);
+				const response = await Promise.race([toPromise(cancel.onCancellationRequested), dfd.p, to]);
+
+				if (response.hash === sha256(chunk)) {
+					this.logger.info(`chunk ${index} complete ${response.hash}.`);
+
+					this.maxAddress = Math.max(this.maxAddress, address);
+					speed.setCurrent(this.maxAddress);
+
+					report.message(localize('serial.flash.writing', 'Writing Flash @ {0}', speed.getSpeed()));
+					report.progress(this.maxAddress);
+
+					return;
+				}
+
+				this.logger.warn(`Hash mismatch of chunk ${index}:\nresp:\t${response.hash}\nwant:\t${sha256(chunk)}`);
+			} catch (e) {
+				this.logger.warn(`Write error of chunk ${index}: ${e.message}`);
+			}
 		}
 
 		throw new Error(localize('errorFlashRetry', 'Flash failed (after 3 tries).'));
 	}
-}
-
-function sha256(data: Buffer) {
-	return createHash('sha256').update(data).digest().toString('hex');
 }
