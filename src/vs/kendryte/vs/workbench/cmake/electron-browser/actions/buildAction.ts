@@ -41,7 +41,7 @@ export class MaixCMakeBuildAction extends Action {
 			if (successMessage) {
 				MaixCMakeBuildAction.lastBuildError = this.notificationService.notify({
 					severity: Severity.Info,
-					message: localize('buildSuccess', 'Build complete. (' + result.warnings + ' warnings)'),
+					message: localize('buildSuccess', 'Build complete. ({0} warnings)', result.warnings),
 					actions: {
 						primary: [
 							new Action('showLog', localize('showLogShort', 'Log'), '', true, () => this.showLogWindow()),
