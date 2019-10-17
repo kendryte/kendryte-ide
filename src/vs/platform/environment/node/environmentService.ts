@@ -3,17 +3,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { BACKUPS, IDebugParams, IEnvironmentService, IExtensionHostDebugParams, ParsedArgs } from 'vs/platform/environment/common/environment';
+import { IEnvironmentService, ParsedArgs, IDebugParams, IExtensionHostDebugParams, BACKUPS } from 'vs/platform/environment/common/environment';
 import * as crypto from 'crypto';
 import * as paths from 'vs/base/node/paths';
 import * as os from 'os';
 import * as path from 'vs/base/common/path';
 import * as resources from 'vs/base/common/resources';
 import { memoize } from 'vs/base/common/decorators';
-import pkg from 'vs/platform/product/node/package';
-import product from 'vs/platform/product/node/product';
+import product from 'vs/platform/product/common/product';
 import { toLocalISOString } from 'vs/base/common/date';
-import { isLinux, isWindows } from 'vs/base/common/platform';
+import { isWindows, isLinux } from 'vs/base/common/platform';
 import { getPathFromAmdModule } from 'vs/base/common/amd';
 import { URI } from 'vs/base/common/uri';
 
@@ -29,7 +28,6 @@ function getNixIPCHandle(userDataPath: string, type: string): string {
 	if (vscodePortable && vscodePortable.length + fileName.length < 104) {
 		return path.join(vscodePortable, fileName);
 	}
-
 	const scope = crypto.createHash('md5').update(userDataPath).digest('hex').substr(0, 8);
 	fileName = `kide-${scope}-${fileName}`;
 	if (xdgRuntimeDir && xdgRuntimeDir.length + fileName.length < 104) {
@@ -46,7 +44,7 @@ function getNixIPCHandle(userDataPath: string, type: string): string {
 function getWin32IPCHandle(userDataPath: string, type: string): string {
 	const scope = crypto.createHash('md5').update(userDataPath).digest('hex');
 
-	return `\\\\.\\pipe\\${scope}-${pkg.version}-${type}-sock`;
+	return `\\\\.\\pipe\\${scope}-${product.version}-${type}-sock`;
 }
 
 function getIPCHandle(userDataPath: string, type: string): string {
@@ -87,7 +85,7 @@ function getCLIPath(execPath: string, appRoot: string, isBuilt: boolean): string
 
 export class EnvironmentService implements IEnvironmentService {
 
-	_serviceBrand: any;
+	_serviceBrand: undefined;
 
 	get args(): ParsedArgs { return this._args; }
 
@@ -107,16 +105,12 @@ export class EnvironmentService implements IEnvironmentService {
 	@memoize
 	get userDataPath(): string {
 		const vscodePortable = process.env['VSCODE_PORTABLE'];
-
 		if (vscodePortable) {
 			return path.join(vscodePortable, 'user-data');
 		}
 
 		return parseUserDataDir(this._args, process);
 	}
-
-	@memoize
-	get webUserDataHome(): URI { return URI.file(parsePathArg(this._args['web-user-data-dir'], process) || this.userDataPath); }
 
 	get appNameLong(): string { return product.nameLong; }
 
@@ -130,6 +124,12 @@ export class EnvironmentService implements IEnvironmentService {
 
 	@memoize
 	get settingsResource(): URI { return resources.joinPath(this.userRoamingDataHome, 'settings.json'); }
+
+	@memoize
+	get settingsSyncPreviewResource(): URI { return resources.joinPath(this.userRoamingDataHome, '.settings.json'); }
+
+	@memoize
+	get userDataSyncLogResource(): URI { return URI.file(path.join(this.logsPath, 'userDataSync.log')); }
 
 	@memoize
 	get machineSettingsHome(): URI { return URI.file(path.join(this.userDataPath, 'Machine')); }
@@ -150,7 +150,14 @@ export class EnvironmentService implements IEnvironmentService {
 	get keyboardLayoutResource(): URI { return resources.joinPath(this.userRoamingDataHome, 'keyboardLayout.json'); }
 
 	@memoize
-	get localeResource(): URI { return resources.joinPath(this.userRoamingDataHome, 'locale.json'); }
+	get argvResource(): URI {
+		const vscodePortable = process.env['VSCODE_PORTABLE'];
+		if (vscodePortable) {
+			return URI.file(path.join(vscodePortable, 'argv.json'));
+		}
+
+		return URI.file(path.join(this.userHome, product.dataFolderName, 'argv.json'));
+	}
 
 	@memoize
 	get isExtensionDevelopment(): boolean { return !!this._args.extensionDevelopmentPath; }
@@ -191,7 +198,6 @@ export class EnvironmentService implements IEnvironmentService {
 		}
 
 		const vscodePortable = process.env['VSCODE_PORTABLE'];
-
 		if (vscodePortable) {
 			return path.join(vscodePortable, 'extensions');
 		}
@@ -209,11 +215,6 @@ export class EnvironmentService implements IEnvironmentService {
 				}
 				return URI.file(path.normalize(p));
 			});
-		} else if (s) {
-			if (/^[^:/?#]+?:\/\//.test(s)) {
-				return [URI.parse(s)];
-			}
-			return [URI.file(path.normalize(s))];
 		}
 		return undefined;
 	}
@@ -246,25 +247,14 @@ export class EnvironmentService implements IEnvironmentService {
 		return false;
 	}
 
-	get skipGettingStarted(): boolean { return !!this._args['skip-getting-started']; }
-
-	get skipReleaseNotes(): boolean { return !!this._args['skip-release-notes']; }
-
-	get skipAddToRecentlyOpened(): boolean { return !!this._args['skip-add-to-recently-opened']; }
-
 	@memoize
 	get debugExtensionHost(): IExtensionHostDebugParams { return parseExtensionHostPort(this._args, this.isBuilt); }
-
-	@memoize
-	get debugSearch(): IDebugParams { return parseSearchPort(this._args, this.isBuilt); }
 
 	get isBuilt(): boolean { return !process.env['VSCODE_DEV']; }
 	get verbose(): boolean { return !!this._args.verbose; }
 	get log(): string | undefined { return this._args.log; }
 
 	get wait(): boolean { return !!this._args.wait; }
-
-	get logExtensionHostCommunication(): boolean { return !!this._args.logExtensionHostCommunication; }
 
 	get status(): boolean { return !!this._args.status; }
 
@@ -285,9 +275,6 @@ export class EnvironmentService implements IEnvironmentService {
 
 	get driverHandle(): string | undefined { return this._args['driver']; }
 	get driverVerbose(): boolean { return !!this._args['driver-verbose']; }
-
-	readonly webviewResourceRoot = 'vscode-resource:{{resource}}';
-	readonly webviewCspSource = 'vscode-resource:';
 
 	constructor(private _args: ParsedArgs, private _execPath: string) {
 		if (!process.env['VSCODE_LOGS']) {
@@ -315,7 +302,7 @@ function parseDebugPort(debugArg: string | undefined, debugBrkArg: string | unde
 	return { port, break: brk, debugId };
 }
 
-function parsePathArg(arg: string | undefined, process: NodeJS.Process): string | undefined {
+export function parsePathArg(arg: string | undefined, process: NodeJS.Process): string | undefined {
 	if (!arg) {
 		return undefined;
 	}

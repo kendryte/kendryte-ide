@@ -6,13 +6,13 @@
 import * as dom from 'vs/base/browser/dom';
 import { HighlightedLabel } from 'vs/base/browser/ui/highlightedlabel/highlightedLabel';
 import { IIdentityProvider, IKeyboardNavigationLabelProvider, IListVirtualDelegate } from 'vs/base/browser/ui/list/list';
-import { IDataSource, ITreeNode, ITreeRenderer, ITreeSorter } from 'vs/base/browser/ui/tree/tree';
+import { IDataSource, ITreeNode, ITreeRenderer, ITreeSorter, ITreeFilter } from 'vs/base/browser/ui/tree/tree';
 import { values } from 'vs/base/common/collections';
 import { createMatches, FuzzyScore } from 'vs/base/common/filters';
 import 'vs/css!./media/outlineTree';
 import 'vs/css!./media/symbol-icons';
 import { Range } from 'vs/editor/common/core/range';
-import { SymbolKind, symbolKindToCssClass } from 'vs/editor/common/modes';
+import { SymbolKind, SymbolKinds, SymbolTag } from 'vs/editor/common/modes';
 import { OutlineElement, OutlineGroup, OutlineModel } from 'vs/editor/contrib/documentSymbols/outlineModel';
 import { localize } from 'vs/nls';
 import { IconLabel } from 'vs/base/browser/ui/iconLabel/iconLabel';
@@ -44,17 +44,20 @@ export class OutlineIdentityProvider implements IIdentityProvider<OutlineItem> {
 }
 
 export class OutlineGroupTemplate {
-	static id = 'OutlineGroupTemplate';
-
-	labelContainer: HTMLElement;
-	label: HighlightedLabel;
+	static readonly id = 'OutlineGroupTemplate';
+	constructor(
+		readonly labelContainer: HTMLElement,
+		readonly label: HighlightedLabel,
+	) { }
 }
 
 export class OutlineElementTemplate {
-	static id = 'OutlineElementTemplate';
-	container: HTMLElement;
-	iconLabel: IconLabel;
-	decoration: HTMLElement;
+	static readonly id = 'OutlineElementTemplate';
+	constructor(
+		readonly container: HTMLElement,
+		readonly iconLabel: IconLabel,
+		readonly decoration: HTMLElement,
+	) { }
 }
 
 export class OutlineVirtualDelegate implements IListVirtualDelegate<OutlineItem> {
@@ -80,7 +83,7 @@ export class OutlineGroupRenderer implements ITreeRenderer<OutlineGroup, FuzzySc
 		const labelContainer = dom.$('.outline-element-label');
 		dom.addClass(container, 'outline-element');
 		dom.append(container, labelContainer);
-		return { labelContainer, label: new HighlightedLabel(labelContainer, true) };
+		return new OutlineGroupTemplate(labelContainer, new HighlightedLabel(labelContainer, true));
 	}
 
 	renderElement(node: ITreeNode<OutlineGroup, FuzzyScore>, index: number, template: OutlineGroupTemplate): void {
@@ -109,7 +112,7 @@ export class OutlineElementRenderer implements ITreeRenderer<OutlineElement, Fuz
 		const iconLabel = new IconLabel(container, { supportHighlights: true });
 		const decoration = dom.$('.outline-element-decoration');
 		container.appendChild(decoration);
-		return { container, iconLabel, decoration };
+		return new OutlineElementTemplate(container, iconLabel, decoration);
 	}
 
 	renderElement(node: ITreeNode<OutlineElement, FuzzyScore>, index: number, template: OutlineElementTemplate): void {
@@ -122,7 +125,11 @@ export class OutlineElementRenderer implements ITreeRenderer<OutlineElement, Fuz
 		};
 		if (this._configurationService.getValue(OutlineConfigKeys.icons)) {
 			// add styles for the icons
-			options.extraClasses.push(`outline-element-icon ${symbolKindToCssClass(element.symbol.kind, true)}`);
+			options.extraClasses.push(`outline-element-icon ${SymbolKinds.toCssClassName(element.symbol.kind, true)}`);
+		}
+		if (element.symbol.tags.indexOf(SymbolTag.Deprecated) >= 0) {
+			options.extraClasses.push(`deprecated`);
+			options.matches = [];
 		}
 		template.iconLabel.setLabel(element.symbol.name, element.symbol.detail, options);
 		this._renderMarkerInfo(element, template);
@@ -205,6 +212,31 @@ export const enum OutlineSortOrder {
 	ByPosition,
 	ByName,
 	ByKind
+}
+
+export class OutlineFilter implements ITreeFilter<OutlineItem> {
+
+	private readonly _filteredTypes = new Set<SymbolKind>();
+
+	constructor(
+		private readonly _prefix: string,
+		@IConfigurationService private readonly _configService: IConfigurationService,
+	) {
+
+	}
+
+	update() {
+		this._filteredTypes.clear();
+		for (const name of SymbolKinds.names()) {
+			if (!this._configService.getValue<boolean>(`${this._prefix}.${name}`)) {
+				this._filteredTypes.add(SymbolKinds.fromString(name) || -1);
+			}
+		}
+	}
+
+	filter(element: OutlineItem): boolean {
+		return !(element instanceof OutlineElement) || !this._filteredTypes.has(element.symbol.kind);
+	}
 }
 
 export class OutlineItemComparator implements ITreeSorter<OutlineItem> {

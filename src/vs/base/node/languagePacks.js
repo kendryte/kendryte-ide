@@ -270,10 +270,10 @@ function factory(nodeRequire, path, fs, perf) {
 								const kendrytePackData = JSON.parse(values[2]).contents;
 								const bundles = Object.keys(metadata.bundles);
 								const writes = [];
-								for (let bundle of bundles) {
+								for (const bundle of bundles) {
 									const modules = metadata.bundles[bundle];
 									const target = Object.create(null);
-									for (let module of modules) {
+									for (const module of modules) {
 										const keys = metadata.keys[module];
 										const defaultMessages = metadata.messages[module];
 										let translations = packData[module];
