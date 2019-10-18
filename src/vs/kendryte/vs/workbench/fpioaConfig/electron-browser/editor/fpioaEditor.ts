@@ -18,7 +18,7 @@ import { EditorId } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/t
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/resourceConfiguration';
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { IWindowService } from 'vs/platform/windows/common/windows';
+import { IHostService } from 'vs/workbench/services/host/browser/host';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { ICustomJsonEditorService, IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 import { IFPIOAMapData } from 'vs/kendryte/vs/base/common/jsonSchemas/deviceManagerSchema';
@@ -39,14 +39,14 @@ export class FpioaEditor extends AbstractJsonEditor<IFPIOAMapData, IFpioaInputSt
 		@ITextFileService textFileService: ITextFileService,
 		@IEditorService editorService: IEditorService,
 		@IEditorGroupsService editorGroupService: IEditorGroupsService,
-		@IWindowService windowService: IWindowService,
+		@IHostService hostService: IHostService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@INotificationService notificationService: INotificationService,
 		@ICustomJsonEditorService customJsonEditorService: ICustomJsonEditorService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@INotificationService private readonly notifyService: INotificationService,
 	) {
-		super(id, telemetryService, instantiationService, storageService, configurationService, themeService, textFileService, editorService, editorGroupService, windowService, contextKeyService, notificationService, customJsonEditorService);
+		super(id, telemetryService, instantiationService, storageService, configurationService, themeService, textFileService, editorService, editorGroupService, hostService, contextKeyService, notificationService, customJsonEditorService);
 	}
 
 	protected _createEditor(parent: HTMLElement): void {

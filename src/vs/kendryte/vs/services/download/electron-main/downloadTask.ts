@@ -4,7 +4,8 @@ import { Disposable, IDisposable, toDisposable } from 'vs/base/common/lifecycle'
 import { createDownloadId, DownloadID, IDownloadTargetInfo } from 'vs/kendryte/vs/services/download/common/download';
 import { exists, fileExists, mkdirp, readFile, truncate, unlink, writeFile } from 'vs/base/node/pfs';
 import { dirname } from 'vs/base/common/path';
-import { IHeaders, IRequestContext, IRequestService } from 'vs/platform/request/common/request';
+import { IHeaders, IRequestContext } from 'vs/base/parts/request/common/request';
+import { IRequestService } from 'vs/platform/request/common/request';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { createWriteStream, WriteStream } from 'fs';
 import { ILogService, MultiplexLogService } from 'vs/platform/log/common/log';

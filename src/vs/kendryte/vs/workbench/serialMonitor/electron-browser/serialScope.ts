@@ -61,9 +61,10 @@ export class SerialScope extends Disposable implements ISerialPrivateReplService
 	}
 
 	public acceptReplInput(): void {
-		console.log('accept input!');
-		this.history.add(this.model.getValue());
-		this.lineInputStream.write(this.model.getValue());
+		const data = this.model.getValue();
+		// console.log('accept input!', data);
+		this.history.add(data);
+		this.lineInputStream.write(data);
 		this.model.setValue('');
 	}
 
@@ -86,11 +87,11 @@ export class SerialScope extends Disposable implements ISerialPrivateReplService
 		}));
 	}
 
-	public selectSession(session: IDebugSession): void {
+	public async selectSession(session: IDebugSession) {
 		this.logService.debug('selectSession');
 	}
 
-	public clearRepl(): void {
+	public async clearRepl() {
 		this.logService.debug('clearRepl');
 		this.model.setValue('');
 	}

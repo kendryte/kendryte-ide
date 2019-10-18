@@ -7,7 +7,7 @@ import {
 } from 'vs/kendryte/vs/base/common/menu/openocd';
 import { isWindows } from 'vs/base/common/platform';
 import { URL_INSTALL_JLINK_DRIVER } from 'vs/kendryte/vs/base/common/urlList';
-import { IWindowsService } from 'vs/platform/windows/common/windows';
+import { IElectronService } from 'vs/platform/electron/node/electron';
 import { INodePathService } from 'vs/kendryte/vs/services/path/common/type';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { localize } from 'vs/nls';
@@ -31,7 +31,7 @@ export class InstallJTagDriverAction extends Action {
 
 	constructor(
 		id: string, label: string,
-		@IWindowsService private readonly windowsService: IWindowsService,
+		@IElectronService private readonly electronService: IElectronService,
 		@INodePathService private readonly nodePathService: INodePathService,
 		@IChannelLogService private readonly channelLogService: IChannelLogService,
 		@INotificationService private readonly notificationService: INotificationService,
@@ -63,7 +63,7 @@ start "zadig" /D ${JSON.stringify(dirname(zadigExe))} /WAIT ${JSON.stringify(zad
 
 			this.notificationService.info('ZADIG Program exit. Note: You may need un-plug and plug again.');
 		} else {
-			await this.windowsService.openExternal(URL_INSTALL_JLINK_DRIVER);
+			await this.electronService.openExternal(URL_INSTALL_JLINK_DRIVER);
 		}
 	}
 

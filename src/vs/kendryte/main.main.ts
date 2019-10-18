@@ -1,6 +1,6 @@
 //// included by "vs/code/electron-main/main.ts"
 
-import 'vs/kendryte/vs/platform/menubar/electron-main/aboutMenuDialog';
+// import 'vs/kendryte/vs/platform/menubar/electron-main/aboutMenuDialog';
 import 'vs/kendryte/vs/services/download/electron-main/nodeDownloadService';
 import 'vs/kendryte/vs/services/ipc/electron-main/ipcChannelMain';
 import 'vs/kendryte/vs/services/path/electron-main/contribution';

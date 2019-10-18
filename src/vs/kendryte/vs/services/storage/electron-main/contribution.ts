@@ -3,6 +3,7 @@ import { IStorageService, IWillSaveStateEvent, IWorkspaceStorageChangeEvent, Sto
 import { Disposable } from 'vs/base/common/lifecycle';
 import { Emitter } from 'vs/base/common/event';
 import { isUndefinedOrNull } from 'vs/base/common/types';
+import { IWorkspaceInitializationPayload } from 'vs/platform/workspaces/common/workspaces';
 import Store = require('electron-store');
 
 class StorageMainService extends Disposable implements IStorageService {
@@ -49,6 +50,10 @@ class StorageMainService extends Disposable implements IStorageService {
 
 	async logStorage(): Promise<void> {
 		console.log('This is the main store: %s', JSON.stringify(this._storeObject.store, null, '\t'));
+	}
+
+	async migrate(toWorkspace: IWorkspaceInitializationPayload): Promise<void> {
+		// TODO: impl this
 	}
 }
 

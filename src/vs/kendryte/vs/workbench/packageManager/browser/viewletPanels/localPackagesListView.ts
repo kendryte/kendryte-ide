@@ -187,7 +187,7 @@ export class LocalPackagesListView extends ViewletPanel {
 
 		const delegate = new Delegate();
 		const renderer = this.instantiationService.createInstance(Renderer);
-		this.list = this.instantiationService.createInstance(WorkbenchPagedList, this.packageList, delegate, [renderer], {
+		this.list = this.instantiationService.createInstance(WorkbenchPagedList, 'kendryte-package-local', this.packageList, delegate, [renderer], {
 			ariaLabel: localize('packages', 'Packages'),
 			multipleSelectionSupport: false,
 		}) as WorkbenchPagedList<ILibraryProject>;

@@ -1,4 +1,4 @@
-import { IStatusbarService, StatusbarAlignment } from 'vs/platform/statusbar/common/statusbar';
+import { IStatusbarService, StatusbarAlignment } from 'vs/workbench/services/statusbar/common/statusbar';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import { ThemeColor } from 'vs/platform/theme/common/themeService';
 import { ISleepData, IStatusButtonData, IStatusButtonMethod } from 'vs/kendryte/vs/workbench/bottomBar/common/type';

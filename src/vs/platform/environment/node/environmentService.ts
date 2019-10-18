@@ -22,7 +22,7 @@ export const xdgRuntimeDir = process.env['XDG_RUNTIME_DIR'];
 
 function getNixIPCHandle(userDataPath: string, type: string): string {
 	const vscodePortable = process.env['VSCODE_PORTABLE'];
-	let fileName = `${pkg.version}-${type}.sock`;
+	let fileName = `${product.version}-${type}.sock`;
 	const osTempPath = os.tmpdir();
 
 	if (vscodePortable && vscodePortable.length + fileName.length < 104) {

@@ -4,7 +4,7 @@ import { IChannelLogger, IChannelLogService, OPEN_RESOURCE_SCHEME } from 'vs/ken
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { ChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/logger';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { IWindowService } from 'vs/platform/windows/common/windows';
+import { IElectronEnvironmentService } from 'vs/workbench/services/electron/electron-browser/electronEnvironmentService';
 import { URI } from 'vs/base/common/uri';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
 import { IEditorService, IOpenEditorOverride } from 'vs/workbench/services/editor/common/editorService';
@@ -21,7 +21,7 @@ class ChannelLogService extends Disposable implements IChannelLogService {
 
 	constructor(
 		@IOutputService private outputService: IOutputService,
-		@IWindowService private windowService: IWindowService,
+		@IElectronEnvironmentService private readonly electronEnvironmentService: IElectronEnvironmentService,
 		@IEditorService private readonly editorService: IEditorService,
 		@ILifecycleService lifecycleService: ILifecycleService,
 	) {
@@ -47,7 +47,7 @@ class ChannelLogService extends Disposable implements IChannelLogService {
 		if (res.scheme === OPEN_RESOURCE_SCHEME) {
 			if (res.path.startsWith('/logger/')) {
 				this.show(res.fragment);
-				return { override: Promise.resolve(null) };
+				return { override: Promise.resolve(undefined) };
 			}
 		}
 		return;
@@ -70,7 +70,7 @@ class ChannelLogService extends Disposable implements IChannelLogService {
 			log,
 			file,
 		});
-		const newItem = new ChannelLogger(this.windowService.windowId, this.outputService.getChannel(id) as IOutputChannel);
+		const newItem = new ChannelLogger(this.electronEnvironmentService.windowId, this.outputService.getChannel(id) as IOutputChannel);
 		this._register(newItem);
 
 		this.map.set(id, newItem);

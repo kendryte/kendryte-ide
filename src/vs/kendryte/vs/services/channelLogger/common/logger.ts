@@ -97,6 +97,10 @@ export class ChannelLogger extends AbstractLogService implements IChannelLogger,
 		};
 	}
 
+	flush(): void {
+		// Nothing to flush
+	}
+
 	dispose() {
 		this._onDispose.fire();
 		this._onDispose.dispose();

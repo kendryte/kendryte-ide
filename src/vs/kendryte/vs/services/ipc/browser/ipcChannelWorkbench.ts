@@ -8,7 +8,7 @@ import { URI } from 'vs/base/common/uri';
 import { ChannelLogger } from 'vs/kendryte/vs/services/channelLogger/common/logger';
 import { LogEvent } from 'vs/kendryte/vs/services/channelLogger/common/type';
 import { IPC_ID_IS_ME_FIRST, IPC_ID_STOP_LOG_EVENT } from 'vs/kendryte/vs/base/common/ipcIds';
-import { IWindowService } from 'vs/platform/windows/common/windows';
+import { IElectronEnvironmentService } from 'vs/workbench/services/electron/electron-browser/electronEnvironmentService';
 import { registerChannelClient } from 'vs/kendryte/vs/platform/instantiation/common/ipcExtensions';
 
 const symbolMethod = Symbol('ipc-method-mark');
@@ -21,7 +21,7 @@ class KendryteIPCWorkbenchService implements IKendryteClientService, IPCServiceC
 
 	constructor(
 		@IKendryteMainIpcChannel protected readonly mainChannel: IKendryteMainIpcChannelClient,
-		@IWindowService protected readonly windowService: IWindowService,
+		@IElectronEnvironmentService private readonly electronEnvironmentService: IElectronEnvironmentService,
 		@IKendryteServiceRunnerChannel protected readonly runnerChannel: IKendryteMainIpcChannelClient,
 		@ILogService protected readonly logService: ILogService,
 	) {
@@ -39,7 +39,7 @@ class KendryteIPCWorkbenchService implements IKendryteClientService, IPCServiceC
 	}
 
 	isMeFirst(): Thenable<boolean> {
-		const windowId = this.windowService.windowId;
+		const windowId = this.electronEnvironmentService.windowId;
 		return this.mainChannel.call<boolean>(IPC_ID_IS_ME_FIRST, windowId);
 	}
 

@@ -1,4 +1,4 @@
-import product from 'vs/platform/product/node/product';
+import product from 'vs/platform/product/common/product';
 import { resolvePath } from 'vs/kendryte/vs/base/common/resolvePath';
 import { mkdirp, writeFile } from 'vs/base/node/pfs';
 import * as fs from 'fs';

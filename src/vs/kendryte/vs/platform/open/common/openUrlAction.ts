@@ -1,5 +1,5 @@
 import { Action } from 'vs/base/common/actions';
-import { IWindowsService } from 'vs/platform/windows/common/windows';
+import { IElectronService } from 'vs/platform/electron/node/electron';
 
 export type GetUrl = () => string | Thenable<string>;
 
@@ -9,7 +9,7 @@ export class OpenUrlAction extends Action {
 	constructor(
 		label: string,
 		protected readonly url: string | GetUrl,
-		@IWindowsService private readonly windowsService: IWindowsService,
+		@IElectronService private readonly electronService: IElectronService,
 	) {
 		super(OpenUrlAction.ID, label, 'link');
 	}
@@ -21,6 +21,6 @@ export class OpenUrlAction extends Action {
 		} else {
 			url = await this.url();
 		}
-		await this.windowsService.openExternal(url);
+		await this.electronService.openExternal(url);
 	}
 }

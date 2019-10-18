@@ -24,7 +24,7 @@ import { OpenManagerControl } from 'vs/kendryte/vs/workbench/kendrytePackageJson
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/resourceConfiguration';
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
 import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
-import { IWindowService } from 'vs/platform/windows/common/windows';
+import { IHostService } from 'vs/workbench/services/host/browser/host';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IInputState } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditorInput';
 import { objectEntries, objectKeys } from 'vs/kendryte/vs/base/common/type/objectKeys';
@@ -75,12 +75,12 @@ export class KendrytePackageJsonEditor extends AbstractJsonEditor<ICompileInfo, 
 		@ITextFileService textFileService: ITextFileService,
 		@IEditorService editorService: IEditorService,
 		@IEditorGroupsService editorGroupService: IEditorGroupsService,
-		@IWindowService windowService: IWindowService,
+		@IHostService hostService: IHostService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@INotificationService notificationService: INotificationService,
 		@ICustomJsonEditorService customJsonEditorService: ICustomJsonEditorService,
 	) {
-		super(id, telemetryService, instantiationService, storageService, configurationService, themeService, textFileService, editorService, editorGroupService, windowService, contextKeyService, notificationService, customJsonEditorService);
+		super(id, telemetryService, instantiationService, storageService, configurationService, themeService, textFileService, editorService, editorGroupService, hostService, contextKeyService, notificationService, customJsonEditorService);
 
 		this.sectionCreator = this._register(instantiationService.createInstance(SectionFactory));
 		this._register(this.sectionCreator.onDidHeightChange(() => {

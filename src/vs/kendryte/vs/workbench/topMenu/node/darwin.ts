@@ -1,4 +1,4 @@
-import product from 'vs/platform/product/node/product';
+import product from 'vs/platform/product/common/product';
 import { symlink, unlink } from 'vs/base/node/pfs';
 import { lstatExists } from 'vs/kendryte/vs/base/node/extrafs';
 

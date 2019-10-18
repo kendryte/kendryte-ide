@@ -1,5 +1,5 @@
 import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/lifecycle';
-import { IStatusbarService, StatusbarAlignment } from 'vs/platform/statusbar/common/statusbar';
+import { IStatusbarService, StatusbarAlignment } from 'vs/workbench/services/statusbar/common/statusbar';
 import { IKendryteStatusControllerService, IPartMyStatusBarItem, StatusBarLeftLocation } from 'vs/kendryte/vs/workbench/bottomBar/common/type';
 import { MyStatusBarItem } from 'vs/kendryte/vs/workbench/bottomBar/common/myStatusBarItem';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';

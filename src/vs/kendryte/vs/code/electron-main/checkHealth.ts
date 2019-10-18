@@ -1,10 +1,10 @@
-import { BrowserWindow, dialog, ipcMain, IpcMessageEvent } from 'electron';
+import { BrowserWindow, dialog, ipcMain, IpcMainEvent } from 'electron';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { localize } from 'vs/nls';
 
 const windowTimeouts = new Map<number, NodeJS.Timeout>();
 
-ipcMain.on('kendryte-health-window-ready', (event: IpcMessageEvent) => {
+ipcMain.on('kendryte-health-window-ready', (event: IpcMainEvent) => {
 	const tmr = windowTimeouts.get(event.sender.id);
 	if (tmr) {
 		console.log('window [%s] check ok.', event.sender.id);

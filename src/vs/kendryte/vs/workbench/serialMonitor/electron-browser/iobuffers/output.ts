@@ -22,13 +22,13 @@ export class XtermScrollbackBuffer extends Writable {
 	) {
 		super();
 
-		if (encoding === 'hex' && hexNewline) {
-			this.encoder = createEncoder('hexnewline');
-		} else if (encoding === 'hexasc') {
+		if (encoding === 'bin2hex' && hexNewline) {
+			this.encoder = createEncoder('bin2hex.linefeed');
+		} else if (encoding === 'bin2hexasc') {
 			this.encoder = createEncoder(encoding);
 			linefeed = '';
 		} else {
-			this.encoder = createEncoder(encoding || '');
+			this.encoder = createEncoder(encoding || 'binary');
 		}
 
 		if (linefeed) {

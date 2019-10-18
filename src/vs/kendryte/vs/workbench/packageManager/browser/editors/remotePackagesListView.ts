@@ -20,7 +20,7 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { DisplayPackageDetailAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/displayPackageDetailAction';
 import { IPackageRegistryService } from 'vs/kendryte/vs/workbench/packageManager/common/type';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { IWindowService } from 'vs/platform/windows/common/windows';
+import { IElectronService } from 'vs/platform/electron/node/electron';
 import { URI } from 'vs/base/common/uri';
 import { CMakeProjectTypes } from 'vs/kendryte/vs/base/common/jsonSchemas/cmakeConfigSchema';
 import { selectBoxNames } from 'vs/kendryte/vs/base/browser/ui/selectBox';
@@ -69,7 +69,7 @@ class ListRenderer implements IPagedRenderer<IRemotePackageInfo, ITemplateData> 
 		@IPackageRegistryService private readonly packageRegistryService: IPackageRegistryService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@IFileDialogService private readonly fileDialogService: IFileDialogService,
-		@IWindowService private readonly windowService: IWindowService,
+		@IElectronService private readonly electronService: IElectronService,
 		@IKendryteWorkspaceService private readonly kendryteWorkspaceService: IKendryteWorkspaceService,
 	) {
 	}
@@ -224,7 +224,7 @@ class ListRenderer implements IPagedRenderer<IRemotePackageInfo, ITemplateData> 
 			}).then((path) => {
 				if (path) {
 					const isEmptyWorkspace = this.kendryteWorkspaceService.isEmpty();
-					this.windowService.openWindow([
+					this.electronService.openWindow([
 						{
 							folderUri: URI.file(path),
 						},
@@ -251,6 +251,7 @@ export class RemotePackagesListView extends WorkbenchPagedList<IRemotePackageInf
 		@IKeybindingService keybindingService: IKeybindingService,
 	) {
 		super(
+			'kendryte-package-remote',
 			container,
 			new ListDelegate,
 			[instantiationService.createInstance(ListRenderer)],

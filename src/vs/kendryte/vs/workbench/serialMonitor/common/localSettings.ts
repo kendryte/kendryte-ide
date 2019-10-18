@@ -4,7 +4,7 @@ export enum SerialOpenMode {
 }
 
 export interface ILocalOptions {
-	outputCharset: 'binary' | 'utf8' | 'hex' | 'hexasc';
+	outputCharset: 'binary' | 'utf8' | 'bin2hex' | 'bin2hexasc';
 	inputCharset: 'latin1' | 'utf8' | 'hex';
 	lineEnding: 'No' | '\\n' | '\\r\\n' | '\\r' | '\\0';
 	escape: boolean;

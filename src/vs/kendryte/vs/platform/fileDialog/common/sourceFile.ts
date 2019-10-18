@@ -1,6 +1,6 @@
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { CONFIG_KEY_SOURCE_TYPES } from 'vs/kendryte/vs/platform/fileDialog/common/configKeys';
-import { FileFilter } from 'vs/platform/windows/common/windows';
+import { FileFilter } from 'vs/platform/dialogs/common/dialogs';
 import { localize } from 'vs/nls';
 
 export function createSourceFilter(configurationService: IConfigurationService): FileFilter {

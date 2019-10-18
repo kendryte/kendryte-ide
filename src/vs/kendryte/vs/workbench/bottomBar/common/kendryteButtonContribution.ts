@@ -90,9 +90,9 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 
 	private changeSelection(selectDefaultButton: IPublicStatusButton) {
 		if (this.serialPortService.lastSelect) {
-			selectDefaultButton.text = '$(vs select) - ' + this.serialPortService.lastSelect;
+			selectDefaultButton.text = '$(-vs-select) - ' + this.serialPortService.lastSelect;
 		} else {
-			selectDefaultButton.text = '$(vs select)';
+			selectDefaultButton.text = '$(-vs-select)';
 		}
 	}
 
@@ -134,7 +134,7 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 		cleanButton.setContextKey(cmakeButtonsShow);
 
 		const buildButton = this.statusControl.createInstance(MyStatusBarItemNames.BUILD_BUTTON, StatusBarLeftLocation.CMAKE);
-		buildButton.text = '$(checklist)';
+		buildButton.text = '$(-vs-BuilderWhite)';
 		buildButton.tooltip = ACTION_LABEL_MAIX_CMAKE_BUILD;
 		buildButton.command = ACTION_ID_MAIX_CMAKE_BUILD;
 		buildButton.setContextKey(cmakeButtonsShow);
@@ -152,7 +152,7 @@ class KendryteButtonContribution extends Disposable implements IWorkbenchContrib
 		launchButton.setContextKey(cmakeButtonsShow);
 
 		const uploadButton = this.statusControl.createInstance(MyStatusBarItemNames.FLASH_BUTTON, StatusBarLeftLocation.CMAKE);
-		uploadButton.text = '$(desktop-download)';
+		uploadButton.text = '$(-vs-DownloadWhite)';
 		uploadButton.tooltip = ACTION_LABEL_MAIX_SERIAL_BUILD_UPLOAD;
 		uploadButton.command = ACTION_ID_MAIX_SERIAL_BUILD_UPLOAD;
 		uploadButton.setContextKey(cmakeButtonsShow);

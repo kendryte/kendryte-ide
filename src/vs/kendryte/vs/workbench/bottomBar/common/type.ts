@@ -1,6 +1,6 @@
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { ThemeColor } from 'vs/platform/theme/common/themeService';
-import { StatusbarAlignment } from 'vs/platform/statusbar/common/statusbar';
+import { StatusbarAlignment } from 'vs/workbench/services/statusbar/common/statusbar';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
 import { MyStatusBarItemNames } from 'vs/kendryte/vs/workbench/bottomBar/common/myStatusBarItemId';
 

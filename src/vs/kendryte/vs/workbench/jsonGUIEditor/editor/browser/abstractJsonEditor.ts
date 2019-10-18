@@ -17,14 +17,14 @@ import { IEditorService } from 'vs/workbench/services/editor/common/editorServic
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/resourceConfiguration';
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
 import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
-import { IWindowService } from 'vs/platform/windows/common/windows';
+import { IHostService } from 'vs/workbench/services/host/browser/host';
 import { AbstractTextResourceEditor } from 'vs/workbench/browser/parts/editor/textResourceEditor';
 
 export abstract class AbstractJsonEditor<JsonType, State extends IInputState = {}> extends AbstractTextResourceEditor implements IJsonEditor {
 	private readonly inJsonGuiEditorContextKey: IContextKey<boolean>;
 	private readonly inJsonRawEditorContextKey: IContextKey<boolean>;
 
-	protected _input: AbstractJsonEditorInput<JsonType, State> | null;
+	protected _input: AbstractJsonEditorInput<JsonType, State> | undefined;
 	private _inputEvents: IDisposable[] = [];
 	protected editorInited: boolean = false;
 	private _awaitingUpdate: boolean = false;
@@ -43,7 +43,7 @@ export abstract class AbstractJsonEditor<JsonType, State extends IInputState = {
 		@ITextFileService textFileService: ITextFileService,
 		@IEditorService editorService: IEditorService,
 		@IEditorGroupsService editorGroupService: IEditorGroupsService,
-		@IWindowService windowService: IWindowService,
+		@IHostService hostService: IHostService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@INotificationService protected readonly notificationService: INotificationService,
 		@ICustomJsonEditorService protected readonly customJsonEditorService: ICustomJsonEditorService,
@@ -58,7 +58,7 @@ export abstract class AbstractJsonEditor<JsonType, State extends IInputState = {
 			editorGroupService,
 			textFileService,
 			editorService,
-			windowService,
+			hostService,
 		);
 		this.inJsonGuiEditorContextKey = CONTEXT_JSON_GUI_EDITOR.bindTo(contextKeyService);
 		this.inJsonRawEditorContextKey = CONTEXT_JSON_GUI_EDITOR_JSON_MODE.bindTo(contextKeyService);

@@ -6,7 +6,7 @@ import { IStorageService } from 'vs/platform/storage/common/storage';
 import { EditorOptions } from 'vs/workbench/common/editor';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IPackageLocalRemoteInfo, PackageDetailCompletionInput } from 'vs/kendryte/vs/workbench/packageManager/common/editors/packageDetailInput';
-import { IWebviewService, WebviewElement } from 'vs/workbench/contrib/webview/common/webview';
+import { IWebviewService, WebviewElement } from 'vs/workbench/contrib/webview/browser/webview';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { localize } from 'vs/nls';
 import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
@@ -18,12 +18,13 @@ import { DisposableStore, dispose, IDisposable } from 'vs/base/common/lifecycle'
 import { InstallSingleDependencyAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/installDependencyAction';
 import { asText, IRequestService } from 'vs/platform/request/common/request';
 import * as marked from 'vs/base/common/marked/marked';
-import { ShowCurrentReleaseNotesAction } from 'vs/workbench/contrib/update/electron-browser/update';
+import { ShowCurrentReleaseNotesAction } from 'vs/workbench/contrib/update/browser/update';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import 'vs/css!vs/kendryte/vs/workbench/packageManager/browser/editors/detailPage';
 import { DeleteDependencyAction } from 'vs/kendryte/vs/workbench/packageManager/browser/actions/deleteDependencyAction';
 import { OpenUrlAction } from 'vs/kendryte/vs/platform/open/common/openUrlAction';
 import { editorBackground, foreground } from 'vs/platform/theme/common/colorRegistry';
+import { URI } from 'vs/base/common/uri';
 
 const githubUrlReg = /^https?:\/\/github.com\/([^\/]+)\/([^\/]+)/;
 
@@ -105,15 +106,13 @@ export class PackageDetailEditor extends BaseEditor {
 		}
 		this.webviewElement = this.webviewService.createWebview(
 			'package-detail',
-			{
-				allowSvgs: true,
-			},
+			{},
 			{
 				allowScripts: false,
 			},
 		);
 		this.renderBody('');
-		this.webviewElementEvent = this.webviewElement.onDidClickLink(link => {
+		this.webviewElementEvent = this.webviewElement.onDidClickLink((link: URI) => {
 			if (!link) {
 				return;
 			}
@@ -213,9 +212,9 @@ export class PackageDetailEditor extends BaseEditor {
 
 		this.content.style.height = (dimension.height - this.content.offsetTop).toFixed(0) + 'px';
 
-		if (this.webviewElement) {
-			this.webviewElement.layout();
-		}
+		// if (this.webviewElement) {
+		// 	this.webviewElement.layout();
+		// }
 	}
 
 	renderBody(body: string): void {

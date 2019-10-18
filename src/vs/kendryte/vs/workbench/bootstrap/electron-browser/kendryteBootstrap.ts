@@ -2,7 +2,7 @@ import { ILifecycleService, LifecyclePhase } from 'vs/platform/lifecycle/common/
 import { localize } from 'vs/nls';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { OpenDevToolsAction } from 'vs/kendryte/vs/workbench/actionRegistry/common/openDevToolsAction';
-import { IWindowService, IWindowsService } from 'vs/platform/windows/common/windows';
+import { IElectronService } from 'vs/platform/electron/node/electron';
 import { IKendryteClientService } from 'vs/kendryte/vs/services/ipc/common/ipcType';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -27,8 +27,7 @@ class KendryteContribution implements IWorkbenchContribution {
 		@ILogService private readonly logService: ILogService,
 		@ILifecycleService private readonly lifecycleService: ILifecycleService,
 		@INotificationService private readonly notificationService: INotificationService,
-		@IWindowService private readonly windowService: IWindowService,
-		@IWindowsService private readonly windowsService: IWindowsService,
+		@IElectronService private readonly electronService: IElectronService,
 		@IKendryteClientService private readonly client: IKendryteClientService,
 		@INodePathService private readonly nodePathService: INodePathService,
 		@INodeFileSystemService private readonly nodeFileSystemService: INodeFileSystemService,
@@ -47,7 +46,7 @@ class KendryteContribution implements IWorkbenchContribution {
 		const extensionChanged = await this.instantiationService.invokeFunction(MaixBuildSystemPrepare);
 		if (extensionChanged) {
 			this.logService.info('{update} will relaunch now');
-			this.windowsService.relaunch({});
+			this.electronService.relaunch({});
 			return;
 		}
 		this.logService.info('{update} Install Extensions {complete}');
@@ -123,7 +122,7 @@ class KendryteContribution implements IWorkbenchContribution {
 				message: localize('bootstrap.kendryte.fatal', 'Something goes wrong when starting Kendryte IDE: {0}', e.message),
 				actions: {
 					primary: [
-						new OpenDevToolsAction(OpenDevToolsAction.ID, OpenDevToolsAction.LABEL, this.windowService),
+						new OpenDevToolsAction(OpenDevToolsAction.ID, OpenDevToolsAction.LABEL, this.electronService),
 					],
 				},
 			});

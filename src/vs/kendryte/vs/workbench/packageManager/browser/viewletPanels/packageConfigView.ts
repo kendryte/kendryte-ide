@@ -141,7 +141,7 @@ export class PackageConfigView extends ViewletPanel {
 		const renderer = this.instantiationService.createInstance(Renderer);
 		this._register(renderer.onValueDidChange(item => this.writeChange(item)));
 
-		this.list = this.instantiationService.createInstance(WorkbenchList, this.packageList, delegate, [renderer], {
+		this.list = this.instantiationService.createInstance(WorkbenchList, 'package-config', this.packageList, delegate, [renderer], {
 			ariaLabel: localize('dependency tree', 'Dependency Tree'),
 			multipleSelectionSupport: false,
 		}) as WorkbenchList<IConfigSection>;

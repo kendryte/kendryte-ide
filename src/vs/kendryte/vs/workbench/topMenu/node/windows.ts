@@ -1,6 +1,6 @@
 import { promisify } from 'util';
 import { create, IShortcutOptions, NORMAL } from 'windows-shortcuts';
-import product from 'vs/platform/product/node/product';
+import product from 'vs/platform/product/common/product';
 import { applicationDescription } from 'vs/kendryte/vs/workbench/topMenu/common/title';
 import { unlink } from 'vs/base/node/pfs';
 import { lstatExists } from 'vs/kendryte/vs/base/node/extrafs';

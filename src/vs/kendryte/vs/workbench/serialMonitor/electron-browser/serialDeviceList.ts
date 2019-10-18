@@ -35,6 +35,7 @@ export class SerialDeviceList extends Disposable {
 		super();
 		this.list = instantiationService.createInstance(
 			WorkbenchList,
+			'serial-monitor',
 			container,
 			this.createDelegate(),
 			[new SerialPortItemRenderer(this._onClick)],
@@ -233,7 +234,7 @@ class SerialPortItemRenderer implements IListRenderer<SerialMonitorData, ISerial
 			templateData.parent.classList.add('open');
 			templateData.parent.classList.remove('close');
 		} else {
-			ico = '$(primitive-square)　';
+			ico = '';
 			templateData.parent.classList.remove('open');
 			templateData.parent.classList.add('close');
 		}

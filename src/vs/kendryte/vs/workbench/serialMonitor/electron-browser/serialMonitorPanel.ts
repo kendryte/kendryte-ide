@@ -97,11 +97,11 @@ class SerialMonitorPanel extends Panel {
 	}
 
 	private sideVisible(which: 'left' | 'right') {
-		return this.getContainer().classList.contains(which + '_show');
+		return this.getContainer()!.classList.contains(which + '_show');
 	}
 
 	private toggleSide(which: 'left' | 'right') {
-		const shown = this.getContainer().classList.toggle(which + '_show');
+		const shown = this.getContainer()!.classList.toggle(which + '_show');
 		this.layout();
 		this.storageService.store('serial:monitor:panel:status:' + which, shown ? 'show' : '', StorageScope.GLOBAL);
 	}
@@ -248,6 +248,7 @@ class SerialMonitorPanel extends Panel {
 	}
 
 	public layout(dimension: Dimension = this.lastDimension): void {
+		console.log('!serialport monitor layout');
 		if (!dimension) {
 			return;
 		}
@@ -322,18 +323,24 @@ class SerialMonitorPanel extends Panel {
 			this.xterm.handleSerialIncoming(instance);
 			if (current.openMode === SerialOpenMode.raw) {
 				this.context.lineInputStream.setOptions(current.getMonitorConfig());
+				// console.log('lineInputStream.pipe(instance)');
 				this.context.lineInputStream.pipe(instance);
+				// console.log('typeInputStream.unpipe()');
 				this.context.typeInputStream.unpipe();
 				this.xterm.handleUserType(false);
 			} else {
 				this.context.typeInputStream.setOptions(current.getMonitorConfig());
+				// console.log('typeInputStream.pipe(instance)');
 				this.context.typeInputStream.pipe(instance);
+				// console.log('lineInputStream.unpipe()');
 				this.context.lineInputStream.unpipe();
 				this.xterm.handleUserType(true);
 			}
 		} else {
 			this.xterm.handleSerialIncoming(undefined);
+			// console.log('lineInputStream.unpipe()');
 			this.context.lineInputStream.unpipe();
+			// console.log('typeInputStream.unpipe()');
 			this.context.typeInputStream.unpipe();
 			this.xterm.handleUserType(false);
 			this.xterm.clearScreen();

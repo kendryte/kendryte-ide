@@ -1,5 +1,6 @@
 import { createDecorator } from 'vs/base/common/decorators';
 
+/** @deprecated Logic Wrong! */
 export function preventCallFast(delay: number): Function {
 	return createDecorator((fn, key) => {
 		const timerKey = `$guarantee$debounce$${key}`;
@@ -19,7 +20,8 @@ export function preventCallFast(delay: number): Function {
 
 			this[timerKey] = setTimeout(() => {
 				delete this[timerKey];
-				fn.apply(this, args);
+				fn.apply(this, this[argsKey]);
+				delete this[argsKey];
 			}, delay);
 		};
 	});

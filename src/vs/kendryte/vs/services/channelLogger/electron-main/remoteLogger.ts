@@ -81,4 +81,8 @@ export class RemoteLogger implements IChannelLogger {
 	public setLevel(level: LogLevel): void {
 		this.level = level;
 	}
+
+	public flush(): void {
+		// Nothing to do
+	}
 }

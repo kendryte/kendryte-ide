@@ -73,6 +73,7 @@ export class FpioaLeftPanel extends Disposable implements IView {
 
 		this.list = this._register(instantiationService.createInstance(
 			WorkbenchObjectTree,
+			'fpioa',
 			this.element,
 			new LeftPanelItemDelegate(),
 			[

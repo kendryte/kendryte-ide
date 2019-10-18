@@ -11,6 +11,10 @@ export function visualStudioIconClass(name: string) {
 	return 'visualstudio-icon ' + name;
 }
 
+export function visualStudioIconHtml(name: string) {
+	return `<span class="${vscodeIconClass(name)}"></span>`;
+}
+
 export function vscodeIcon(name: string) {
 	const ico = $('span');
 	ico.className = 'vscode-icon ' + name;

@@ -1,5 +1,5 @@
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { SimpleFindWidget } from 'vs/editor/contrib/find/simpleFindWidget';
+import { SimpleFindWidget } from 'vs/workbench/contrib/codeEditor/browser/find/simpleFindWidget';
 import { FindReplaceState } from 'vs/editor/contrib/find/findState';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
@@ -96,5 +96,10 @@ export class OutputWindowFind extends SimpleFindWidget {
 		}
 
 		this.updateTheme(theme);
+	}
+
+	protected findFirst(): void {
+		console.log('find first');
+		this.find(false);
 	}
 }

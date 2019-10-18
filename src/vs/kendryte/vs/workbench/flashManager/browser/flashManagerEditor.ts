@@ -34,10 +34,10 @@ import { ITextResourceConfigurationService } from 'vs/editor/common/services/res
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
-import { IWindowService } from 'vs/platform/windows/common/windows';
+import { IHostService } from 'vs/workbench/services/host/browser/host';
 
 export class FlashManagerEditor extends AbstractJsonEditor<IFlashManagerConfigJson, IFlashManagerEditorState> {
-	protected _input: FlashManagerEditorInput | null;
+	protected _input: FlashManagerEditorInput | undefined;
 
 	private _parent: HTMLDivElement;
 	private titleContainer: HTMLElement;
@@ -65,13 +65,13 @@ export class FlashManagerEditor extends AbstractJsonEditor<IFlashManagerConfigJs
 		@ITextFileService textFileService: ITextFileService,
 		@IEditorService editorService: IEditorService,
 		@IEditorGroupsService editorGroupService: IEditorGroupsService,
-		@IWindowService windowService: IWindowService,
+		@IHostService hostService: IHostService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@INotificationService notificationService: INotificationService,
 		@ICustomJsonEditorService customJsonEditorService: ICustomJsonEditorService,
 		@IContextViewService private readonly contextViewService: IContextViewService,
 	) {
-		super(id, telemetryService, instantiationService, storageService, configurationService, themeService, textFileService, editorService, editorGroupService, windowService, contextKeyService, notificationService, customJsonEditorService);
+		super(id, telemetryService, instantiationService, storageService, configurationService, themeService, textFileService, editorService, editorGroupService, hostService, contextKeyService, notificationService, customJsonEditorService);
 
 		this.context = FlashManagerFocusContext.bindTo(contextKeyService);
 		this.render = this.instantiationService.createInstance(FlashSectionRender);
@@ -153,6 +153,7 @@ export class FlashManagerEditor extends AbstractJsonEditor<IFlashManagerConfigJs
 
 		this.sectionList = this._register(this.instantiationService.createInstance(
 			WorkbenchList,
+			'flash-manager',
 			append(this._parent, $('div.listContainer')),
 			new FlashSectionDelegate,
 			[this.render],

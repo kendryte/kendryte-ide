@@ -5,6 +5,7 @@ import { IJsonEditorToRegister } from 'vs/kendryte/vs/workbench/jsonGUIEditor/co
 import { EditorId } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/common/type';
 import { IJsonEditorModel } from 'vs/kendryte/vs/workbench/jsonGUIEditor/service/common/type';
 import { AbstractJsonEditor } from 'vs/kendryte/vs/workbench/jsonGUIEditor/editor/browser/abstractJsonEditor';
+import { BaseEditor } from 'vs/workbench/browser/parts/editor/baseEditor';
 
 export class JsonEditorDescriptor<JsonType> implements IEditorDescriptor {
 	constructor(
@@ -13,7 +14,7 @@ export class JsonEditorDescriptor<JsonType> implements IEditorDescriptor {
 	) {
 	}
 
-	instantiate(instantiationService: IInstantiationService) {
+	instantiate(instantiationService: IInstantiationService): BaseEditor {
 		return instantiationService.createInstance(this.ctor, this.descriptor) as AbstractJsonEditor<IJsonEditorModel<JsonType>>;
 	}
 

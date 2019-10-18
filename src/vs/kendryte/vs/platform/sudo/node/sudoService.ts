@@ -3,7 +3,7 @@ import { exec } from 'sudo-prompt';
 import { isMacintosh } from 'vs/base/common/platform';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { dirname, join } from 'vs/base/common/path';
-import product from 'vs/platform/product/node/product';
+import product from 'vs/platform/product/common/product';
 
 export interface Options {
 	name?: string;

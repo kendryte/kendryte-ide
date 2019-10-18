@@ -34,6 +34,7 @@ import { IAccessibilityService } from 'vs/platform/accessibility/common/accessib
 import { OutputWindowFind } from 'vs/kendryte/vs/workbench/serialMonitor/electron-browser/outputWindowFind';
 import { SearchAddon } from 'xterm-addon-search';
 import { ISerialPortInstance } from 'vs/kendryte/vs/services/serialPort/common/type';
+import { FakeTerminalProcessManager } from 'vs/kendryte/vs/workbench/serialMonitor/electron-browser/fakeTerminalProcessManager';
 
 interface IContextMenuCache {
 	actions: (IAction | ContextSubMenu)[];
@@ -41,9 +42,6 @@ interface IContextMenuCache {
 }
 
 export class OutputXTerminal extends TerminalInstance {
-	protected _toDisposable: IDisposable[];
-	protected _isLifecycleDisposed: boolean;
-
 	private terminal: XTermTerminal;
 	private terminalSearch: SearchAddon | undefined;
 	private elementWrapper: HTMLDivElement;
@@ -69,7 +67,7 @@ export class OutputXTerminal extends TerminalInstance {
 	private readonly configurationService: IConfigurationService;
 	private readonly instantiationService: IInstantiationService;
 	private readonly contextMenuService: IContextMenuService;
-	private xtermReadyPromise: Promise<void>;
+	private xtermReadyPromise: Promise<XTermTerminal>;
 
 	constructor(
 		container: HTMLDivElement,
@@ -95,7 +93,7 @@ export class OutputXTerminal extends TerminalInstance {
 			terminalFocusContextKey,
 			configHelper,
 			container,
-			{ isRendererOnly: true },
+			{},
 			terminalInstanceService,
 			contextKeyService,
 			keybindingService,
@@ -130,29 +128,16 @@ export class OutputXTerminal extends TerminalInstance {
 		this._hasFocusContext = CONTEXT_IN_SERIAL_PORT_OUTPUT.bindTo(contextKeyService);
 
 		this.parentDisposables = [];
-		this._toDisposable = [];
 
 		this.setVisible(true);
 	}
 
 	public dispose(): void {
-		this._isLifecycleDisposed = true;
+		this.parentDisposables = dispose(this.parentDisposables);
 		super.dispose();
-		this._toDisposable = dispose(this._toDisposable);
 	}
 
-	protected _register<T extends IDisposable>(t: T): T {
-		if (this._isLifecycleDisposed) {
-			console.warn('Registering disposable on object that has already been disposed.');
-			t.dispose();
-		} else {
-			this._toDisposable.push(t);
-		}
-
-		return t;
-	}
-
-	_createXterm(): Promise<void> {
+	_createXterm(): Promise<XTermTerminal> {
 		if (this.xtermReadyPromise) {
 			return this.xtermReadyPromise;
 		}
@@ -161,14 +146,19 @@ export class OutputXTerminal extends TerminalInstance {
 		});
 	}
 
-	async __createXterm(): Promise<void> {
+	async __createXterm(): Promise<XTermTerminal> {
 		await super._createXterm();
 		this.terminal = (this as any)._xterm;
 		this.terminalSearch = (this as any)._xtermSearch;
 
-		this._register(this.onRendererInput((data: string) => this.handleInput(data)));
+		this._register(this.terminal.onData((data: string) => this.handleInput(data)));
 
 		// this.registerFocusEvents();
+		return this.terminal! as any;
+	}
+
+	_createProcess() {
+		(this as any)._processManager = new FakeTerminalProcessManager();
 	}
 
 	reattachToElement(container: HTMLElement): void {
@@ -195,16 +185,16 @@ export class OutputXTerminal extends TerminalInstance {
 			// console.error(this.myConfigHelper.panelContainer);
 			this.elementWrapper = (this as any)._wrapperElement;
 			this.parentDisposables = dispose(this.parentDisposables);
-			this.parentDisposables.push(addDisposableListener(this.myConfigHelper.panelContainer, 'mousedown', (event: MouseEvent) => this.handleMouseDown(event)));
-			this.parentDisposables.push(addDisposableListener(this.myConfigHelper.panelContainer, 'mouseup', (event: MouseEvent) => this.handleMouseUp(event)));
-			this.parentDisposables.push(addDisposableListener(this.myConfigHelper.panelContainer, 'contextmenu', (event: MouseEvent) => this.handleContextMenu(event)));
+			this.parentDisposables.push(addDisposableListener(this.myConfigHelper.panelContainer!, 'mousedown', (event: MouseEvent) => this.handleMouseDown(event)));
+			this.parentDisposables.push(addDisposableListener(this.myConfigHelper.panelContainer!, 'mouseup', (event: MouseEvent) => this.handleMouseUp(event)));
+			this.parentDisposables.push(addDisposableListener(this.myConfigHelper.panelContainer!, 'contextmenu', (event: MouseEvent) => this.handleContextMenu(event)));
 		});
 	}
 
 	public layout(dimension: Dimension = this.dimension): void {
 		this.dimension = dimension;
 		if (this.terminal) {
-			this.terminal.element.style.height = dimension.height + 'px';
+			this.terminal.element!.style.height = dimension.height + 'px';
 			super.layout(dimension);
 			// console.log('terminalInstance: layout: [%s, %s] = (%s, %s)', dimension.width, dimension.height, (this as any)._cols, (this as any)._rows);
 		}
@@ -401,9 +391,9 @@ export class OutputXTerminal extends TerminalInstance {
 		const sel = this.terminal.getSelection();
 		await this.createWidget();
 		if (this.terminal.hasSelection() && (sel.indexOf('\n') === -1)) {
-			this._findWidget.reveal(sel);
+			this._findWidget!.reveal(sel);
 		} else {
-			this._findWidget.reveal();
+			this._findWidget!.reveal();
 		}
 	}
 }

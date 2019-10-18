@@ -1,24 +1,26 @@
 import { chunkBuffer } from 'vs/kendryte/vs/base/node/chunkBuffer';
 import { splitBuffer } from 'vs/kendryte/vs/base/node/splitBuffer';
 
-export function createEncoder(encoding: string) {
+export type availableEncoder = 'binary' | 'utf8' | 'bin2hex' | 'bin2hex.linefeed' | 'bin2hexasc';
+
+export function createEncoder(encoding: availableEncoder) {
 	switch (encoding) {
-		case 'hex':
+		case 'binary':
 		case 'utf8':
 			return (data: Buffer): string => {
 				return data.toString(encoding);
 			};
-		case 'hexasc':
+		case 'bin2hexasc':
 			return hexascEncoder();
-		case 'hexnewline':
+		case 'bin2hex.linefeed':
 			return (data: Buffer): string => {
 				return splitBuffer(data, Buffer.from('\n'), true).map((buff) => {
 					return buff.toString('hex');
 				}).join('\r\n');
 			};
-		default: // 'binary'
+		default: // <-- seems not need
 			return (data: Buffer): string => {
-				return data.toString('binary');
+				return data.toString();
 			};
 	}
 }
