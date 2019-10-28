@@ -2,7 +2,7 @@ import { IEnvironmentService } from 'vs/platform/environment/common/environment'
 import { registerMainSingleton } from 'vs/kendryte/vs/platform/instantiation/common/mainExtensions';
 import { app, RelaunchOptions } from 'electron';
 import { IWindowsMainService } from 'vs/platform/windows/electron-main/windows';
-import { IElectronService } from 'vs/platform/electron/node/electron';
+import { IElectronMainService } from 'vs/platform/electron/electron-main/electronMainService';
 import { isUpdater } from 'vs/kendryte/vs/base/common/platform';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { IRelaunchService } from 'vs/kendryte/vs/platform/vscode/common/relaunchService';
@@ -39,7 +39,7 @@ class MainProcessRelaunchService implements IRelaunchMainService {
 	constructor(
 		@IEnvironmentService environmentService: IEnvironmentService,
 		@IWindowsMainService private readonly windowsService: IWindowsMainService,
-		@IElectronService private readonly electronService: IElectronService,
+		@IElectronMainService private readonly electronService: IElectronMainService,
 		@ILogService private readonly logService: ILogService,
 	) {
 	}
@@ -117,7 +117,7 @@ class MainProcessRelaunchService implements IRelaunchMainService {
 	}
 
 	relaunch() {
-		this.electronService.relaunch({});
+		this.electronService.relaunch(undefined, {});
 	}
 
 	public createLogsTarball(): Promise<string> {
@@ -126,7 +126,7 @@ class MainProcessRelaunchService implements IRelaunchMainService {
 
 	public launchUpdater() {
 		return this.send('please-update', '').then(() => {
-			this.electronService.quit();
+			this.electronService.quit(undefined);
 		});
 	}
 
