@@ -34,7 +34,7 @@
     "@octokit/rest": "^15.13.0",
     "applicationinsights": "1.0.8",
     "buffer-crc32": "^0.2.13",
-    "decompress": "^4.2.0",
+    "decompress": "^4.2.1",
     "decompress-tar": "^4.1.1",
     "decompress-tarbz2": "^4.1.1",
     "decompress-targz": "^4.1.1",
